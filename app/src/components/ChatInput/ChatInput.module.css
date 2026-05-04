@@ -160,6 +160,34 @@
   opacity: 0.85;
 }
 
+/* ── Impact pulse ──
+   Used for "mass" and "baton" variants the moment the action button is
+   absorbed. Brightens the inner highlight, then decays. */
+.surface.glass.pulsed {
+  box-shadow:
+    -2px 2px 2px 1px #fff inset,
+    -1px -3px 3px -2px rgba(0, 0, 0, 0.41) inset,
+    2px 1px 4px -4px rgba(0, 0, 0, 0.84) inset,
+    0 0 12px 8px #fff inset,
+    0 -9px 14px 4px rgba(0, 0, 0, 0.18) inset,
+    -2px -3px 5px 3px rgba(0, 0, 0, 0.10) inset,
+    0 28px 12px -7px #fff inset,
+    0 34px 10px -9px rgba(0, 0, 0, 0.08) inset,
+    0 27px 8px rgba(0, 0, 0, 0.01),
+    0 17px 6px rgba(0, 0, 0, 0.01),
+    0 10px 6px rgba(0, 0, 0, 0.06),
+    0 4px 4px rgba(0, 0, 0, 0.10),
+    0 1px 3px rgba(0, 0, 0, 0.10);
+  transition:
+    background 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.18s cubic-bezier(0.34, 1.6, 0.64, 1),
+    color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.surface.glass.pulsed::after {
+  opacity: 1;
+}
+
 /* ── Leading icon button (the +) ── */
 .leadSlot {
   all: unset;
@@ -280,6 +308,42 @@
   height: 14px;
   border-radius: 4px;
   background: #f3f3f3;
+}
+
+/* Inline action — variant D.
+   Sits inside the pill at the trailing edge of the text.
+   Subtle hover/active so it still reads as a real CTA. */
+.inlineAction {
+  all: unset;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #111;
+  transition:
+    background 160ms ease,
+    transform 140ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.inlineAction:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.inlineAction:active {
+  background: rgba(0, 0, 0, 0.10);
+  transform: scale(0.92);
+  transition-duration: 70ms;
+}
+
+.inlineAction:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
+  outline-offset: 2px;
 }
 
 /* ─────────────────────────────────────────────

@@ -7,11 +7,27 @@ import {
   forwardRef,
   type KeyboardEvent,
 } from "react";
-import { AnimatePresence, LayoutGroup, motion, type Transition } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useAnimationControls, type Transition } from "motion/react";
 import { Copy, Pencil } from "lucide-react";
+import { MorphGlyph } from "./MorphGlyph";
 import styles from "./ChatInput.module.css";
 
 export type ChatInputState = "idle" | "typing" | "responding" | "resting";
+
+/**
+ * Variants for the responding -> resting moment (when the AI finishes and
+ * the stop button leaves). Everything else stays identical so options can
+ * be compared side-by-side.
+ *
+ * - "default": the original — button shrinks in place, bubble layout-animates.
+ * - "absorb":  button slides INTO the bubble while shrinking; bubble pulls right edge.
+ * - "mass":    differentiated springs (light button, heavy bubble) + shadow pulse.
+ * - "baton":   stop square morphs to a circle, the circle slides into the bubble center,
+ *              bubble glass ripples outward as it dissolves.
+ * - "inline":  no trailing button. Send/stop glyph lives inside the input,
+ *              right-aligned with the text. Whole transition happens within the pill.
+ */
+export type ChatInputVariant = "default" | "absorb" | "mass" | "baton" | "inline";
 
 export interface ChatInputHandle {
   focus: () => void;
@@ -29,8 +45,8 @@ interface ChatInputProps {
   onCopy?: (value: string) => void;
   onEdit?: (value: string) => void;
   placeholder?: string;
-  /** When true, the morph from typing -> responding becomes a one-frame snapshot. */
-  disableEntryAnimation?: boolean;
+  /** Choreography for the responding -> resting transition. */
+  variant?: ChatInputVariant;
 }
 
 /**
@@ -46,22 +62,81 @@ const spring: Transition = {
   mass: 0.9,
 };
 
+/**
+ * Per-variant choreography. Each variant overrides:
+ *   - bubbleSpring: the layout spring on the surface (controls how the
+ *     bubble re-flows when the button leaves).
+ *   - actionExit:   the exit transition + animate target for the trailing
+ *     action button (send / stop).
+ */
+type ActionExit = {
+  exit: Record<string, number | string>;
+  transition: Transition;
+};
+
+interface VariantConfig {
+  bubbleSpring: Transition;
+  actionExit: ActionExit;
+}
+
+const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
+  default: {
+    bubbleSpring: spring,
+    actionExit: {
+      exit: { opacity: 0, scale: 0.6, width: 0, marginLeft: -4 },
+      transition: spring,
+    },
+  },
+  // ── A: ABSORB ──
+  // Button physically slides leftward into the bubble while shrinking.
+  // Bubble's right edge naturally pulls over via layout. Cleanest single-element read.
+  absorb: {
+    bubbleSpring: { type: "spring", stiffness: 260, damping: 26, mass: 1.2 },
+    actionExit: {
+      exit: { opacity: 0, scale: 0, x: -28, width: 0, marginLeft: -4 },
+      transition: { type: "spring", stiffness: 420, damping: 30, mass: 0.7 },
+    },
+  },
+  // ── B: HEAVY BUBBLE ──
+  // Snappy light-feeling button + heavy bubble that overshoots into place.
+  // Plus a brief shadow pulse on the moment of impact (handled separately).
+  mass: {
+    bubbleSpring: { type: "spring", stiffness: 180, damping: 14, mass: 1.6 },
+    actionExit: {
+      exit: { opacity: 0, scale: 0.5, width: 0, marginLeft: -4 },
+      transition: { type: "spring", stiffness: 520, damping: 32, mass: 0.55 },
+    },
+  },
+  // ── C: BATON ──
+  // Stop button slides hard left into the bubble center; the bubble's inner
+  // highlight ripples outward. The square -> circle morph is handled in JSX.
+  baton: {
+    bubbleSpring: { type: "spring", stiffness: 240, damping: 22, mass: 1.3 },
+    actionExit: {
+      exit: { opacity: 0, scale: 0, x: -42, width: 0, marginLeft: -4 },
+      transition: { type: "spring", stiffness: 380, damping: 26, mass: 0.8 },
+    },
+  },
+  // ── D: INLINE ──
+  // No trailing button at all. The send/stop glyph lives inside the input
+  // pill, right-aligned with the text. The bubble springs are tuned for a
+  // single-element feel since nothing absorbs into it from outside.
+  inline: {
+    bubbleSpring: { type: "spring", stiffness: 280, damping: 28, mass: 1 },
+    actionExit: {
+      // The standard trailing button isn't rendered for this variant,
+      // so this exit is unused. Kept for type uniformity.
+      exit: { opacity: 0, scale: 0.6 },
+      transition: spring,
+    },
+  },
+};
+
 const PlusIcon = () => (
   <svg width="12" height="12" viewBox="0 0 11 11" fill="none" aria-hidden>
     <path
       d="M0.5 5.167H9.833M5.167 0.5V9.833"
       stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const ArrowUpIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 11 11" fill="none" aria-hidden>
-    <path
-      d="M0.5 5.167L5.167 0.5M5.167 0.5L9.833 5.167M5.167 0.5V9.833"
-      stroke="#FFFFFFFA"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -80,11 +155,16 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onCopy,
       onEdit,
       placeholder = "Placeholder text...",
+      variant = "default",
     },
     ref
   ) {
     const editorRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
+    const [pulsing, setPulsing] = useState(false);
+    const surfaceControls = useAnimationControls();
+    const prevState = useRef(state);
+    const cfg = VARIANTS[variant];
 
     useImperativeHandle(ref, () => ({
       focus: () => editorRef.current?.focus(),
@@ -98,6 +178,28 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         editorRef.current?.focus();
       }
     }, [state]);
+
+    // ── Variant side effects on responding -> resting ──
+    // Triggers a brief shadow pulse on the bubble (mass + baton variants)
+    // and a subtle width bulge so the bubble "absorbs" the button's mass.
+    useEffect(() => {
+      const prev = prevState.current;
+      prevState.current = state;
+      if (prev !== "responding" || state !== "resting") return;
+
+      if (variant === "mass" || variant === "baton") {
+        setPulsing(true);
+        const id = window.setTimeout(() => setPulsing(false), 260);
+        return () => clearTimeout(id);
+      }
+      if (variant === "absorb") {
+        // Tiny width overshoot: bubble visibly receives the mass.
+        surfaceControls.start({
+          scaleX: [1, 1.015, 1],
+          transition: { duration: 0.42, times: [0, 0.45, 1], ease: [0.25, 1, 0.5, 1] },
+        });
+      }
+    }, [state, variant, surfaceControls]);
 
     const handleKeyDown = useCallback(
       (e: KeyboardEvent<HTMLInputElement>) => {
@@ -117,6 +219,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // on a settled bubble.
     const isRestingHovered = state === "resting" && hovered;
     const showActions = isRestingHovered;
+    const isInline = variant === "inline";
+    const showInlineGlyph = isInline && (showSend || showStop);
 
     return (
       <LayoutGroup id="chat-input">
@@ -125,11 +229,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-        <motion.div className={styles.root} layout transition={spring}>
+        <motion.div className={styles.root} layout transition={cfg.bubbleSpring}>
           <motion.div
             layout
-            className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""}`}
-            transition={spring}
+            className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
+            transition={cfg.bubbleSpring}
+            animate={surfaceControls}
             onClick={() => editorRef.current?.focus()}
           >
             {/* Leading + button — only shown when not in bubble state.
@@ -170,13 +275,44 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               transition={spring}
               spellCheck={false}
             />
+
+            {/* Inline action — variant D only.
+                Sits inside the pill, right-aligned with the editor text.
+                Same morph (↵ → L → U → square), darker color so it reads
+                on the light pill. Whole transition stays within the input. */}
+            <AnimatePresence initial={false}>
+              {showInlineGlyph && (
+                <motion.button
+                  key="inline-action"
+                  layout
+                  type="button"
+                  className={styles.inlineAction}
+                  initial={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
+                  animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
+                  transition={spring}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showStop) onStop?.();
+                    else onSubmit(value);
+                  }}
+                  aria-label={showStop ? "Stop response" : "Send message"}
+                >
+                  <MorphGlyph
+                    mode={showStop ? "stop" : "send"}
+                    color="#111"
+                  />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Trailing action button — single morphing element across
               send (typing) <-> stop (responding). Same layoutId so the
-              circle persists; only its glyph swaps. */}
+              circle persists; only its glyph swaps. Hidden in the inline
+              variant which renders the glyph inside the pill instead. */}
           <AnimatePresence initial={false}>
-            {(showSend || showStop) && (
+            {!isInline && (showSend || showStop) && (
               <motion.button
                 key="action"
                 layout
@@ -185,37 +321,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 className={styles.action}
                 initial={{ opacity: 0, scale: 0.6, width: 0, marginLeft: -4 }}
                 animate={{ opacity: 1, scale: 1, width: 42, marginLeft: 0 }}
-                exit={{ opacity: 0, scale: 0.6, width: 0, marginLeft: -4 }}
-                transition={spring}
+                exit={cfg.actionExit.exit}
+                transition={cfg.actionExit.transition}
                 onClick={() => {
                   if (showStop) onStop?.();
                   else onSubmit(value);
                 }}
                 aria-label={showStop ? "Stop response" : "Send message"}
               >
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {showStop ? (
-                    <motion.span
-                      key="stop"
-                      className={styles.stopGlyph}
-                      initial={{ scale: 0.4, opacity: 0, borderRadius: 999 }}
-                      animate={{ scale: 1, opacity: 1, borderRadius: 4 }}
-                      exit={{ scale: 0.4, opacity: 0, borderRadius: 999 }}
-                      transition={spring}
-                    />
-                  ) : (
-                    <motion.span
-                      key="send"
-                      initial={{ scale: 0.4, opacity: 0, rotate: -45 }}
-                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                      exit={{ scale: 0.4, opacity: 0, rotate: 45 }}
-                      transition={spring}
-                      style={{ display: "flex" }}
-                    >
-                      <ArrowUpIcon />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                {/* Single morphing path: send (↵) → L → U → filled square.
+                    One element, one continuous tween — no fade-swap. */}
+                <MorphGlyph mode={showStop ? "stop" : "send"} />
               </motion.button>
             )}
           </AnimatePresence>

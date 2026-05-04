@@ -1,153 +1,98 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import "./App.css";
-import { ChatInput, type ChatInputState } from "./components/ChatInput/ChatInput";
+import { Playground } from "./pages/Playground";
+import { SideNav, type RouteId } from "./components/SideNav";
 
-const STATES: { id: ChatInputState; title: string; desc: string }[] = [
-  {
-    id: "idle",
-    title: "Default state",
-    desc: "Regular input, should behave like a regular input.",
-  },
-  {
-    id: "typing",
-    title: "Typing state",
-    desc: "While user is typing text and button become active.",
-  },
-  {
-    id: "responding",
-    title: "Chat bubble state",
-    desc: "When users press enter, the input morphs into this chat bubble. While the AI agent is responding, Stop CTA should persist.",
-  },
-  {
-    id: "resting",
-    title: "Chat bubble resting state",
-    desc: "When reply is finished, the input goes to its resting state.",
-  },
-];
-
-function App() {
-  const [state, setState] = useState<ChatInputState>("idle");
-  const [value, setValue] = useState("");
-  const stopTimer = useRef<number | null>(null);
-
-  // When typing begins from idle, transition to typing state.
-  useEffect(() => {
-    if (state === "idle" && value.length > 0) setState("typing");
-    if (state === "typing" && value.length === 0) setState("idle");
-  }, [value, state]);
-
-  // Simulated agent response: after 2.4s of "responding", drop to "resting".
-  useEffect(() => {
-    if (state === "responding") {
-      stopTimer.current = window.setTimeout(() => setState("resting"), 2400);
-    }
-    return () => {
-      if (stopTimer.current) {
-        clearTimeout(stopTimer.current);
-        stopTimer.current = null;
-      }
-    };
-  }, [state]);
-
-  const handleSubmit = (v: string) => {
-    if (!v.trim()) return;
-    setValue(v.trim());
-    setState("responding");
-  };
-
-  const handleStop = () => setState("resting");
-
-  const reset = () => {
-    setValue("");
-    setState("idle");
-  };
-
-  return (
-    <main className="page">
-      <header>
-        <h1>Chat input</h1>
-        <p>
-          Single morphing element across four states. The pill, leading icon,
-          editor, and trailing button persist as the same DOM nodes — only their
-          layout, fill, and shadow change. Animations use spring physics for a
-          continuous, fluid feel rather than fades between variants.
-        </p>
-      </header>
-
-      <nav className="rail" aria-label="States">
-        {STATES.map((s) => (
-          <button
-            key={s.id}
-            className={`railItem ${state === s.id ? "active" : ""}`}
-            onClick={() => {
-              // Rail clicks always show the canonical sample for that state,
-              // matching the design spec.
-              if (s.id === "idle") setValue("");
-              if (s.id === "typing") setValue("I am typing");
-              if (s.id === "responding" || s.id === "resting") setValue("Hello there");
-              setState(s.id);
-            }}
-          >
-            <span>{s.title}</span>
-            <kbd>{s.id}</kbd>
-            <span className="desc">{s.desc}</span>
-          </button>
-        ))}
-      </nav>
-
-      <section className="stage">
-        <div className="stageHeader">{stageHeaderFor(state)}</div>
-        <div className="stageBox">
-          <ChatInput
-            state={state}
-            value={value}
-            onChange={setValue}
-            onSubmit={handleSubmit}
-            onStop={handleStop}
-          />
-        </div>
-
-        <div className="controls">
-          <button onClick={reset}>Reset</button>
-          <button
-            onClick={() => {
-              setValue("Hello there");
-              setState("responding");
-            }}
-            disabled={state === "responding"}
-          >
-            Simulate send
-          </button>
-          <button
-            onClick={() => setState("resting")}
-            disabled={state !== "responding"}
-          >
-            Force stop
-          </button>
-        </div>
-
-        <p className="note">
-          Try it: focus the input and start typing — the send button morphs in.
-          Press Enter to submit; the pill morphs into a glass bubble with a stop
-          control. After the response settles, the bubble drops to its resting
-          state.
-        </p>
-      </section>
-    </main>
-  );
+interface PageDef {
+  title: string;
+  blurb: string;
+  variant: "default" | "absorb" | "mass" | "baton" | "inline";
+  callout?: { title: string; bullets: string[] };
 }
 
-function stageHeaderFor(s: ChatInputState) {
-  switch (s) {
-    case "idle":
-      return "Default";
-    case "typing":
-      return "Typing";
-    case "responding":
-      return "Chat bubble — responding";
-    case "resting":
-      return "Chat bubble — resting";
-  }
+const PAGES: Record<RouteId, PageDef> = {
+  original: {
+    title: "Original",
+    blurb:
+      "Single morphing element across four states. The pill, leading icon, editor, and trailing button persist as the same DOM nodes — only their layout, fill, and shadow change.",
+    variant: "default",
+  },
+  absorb: {
+    title: "A — Absorb",
+    blurb:
+      "When the AI finishes responding, the stop button slides into the bubble while shrinking. The bubble's right edge naturally pulls over and gives a tiny scale bulge, as if it received the button's mass.",
+    variant: "absorb",
+    callout: {
+      title: "What's different on responding → resting",
+      bullets: [
+        "Action button exit: x: -28, scale: 0 (slides INTO the bubble center).",
+        "Bubble layout spring: stiffness 260 / damping 26 / mass 1.2 — slightly heavier feel.",
+        "Bubble plays a 1.5% scaleX overshoot on receipt, then settles.",
+      ],
+    },
+  },
+  mass: {
+    title: "B — Heavy bubble",
+    blurb:
+      "Differentiated mass: the button is light and snappy, the bubble is heavy and overshoots into place. A brief shadow pulse on the bubble marks the moment of impact.",
+    variant: "mass",
+    callout: {
+      title: "What's different on responding → resting",
+      bullets: [
+        "Button exit spring: stiffness 520, damping 32, mass 0.55 — fast and weightless.",
+        "Bubble spring: stiffness 180, damping 14, mass 1.6 — visibly overshoots.",
+        "Bubble's inner highlight pulses bright for ~260ms (the impact frame).",
+      ],
+    },
+  },
+  baton: {
+    title: "C — Baton pass",
+    blurb:
+      "The clearest single-element story: the stop square morphs back into a circle, slides hard left into the bubble center, and the bubble's inner glass pulses outward as it dissolves — a visible hand-off.",
+    variant: "baton",
+    callout: {
+      title: "What's different on responding → resting",
+      bullets: [
+        "Stop glyph reverts square → circle on exit (suggests releasing the trail).",
+        "Action button slides further left: x: -42 (deep into the bubble center).",
+        "Bubble shadow pulses simultaneously — reads as the energy dispersing.",
+      ],
+    },
+  },
+  inline: {
+    title: "D — Inline",
+    blurb:
+      "No trailing button. As soon as you type, the ↵ enter glyph appears inside the input, right-aligned with the text. Press Enter — the same arrow → L → U → square morph plays in place. Everything happens within one pill.",
+    variant: "inline",
+    callout: {
+      title: "What's different",
+      bullets: [
+        "No external send/stop button. Glyph lives inside the pill, next to the text.",
+        "Same continuous morph (↵ → L → U → square), 400ms snappy ease-out.",
+        "All four states stay inside one element — input never has anything beside it.",
+      ],
+    },
+  },
+};
+
+function App() {
+  const [route, setRoute] = useState<RouteId>("original");
+  const page = PAGES[route];
+
+  return (
+    <div className="shell">
+      <SideNav active={route} onSelect={setRoute} />
+      <main className="content">
+        <Playground
+          key={route}
+          title={page.title}
+          blurb={page.blurb}
+          variant={page.variant}
+          callout={page.callout}
+        />
+      </main>
+    </div>
+  );
 }
 
 export default App;
