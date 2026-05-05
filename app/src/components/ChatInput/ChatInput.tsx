@@ -263,16 +263,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               )}
             </AnimatePresence>
 
-            <motion.input
+            <input
               ref={editorRef}
-              layout
               className={styles.editor}
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               readOnly={isReadOnly}
-              transition={spring}
               spellCheck={false}
             />
 
