@@ -23,27 +23,14 @@ import "./ChatExperience.css";
 
 const AI_RESPONSE = [
   "Particle physics studies the most fundamental constituents of matter and the forces that act between them.",
-  "The Standard Model is the framework that organises everything we currently know about elementary particles.",
-  "It contains twelve fermions — six quarks and six leptons — that make up all the matter we observe.",
-  "Quarks combine into hadrons: protons and neutrons are each built from three of them, bound together by gluons.",
-  "The Higgs boson, discovered in 2012 at CERN, completes the model — its associated field gives elementary particles their mass.",
-  "Antimatter is the mirror image of ordinary matter — every particle has an antiparticle with opposite charge but identical mass.",
-  "When a particle meets its antiparticle they annihilate, converting their combined mass entirely into energy via E = mc².",
-  "The universe contains far more matter than antimatter today, and explaining that asymmetry is one of the biggest unsolved problems in physics.",
-  "Neutrinos are produced in colossal numbers by the Sun — roughly 65 billion pass through every square centimetre of your skin each second.",
-  "They interact so weakly with matter that a light-year of lead would stop only about half of them.",
-  "Quantum chromodynamics, or QCD, describes how quarks are bound by the strong force — the force actually gets stronger as quarks are pulled apart.",
-  "Trying to separate two quarks produces enough energy to create a new quark-antiquark pair, so isolated free quarks have never been observed.",
-  "Virtual particles are a consequence of the uncertainty principle — they borrow energy from the vacuum for an instant too short for it to be measured.",
-  "The Casimir effect is a measurable force between two uncharged metal plates caused by the pressure of virtual particles in the vacuum between them.",
-  "String theory proposes that all particles are actually tiny vibrating strings of energy, with different vibration modes producing different particles.",
+  "The Standard Model organises twelve fermions — six quarks and six leptons — plus the force-carrying bosons into a single coherent framework.",
+  "The Higgs boson, found at CERN in 2012, completes the picture by giving elementary particles their mass through interaction with the Higgs field.",
 ];
 
 const HIGGS_SIZE_RESPONSE = [
-  "The Higgs boson has no measurable size in the way a proton does — it is a point particle, meaning it has no known internal structure or spatial extent.",
-  "Its mass, however, is well measured: roughly 125 GeV/c², about 133 times heavier than a proton.",
-  "In natural units, that mass corresponds to a length scale of around 1.6 × 10⁻¹⁸ metres — far smaller than a proton, which is about 10⁻¹⁵ metres across.",
-  "So when physicists ask how 'big' the Higgs is, the honest answer is: point-like at every scale we can currently probe, with its identity defined by mass and quantum numbers, not by volume.",
+  "The Higgs boson is a point particle — it has no measurable spatial extent or internal structure at any scale we can currently probe.",
+  "Its mass sits at roughly 125 GeV/c², about 133 times heavier than a proton, which corresponds to a length scale of around 1.6 × 10⁻¹⁸ metres.",
+  "So 'how big is it' has only one honest answer: it has no size, only mass and quantum numbers.",
 ];
 
 interface Turn {
@@ -145,12 +132,13 @@ export function ChatExperience() {
     <div className="chatPage">
       <div className="chatFeed">
         <AnimatePresence initial={false}>
-          {turns.map((turn) => {
+          {turns.map((turn, i) => {
+            const isActiveInput = i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing");
             return (
               <motion.article
                 key={turn.id}
                 id={`turn-${turn.id}`}
-                className="chatTurn"
+                className={`chatTurn${isActiveInput ? " activeInput" : ""}`}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}

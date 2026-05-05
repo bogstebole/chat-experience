@@ -46,6 +46,15 @@
   scroll-margin-top: 16px;
 }
 
+.activeInput {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding-bottom: 24px;
+  padding-top: 12px;
+}
+
 .userRow {
   display: flex;
   justify-content: flex-end;
