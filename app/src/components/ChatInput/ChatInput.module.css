@@ -18,7 +18,13 @@
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.03em;
-  width: 233px;
+  /* Fixed width when typing */
+  width: 320px;
+}
+
+.root.isGlassRoot {
+  width: auto;
+  max-width: 320px;
 }
 
 /* ── Surface — the morphing pill ── */
@@ -30,7 +36,7 @@
   flex: 1;
   height: var(--pill-h);
   min-width: 0;
-  padding: 4px;
+  padding: 4px 8px 4px 4px;
   border-radius: var(--pill-radius);
   background: var(--pill-fill);
   color: var(--pill-text);
@@ -87,13 +93,11 @@
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.45) 0%,
-    rgba(0, 0, 0, 0.12) 40%,
-    rgba(0, 0, 0, 0.22) 70%,
-    rgba(0, 0, 0, 0.15) 100%
-  );
+  background: linear-gradient(145deg,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(0, 0, 0, 0.12) 40%,
+      rgba(0, 0, 0, 0.22) 70%,
+      rgba(0, 0, 0, 0.15) 100%);
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -112,14 +116,12 @@
   left: 15%;
   right: 15%;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.7) 30%,
-    rgba(255, 255, 255, 0.9) 50%,
-    rgba(255, 255, 255, 0.7) 70%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.7) 30%,
+      rgba(255, 255, 255, 0.9) 50%,
+      rgba(255, 255, 255, 0.7) 70%,
+      transparent 100%);
   border-radius: 999px;
   pointer-events: none;
   opacity: 0.6;
@@ -147,13 +149,11 @@
 }
 
 .surface.glass.hovered::before {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(0, 0, 0, 0.1) 40%,
-    rgba(0, 0, 0, 0.18) 70%,
-    rgba(0, 0, 0, 0.12) 100%
-  );
+  background: linear-gradient(145deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(0, 0, 0, 0.1) 40%,
+      rgba(0, 0, 0, 0.18) 70%,
+      rgba(0, 0, 0, 0.12) 100%);
 }
 
 .surface.glass.hovered::after {
@@ -237,12 +237,13 @@
   letter-spacing: inherit;
   color: inherit;
   line-height: 1;
-  padding: 0;
+  padding: 0 8px 0 0;
   resize: none;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   caret-color: #111;
+  field-sizing: content;
 }
 
 .editor::placeholder {
@@ -354,7 +355,8 @@
    so that revealing the actions does NOT push the bubble upward. */
 .wrap {
   position: relative;
-  width: 233px;
+  display: inline-flex;
+  justify-content: flex-end;
 }
 
 .actionsRow {

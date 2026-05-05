@@ -1,6 +1,6 @@
 import "./SideNav.css";
 
-export type RouteId = "original" | "absorb" | "mass" | "baton" | "inline";
+export type RouteId = "original" | "absorb" | "mass" | "baton" | "inline" | "chat";
 
 interface NavItem {
   id: RouteId;
@@ -9,6 +9,7 @@ interface NavItem {
 }
 
 const ITEMS: NavItem[] = [
+  { id: "chat", label: "Chat", hint: "real conversation" },
   { id: "original", label: "Original", hint: "current build" },
   { id: "absorb", label: "A — Absorb", hint: "button into bubble" },
   { id: "mass", label: "B — Heavy bubble", hint: "differentiated mass" },

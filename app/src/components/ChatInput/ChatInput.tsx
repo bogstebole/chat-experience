@@ -229,7 +229,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-        <motion.div className={styles.root} layout transition={cfg.bubbleSpring}>
+        <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={cfg.bubbleSpring}>
           <motion.div
             layout
             className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}

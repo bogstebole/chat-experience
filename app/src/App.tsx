@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { Playground } from "./pages/Playground";
+import { ChatExperience } from "./pages/ChatExperience";
 import { SideNav, type RouteId } from "./components/SideNav";
 
 interface PageDef {
@@ -10,7 +11,9 @@ interface PageDef {
   callout?: { title: string; bullets: string[] };
 }
 
-const PAGES: Record<RouteId, PageDef> = {
+type PlaygroundRoute = Exclude<RouteId, "chat">;
+
+const PAGES: Record<PlaygroundRoute, PageDef> = {
   original: {
     title: "Original",
     blurb:
@@ -76,20 +79,23 @@ const PAGES: Record<RouteId, PageDef> = {
 };
 
 function App() {
-  const [route, setRoute] = useState<RouteId>("original");
-  const page = PAGES[route];
+  const [route, setRoute] = useState<RouteId>("chat");
 
   return (
     <div className="shell">
       <SideNav active={route} onSelect={setRoute} />
       <main className="content">
-        <Playground
-          key={route}
-          title={page.title}
-          blurb={page.blurb}
-          variant={page.variant}
-          callout={page.callout}
-        />
+        {route === "chat" ? (
+          <ChatExperience key="chat" />
+        ) : (
+          <Playground
+            key={route}
+            title={PAGES[route].title}
+            blurb={PAGES[route].blurb}
+            variant={PAGES[route].variant}
+            callout={PAGES[route].callout}
+          />
+        )}
       </main>
     </div>
   );

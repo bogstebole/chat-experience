@@ -1,0 +1,86 @@
+.chatPage {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chatInputBar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 32px 0 20px;
+  background: linear-gradient(
+    to bottom,
+    var(--bg) 0%,
+    var(--bg) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.chatFeed {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  padding-top: 24px;
+  padding-bottom: 99vh;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chatFeed::-webkit-scrollbar {
+  display: none;
+}
+
+.chatTurn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-margin-top: 16px;
+}
+
+.userRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.aiText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  max-width: 56ch;
+}
+
+.chatEmpty {
+  margin-top: 64px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.bottomBlur {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(to top, var(--bg) 10%, rgba(255,255,255,0) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  mask-image: linear-gradient(to top, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 50%, transparent 100%);
+}
+
+
