@@ -119,13 +119,14 @@ const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
   },
   // ── D: INLINE ──
   // No trailing button at all. The send/stop glyph lives inside the input
-  // pill, right-aligned with the text. The bubble springs are tuned for a
-  // single-element feel since nothing absorbs into it from outside.
+  // pill. On submit/stop, the glyph slides left into the text (baton-pass
+  // style) while the pill morphs to a bubble with the same heavy overshoot
+  // spring as the baton variant.
   inline: {
-    bubbleSpring: { type: "spring", stiffness: 280, damping: 28, mass: 1 },
+    bubbleSpring: { type: "spring", stiffness: 240, damping: 22, mass: 1.3 },
     actionExit: {
-      // The standard trailing button isn't rendered for this variant,
-      // so this exit is unused. Kept for type uniformity.
+      // Unused for the trailing button (not rendered) but drives the inline
+      // glyph exit via the showInlineGlyph AnimatePresence below.
       exit: { opacity: 0, scale: 0.6 },
       transition: spring,
     },
@@ -187,8 +188,15 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       prevState.current = state;
       if (prev !== "responding" || state !== "resting") return;
 
-      if (variant === "mass" || variant === "baton") {
+      if (variant === "mass" || variant === "baton" || variant === "inline") {
         setPulsing(true);
+        if (variant === "inline") {
+          // Glyph lands inside the pill — ripple outward as it dissolves.
+          surfaceControls.start({
+            scaleX: [1, 1.018, 1],
+            transition: { duration: 0.38, times: [0, 0.4, 1], ease: [0.25, 1, 0.5, 1] },
+          });
+        }
         const id = window.setTimeout(() => setPulsing(false), 260);
         return () => clearTimeout(id);
       }
@@ -287,8 +295,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   className={styles.inlineAction}
                   initial={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
                   animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
-                  exit={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
-                  transition={spring}
+                  exit={{ opacity: 0, scale: 0, x: -20, width: 0, marginLeft: -4 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 26, mass: 0.8 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (showStop) onStop?.();
