@@ -5,7 +5,7 @@
 
 .root {
   --pill-h: 36px;
-  --pill-radius: 9999px;
+  --pill-radius: 20px;
   --slot: 28px;
   --send-w: 42px;
   --pill-fill: rgba(0, 0, 0, 0.03);
@@ -31,10 +31,10 @@
 .surface {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   flex: 1;
-  height: var(--pill-h);
+  min-height: var(--pill-h);
   min-width: 0;
   padding: 4px 8px 4px 4px;
   border-radius: var(--pill-radius);
@@ -224,7 +224,7 @@
   outline-offset: 2px;
 }
 
-/* ── Editor area: contenteditable so caret + measured width are real ── */
+/* ── Editor area ── */
 .editor {
   position: relative;
   z-index: 1;
@@ -236,12 +236,15 @@
   font: inherit;
   letter-spacing: inherit;
   color: inherit;
-  line-height: 1;
-  padding: 0 8px 0 0;
+  line-height: 1.45;
+  /* Push the first line to the optical center of the 28px inner pill.
+     As text wraps, the pill grows downward and this offset stays fixed. */
+  padding: 8px 8px 8px 8px;
   resize: none;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-y: auto;
+  max-height: 120px;
+  white-space: pre-wrap;
+  word-break: break-word;
   caret-color: #111;
   field-sizing: content;
 }
@@ -319,6 +322,7 @@
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  align-self: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;

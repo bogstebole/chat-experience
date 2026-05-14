@@ -13,57 +13,71 @@ interface PageDef {
 
 type PlaygroundRoute = Exclude<RouteId, "chat">;
 
-const PAGES: Record<PlaygroundRoute, PageDef> = {
-  original: {
-    title: "Original",
+const PAGES: Partial<Record<PlaygroundRoute, PageDef>> = {
+  // original: {
+  //   title: "Original",
+  //   blurb:
+  //     "Single morphing element across four states. The pill, leading icon, editor, and trailing button persist as the same DOM nodes — only their layout, fill, and shadow change.",
+  //   variant: "default",
+  // },
+  // absorb: {
+  //   title: "A — Absorb",
+  //   blurb:
+  //     "When the AI finishes responding, the stop button slides into the bubble while shrinking. The bubble's right edge naturally pulls over and gives a tiny scale bulge, as if it received the button's mass.",
+  //   variant: "absorb",
+  //   callout: {
+  //     title: "What's different on responding → resting",
+  //     bullets: [
+  //       "Action button exit: x: -28, scale: 0 (slides INTO the bubble center).",
+  //       "Bubble layout spring: stiffness 260 / damping 26 / mass 1.2 — slightly heavier feel.",
+  //       "Bubble plays a 1.5% scaleX overshoot on receipt, then settles.",
+  //     ],
+  //   },
+  // },
+  // mass: {
+  //   title: "B — Heavy bubble",
+  //   blurb:
+  //     "Differentiated mass: the button is light and snappy, the bubble is heavy and overshoots into place. A brief shadow pulse on the bubble marks the moment of impact.",
+  //   variant: "mass",
+  //   callout: {
+  //     title: "What's different on responding → resting",
+  //     bullets: [
+  //       "Button exit spring: stiffness 520, damping 32, mass 0.55 — fast and weightless.",
+  //       "Bubble spring: stiffness 180, damping 14, mass 1.6 — visibly overshoots.",
+  //       "Bubble's inner highlight pulses bright for ~260ms (the impact frame).",
+  //     ],
+  //   },
+  // },
+  // baton: {
+  //   title: "C — Baton pass",
+  //   blurb:
+  //     "The clearest single-element story: the stop square morphs back into a circle, slides hard left into the bubble center, and the bubble's inner glass pulses outward as it dissolves — a visible hand-off.",
+  //   variant: "baton",
+  //   callout: {
+  //     title: "What's different on responding → resting",
+  //     bullets: [
+  //       "Stop glyph reverts square → circle on exit (suggests releasing the trail).",
+  //       "Action button slides further left: x: -42 (deep into the bubble center).",
+  //       "Bubble shadow pulses simultaneously — reads as the energy dispersing.",
+  //     ],
+  //   },
+  // },
+  "inline-saved": {
+    title: "D — Inline (reference)",
     blurb:
-      "Single morphing element across four states. The pill, leading icon, editor, and trailing button persist as the same DOM nodes — only their layout, fill, and shadow change.",
-    variant: "default",
-  },
-  absorb: {
-    title: "A — Absorb",
-    blurb:
-      "When the AI finishes responding, the stop button slides into the bubble while shrinking. The bubble's right edge naturally pulls over and gives a tiny scale bulge, as if it received the button's mass.",
-    variant: "absorb",
+      "Saved baseline before textarea / wrapping experiments. No trailing button — send/stop glyph lives inside the pill.",
+    variant: "inline",
     callout: {
-      title: "What's different on responding → resting",
+      title: "What's different",
       bullets: [
-        "Action button exit: x: -28, scale: 0 (slides INTO the bubble center).",
-        "Bubble layout spring: stiffness 260 / damping 26 / mass 1.2 — slightly heavier feel.",
-        "Bubble plays a 1.5% scaleX overshoot on receipt, then settles.",
-      ],
-    },
-  },
-  mass: {
-    title: "B — Heavy bubble",
-    blurb:
-      "Differentiated mass: the button is light and snappy, the bubble is heavy and overshoots into place. A brief shadow pulse on the bubble marks the moment of impact.",
-    variant: "mass",
-    callout: {
-      title: "What's different on responding → resting",
-      bullets: [
-        "Button exit spring: stiffness 520, damping 32, mass 0.55 — fast and weightless.",
-        "Bubble spring: stiffness 180, damping 14, mass 1.6 — visibly overshoots.",
-        "Bubble's inner highlight pulses bright for ~260ms (the impact frame).",
-      ],
-    },
-  },
-  baton: {
-    title: "C — Baton pass",
-    blurb:
-      "The clearest single-element story: the stop square morphs back into a circle, slides hard left into the bubble center, and the bubble's inner glass pulses outward as it dissolves — a visible hand-off.",
-    variant: "baton",
-    callout: {
-      title: "What's different on responding → resting",
-      bullets: [
-        "Stop glyph reverts square → circle on exit (suggests releasing the trail).",
-        "Action button slides further left: x: -42 (deep into the bubble center).",
-        "Bubble shadow pulses simultaneously — reads as the energy dispersing.",
+        "No external send/stop button. Glyph lives inside the pill, next to the text.",
+        "Same continuous morph (↵ → L → U → square), 400ms snappy ease-out.",
+        "All four states stay inside one element — input never has anything beside it.",
       ],
     },
   },
   inline: {
-    title: "D — Inline",
+    title: "D — Inline (wip)",
     blurb:
       "No trailing button. As soon as you type, the ↵ enter glyph appears inside the input, right-aligned with the text. Press Enter — the same arrow → L → U → square morph plays in place. Everything happens within one pill.",
     variant: "inline",
@@ -87,15 +101,15 @@ function App() {
       <main className="content">
         {route === "chat" ? (
           <ChatExperience key="chat" />
-        ) : (
+        ) : PAGES[route] ? (
           <Playground
             key={route}
-            title={PAGES[route].title}
-            blurb={PAGES[route].blurb}
-            variant={PAGES[route].variant}
-            callout={PAGES[route].callout}
+            title={PAGES[route]!.title}
+            blurb={PAGES[route]!.blurb}
+            variant={PAGES[route]!.variant}
+            callout={PAGES[route]!.callout}
           />
-        )}
+        ) : null}
       </main>
     </div>
   );

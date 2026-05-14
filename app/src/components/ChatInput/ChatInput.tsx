@@ -191,7 +191,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     ref
   ) {
     const instanceId = useId();
-    const editorRef = useRef<HTMLInputElement>(null);
+    const editorRef = useRef<HTMLTextAreaElement>(null);
     const [hovered, setHovered] = useState(false);
     const [pulsing, setPulsing] = useState(false);
     const surfaceControls = useAnimationControls();
@@ -248,7 +248,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, [state, variant, surfaceControls]);
 
     const handleKeyDown = useCallback(
-      (e: KeyboardEvent<HTMLInputElement>) => {
+      (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           if (value.trim().length > 0) onSubmit(value);
@@ -321,7 +321,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               )}
             </AnimatePresence>
 
-            <motion.input
+            <motion.textarea
               ref={editorRef}
               className={styles.editor}
               value={value}
@@ -330,6 +330,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               placeholder={placeholder}
               readOnly={isReadOnly}
               spellCheck={false}
+              rows={1}
             />
 
             {/* Inline action — variant D only.
