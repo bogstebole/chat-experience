@@ -3,7 +3,10 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   ChatInput,
   type ChatInputState,
+  type InlineAnimConfig,
+  defaultInlineAnimConfig,
 } from "../components/ChatInput/ChatInput";
+import { AnimationPanel } from "../components/AnimationPanel/AnimationPanel";
 import "./ChatExperience.css";
 
 /**
@@ -51,6 +54,7 @@ export function ChatExperience() {
   const [turns, setTurns] = useState<Turn[]>([newTurn()]);
   const streamingRef = useRef<number | null>(null);
   const turnCountRef = useRef(0);
+  const [animConfig, setAnimConfig] = useState<InlineAnimConfig>(defaultInlineAnimConfig);
 
   // Cleanup any in-flight streaming timer on unmount.
   useEffect(() => {
@@ -151,6 +155,7 @@ export function ChatExperience() {
                   onSubmit={(v) => handleSubmit(turn.id, v)}
                   onStop={() => handleStop(turn.id)}
                   variant="inline"
+                  animationConfig={animConfig}
                   placeholder="Ask me about particle physics…"
                 />
               </div>
@@ -161,6 +166,7 @@ export function ChatExperience() {
         </AnimatePresence>
       </div>
       <div className="bottomBlur" />
+      <AnimationPanel config={animConfig} onChange={setAnimConfig} />
     </div>
   );
 }

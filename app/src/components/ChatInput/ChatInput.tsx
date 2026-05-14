@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useImperativeHandle,
   useRef,
   useState,
@@ -13,6 +14,32 @@ import { MorphGlyph } from "./MorphGlyph";
 import styles from "./ChatInput.module.css";
 
 export type ChatInputState = "idle" | "typing" | "responding" | "resting";
+
+export interface InlineAnimConfig {
+  bubbleStiffness: number;
+  bubbleDamping: number;
+  bubbleMass: number;
+  glyphExitX: number;
+  glyphExitStiffness: number;
+  glyphExitDamping: number;
+  glyphExitMass: number;
+  rippleScaleX: number;
+  rippleDuration: number;
+  pulseDuration: number;
+}
+
+export const defaultInlineAnimConfig: InlineAnimConfig = {
+  bubbleStiffness: 600,
+  bubbleDamping: 21.5,
+  bubbleMass: 0.2,
+  glyphExitX: 0,
+  glyphExitStiffness: 600,
+  glyphExitDamping: 18,
+  glyphExitMass: 0.5,
+  rippleScaleX: 1.000,
+  rippleDuration: 0.19,
+  pulseDuration: 140,
+};
 
 /**
  * Variants for the responding -> resting moment (when the AI finishes and
@@ -47,6 +74,8 @@ interface ChatInputProps {
   placeholder?: string;
   /** Choreography for the responding -> resting transition. */
   variant?: ChatInputVariant;
+  /** Live-tweak overrides for the inline variant's animation parameters. */
+  animationConfig?: InlineAnimConfig;
 }
 
 /**
@@ -123,7 +152,7 @@ const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
   // style) while the pill morphs to a bubble with the same heavy overshoot
   // spring as the baton variant.
   inline: {
-    bubbleSpring: { type: "spring", stiffness: 240, damping: 22, mass: 1.3 },
+    bubbleSpring: { type: "spring", stiffness: 600, damping: 21.5, mass: 0.2 },
     actionExit: {
       // Unused for the trailing button (not rendered) but drives the inline
       // glyph exit via the showInlineGlyph AnimatePresence below.
@@ -157,15 +186,21 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onEdit,
       placeholder = "Placeholder text...",
       variant = "default",
+      animationConfig,
     },
     ref
   ) {
+    const instanceId = useId();
     const editorRef = useRef<HTMLInputElement>(null);
     const [hovered, setHovered] = useState(false);
     const [pulsing, setPulsing] = useState(false);
     const surfaceControls = useAnimationControls();
     const prevState = useRef(state);
     const cfg = VARIANTS[variant];
+    // Stable ref so the state-change effect always reads the latest config
+    // without needing it as a dependency (avoids re-subscribing on every tweak).
+    const animCfgRef = useRef(animationConfig);
+    animCfgRef.current = animationConfig;
 
     useImperativeHandle(ref, () => ({
       focus: () => editorRef.current?.focus(),
@@ -191,13 +226,16 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       if (variant === "mass" || variant === "baton" || variant === "inline") {
         setPulsing(true);
         if (variant === "inline") {
-          // Glyph lands inside the pill — ripple outward as it dissolves.
+          const ac = animCfgRef.current;
+          const scaleX = ac?.rippleScaleX ?? 1.018;
+          const duration = ac?.rippleDuration ?? 0.38;
           surfaceControls.start({
-            scaleX: [1, 1.018, 1],
-            transition: { duration: 0.38, times: [0, 0.4, 1], ease: [0.25, 1, 0.5, 1] },
+            scaleX: [1, scaleX, 1],
+            transition: { duration, times: [0, 0.4, 1], ease: [0.25, 1, 0.5, 1] },
           });
         }
-        const id = window.setTimeout(() => setPulsing(false), 260);
+        const pulseDuration = variant === "inline" ? (animCfgRef.current?.pulseDuration ?? 260) : 260;
+        const id = window.setTimeout(() => setPulsing(false), pulseDuration);
         return () => clearTimeout(id);
       }
       if (variant === "absorb") {
@@ -230,18 +268,30 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const isInline = variant === "inline";
     const showInlineGlyph = isInline && (showSend || showStop);
 
+    // When inline + config provided, override the bubble spring and glyph exit
+    // so live-tweaked values take effect immediately on next transition.
+    const ac = animationConfig;
+    const bubbleSpring: Transition = isInline && ac
+      ? { type: "spring", stiffness: ac.bubbleStiffness, damping: ac.bubbleDamping, mass: ac.bubbleMass }
+      : cfg.bubbleSpring;
+    const glyphExitTransition: Transition = isInline && ac
+      ? { type: "spring", stiffness: ac.glyphExitStiffness, damping: ac.glyphExitDamping, mass: ac.glyphExitMass }
+      : { type: "spring", stiffness: 380, damping: 26, mass: 0.8 };
+    const glyphExitValues = isInline && ac
+      ? { opacity: 0, scale: 0, x: ac.glyphExitX, width: 0, marginLeft: -4 }
+      : { opacity: 0, scale: 0, x: -20, width: 0, marginLeft: -4 };
+
     return (
-      <LayoutGroup id="chat-input">
+      <LayoutGroup id={instanceId}>
         <div
           className={styles.wrap}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-        <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={cfg.bubbleSpring}>
+        <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={bubbleSpring}>
           <motion.div
-            layout
             className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
-            transition={cfg.bubbleSpring}
+            transition={bubbleSpring}
             animate={surfaceControls}
             onClick={() => editorRef.current?.focus()}
           >
@@ -271,7 +321,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               )}
             </AnimatePresence>
 
-            <input
+            <motion.input
               ref={editorRef}
               className={styles.editor}
               value={value}
@@ -295,8 +345,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   className={styles.inlineAction}
                   initial={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
                   animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
-                  exit={{ opacity: 0, scale: 0, x: -20, width: 0, marginLeft: -4 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 26, mass: 0.8 }}
+                  exit={glyphExitValues}
+                  transition={glyphExitTransition}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (showStop) onStop?.();
@@ -322,7 +372,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               <motion.button
                 key="action"
                 layout
-                layoutId="chat-action"
+                layoutId={`${instanceId}-action`}
                 type="button"
                 className={styles.action}
                 initial={{ opacity: 0, scale: 0.6, width: 0, marginLeft: -4 }}
