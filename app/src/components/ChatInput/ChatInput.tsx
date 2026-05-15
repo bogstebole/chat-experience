@@ -16,39 +16,22 @@ import styles from "./ChatInput.module.css";
 export type ChatInputState = "idle" | "typing" | "responding" | "resting";
 
 export interface InlineAnimConfig {
-  bubbleStiffness: number;
-  bubbleDamping: number;
-  bubbleMass: number;
-  buttonStiffness: number;
-  buttonDamping: number;
-  buttonMass: number;
-  rippleScaleX: number;
-  rippleDuration: number;
-  pulseDuration: number;
-  /** ms to wait after button exit completes before buttons re-enter below */
-  slideInDelay: number;
-  /** fraction of compact width at which expansion triggers (0–1) */
-  nearWrapThreshold: number;
-  /** fraction of compact width below which expansion collapses back (0–1) */
-  expandExitThreshold: number;
-  /** extra px added to single-line height to create the pre-wrap open space */
-  preExpandHeight: number;
+  bubble: { stiffness: number; damping: number; mass: number };
+  button: { stiffness: number; damping: number; mass: number; stagger: number };
+  ripple: { scaleX: number; duration: number; pulseDuration: number };
+  wrap: {
+    nearThreshold: number;
+    exitThreshold: number;
+    preExpandHeight: number;
+    slideInDelay: number;
+  };
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
-  bubbleStiffness: 600,
-  bubbleDamping: 21.5,
-  bubbleMass: 0.2,
-  buttonStiffness: 380,
-  buttonDamping: 34,
-  buttonMass: 0.9,
-  rippleScaleX: 1.000,
-  rippleDuration: 0.19,
-  pulseDuration: 140,
-  slideInDelay: 120,
-  nearWrapThreshold: 0.92,
-  expandExitThreshold: 0.75,
-  preExpandHeight: 16,
+  bubble: { stiffness: 600,  damping: 21.5, mass: 0.2  },
+  button: { stiffness: 380,  damping: 34,   mass: 0.9, stagger: 0.055 },
+  ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
+  wrap:   { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
 };
 
 /**
@@ -240,10 +223,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     const ac = animationConfig;
     const bubbleSpring: Transition = isInline && ac
-      ? { type: "spring", stiffness: ac.bubbleStiffness, damping: ac.bubbleDamping, mass: ac.bubbleMass }
+      ? { type: "spring", stiffness: ac.bubble.stiffness, damping: ac.bubble.damping, mass: ac.bubble.mass }
       : cfg.bubbleSpring;
     const buttonSpring: Transition = isInline && ac
-      ? { type: "spring", stiffness: ac.buttonStiffness, damping: ac.buttonDamping, mass: ac.buttonMass }
+      ? { type: "spring", stiffness: ac.button.stiffness, damping: ac.button.damping, mass: ac.button.mass }
       : spring;
 
     // Auto-focus when entering typing-capable states
@@ -274,19 +257,20 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       requestAnimationFrame(() => {
         const textW = span ? span.offsetWidth : 0;
         const contentW = el.clientWidth - 16;
+        const isMultiline = el.scrollHeight > singleLineHeight.current + 2;
 
         const ac = animCfgRef.current;
         if (!expandedModeRef.current) {
           compactAvailWidthRef.current = contentW;
-          if (textW >= compactAvailWidthRef.current * (ac?.nearWrapThreshold ?? 0.92)) {
+          if (isMultiline || textW >= compactAvailWidthRef.current * (ac?.wrap?.nearThreshold ?? 0.92)) {
             expandedModeRef.current = true;
             pendingExpansion.current = true;
             setShowButtons(false);
           }
         } else {
-          const wrappedNow = textW >= contentW - 2;
+          const wrappedNow = isMultiline || textW >= contentW - 2;
           setIsActuallyWrapped(wrappedNow);
-          if (!wrappedNow && textW < compactAvailWidthRef.current * (ac?.expandExitThreshold ?? 0.75)) {
+          if (!wrappedNow && textW < compactAvailWidthRef.current * (ac?.wrap?.exitThreshold ?? 0.75)) {
             expandedModeRef.current = false;
             pendingExpansion.current = false;
             setExpandedMode(false);
@@ -313,14 +297,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         setPulsing(true);
         if (variant === "inline") {
           const ac = animCfgRef.current;
-          const scaleX = ac?.rippleScaleX ?? 1.018;
-          const duration = ac?.rippleDuration ?? 0.38;
+          const scaleX = ac?.ripple?.scaleX ?? 1.018;
+          const duration = ac?.ripple?.duration ?? 0.38;
           surfaceControls.start({
             scaleX: [1, scaleX, 1],
             transition: { duration, times: [0, 0.4, 1], ease: [0.25, 1, 0.5, 1] },
           });
         }
-        const pulseDuration = variant === "inline" ? (animCfgRef.current?.pulseDuration ?? 260) : 260;
+        const pulseDuration = variant === "inline" ? (animCfgRef.current?.ripple?.pulseDuration ?? 260) : 260;
         const id = window.setTimeout(() => setPulsing(false), pulseDuration);
         return () => clearTimeout(id);
       }
@@ -390,7 +374,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               rows={1}
               animate={{
                 minHeight: expandedMode && !isActuallyWrapped
-                  ? singleLineHeight.current + (animCfgRef.current?.preExpandHeight ?? 16)
+                  ? singleLineHeight.current + (animCfgRef.current?.wrap?.preExpandHeight ?? 16)
                   : undefined,
               }}
               transition={bubbleSpring}
@@ -412,7 +396,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 buttonsTimerRef.current = window.setTimeout(() => {
                   setShowButtons(true);
                   buttonsTimerRef.current = null;
-                }, animCfgRef.current?.slideInDelay ?? 120);
+                }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
               }}
             >
               {!isGlass && showButtons && (
@@ -423,7 +407,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   initial={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
                   animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 0 }}
                   exit={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
-                  transition={{ ...buttonSpring, delay: 0.055 }}
+                  transition={{ ...buttonSpring, delay: ac?.button?.stagger ?? 0.055 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onAdd?.();
