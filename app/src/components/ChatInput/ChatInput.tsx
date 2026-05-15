@@ -25,7 +25,14 @@ export interface InlineAnimConfig {
   rippleScaleX: number;
   rippleDuration: number;
   pulseDuration: number;
+  /** ms to wait after button exit completes before buttons re-enter below */
   slideInDelay: number;
+  /** fraction of compact width at which expansion triggers (0–1) */
+  nearWrapThreshold: number;
+  /** fraction of compact width below which expansion collapses back (0–1) */
+  expandExitThreshold: number;
+  /** extra px added to single-line height to create the pre-wrap open space */
+  preExpandHeight: number;
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
@@ -38,7 +45,10 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   rippleScaleX: 1.000,
   rippleDuration: 0.19,
   pulseDuration: 140,
-  slideInDelay: 300,
+  slideInDelay: 120,
+  nearWrapThreshold: 0.92,
+  expandExitThreshold: 0.75,
+  preExpandHeight: 16,
 };
 
 /**
@@ -265,9 +275,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         const textW = span ? span.offsetWidth : 0;
         const contentW = el.clientWidth - 16;
 
+        const ac = animCfgRef.current;
         if (!expandedModeRef.current) {
           compactAvailWidthRef.current = contentW;
-          if (textW >= compactAvailWidthRef.current * 0.92) {
+          if (textW >= compactAvailWidthRef.current * (ac?.nearWrapThreshold ?? 0.92)) {
             expandedModeRef.current = true;
             pendingExpansion.current = true;
             setShowButtons(false);
@@ -275,7 +286,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         } else {
           const wrappedNow = textW >= contentW - 2;
           setIsActuallyWrapped(wrappedNow);
-          if (!wrappedNow && textW < compactAvailWidthRef.current * 0.75) {
+          if (!wrappedNow && textW < compactAvailWidthRef.current * (ac?.expandExitThreshold ?? 0.75)) {
             expandedModeRef.current = false;
             pendingExpansion.current = false;
             setExpandedMode(false);
@@ -379,7 +390,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               rows={1}
               animate={{
                 minHeight: expandedMode && !isActuallyWrapped
-                  ? singleLineHeight.current + 16
+                  ? singleLineHeight.current + (animCfgRef.current?.preExpandHeight ?? 16)
                   : undefined,
               }}
               transition={bubbleSpring}
@@ -401,7 +412,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 buttonsTimerRef.current = window.setTimeout(() => {
                   setShowButtons(true);
                   buttonsTimerRef.current = null;
-                }, 120);
+                }, animCfgRef.current?.slideInDelay ?? 120);
               }}
             >
               {!isGlass && showButtons && (

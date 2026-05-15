@@ -54,16 +54,19 @@ export function ChatExperience() {
   const streamingRef = useRef<number | null>(null);
   const turnCountRef = useRef(0);
   const animConfig = useDialKit("Inline Config", {
-    bubbleStiffness:    [600,  50,  600,  1    ],
-    bubbleDamping:      [21.5, 5,   60,   0.5  ],
-    bubbleMass:         [0.2,  0.1, 3,    0.05 ],
-    buttonStiffness:    [380,  50,  600,  1    ],
-    buttonDamping:      [34,   5,   60,   0.5  ],
-    buttonMass:         [0.9,  0.1, 3,    0.05 ],
-    rippleScaleX:       [1.0,  1,   1.06, 0.001],
-    rippleDuration:     [0.19, 0.1, 1,    0.01 ],
-    pulseDuration:      [140,  50,  600,  10   ],
-    slideInDelay:       [300,  0,   800,  10   ],
+    bubbleStiffness:      [600,  50,   600,  1    ],
+    bubbleDamping:        [21.5, 5,    60,   0.5  ],
+    bubbleMass:           [0.2,  0.1,  3,    0.05 ],
+    buttonStiffness:      [380,  50,   600,  1    ],
+    buttonDamping:        [34,   5,    60,   0.5  ],
+    buttonMass:           [0.9,  0.1,  3,    0.05 ],
+    rippleScaleX:         [1.0,  1,    1.06, 0.001],
+    rippleDuration:       [0.19, 0.1,  1,    0.01 ],
+    pulseDuration:        [140,  50,   600,  10   ],
+    slideInDelay:         [120,  0,    800,  10   ],
+    nearWrapThreshold:    [0.92, 0.5,  1,    0.01 ],
+    expandExitThreshold:  [0.75, 0.3,  0.99, 0.01 ],
+    preExpandHeight:      [16,   0,    60,   1    ],
   }) as InlineAnimConfig;
 
   // Cleanup any in-flight streaming timer on unmount.
