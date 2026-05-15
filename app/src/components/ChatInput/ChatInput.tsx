@@ -345,7 +345,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             style={{
               alignItems: "center",
               flexWrap: expandedMode ? "wrap" : "nowrap",
-              justifyContent: expandedMode ? "space-between" : "flex-start",
+              justifyContent: expandedMode ? "flex-end" : "flex-start",
             }}
             transition={bubbleSpring}
             animate={surfaceControls}
@@ -367,10 +367,30 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               {value}
             </span>
 
-            {/* Both inline buttons live in one AnimatePresence so onExitComplete
-                fires only when the last visible button has finished its exit.
-                That event drives the three-step expand sequence:
-                buttons exit → layout opens → buttons re-enter below. */}
+            <motion.textarea
+              ref={editorRef}
+              className={styles.editor}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              readOnly={isReadOnly}
+              spellCheck={false}
+              rows={1}
+              animate={{
+                minHeight: expandedMode && !isActuallyWrapped
+                  ? singleLineHeight.current + 16
+                  : undefined,
+              }}
+              transition={bubbleSpring}
+              style={{
+                flexBasis: expandedMode ? "100%" : undefined,
+              }}
+            />
+
+            {/* Both buttons are trailing — add button stays right of text,
+                send appears to its right. In expanded mode they wrap to the
+                second row right-aligned so text only ever grows leftward. */}
             <AnimatePresence
               initial={false}
               onExitComplete={() => {
@@ -389,9 +409,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   key="lead"
                   type="button"
                   className={styles.leadSlot}
-                  initial={{ opacity: 0, scale: 0, width: 0, marginRight: -4 }}
-                  animate={{ opacity: 1, scale: 1, width: 28, marginRight: 0 }}
-                  exit={{ opacity: 0, scale: 0, width: 0, marginRight: -4 }}
+                  initial={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
+                  animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 0 }}
+                  exit={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
                   transition={buttonSpring}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -426,28 +446,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 </motion.button>
               )}
             </AnimatePresence>
-
-            <motion.textarea
-              ref={editorRef}
-              className={styles.editor}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              readOnly={isReadOnly}
-              spellCheck={false}
-              rows={1}
-              animate={{
-                minHeight: expandedMode && !isActuallyWrapped
-                  ? singleLineHeight.current + 16
-                  : undefined,
-              }}
-              transition={bubbleSpring}
-              style={{
-                order: expandedMode ? -1 : 0,
-                flexBasis: expandedMode ? "100%" : undefined,
-              }}
-            />
           </motion.div>
 
           {/* Trailing action button — single morphing element across
