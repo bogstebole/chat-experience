@@ -19,10 +19,9 @@ export interface InlineAnimConfig {
   bubbleStiffness: number;
   bubbleDamping: number;
   bubbleMass: number;
-  glyphExitX: number;
-  glyphExitStiffness: number;
-  glyphExitDamping: number;
-  glyphExitMass: number;
+  buttonStiffness: number;
+  buttonDamping: number;
+  buttonMass: number;
   rippleScaleX: number;
   rippleDuration: number;
   pulseDuration: number;
@@ -33,10 +32,9 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   bubbleStiffness: 600,
   bubbleDamping: 21.5,
   bubbleMass: 0.2,
-  glyphExitX: 0,
-  glyphExitStiffness: 600,
-  glyphExitDamping: 18,
-  glyphExitMass: 0.5,
+  buttonStiffness: 380,
+  buttonDamping: 34,
+  buttonMass: 0.9,
   rippleScaleX: 1.000,
   rippleDuration: 0.19,
   pulseDuration: 140,
@@ -198,12 +196,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const measureSpanRef = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
     const [pulsing, setPulsing] = useState(false);
-    const [isMultiline, setIsMultiline] = useState(false);
-    const [isNearWrap, setIsNearWrap] = useState(false);
+    const [expandedMode, setExpandedMode] = useState(false);
+    const [isActuallyWrapped, setIsActuallyWrapped] = useState(false);
     const [showButtons, setShowButtons] = useState(true);
     const singleLineHeight = useRef(0);
-    const isNearWrapRef = useRef(false);
-    const maxSingleLineWidthRef = useRef(0);
+    const expandedModeRef = useRef(false);
+    const compactAvailWidthRef = useRef(0);
+    const pendingExpansion = useRef(false);
     const buttonsTimerRef = useRef<number | null>(null);
     const surfaceControls = useAnimationControls();
     const prevState = useRef(state);
@@ -233,12 +232,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const bubbleSpring: Transition = isInline && ac
       ? { type: "spring", stiffness: ac.bubbleStiffness, damping: ac.bubbleDamping, mass: ac.bubbleMass }
       : cfg.bubbleSpring;
-    const glyphExitTransition: Transition = isInline && ac
-      ? { type: "spring", stiffness: ac.glyphExitStiffness, damping: ac.glyphExitDamping, mass: ac.glyphExitMass }
-      : { type: "spring", stiffness: 380, damping: 26, mass: 0.8 };
-    const glyphExitValues = isInline && ac
-      ? { opacity: 0, scale: 0, x: ac.glyphExitX, width: 0, marginLeft: -4 }
-      : { opacity: 0, scale: 0, x: -20, width: 0, marginLeft: -4 };
+    const buttonSpring: Transition = isInline && ac
+      ? { type: "spring", stiffness: ac.buttonStiffness, damping: ac.buttonDamping, mass: ac.buttonMass }
+      : spring;
 
     // Auto-focus when entering typing-capable states
     useEffect(() => {
@@ -254,47 +250,45 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }
     }, []);
 
-    // Detect wrap + near-wrap on every value change.
-    // maxSingleLineWidthRef caches the textarea's width while buttons are present
-    // so the threshold stays stable after buttons unmount (which widens the textarea).
+    // On every keystroke: decide whether to enter or exit expanded mode.
+    // compactAvailWidthRef is frozen once we enter expanded mode so the exit
+    // threshold is always compared against the same compact baseline (with buttons).
+    // Entering expanded mode only hides buttons here — the layout switch and
+    // button re-reveal are driven by onExitComplete so the three-step sequence
+    // (exit → expand → enter) is continuous and event-driven, not timer-guessed.
     useEffect(() => {
       const el = editorRef.current;
       const span = measureSpanRef.current;
       if (!el || !singleLineHeight.current) return;
+
       requestAnimationFrame(() => {
-        const isWrapped = el.scrollHeight > singleLineHeight.current;
         const textW = span ? span.offsetWidth : 0;
-        // Only refresh the reference width when buttons are in their natural position
-        if (!isNearWrapRef.current && !isWrapped) {
-          maxSingleLineWidthRef.current = el.clientWidth - 16;
+        const contentW = el.clientWidth - 16;
+
+        if (!expandedModeRef.current) {
+          compactAvailWidthRef.current = contentW;
+          if (textW >= compactAvailWidthRef.current * 0.92) {
+            expandedModeRef.current = true;
+            pendingExpansion.current = true;
+            setShowButtons(false);
+          }
+        } else {
+          const wrappedNow = textW >= contentW - 2;
+          setIsActuallyWrapped(wrappedNow);
+          if (!wrappedNow && textW < compactAvailWidthRef.current * 0.75) {
+            expandedModeRef.current = false;
+            pendingExpansion.current = false;
+            setExpandedMode(false);
+            setIsActuallyWrapped(false);
+            setShowButtons(true);
+            if (buttonsTimerRef.current) {
+              clearTimeout(buttonsTimerRef.current);
+              buttonsTimerRef.current = null;
+            }
+          }
         }
-        const availW = maxSingleLineWidthRef.current || (el.clientWidth - 16);
-        const nearWrap = !isWrapped && textW >= availW * 0.95;
-        isNearWrapRef.current = nearWrap;
-        setIsMultiline(isWrapped);
-        setIsNearWrap(nearWrap);
       });
     }, [value]);
-
-    // Show/hide buttons via AnimatePresence: hide on near-wrap, hide then
-    // re-show after slideInDelay when multiline, restore immediately otherwise.
-    useEffect(() => {
-      if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
-
-      if (isNearWrap && !isMultiline) {
-        setShowButtons(false);
-      } else if (isMultiline) {
-        setShowButtons(false);
-        const delay = animCfgRef.current?.slideInDelay ?? 300;
-        buttonsTimerRef.current = window.setTimeout(() => setShowButtons(true), delay);
-      } else {
-        setShowButtons(true);
-      }
-
-      return () => {
-        if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
-      };
-    }, [isNearWrap, isMultiline]);
 
     // ── Variant side effects on responding -> resting ──
     // Triggers a brief shadow pulse on the bubble (mass + baton variants)
@@ -350,8 +344,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
             style={{
               alignItems: "center",
-              flexWrap: isMultiline ? "wrap" : "nowrap",
-              justifyContent: isMultiline ? "space-between" : "flex-start",
+              flexWrap: expandedMode ? "wrap" : "nowrap",
+              justifyContent: expandedMode ? "space-between" : "flex-start",
             }}
             transition={bubbleSpring}
             animate={surfaceControls}
@@ -373,20 +367,32 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               {value}
             </span>
 
-            {/* Leading + button — only shown when not in bubble state.
-                Real <button> so it gets keyboard + hover/active. Stops
-                propagation so clicks don't refocus the editor. */}
-            <AnimatePresence initial={false}>
+            {/* Both inline buttons live in one AnimatePresence so onExitComplete
+                fires only when the last visible button has finished its exit.
+                That event drives the three-step expand sequence:
+                buttons exit → layout opens → buttons re-enter below. */}
+            <AnimatePresence
+              initial={false}
+              onExitComplete={() => {
+                if (!pendingExpansion.current) return;
+                pendingExpansion.current = false;
+                setExpandedMode(true);
+                if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
+                buttonsTimerRef.current = window.setTimeout(() => {
+                  setShowButtons(true);
+                  buttonsTimerRef.current = null;
+                }, 120);
+              }}
+            >
               {!isGlass && showButtons && (
                 <motion.button
                   key="lead"
-                  layout
                   type="button"
                   className={styles.leadSlot}
-                  initial={{ opacity: 0, scale: 0.6, width: 0, marginRight: -4 }}
+                  initial={{ opacity: 0, scale: 0, width: 0, marginRight: -4 }}
                   animate={{ opacity: 1, scale: 1, width: 28, marginRight: 0 }}
-                  exit={{ opacity: 0, scale: 0.6, width: 0, marginRight: -4 }}
-                  transition={spring}
+                  exit={{ opacity: 0, scale: 0, width: 0, marginRight: -4 }}
+                  transition={buttonSpring}
                   onClick={(e) => {
                     e.stopPropagation();
                     onAdd?.();
@@ -397,36 +403,15 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   <PlusIcon />
                 </motion.button>
               )}
-            </AnimatePresence>
-
-            <motion.textarea
-              ref={editorRef}
-              className={styles.editor}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              readOnly={isReadOnly}
-              spellCheck={false}
-              rows={1}
-              style={{ order: isMultiline ? -1 : 0, flexBasis: isMultiline ? "100%" : undefined }}
-            />
-
-            {/* Inline action — variant D only.
-                Sits inside the pill, right-aligned with the editor text.
-                Same morph (↵ → L → U → square), darker color so it reads
-                on the light pill. Whole transition stays within the input. */}
-            <AnimatePresence initial={false}>
               {showInlineGlyph && showButtons && (
                 <motion.button
                   key="inline-action"
-                  layout
                   type="button"
                   className={styles.inlineAction}
-                  initial={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
+                  initial={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
                   animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
-                  exit={glyphExitValues}
-                  transition={glyphExitTransition}
+                  exit={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
+                  transition={buttonSpring}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (showStop) onStop?.();
@@ -441,6 +426,28 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 </motion.button>
               )}
             </AnimatePresence>
+
+            <motion.textarea
+              ref={editorRef}
+              className={styles.editor}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              readOnly={isReadOnly}
+              spellCheck={false}
+              rows={1}
+              animate={{
+                minHeight: expandedMode && !isActuallyWrapped
+                  ? singleLineHeight.current + 16
+                  : undefined,
+              }}
+              transition={bubbleSpring}
+              style={{
+                order: expandedMode ? -1 : 0,
+                flexBasis: expandedMode ? "100%" : undefined,
+              }}
+            />
           </motion.div>
 
           {/* Trailing action button — single morphing element across

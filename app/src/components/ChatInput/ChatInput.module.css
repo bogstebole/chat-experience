@@ -32,7 +32,6 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
   flex: 1;
   min-height: var(--pill-h);
   min-width: 0;
@@ -65,7 +64,6 @@
 .surface.glass {
   --pill-fill: rgba(255, 255, 255, 0.2);
   --pill-text: #111111;
-  padding-left: 12px;
   cursor: default;
   backdrop-filter: blur(2.5px);
   -webkit-backdrop-filter: blur(2.5px);
