@@ -31,12 +31,12 @@
 .surface {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
   flex: 1;
   min-height: var(--pill-h);
   min-width: 0;
-  padding: 4px 8px 4px 4px;
+  padding: 4px 4px 4px 4px;
   border-radius: var(--pill-radius);
   background: var(--pill-fill);
   color: var(--pill-text);
@@ -237,9 +237,7 @@
   letter-spacing: inherit;
   color: inherit;
   line-height: 1.45;
-  /* Push the first line to the optical center of the 28px inner pill.
-     As text wraps, the pill grows downward and this offset stays fixed. */
-  padding: 8px 8px 8px 8px;
+  padding: 4px 8px 4px 8px;
   resize: none;
   overflow-y: auto;
   max-height: 120px;
@@ -322,7 +320,6 @@
   position: relative;
   z-index: 1;
   flex-shrink: 0;
-  align-self: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;

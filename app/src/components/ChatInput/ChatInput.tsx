@@ -91,6 +91,9 @@ const spring: Transition = {
   mass: 0.9,
 };
 
+const nearWrapTransition: Transition = { type: "spring", stiffness: 500, damping: 30, mass: 0.6 };
+const springUpTransition: Transition = { type: "spring", stiffness: 380, damping: 26, mass: 0.8 };
+
 /**
  * Per-variant choreography. Each variant overrides:
  *   - bubbleSpring: the layout spring on the surface (controls how the
@@ -192,9 +195,16 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   ) {
     const instanceId = useId();
     const editorRef = useRef<HTMLTextAreaElement>(null);
+    const measureSpanRef = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
     const [pulsing, setPulsing] = useState(false);
+    const [isMultiline, setIsMultiline] = useState(false);
+    const [isNearWrap, setIsNearWrap] = useState(false);
+    const singleLineHeight = useRef(0);
+    const prevIsMultilineRef = useRef(false);
     const surfaceControls = useAnimationControls();
+    const leadControls = useAnimationControls();
+    const glyphControls = useAnimationControls();
     const prevState = useRef(state);
     const cfg = VARIANTS[variant];
     // Stable ref so the state-change effect always reads the latest config
@@ -208,12 +218,96 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       getValue: () => value,
     }), [onChange, value]);
 
+    // ── Derived values ── hoisted above effects that reference them
+    const isGlass = state === "responding" || state === "resting";
+    const isReadOnly = isGlass;
+    const showSend = state === "typing" && value.trim().length > 0;
+    const showStop = state === "responding";
+    const isRestingHovered = state === "resting" && hovered;
+    const showActions = isRestingHovered;
+    const isInline = variant === "inline";
+    const showInlineGlyph = isInline && (showSend || showStop);
+
+    const ac = animationConfig;
+    const bubbleSpring: Transition = isInline && ac
+      ? { type: "spring", stiffness: ac.bubbleStiffness, damping: ac.bubbleDamping, mass: ac.bubbleMass }
+      : cfg.bubbleSpring;
+    const glyphExitTransition: Transition = isInline && ac
+      ? { type: "spring", stiffness: ac.glyphExitStiffness, damping: ac.glyphExitDamping, mass: ac.glyphExitMass }
+      : { type: "spring", stiffness: 380, damping: 26, mass: 0.8 };
+    const glyphExitValues = isInline && ac
+      ? { opacity: 0, scale: 0, x: ac.glyphExitX, width: 0, marginLeft: -4 }
+      : { opacity: 0, scale: 0, x: -20, width: 0, marginLeft: -4 };
+
     // Auto-focus when entering typing-capable states
     useEffect(() => {
       if (state === "idle" || state === "typing") {
         editorRef.current?.focus();
       }
     }, [state]);
+
+    // Capture single-line height once on mount
+    useEffect(() => {
+      if (editorRef.current) {
+        singleLineHeight.current = editorRef.current.scrollHeight;
+      }
+    }, []);
+
+    // Detect wrap + near-wrap on every value change
+    useEffect(() => {
+      const el = editorRef.current;
+      const span = measureSpanRef.current;
+      if (!el || !singleLineHeight.current) return;
+      requestAnimationFrame(() => {
+        const isWrapped = el.scrollHeight > singleLineHeight.current;
+        const textW = span ? span.offsetWidth : 0;
+        const availW = el.clientWidth - 16; // subtract 8px left + 8px right editor padding
+        const nearWrap = !isWrapped && textW >= availW * 0.95;
+        setIsMultiline(isWrapped);
+        setIsNearWrap(nearWrap);
+      });
+    }, [value]);
+
+    // Animate lead button into visible state when leaving glass mode
+    useEffect(() => {
+      if (!isGlass) {
+        leadControls.start({ opacity: 1, scale: 1, width: 28, marginRight: 0, x: 0, y: 0, transition: spring });
+      }
+    }, [isGlass, leadControls]);
+
+    // Near-wrap: slide buttons off their edges; on recovery restore them
+    useEffect(() => {
+      if (isNearWrap && !isMultiline) {
+        leadControls.start({ x: -32, opacity: 0, transition: nearWrapTransition });
+        if (showInlineGlyph) glyphControls.start({ x: 32, opacity: 0, transition: nearWrapTransition });
+      } else if (!isNearWrap && !isMultiline) {
+        leadControls.start({ x: 0, opacity: 1, scale: 1, width: 28, marginRight: 0, y: 0, transition: spring });
+        if (showInlineGlyph) glyphControls.start({ x: 0, opacity: 1, scale: 1, width: 24, marginLeft: 0, y: 0, transition: glyphExitTransition });
+      }
+    }, [isNearWrap, isMultiline, showInlineGlyph, leadControls, glyphControls, glyphExitTransition]);
+
+    // Multiline: slide buttons in from sides after 300ms; on unwrap return to centre
+    useEffect(() => {
+      const wasMultiline = prevIsMultilineRef.current;
+      prevIsMultilineRef.current = isMultiline;
+
+      if (isMultiline && !wasMultiline) {
+        // Snap off-screen immediately (covers both near-wrap and direct-paste entry)
+        leadControls.set({ x: -32, y: 0, opacity: 0 });
+        if (showInlineGlyph) glyphControls.set({ x: 32, y: 0, opacity: 0 });
+        // 300ms pause lets the layout expansion settle, then slide in from sides
+        const id = window.setTimeout(() => {
+          leadControls.start({ x: 0, y: 0, opacity: 1, transition: springUpTransition });
+          if (showInlineGlyph) {
+            glyphControls.start({ x: 0, y: 0, opacity: 1, transition: springUpTransition });
+          }
+        }, 300);
+        return () => clearTimeout(id);
+      } else if (!isMultiline && wasMultiline && !isNearWrap) {
+        leadControls.start({ x: 0, y: 0, opacity: 1, transition: spring });
+        if (showInlineGlyph) glyphControls.start({ x: 0, y: 0, opacity: 1, transition: spring });
+      }
+    }, [isMultiline, isNearWrap, showInlineGlyph, leadControls, glyphControls]);
 
     // ── Variant side effects on responding -> resting ──
     // Triggers a brief shadow pulse on the bubble (mass + baton variants)
@@ -257,30 +351,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       [value, onSubmit]
     );
 
-    const isGlass = state === "responding" || state === "resting";
-    const isReadOnly = isGlass; // bubble states display the message
-    const showSend = state === "typing" && value.trim().length > 0;
-    const showStop = state === "responding";
-    // Hover affordances (glass hover + action row) are only meaningful
-    // on a settled bubble.
-    const isRestingHovered = state === "resting" && hovered;
-    const showActions = isRestingHovered;
-    const isInline = variant === "inline";
-    const showInlineGlyph = isInline && (showSend || showStop);
-
-    // When inline + config provided, override the bubble spring and glyph exit
-    // so live-tweaked values take effect immediately on next transition.
-    const ac = animationConfig;
-    const bubbleSpring: Transition = isInline && ac
-      ? { type: "spring", stiffness: ac.bubbleStiffness, damping: ac.bubbleDamping, mass: ac.bubbleMass }
-      : cfg.bubbleSpring;
-    const glyphExitTransition: Transition = isInline && ac
-      ? { type: "spring", stiffness: ac.glyphExitStiffness, damping: ac.glyphExitDamping, mass: ac.glyphExitMass }
-      : { type: "spring", stiffness: 380, damping: 26, mass: 0.8 };
-    const glyphExitValues = isInline && ac
-      ? { opacity: 0, scale: 0, x: ac.glyphExitX, width: 0, marginLeft: -4 }
-      : { opacity: 0, scale: 0, x: -20, width: 0, marginLeft: -4 };
-
     return (
       <LayoutGroup id={instanceId}>
         <div
@@ -291,10 +361,31 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={bubbleSpring}>
           <motion.div
             className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
+            style={{
+              alignItems: "center",
+              flexWrap: isMultiline ? "wrap" : "nowrap",
+              justifyContent: isMultiline ? "space-between" : "flex-start",
+            }}
             transition={bubbleSpring}
             animate={surfaceControls}
             onClick={() => editorRef.current?.focus()}
           >
+            {/* Hidden span for text-width measurement (near-wrap detection) */}
+            <span
+              ref={measureSpanRef}
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                visibility: "hidden",
+                pointerEvents: "none",
+                whiteSpace: "nowrap",
+                font: "inherit",
+                letterSpacing: "inherit",
+              }}
+            >
+              {value}
+            </span>
+
             {/* Leading + button — only shown when not in bubble state.
                 Real <button> so it gets keyboard + hover/active. Stops
                 propagation so clicks don't refocus the editor. */}
@@ -306,7 +397,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   type="button"
                   className={styles.leadSlot}
                   initial={{ opacity: 0, scale: 0.6, width: 0, marginRight: -4 }}
-                  animate={{ opacity: 1, scale: 1, width: 28, marginRight: 0 }}
+                  animate={leadControls}
                   exit={{ opacity: 0, scale: 0.6, width: 0, marginRight: -4 }}
                   transition={spring}
                   onClick={(e) => {
@@ -331,6 +422,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               readOnly={isReadOnly}
               spellCheck={false}
               rows={1}
+              style={{ order: isMultiline ? -1 : 0, flexBasis: isMultiline ? "100%" : undefined }}
             />
 
             {/* Inline action — variant D only.
@@ -345,7 +437,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   type="button"
                   className={styles.inlineAction}
                   initial={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
-                  animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
+                  animate={glyphControls}
                   exit={glyphExitValues}
                   transition={glyphExitTransition}
                   onClick={(e) => {
