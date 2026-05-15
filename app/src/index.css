@@ -35,3 +35,14 @@ textarea {
   font-family: inherit;
   color: inherit;
 }
+
+/* DialKit — full-height panel */
+.dialkit-panel[data-position="top-right"] {
+  top: 0;
+  bottom: 0;
+  max-height: 100vh;
+}
+
+.dialkit-panel-inner {
+  max-height: 100vh !important;
+}

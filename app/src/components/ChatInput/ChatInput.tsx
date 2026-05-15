@@ -423,7 +423,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   initial={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
                   animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 0 }}
                   exit={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
-                  transition={buttonSpring}
+                  transition={{ ...buttonSpring, delay: 0.055 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onAdd?.();
