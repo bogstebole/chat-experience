@@ -26,6 +26,7 @@ export interface InlineAnimConfig {
   rippleScaleX: number;
   rippleDuration: number;
   pulseDuration: number;
+  slideInDelay: number;
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
@@ -39,6 +40,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   rippleScaleX: 1.000,
   rippleDuration: 0.19,
   pulseDuration: 140,
+  slideInDelay: 300,
 };
 
 /**
@@ -91,8 +93,6 @@ const spring: Transition = {
   mass: 0.9,
 };
 
-const nearWrapTransition: Transition = { type: "spring", stiffness: 500, damping: 30, mass: 0.6 };
-const springUpTransition: Transition = { type: "spring", stiffness: 380, damping: 26, mass: 0.8 };
 
 /**
  * Per-variant choreography. Each variant overrides:
@@ -200,11 +200,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const [pulsing, setPulsing] = useState(false);
     const [isMultiline, setIsMultiline] = useState(false);
     const [isNearWrap, setIsNearWrap] = useState(false);
+    const [showButtons, setShowButtons] = useState(true);
     const singleLineHeight = useRef(0);
-    const prevIsMultilineRef = useRef(false);
+    const isNearWrapRef = useRef(false);
+    const maxSingleLineWidthRef = useRef(0);
+    const buttonsTimerRef = useRef<number | null>(null);
     const surfaceControls = useAnimationControls();
-    const leadControls = useAnimationControls();
-    const glyphControls = useAnimationControls();
     const prevState = useRef(state);
     const cfg = VARIANTS[variant];
     // Stable ref so the state-change effect always reads the latest config
@@ -253,7 +254,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }
     }, []);
 
-    // Detect wrap + near-wrap on every value change
+    // Detect wrap + near-wrap on every value change.
+    // maxSingleLineWidthRef caches the textarea's width while buttons are present
+    // so the threshold stays stable after buttons unmount (which widens the textarea).
     useEffect(() => {
       const el = editorRef.current;
       const span = measureSpanRef.current;
@@ -261,53 +264,37 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       requestAnimationFrame(() => {
         const isWrapped = el.scrollHeight > singleLineHeight.current;
         const textW = span ? span.offsetWidth : 0;
-        const availW = el.clientWidth - 16; // subtract 8px left + 8px right editor padding
+        // Only refresh the reference width when buttons are in their natural position
+        if (!isNearWrapRef.current && !isWrapped) {
+          maxSingleLineWidthRef.current = el.clientWidth - 16;
+        }
+        const availW = maxSingleLineWidthRef.current || (el.clientWidth - 16);
         const nearWrap = !isWrapped && textW >= availW * 0.95;
+        isNearWrapRef.current = nearWrap;
         setIsMultiline(isWrapped);
         setIsNearWrap(nearWrap);
       });
     }, [value]);
 
-    // Animate lead button into visible state when leaving glass mode
+    // Show/hide buttons via AnimatePresence: hide on near-wrap, hide then
+    // re-show after slideInDelay when multiline, restore immediately otherwise.
     useEffect(() => {
-      if (!isGlass) {
-        leadControls.start({ opacity: 1, scale: 1, width: 28, marginRight: 0, x: 0, y: 0, transition: spring });
-      }
-    }, [isGlass, leadControls]);
+      if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
 
-    // Near-wrap: slide buttons off their edges; on recovery restore them
-    useEffect(() => {
       if (isNearWrap && !isMultiline) {
-        leadControls.start({ x: -32, opacity: 0, transition: nearWrapTransition });
-        if (showInlineGlyph) glyphControls.start({ x: 32, opacity: 0, transition: nearWrapTransition });
-      } else if (!isNearWrap && !isMultiline) {
-        leadControls.start({ x: 0, opacity: 1, scale: 1, width: 28, marginRight: 0, y: 0, transition: spring });
-        if (showInlineGlyph) glyphControls.start({ x: 0, opacity: 1, scale: 1, width: 24, marginLeft: 0, y: 0, transition: glyphExitTransition });
+        setShowButtons(false);
+      } else if (isMultiline) {
+        setShowButtons(false);
+        const delay = animCfgRef.current?.slideInDelay ?? 300;
+        buttonsTimerRef.current = window.setTimeout(() => setShowButtons(true), delay);
+      } else {
+        setShowButtons(true);
       }
-    }, [isNearWrap, isMultiline, showInlineGlyph, leadControls, glyphControls, glyphExitTransition]);
 
-    // Multiline: slide buttons in from sides after 300ms; on unwrap return to centre
-    useEffect(() => {
-      const wasMultiline = prevIsMultilineRef.current;
-      prevIsMultilineRef.current = isMultiline;
-
-      if (isMultiline && !wasMultiline) {
-        // Snap off-screen immediately (covers both near-wrap and direct-paste entry)
-        leadControls.set({ x: -32, y: 0, opacity: 0 });
-        if (showInlineGlyph) glyphControls.set({ x: 32, y: 0, opacity: 0 });
-        // 300ms pause lets the layout expansion settle, then slide in from sides
-        const id = window.setTimeout(() => {
-          leadControls.start({ x: 0, y: 0, opacity: 1, transition: springUpTransition });
-          if (showInlineGlyph) {
-            glyphControls.start({ x: 0, y: 0, opacity: 1, transition: springUpTransition });
-          }
-        }, 300);
-        return () => clearTimeout(id);
-      } else if (!isMultiline && wasMultiline && !isNearWrap) {
-        leadControls.start({ x: 0, y: 0, opacity: 1, transition: spring });
-        if (showInlineGlyph) glyphControls.start({ x: 0, y: 0, opacity: 1, transition: spring });
-      }
-    }, [isMultiline, isNearWrap, showInlineGlyph, leadControls, glyphControls]);
+      return () => {
+        if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
+      };
+    }, [isNearWrap, isMultiline]);
 
     // ── Variant side effects on responding -> resting ──
     // Triggers a brief shadow pulse on the bubble (mass + baton variants)
@@ -390,14 +377,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 Real <button> so it gets keyboard + hover/active. Stops
                 propagation so clicks don't refocus the editor. */}
             <AnimatePresence initial={false}>
-              {!isGlass && (
+              {!isGlass && showButtons && (
                 <motion.button
                   key="lead"
                   layout
                   type="button"
                   className={styles.leadSlot}
                   initial={{ opacity: 0, scale: 0.6, width: 0, marginRight: -4 }}
-                  animate={leadControls}
+                  animate={{ opacity: 1, scale: 1, width: 28, marginRight: 0 }}
                   exit={{ opacity: 0, scale: 0.6, width: 0, marginRight: -4 }}
                   transition={spring}
                   onClick={(e) => {
@@ -430,14 +417,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 Same morph (↵ → L → U → square), darker color so it reads
                 on the light pill. Whole transition stays within the input. */}
             <AnimatePresence initial={false}>
-              {showInlineGlyph && (
+              {showInlineGlyph && showButtons && (
                 <motion.button
                   key="inline-action"
                   layout
                   type="button"
                   className={styles.inlineAction}
                   initial={{ opacity: 0, scale: 0.5, width: 0, marginLeft: -4 }}
-                  animate={glyphControls}
+                  animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
                   exit={glyphExitValues}
                   transition={glyphExitTransition}
                   onClick={(e) => {

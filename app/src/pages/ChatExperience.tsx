@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useDialKit } from "dialkit";
 import {
   ChatInput,
   type ChatInputState,
   type InlineAnimConfig,
-  defaultInlineAnimConfig,
 } from "../components/ChatInput/ChatInput";
-import { AnimationPanel } from "../components/AnimationPanel/AnimationPanel";
 import "./ChatExperience.css";
 
 /**
@@ -54,7 +53,19 @@ export function ChatExperience() {
   const [turns, setTurns] = useState<Turn[]>([newTurn()]);
   const streamingRef = useRef<number | null>(null);
   const turnCountRef = useRef(0);
-  const [animConfig, setAnimConfig] = useState<InlineAnimConfig>(defaultInlineAnimConfig);
+  const animConfig = useDialKit("Inline Config", {
+    bubbleStiffness:    [600,  50,  600,  1    ],
+    bubbleDamping:      [21.5, 5,   60,   0.5  ],
+    bubbleMass:         [0.2,  0.1, 3,    0.05 ],
+    glyphExitX:         [0,   -80,  0,    1    ],
+    glyphExitStiffness: [600,  50,  600,  1    ],
+    glyphExitDamping:   [18,   5,   60,   0.5  ],
+    glyphExitMass:      [0.5,  0.1, 3,    0.05 ],
+    rippleScaleX:       [1.0,  1,   1.06, 0.001],
+    rippleDuration:     [0.19, 0.1, 1,    0.01 ],
+    pulseDuration:      [140,  50,  600,  10   ],
+    slideInDelay:       [300,  0,   800,  10   ],
+  }) as InlineAnimConfig;
 
   // Cleanup any in-flight streaming timer on unmount.
   useEffect(() => {
@@ -166,7 +177,6 @@ export function ChatExperience() {
         </AnimatePresence>
       </div>
       <div className="bottomBlur" />
-      <AnimationPanel config={animConfig} onChange={setAnimConfig} />
     </div>
   );
 }
