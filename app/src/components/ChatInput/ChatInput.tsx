@@ -31,10 +31,10 @@ export interface InlineAnimConfig {
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
-  bubble: { stiffness: 600,  damping: 21.5, mass: 0.2  },
+  bubble: { stiffness: 600, damping: 21.5, mass: 0.2 },
   button: { stiffness: 380, damping: 34, mass: 0.9, stagger: 0.055 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
-  wrap:   { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
+  wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
 };
 
 /**
@@ -337,174 +337,193 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-        <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={bubbleSpring}>
-          <motion.div
-            className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
-            style={{
-              alignItems: "center",
-              flexWrap: expandedMode ? "wrap" : "nowrap",
-              justifyContent: expandedMode ? "flex-end" : "flex-start",
-            }}
-            transition={bubbleSpring}
-            animate={surfaceControls}
-            onClick={() => editorRef.current?.focus()}
-          >
-            {/* Hidden span for text-width measurement (near-wrap detection) */}
-            <span
-              ref={measureSpanRef}
-              aria-hidden="true"
+          <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={bubbleSpring}>
+            <motion.div
+              className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
               style={{
-                position: "absolute",
-                visibility: "hidden",
-                pointerEvents: "none",
-                whiteSpace: "nowrap",
-                font: "inherit",
-                letterSpacing: "inherit",
-              }}
-            >
-              {value}
-            </span>
-
-            <motion.textarea
-              ref={editorRef}
-              className={styles.editor}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              readOnly={isReadOnly}
-              spellCheck={false}
-              rows={1}
-              animate={{
-                minHeight: expandedMode && !isActuallyWrapped
-                  ? singleLineHeight.current + (animCfgRef.current?.wrap?.preExpandHeight ?? 16)
-                  : undefined,
+                alignItems: "center",
+                flexWrap: expandedMode ? "wrap" : "nowrap",
+                justifyContent: expandedMode ? "flex-end" : "flex-start",
               }}
               transition={bubbleSpring}
-              style={{
-                flexBasis: expandedMode ? "100%" : undefined,
-              }}
-            />
-
-            {/* Both buttons are trailing — add button stays right of text,
-                send appears to its right. In expanded mode they wrap to the
-                second row right-aligned so text only ever grows leftward. */}
-            <div className={styles.buttonGroup}>
-              <AnimatePresence
-                initial={false}
-                onExitComplete={() => {
-                  if (!pendingExpansion.current) return;
-                  pendingExpansion.current = false;
-                  setExpandedMode(true);
-                  if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
-                  buttonsTimerRef.current = window.setTimeout(() => {
-                    setShowButtons(true);
-                    buttonsTimerRef.current = null;
-                  }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
+              animate={surfaceControls}
+              onClick={() => editorRef.current?.focus()}
+            >
+              {/* Hidden span for text-width measurement (near-wrap detection) */}
+              <span
+                ref={measureSpanRef}
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  visibility: "hidden",
+                  pointerEvents: "none",
+                  whiteSpace: "nowrap",
+                  font: "inherit",
+                  letterSpacing: "inherit",
                 }}
               >
-                {!isGlass && showButtons && (
-                  <MotionButton
-                    key="lead"
-                    variant="secondary"
-                    icon={<PlusIcon />}
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 28 }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ ...buttonSpring, delay: ac?.button?.stagger ?? 0.055 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAdd?.();
-                    }}
-                    aria-label="Add attachment"
-                    title="Add"
-                  />
-                )}
-                {showInlineGlyph && showButtons && (
-                  <MotionButton
-                    key="inline-action"
-                    variant="primary"
-                    icon={<MorphGlyph mode={showStop ? "stop" : "send"} color="#111" />}
-                    initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-                    animate={{ opacity: 1, width: 28, marginLeft: 8 }}
-                    exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-                    transition={buttonSpring}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (showStop) onStop?.();
-                      else onSubmit(value);
-                    }}
-                    aria-label={showStop ? "Stop response" : "Send message"}
-                  />
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
+                {value}
+              </span>
 
-          {/* Trailing action button — single morphing element across
+              <motion.textarea
+                ref={editorRef}
+                className={styles.editor}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                readOnly={isReadOnly}
+                spellCheck={false}
+                rows={1}
+                animate={{
+                  minHeight: expandedMode && !isActuallyWrapped
+                    ? singleLineHeight.current + (animCfgRef.current?.wrap?.preExpandHeight ?? 16)
+                    : undefined,
+                }}
+                transition={bubbleSpring}
+                style={{
+                  flexBasis: expandedMode ? "100%" : undefined,
+                }}
+              />
+
+              {/* Both buttons are trailing — add button stays right of text,
+                send appears to its right. In expanded mode they wrap to the
+                second row right-aligned so text only ever grows leftward. */}
+              <div className={styles.buttonGroup}>
+                <AnimatePresence
+                  initial={false}
+                  onExitComplete={() => {
+                    if (!pendingExpansion.current) return;
+                    pendingExpansion.current = false;
+                    setExpandedMode(true);
+                    if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
+                    buttonsTimerRef.current = window.setTimeout(() => {
+                      setShowButtons(true);
+                      buttonsTimerRef.current = null;
+                    }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
+                  }}
+                >
+                  {!isGlass && showButtons && (
+                    <motion.div
+                      key="lead"
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 28 }}
+                      exit={{ 
+                        opacity: 0, 
+                        width: 0,
+                        transition: { type: "tween", ease: "easeInOut", duration: 0.2 }
+                      }}
+                      transition={{ ...buttonSpring, delay: ac?.button?.stagger ?? 0.055 }}
+                      style={{ overflow: "hidden", display: "flex", flexShrink: 0 }}
+                    >
+                      <Button
+                        variant="secondary"
+                        icon={<PlusIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAdd?.();
+                        }}
+                        aria-label="Add attachment"
+                        title="Add"
+                        style={{ flexShrink: 0, width: 28 }}
+                      />
+                    </motion.div>
+                  )}
+                  {showInlineGlyph && showButtons && (
+                    <motion.div
+                      key="inline-action"
+                      initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+                      animate={{ opacity: 1, width: 28, marginLeft: 8 }}
+                      exit={{ 
+                        opacity: 0, 
+                        width: 0, 
+                        marginLeft: 0,
+                        transition: { type: "tween", ease: "easeInOut", duration: 0.2 }
+                      }}
+                      transition={buttonSpring}
+                      style={{ overflow: "hidden", display: "flex", flexShrink: 0 }}
+                    >
+                      <Button
+                        variant="primary"
+                        icon={<MorphGlyph mode={showStop ? "stop" : "send"} color="#111" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (showStop) onStop?.();
+                          else onSubmit(value);
+                        }}
+                        aria-label={showStop ? "Stop response" : "Send message"}
+                        style={{ flexShrink: 0, width: 28 }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+
+            {/* Trailing action button — single morphing element across
               send (typing) <-> stop (responding). Same layoutId so the
               circle persists; only its glyph swaps. Hidden in the inline
               variant which renders the glyph inside the pill instead. */}
-          <AnimatePresence initial={false}>
-            {!isInline && (showSend || showStop) && (
-              <motion.button
-                key="action"
-                layout
-                layoutId={`${instanceId}-action`}
-                type="button"
-                className={styles.action}
-                initial={{ opacity: 0, scale: 0.6, width: 0, marginLeft: -4 }}
-                animate={{ opacity: 1, scale: 1, width: 42, marginLeft: 0 }}
-                exit={cfg.actionExit.exit}
-                transition={cfg.actionExit.transition}
-                onClick={() => {
-                  if (showStop) onStop?.();
-                  else onSubmit(value);
-                }}
-                aria-label={showStop ? "Stop response" : "Send message"}
-              >
-                {/* Single morphing path: send (↵) → L → U → filled square.
+            <AnimatePresence initial={false}>
+              {!isInline && (showSend || showStop) && (
+                <motion.button
+                  key="action"
+                  layout
+                  layoutId={`${instanceId}-action`}
+                  type="button"
+                  className={styles.action}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={cfg.actionExit.exit}
+                  transition={cfg.actionExit.transition}
+                  onClick={() => {
+                    if (showStop) onStop?.();
+                    else onSubmit(value);
+                  }}
+                  aria-label={showStop ? "Stop response" : "Send message"}
+                >
+                  {/* Single morphing path: send (↵) → L → U → filled square.
                     One element, one continuous tween — no fade-swap. */}
-                <MorphGlyph mode={showStop ? "stop" : "send"} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-        </motion.div>
+                  <MorphGlyph mode={showStop ? "stop" : "send"} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
-        {/* Hover-revealed actions — only on a settled (resting) bubble.
+          {/* Hover-revealed actions — only on a settled (resting) bubble.
             Animates from beneath; tracks the wrap's hover so cursor can
             move from bubble to actions without dismissing. */}
-        <AnimatePresence initial={false}>
-          {showActions && (
-            <motion.div
-              key="actions"
-              className={styles.actionsRow}
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ ...spring, stiffness: 460, damping: 38 }}
-            >
-              <button
-                type="button"
-                className={styles.actionBtn}
-                onClick={() => onCopy?.(value)}
-                aria-label="Copy"
-                title="Copy"
+          <AnimatePresence initial={false}>
+            {showActions && (
+              <motion.div
+                key="actions"
+                className={styles.actionsRow}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ ...spring, stiffness: 460, damping: 38 }}
               >
-                <Copy aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={styles.actionBtn}
-                onClick={() => onEdit?.(value)}
-                aria-label="Edit"
-                title="Edit"
-              >
-                <Pencil aria-hidden />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <button
+                  type="button"
+                  className={styles.actionBtn}
+                  onClick={() => onCopy?.(value)}
+                  aria-label="Copy"
+                  title="Copy"
+                >
+                  <Copy aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={styles.actionBtn}
+                  onClick={() => onEdit?.(value)}
+                  aria-label="Edit"
+                  title="Edit"
+                >
+                  <Pencil aria-hidden />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </LayoutGroup>
     );
