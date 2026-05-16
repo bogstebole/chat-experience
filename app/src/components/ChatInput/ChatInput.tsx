@@ -410,12 +410,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {!isGlass && showButtons && (
                     <motion.div
                       key="lead"
-                      initial={{ opacity: 0, scale: 0, width: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28 }}
+                      initial={{ opacity: 0, scale: 0, width: 0, height: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28, height: 28 }}
                       exit={{ 
                         opacity: 0, 
                         scale: 0, 
                         width: 0,
+                        height: 0,
                         transition: pendingExpansion.current 
                           ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 } 
                           : undefined
@@ -445,12 +446,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {showInlineGlyph && showButtons && (
                     <motion.div
                       key="inline-action"
-                      initial={{ opacity: 0, scale: 0, width: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 8 }}
+                      initial={{ opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28, height: 28, marginLeft: 8 }}
                       exit={{ 
                         opacity: 0, 
                         scale: 0, 
                         width: 0, 
+                        height: 0,
                         marginLeft: 0,
                         transition: pendingExpansion.current 
                           ? { type: "tween", duration: 0.15, ease: "easeOut" } 
