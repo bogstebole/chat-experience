@@ -456,7 +456,15 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         marginLeft: 0,
                         transition: pendingExpansion.current 
                           ? { type: "tween", duration: 0.15, ease: "easeOut" } 
-                          : undefined
+                          : {
+                              type: "spring",
+                              visualDuration: ac?.enterButton?.visualDuration ?? 0.18,
+                              bounce: ac?.enterButton?.bounce ?? 0.3,
+                              opacity: { type: "tween", duration: 0.15 },
+                              height: bubbleSpring,
+                              width: bubbleSpring,
+                              marginLeft: bubbleSpring
+                            }
                       }}
                       transition={{
                         type: "spring",
