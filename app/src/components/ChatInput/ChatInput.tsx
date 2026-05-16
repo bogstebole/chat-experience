@@ -20,7 +20,7 @@ export type ChatInputState = "idle" | "typing" | "responding" | "resting";
 
 export interface InlineAnimConfig {
   bubble: { stiffness: number; damping: number; mass: number };
-  button: { stiffness: number; damping: number; mass: number; stagger: number };
+  button: { stiffness: number; damping: number; mass: number; staggerEnter: number; staggerExit: number };
   addButton: { duration: number; visualDuration: number; bounce: number };
   enterButton: { duration: number; visualDuration: number; bounce: number };
   ripple: { scaleX: number; duration: number; pulseDuration: number };
@@ -34,9 +34,9 @@ export interface InlineAnimConfig {
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
   bubble: { stiffness: 600, damping: 21.5, mass: 0.2 },
-  button: { stiffness: 380, damping: 34, mass: 0.9, stagger: 0.055 },
-  addButton: { duration: 0.4, visualDuration: 0.4, bounce: 0.5 },
-  enterButton: { duration: 0.4, visualDuration: 0.4, bounce: 0.5 },
+  button: { stiffness: 500, damping: 50, mass: 0.2, staggerEnter: 0.12, staggerExit: 0.06 },
+  addButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.2 },
+  enterButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.3 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
 };
@@ -417,14 +417,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         scale: 0, 
                         width: 0,
                         transition: pendingExpansion.current 
-                          ? { type: "tween", duration: 0.15, ease: "easeOut" } 
+                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 } 
                           : undefined
                       }}
                       transition={{
                         type: "spring",
                         visualDuration: ac?.addButton?.visualDuration ?? 0.4,
                         bounce: ac?.addButton?.bounce ?? 0.5,
-                        delay: ac?.button?.stagger ?? 0.055,
+                        delay: ac?.button?.staggerEnter ?? 0.055,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
                       style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}
