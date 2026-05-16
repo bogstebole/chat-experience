@@ -186,41 +186,6 @@
   opacity: 1;
 }
 
-/* ── Leading icon button (the +) ── */
-.leadSlot {
-  all: unset;
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  width: var(--slot);
-  height: var(--slot);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  border-radius: 999px;
-  cursor: pointer;
-  transition:
-    background 160ms ease,
-    transform 160ms cubic-bezier(0.25, 1, 0.5, 1),
-    color 160ms ease;
-}
-
-.leadSlot:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.leadSlot:active {
-  background: rgba(0, 0, 0, 0.08);
-  transform: scale(0.92);
-  transition-duration: 80ms;
-}
-
-.leadSlot:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.2);
-  outline-offset: 2px;
-}
 
 /* ── Editor area ── */
 .editor {
@@ -310,41 +275,6 @@
   background: #f3f3f3;
 }
 
-/* Inline action — variant D.
-   Sits inside the pill at the trailing edge of the text.
-   Subtle hover/active so it still reads as a real CTA. */
-.inlineAction {
-  all: unset;
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  cursor: pointer;
-  color: #111;
-  transition:
-    background 160ms ease,
-    transform 140ms cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.inlineAction:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.inlineAction:active {
-  background: rgba(0, 0, 0, 0.10);
-  transform: scale(0.92);
-  transition-duration: 70ms;
-}
-
-.inlineAction:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.2);
-  outline-offset: 2px;
-}
 
 /* ─────────────────────────────────────────────
    Bubble wrapper + hover-revealed actions row
@@ -356,6 +286,12 @@
   position: relative;
   display: inline-flex;
   justify-content: flex-end;
+}
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .actionsRow {

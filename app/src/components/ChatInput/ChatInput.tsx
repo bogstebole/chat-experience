@@ -10,8 +10,11 @@ import {
 } from "react";
 import { AnimatePresence, LayoutGroup, motion, useAnimationControls, type Transition } from "motion/react";
 import { Copy, Pencil } from "lucide-react";
+import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import styles from "./ChatInput.module.css";
+
+const MotionButton = motion(Button);
 
 export type ChatInputState = "idle" | "typing" | "responding" | "resting";
 
@@ -29,7 +32,7 @@ export interface InlineAnimConfig {
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
   bubble: { stiffness: 600,  damping: 21.5, mass: 0.2  },
-  button: { stiffness: 380,  damping: 34,   mass: 0.9, stagger: 0.055 },
+  button: { stiffness: 380, damping: 34, mass: 0.9, stagger: 0.055 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap:   { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
 };
@@ -386,61 +389,56 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             {/* Both buttons are trailing — add button stays right of text,
                 send appears to its right. In expanded mode they wrap to the
                 second row right-aligned so text only ever grows leftward. */}
-            <AnimatePresence
-              initial={false}
-              onExitComplete={() => {
-                if (!pendingExpansion.current) return;
-                pendingExpansion.current = false;
-                setExpandedMode(true);
-                if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
-                buttonsTimerRef.current = window.setTimeout(() => {
-                  setShowButtons(true);
-                  buttonsTimerRef.current = null;
-                }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
-              }}
-            >
-              {!isGlass && showButtons && (
-                <motion.button
-                  key="lead"
-                  type="button"
-                  className={styles.leadSlot}
-                  initial={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
-                  animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 0 }}
-                  exit={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
-                  transition={{ ...buttonSpring, delay: ac?.button?.stagger ?? 0.055 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAdd?.();
-                  }}
-                  aria-label="Add attachment"
-                  title="Add"
-                >
-                  <PlusIcon />
-                </motion.button>
-              )}
-              {showInlineGlyph && showButtons && (
-                <motion.button
-                  key="inline-action"
-                  type="button"
-                  className={styles.inlineAction}
-                  initial={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
-                  animate={{ opacity: 1, scale: 1, width: 24, marginLeft: 0 }}
-                  exit={{ opacity: 0, scale: 0, width: 0, marginLeft: -4 }}
-                  transition={buttonSpring}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (showStop) onStop?.();
-                    else onSubmit(value);
-                  }}
-                  aria-label={showStop ? "Stop response" : "Send message"}
-                >
-                  <MorphGlyph
-                    mode={showStop ? "stop" : "send"}
-                    color="#111"
+            <div className={styles.buttonGroup}>
+              <AnimatePresence
+                initial={false}
+                onExitComplete={() => {
+                  if (!pendingExpansion.current) return;
+                  pendingExpansion.current = false;
+                  setExpandedMode(true);
+                  if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
+                  buttonsTimerRef.current = window.setTimeout(() => {
+                    setShowButtons(true);
+                    buttonsTimerRef.current = null;
+                  }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
+                }}
+              >
+                {!isGlass && showButtons && (
+                  <MotionButton
+                    key="lead"
+                    variant="secondary"
+                    icon={<PlusIcon />}
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 28 }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ ...buttonSpring, delay: ac?.button?.stagger ?? 0.055 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAdd?.();
+                    }}
+                    aria-label="Add attachment"
+                    title="Add"
                   />
-                </motion.button>
-              )}
-            </AnimatePresence>
+                )}
+                {showInlineGlyph && showButtons && (
+                  <MotionButton
+                    key="inline-action"
+                    variant="primary"
+                    icon={<MorphGlyph mode={showStop ? "stop" : "send"} color="#111" />}
+                    initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+                    animate={{ opacity: 1, width: 28, marginLeft: 8 }}
+                    exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+                    transition={buttonSpring}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (showStop) onStop?.();
+                      else onSubmit(value);
+                    }}
+                    aria-label={showStop ? "Stop response" : "Send message"}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
 
           {/* Trailing action button — single morphing element across

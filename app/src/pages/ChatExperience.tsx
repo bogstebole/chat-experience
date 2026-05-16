@@ -60,10 +60,10 @@ export function ChatExperience() {
       mass:      [0.2,  0.1,  3,    0.05 ],
     },
     button: {
-      stiffness: [380,  50,   600,  1    ],
-      damping:   [34,   5,    60,   0.5  ],
-      mass:      [0.9,  0.1,  3,    0.05 ],
-      stagger:   [0.055, 0,   0.3,  0.005],
+      stiffness: [380,  50,  600,  1    ],
+      damping:   [34,   5,   60,   0.5  ],
+      mass:      [0.9,  0.1, 3,    0.05 ],
+      stagger:   [0.055, 0,  0.3,  0.005],
     },
     ripple: {
       scaleX:       [1.0,  1,    1.06, 0.001],
