@@ -21,6 +21,8 @@ export type ChatInputState = "idle" | "typing" | "responding" | "resting";
 export interface InlineAnimConfig {
   bubble: { stiffness: number; damping: number; mass: number };
   button: { stiffness: number; damping: number; mass: number; stagger: number };
+  addButton: { duration: number; visualDuration: number; bounce: number };
+  enterButton: { duration: number; visualDuration: number; bounce: number };
   ripple: { scaleX: number; duration: number; pulseDuration: number };
   wrap: {
     nearThreshold: number;
@@ -33,6 +35,8 @@ export interface InlineAnimConfig {
 export const defaultInlineAnimConfig: InlineAnimConfig = {
   bubble: { stiffness: 600, damping: 21.5, mass: 0.2 },
   button: { stiffness: 380, damping: 34, mass: 0.9, stagger: 0.055 },
+  addButton: { duration: 0.4, visualDuration: 0.4, bounce: 0.5 },
+  enterButton: { duration: 0.4, visualDuration: 0.4, bounce: 0.5 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
 };
@@ -406,15 +410,24 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {!isGlass && showButtons && (
                     <motion.div
                       key="lead"
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 28 }}
+                      initial={{ opacity: 0, scale: 0, width: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28 }}
                       exit={{ 
                         opacity: 0, 
+                        scale: 0, 
                         width: 0,
-                        transition: { type: "tween", ease: "easeInOut", duration: 0.2 }
+                        transition: pendingExpansion.current 
+                          ? { type: "tween", duration: 0.15, ease: "easeOut" } 
+                          : undefined
                       }}
-                      transition={{ ...buttonSpring, delay: ac?.button?.stagger ?? 0.055 }}
-                      style={{ overflow: "hidden", display: "flex", flexShrink: 0 }}
+                      transition={{
+                        type: "spring",
+                        visualDuration: ac?.addButton?.visualDuration ?? 0.4,
+                        bounce: ac?.addButton?.bounce ?? 0.5,
+                        delay: ac?.button?.stagger ?? 0.055,
+                        opacity: { type: "tween", duration: 0.15 }
+                      }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}
                     >
                       <Button
                         variant="secondary"
@@ -432,16 +445,24 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {showInlineGlyph && showButtons && (
                     <motion.div
                       key="inline-action"
-                      initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, width: 28, marginLeft: 8 }}
+                      initial={{ opacity: 0, scale: 0, width: 0, marginLeft: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 8 }}
                       exit={{ 
                         opacity: 0, 
+                        scale: 0, 
                         width: 0, 
                         marginLeft: 0,
-                        transition: { type: "tween", ease: "easeInOut", duration: 0.2 }
+                        transition: pendingExpansion.current 
+                          ? { type: "tween", duration: 0.15, ease: "easeOut" } 
+                          : undefined
                       }}
-                      transition={buttonSpring}
-                      style={{ overflow: "hidden", display: "flex", flexShrink: 0 }}
+                      transition={{
+                        type: "spring",
+                        visualDuration: ac?.enterButton?.visualDuration ?? 0.4,
+                        bounce: ac?.enterButton?.bounce ?? 0.5,
+                        opacity: { type: "tween", duration: 0.15 }
+                      }}
+                      style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexShrink: 0, transformOrigin: "right" }}
                     >
                       <Button
                         variant="primary"

@@ -65,6 +65,16 @@ export function ChatExperience() {
       mass:      [0.9,  0.1, 3,    0.05 ],
       stagger:   [0.055, 0,  0.3,  0.005],
     },
+    addButton: {
+      duration:       [0.4, 0.1, 2, 0.01],
+      visualDuration: [0.4, 0.1, 2, 0.01],
+      bounce:         [0.5, 0,   1, 0.01],
+    },
+    enterButton: {
+      duration:       [0.4, 0.1, 2, 0.01],
+      visualDuration: [0.4, 0.1, 2, 0.01],
+      bounce:         [0.5, 0,   1, 0.01],
+    },
     ripple: {
       scaleX:       [1.0,  1,    1.06, 0.001],
       duration:     [0.19, 0.1,  1,    0.01 ],
