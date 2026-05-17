@@ -618,7 +618,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             transition={{ type: "tween", duration: 0.12 }}
                           >
                             <Button
-                              variant="primary"
+                              variant="secondary"
                               icon={isExpanded ? "Read less" : "Read more"}
                               onClick={(e) => {
                                 e.stopPropagation();
