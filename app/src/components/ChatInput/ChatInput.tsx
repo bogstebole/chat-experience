@@ -17,7 +17,7 @@ function placeCursorAtEnd(el: HTMLElement) {
   sel?.addRange(range);
 }
 import { AnimatePresence, LayoutGroup, animate, motion, useAnimationControls, type Transition } from "motion/react";
-import { Copy, Pencil } from "lucide-react";
+import { Copy, Pencil, Plus } from "lucide-react";
 import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import styles from "./ChatInput.module.css";
@@ -38,6 +38,7 @@ export interface InlineAnimConfig {
     preExpandHeight: number;
     slideInDelay: number;
   };
+  actions: { staggerDelay: number; duration: number };
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
@@ -47,6 +48,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   enterButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.3 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
+  actions: { staggerDelay: 0.07, duration: 0.12 },
 };
 
 /**
@@ -171,16 +173,6 @@ const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
   },
 };
 
-const PlusIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 11 11" fill="none" aria-hidden>
-    <path
-      d="M0.5 5.167H9.833M5.167 0.5V9.833"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
@@ -560,7 +552,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     >
                       <Button
                         variant="secondary"
-                        icon={<PlusIcon />}
+                        icon={<Plus size={12} aria-hidden />}
                         onClick={(e) => {
                           e.stopPropagation();
                           onAdd?.();
@@ -699,30 +691,26 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ ...spring, stiffness: 460, damping: 38 }}
               >
-                <motion.button
-                  type="button"
-                  className={styles.actionBtn}
+                <MotionButton
+                  variant="ghost"
+                  icon={<Copy size={14} aria-hidden />}
                   onClick={() => onCopy?.(value)}
                   aria-label="Copy"
                   title="Copy"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.12, delay: 0 }}
-                >
-                  <Copy aria-hidden />
-                </motion.button>
-                <motion.button
-                  type="button"
-                  className={styles.actionBtn}
+                  transition={{ duration: ac?.actions?.duration ?? 0.12, delay: 0 }}
+                />
+                <MotionButton
+                  variant="ghost"
+                  icon={<Pencil size={14} aria-hidden />}
                   onClick={() => onEdit?.(value)}
                   aria-label="Edit"
                   title="Edit"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.12, delay: 0.07 }}
-                >
-                  <Pencil aria-hidden />
-                </motion.button>
+                  transition={{ duration: ac?.actions?.duration ?? 0.12, delay: ac?.actions?.staggerDelay ?? 0.07 }}
+                />
               </motion.div>
             )}
           </AnimatePresence>

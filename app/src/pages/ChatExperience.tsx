@@ -87,6 +87,10 @@ export function ChatExperience() {
       preExpandHeight: [16,   0,    60,   1    ],
       slideInDelay:    [120,  0,    800,  10   ],
     },
+    actions: {
+      staggerDelay: [0.07, 0,   0.5,  0.005],
+      duration:     [0.12, 0.05, 0.5, 0.01 ],
+    },
   }) as InlineAnimConfig;
 
   // Cleanup any in-flight streaming timer on unmount.

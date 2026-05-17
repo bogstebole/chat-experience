@@ -77,3 +77,21 @@
   transform: scale(0.94);
   transition-duration: 70ms;
 }
+
+/* ── Ghost: flat, subtle gray hover ── */
+.ghost {
+  background: transparent;
+  color: var(--ink-soft, #11111199);
+}
+
+.ghost:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink, #111);
+}
+
+.ghost:active {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink, #111);
+  transform: scale(0.92);
+  transition-duration: 70ms;
+}
