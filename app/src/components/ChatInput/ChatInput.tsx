@@ -22,7 +22,6 @@ import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import styles from "./ChatInput.module.css";
 
-const MotionButton = motion(Button);
 
 export type ChatInputState = "idle" | "typing" | "responding" | "resting";
 
@@ -38,7 +37,7 @@ export interface InlineAnimConfig {
     preExpandHeight: number;
     slideInDelay: number;
   };
-  actions: { staggerDelay: number; duration: number };
+  actions: { staggerDelay: number; duration: number; stiffness: number; damping: number };
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
@@ -48,7 +47,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   enterButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.3 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
-  actions: { staggerDelay: 0.07, duration: 0.12 },
+  actions: { staggerDelay: 0.07, duration: 0.12, stiffness: 400, damping: 22 },
 };
 
 /**
@@ -484,30 +483,30 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 className={styles.editorClip}
                 style={{ flexBasis: expandedMode ? "100%" : undefined }}
               >
-              <motion.div
-                ref={editorWrapRef}
-                className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""}`}
-                animate={isGlass && isOverflowing
-                  ? { maxHeight: isExpanded ? textScrollHeightRef.current : 240 }
-                  : undefined
-                }
-                transition={{ type: "spring", stiffness: 300, damping: 35, mass: 0.8 }}
-              >
-                <div
-                  ref={editorRef}
-                  className={styles.editor}
-                  contentEditable={isReadOnly ? "false" : "plaintext-only"}
-                  suppressContentEditableWarning
-                  onInput={handleInput}
-                  onKeyDown={handleKeyDown}
-                  onPaste={handlePaste}
-                  spellCheck={false}
-                  role="textbox"
-                  aria-multiline="true"
-                  aria-label={placeholder}
-                  data-placeholder={placeholder}
-                />
-              </motion.div>
+                <motion.div
+                  ref={editorWrapRef}
+                  className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""}`}
+                  animate={isGlass && isOverflowing
+                    ? { maxHeight: isExpanded ? textScrollHeightRef.current : 240 }
+                    : undefined
+                  }
+                  transition={{ type: "spring", stiffness: 300, damping: 35, mass: 0.8 }}
+                >
+                  <div
+                    ref={editorRef}
+                    className={styles.editor}
+                    contentEditable={isReadOnly ? "false" : "plaintext-only"}
+                    suppressContentEditableWarning
+                    onInput={handleInput}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    spellCheck={false}
+                    role="textbox"
+                    aria-multiline="true"
+                    aria-label={placeholder}
+                    data-placeholder={placeholder}
+                  />
+                </motion.div>
               </div>
 
               {/* Both buttons are trailing — add button stays right of text,
@@ -686,31 +685,30 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               <motion.div
                 key="actions"
                 className={styles.actionsRow}
-                initial={{ y: -4 }}
-                animate={{ y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ ...spring, stiffness: 460, damping: 38 }}
+                variants={{
+                  hidden: { scale: 0.6, opacity: 0 },
+                  visible: { scale: 1, opacity: 1, transition: { stiffness: 460, damping: 38, staggerChildren: ac?.actions?.staggerDelay ?? 0.07 } },
+                  exit: { scale: 0.6, opacity: 0, transition: { duration: 0.12 } },
+                }}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
               >
-                <MotionButton
-                  variant="ghost"
-                  icon={<Copy size={14} aria-hidden />}
-                  onClick={() => onCopy?.(value)}
-                  aria-label="Copy"
-                  title="Copy"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: ac?.actions?.duration ?? 0.12, delay: 0 }}
-                />
-                <MotionButton
-                  variant="ghost"
-                  icon={<Pencil size={14} aria-hidden />}
-                  onClick={() => onEdit?.(value)}
-                  aria-label="Edit"
-                  title="Edit"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: ac?.actions?.duration ?? 0.12, delay: ac?.actions?.staggerDelay ?? 0.07 }}
-                />
+                {([
+                  { icon: <Copy size={14} aria-hidden />, onClick: () => onCopy?.(value), label: "Copy" },
+                  { icon: <Pencil size={14} aria-hidden />, onClick: () => onEdit?.(value), label: "Edit" },
+                ] as const).map(({ icon, onClick, label }) => (
+                  <motion.div
+                    key={label}
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.8 },
+                      visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: ac?.actions?.stiffness ?? 400, damping: ac?.actions?.damping ?? 22 } },
+                      exit: {},
+                    }}
+                  >
+                    <Button variant="ghost" icon={icon} onClick={onClick} aria-label={label} title={label} />
+                  </motion.div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>

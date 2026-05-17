@@ -317,6 +317,15 @@
   justify-content: flex-end;
 }
 
+.wrap::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 16px;
+}
+
 .buttonGroup {
   display: flex;
   align-items: center;

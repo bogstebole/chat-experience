@@ -88,8 +88,10 @@ export function ChatExperience() {
       slideInDelay:    [120,  0,    800,  10   ],
     },
     actions: {
-      staggerDelay: [0.07, 0,   0.5,  0.005],
-      duration:     [0.12, 0.05, 0.5, 0.01 ],
+      staggerDelay: [0.07, 0,    0.5,  0.005],
+      duration:     [0.12, 0.05, 0.5,  0.01 ],
+      stiffness:    [400,  50,   800,  10   ],
+      damping:      [22,   5,    60,   0.5  ],
     },
   }) as InlineAnimConfig;
 
