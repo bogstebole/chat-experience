@@ -16,7 +16,7 @@
   align-items: center;
   gap: 4px;
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.03em;
   /* Fixed width when typing */
   width: 320px;
@@ -187,11 +187,18 @@
 }
 
 
-/* ── Editor wrapper — handles flex layout + gradient fade mask ── */
+/* ── Editor wrapper — scroll container + gradient fade mask ── */
 .editorWrap {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  max-height: 120px;
+  scrollbar-width: none;
+}
+
+.editorWrap::-webkit-scrollbar {
+  display: none;
 }
 
 .editorWrap[data-fade="top"] {
@@ -209,43 +216,30 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 20px calc(100% - 20px), transparent 100%);
 }
 
-/* ── Editor area ── */
+/* ── Editor area (contenteditable div) ── */
 .editor {
-  position: relative;
-  z-index: 1;
   width: 100%;
   outline: none;
-  border: none;
-  background: transparent;
   font: inherit;
   letter-spacing: inherit;
   color: inherit;
   line-height: 1.45;
-  padding: 4px 8px 4px 8px;
-  resize: none;
-  overflow-y: auto;
-  max-height: 120px;
+  padding: 4px 8px;
+  caret-color: #111;
   white-space: pre-wrap;
   word-break: break-word;
-  caret-color: #111;
-  field-sizing: content;
-  scrollbar-width: none;
 }
 
-.editor::-webkit-scrollbar {
-  display: none;
-}
-
-.editor::placeholder {
+.editor:empty::before {
+  content: attr(data-placeholder);
   color: var(--ink-faint);
+  pointer-events: none;
 }
 
 /* In glass mode the text is inked, not muted, and the caret is hidden */
 .surface.glass .editor {
   color: #111;
-  cursor: default;
   caret-color: transparent;
-  user-select: text;
 }
 
 /* ── Action button (send / stop) ──

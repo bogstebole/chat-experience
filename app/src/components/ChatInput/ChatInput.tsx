@@ -6,8 +6,16 @@ import {
   useRef,
   useState,
   forwardRef,
-  type KeyboardEvent,
 } from "react";
+
+function placeCursorAtEnd(el: HTMLElement) {
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+}
 import { AnimatePresence, LayoutGroup, motion, useAnimationControls, type Transition } from "motion/react";
 import { Copy, Pencil } from "lucide-react";
 import { Button } from "../Button/Button";
@@ -192,13 +200,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     ref
   ) {
     const instanceId = useId();
-    const editorRef = useRef<HTMLTextAreaElement>(null);
+    const editorRef = useRef<HTMLDivElement>(null);
     const editorWrapRef = useRef<HTMLDivElement>(null);
+    const internalChangeRef = useRef(false);
     const measureSpanRef = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
     const [pulsing, setPulsing] = useState(false);
     const [expandedMode, setExpandedMode] = useState(false);
-    const [isActuallyWrapped, setIsActuallyWrapped] = useState(false);
     const [showButtons, setShowButtons] = useState(true);
     const singleLineHeight = useRef(0);
     const expandedModeRef = useRef(false);
@@ -215,7 +223,11 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     useImperativeHandle(ref, () => ({
       focus: () => editorRef.current?.focus(),
-      setValue: (v) => onChange(v),
+      setValue: (v) => {
+        const el = editorRef.current;
+        if (el) { el.textContent = v; placeCursorAtEnd(el); }
+        onChange(v);
+      },
       getValue: () => value,
     }), [onChange, value]);
 
@@ -239,13 +251,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     // Sync fade mask on the editor wrapper based on scroll position
     const updateFade = useCallback(() => {
-      const el = editorRef.current;
       const wrap = editorWrapRef.current;
-      if (!el || !wrap) return;
-      const hasOverflow = el.scrollHeight > el.clientHeight;
+      if (!wrap) return;
+      const hasOverflow = wrap.scrollHeight > wrap.clientHeight;
       if (!hasOverflow) { wrap.removeAttribute("data-fade"); return; }
-      const atTop = el.scrollTop <= 1;
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      const atTop = wrap.scrollTop <= 1;
+      const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 1;
       if (!atTop && !atBottom) wrap.dataset.fade = "both";
       else if (!atTop) wrap.dataset.fade = "top";
       else if (!atBottom) wrap.dataset.fade = "bottom";
@@ -253,17 +264,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, []);
 
     useEffect(() => {
-      const el = editorRef.current;
-      if (!el) return;
-      el.addEventListener("scroll", updateFade, { passive: true });
-      return () => el.removeEventListener("scroll", updateFade);
+      const wrap = editorWrapRef.current;
+      if (!wrap) return;
+      wrap.addEventListener("scroll", updateFade, { passive: true });
+      return () => wrap.removeEventListener("scroll", updateFade);
     }, [updateFade]);
 
     useEffect(() => {
       const id = requestAnimationFrame(() => {
-        const el = editorRef.current;
-        if (el && !isReadOnly) {
-          el.scrollTop = el.scrollHeight;
+        const wrap = editorWrapRef.current;
+        if (wrap && !isReadOnly) {
+          wrap.scrollTop = wrap.scrollHeight;
         }
         updateFade();
       });
@@ -279,9 +290,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     // Capture single-line height once on mount
     useEffect(() => {
-      if (editorRef.current) {
-        singleLineHeight.current = editorRef.current.scrollHeight;
-      }
+      const el = editorRef.current;
+      if (el) singleLineHeight.current = el.scrollHeight || Math.round(12 * 1.45);
     }, []);
 
     // On every keystroke: decide whether to enter or exit expanded mode.
@@ -298,7 +308,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       requestAnimationFrame(() => {
         const textW = span ? span.offsetWidth : 0;
         const contentW = el.clientWidth - 16;
-        const isMultiline = el.scrollHeight > singleLineHeight.current + 2;
+        const wrap = editorWrapRef.current;
+        const isMultiline = (wrap?.scrollHeight ?? 0) > singleLineHeight.current + 2;
 
         const ac = animCfgRef.current;
         if (!expandedModeRef.current) {
@@ -310,12 +321,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           }
         } else {
           const wrappedNow = isMultiline || textW >= contentW - 2;
-          setIsActuallyWrapped(wrappedNow);
           if (!wrappedNow && textW < compactAvailWidthRef.current * (ac?.wrap?.exitThreshold ?? 0.75)) {
             expandedModeRef.current = false;
             pendingExpansion.current = false;
             setExpandedMode(false);
-            setIsActuallyWrapped(false);
             setShowButtons(true);
             if (buttonsTimerRef.current) {
               clearTimeout(buttonsTimerRef.current);
@@ -358,15 +367,40 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }
     }, [state, variant, surfaceControls]);
 
+    const handleInput = useCallback(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      internalChangeRef.current = true;
+      onChange(el.textContent ?? "");
+    }, [onChange]);
+
+    const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const text = e.clipboardData.getData("text/plain");
+      document.execCommand("insertText", false, text);
+    }, []);
+
     const handleKeyDown = useCallback(
-      (e: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
+      (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter") {
           e.preventDefault();
-          if (value.trim().length > 0) onSubmit(value);
+          if (!e.shiftKey && value.trim().length > 0) onSubmit(value);
+          else if (e.shiftKey) document.execCommand("insertText", false, "\n");
         }
       },
       [value, onSubmit]
     );
+
+    // Sync value prop → DOM when changed externally (e.g. clear after submit)
+    useEffect(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      if (internalChangeRef.current) { internalChangeRef.current = false; return; }
+      if (el.textContent !== value) {
+        el.textContent = value;
+        if (document.activeElement === el) placeCursorAtEnd(el);
+      }
+    }, [value]);
 
     return (
       <LayoutGroup id={instanceId}>
@@ -408,22 +442,19 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 className={styles.editorWrap}
                 style={{ flexBasis: expandedMode ? "100%" : undefined }}
               >
-                <motion.textarea
+                <div
                   ref={editorRef}
                   className={styles.editor}
-                  value={value}
-                  onChange={(e) => onChange(e.target.value)}
+                  contentEditable={isReadOnly ? "false" : "plaintext-only"}
+                  suppressContentEditableWarning
+                  onInput={handleInput}
                   onKeyDown={handleKeyDown}
-                  placeholder={placeholder}
-                  readOnly={isReadOnly}
+                  onPaste={handlePaste}
                   spellCheck={false}
-                  rows={1}
-                  animate={{
-                    minHeight: expandedMode && !isActuallyWrapped
-                      ? singleLineHeight.current + (animCfgRef.current?.wrap?.preExpandHeight ?? 16)
-                      : undefined,
-                  }}
-                  transition={bubbleSpring}
+                  role="textbox"
+                  aria-multiline="true"
+                  aria-label={placeholder}
+                  data-placeholder={placeholder}
                 />
               </div>
 
