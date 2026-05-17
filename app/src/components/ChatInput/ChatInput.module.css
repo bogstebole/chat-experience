@@ -5,7 +5,7 @@
 
 .root {
   --pill-h: 36px;
-  --pill-radius: 20px;
+  --pill-radius: 24px;
   --slot: 28px;
   --send-w: 42px;
   --pill-fill: rgba(0, 0, 0, 0.03);
@@ -15,7 +15,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 10px;
   letter-spacing: 0.03em;
   /* Fixed width when typing */
@@ -35,7 +35,7 @@
   flex: 1;
   min-height: var(--pill-h);
   min-width: 0;
-  padding: 4px 4px 4px 4px;
+  padding: 8px;
   border-radius: var(--pill-radius);
   background: var(--pill-fill);
   color: var(--pill-text);

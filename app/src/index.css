@@ -1,11 +1,12 @@
 :root {
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Geist Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --bg: #ffffff;
   --ink: #111111;
   --ink-soft: rgba(17, 17, 17, 0.6);
   --ink-faint: rgba(17, 17, 17, 0.4);
 
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   color: var(--ink);
   background: var(--bg);
   font-synthesis: none;
