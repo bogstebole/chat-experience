@@ -187,12 +187,33 @@
 }
 
 
+/* ── Editor wrapper — handles flex layout + gradient fade mask ── */
+.editorWrap {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editorWrap[data-fade="top"] {
+  mask-image: linear-gradient(to bottom, transparent 0, black 20px 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 20px 100%);
+}
+
+.editorWrap[data-fade="bottom"] {
+  mask-image: linear-gradient(to top, transparent 0, black 20px 100%);
+  -webkit-mask-image: linear-gradient(to top, transparent 0, black 20px 100%);
+}
+
+.editorWrap[data-fade="both"] {
+  mask-image: linear-gradient(to bottom, transparent 0, black 20px calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 20px calc(100% - 20px), transparent 100%);
+}
+
 /* ── Editor area ── */
 .editor {
   position: relative;
   z-index: 1;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   outline: none;
   border: none;
   background: transparent;
@@ -208,6 +229,11 @@
   word-break: break-word;
   caret-color: #111;
   field-sizing: content;
+  scrollbar-width: none;
+}
+
+.editor::-webkit-scrollbar {
+  display: none;
 }
 
 .editor::placeholder {

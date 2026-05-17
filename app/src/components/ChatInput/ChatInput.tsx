@@ -193,6 +193,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   ) {
     const instanceId = useId();
     const editorRef = useRef<HTMLTextAreaElement>(null);
+    const editorWrapRef = useRef<HTMLDivElement>(null);
     const measureSpanRef = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
     const [pulsing, setPulsing] = useState(false);
@@ -235,6 +236,39 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const buttonSpring: Transition = isInline && ac
       ? { type: "spring", stiffness: ac.button.stiffness, damping: ac.button.damping, mass: ac.button.mass }
       : spring;
+
+    // Sync fade mask on the editor wrapper based on scroll position
+    const updateFade = useCallback(() => {
+      const el = editorRef.current;
+      const wrap = editorWrapRef.current;
+      if (!el || !wrap) return;
+      const hasOverflow = el.scrollHeight > el.clientHeight;
+      if (!hasOverflow) { wrap.removeAttribute("data-fade"); return; }
+      const atTop = el.scrollTop <= 1;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      if (!atTop && !atBottom) wrap.dataset.fade = "both";
+      else if (!atTop) wrap.dataset.fade = "top";
+      else if (!atBottom) wrap.dataset.fade = "bottom";
+      else wrap.removeAttribute("data-fade");
+    }, []);
+
+    useEffect(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      el.addEventListener("scroll", updateFade, { passive: true });
+      return () => el.removeEventListener("scroll", updateFade);
+    }, [updateFade]);
+
+    useEffect(() => {
+      const id = requestAnimationFrame(() => {
+        const el = editorRef.current;
+        if (el && !isReadOnly) {
+          el.scrollTop = el.scrollHeight;
+        }
+        updateFade();
+      });
+      return () => cancelAnimationFrame(id);
+    }, [value, isReadOnly, updateFade]);
 
     // Auto-focus when entering typing-capable states
     useEffect(() => {
@@ -369,26 +403,29 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 {value}
               </span>
 
-              <motion.textarea
-                ref={editorRef}
-                className={styles.editor}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-                readOnly={isReadOnly}
-                spellCheck={false}
-                rows={1}
-                animate={{
-                  minHeight: expandedMode && !isActuallyWrapped
-                    ? singleLineHeight.current + (animCfgRef.current?.wrap?.preExpandHeight ?? 16)
-                    : undefined,
-                }}
-                transition={bubbleSpring}
-                style={{
-                  flexBasis: expandedMode ? "100%" : undefined,
-                }}
-              />
+              <div
+                ref={editorWrapRef}
+                className={styles.editorWrap}
+                style={{ flexBasis: expandedMode ? "100%" : undefined }}
+              >
+                <motion.textarea
+                  ref={editorRef}
+                  className={styles.editor}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={placeholder}
+                  readOnly={isReadOnly}
+                  spellCheck={false}
+                  rows={1}
+                  animate={{
+                    minHeight: expandedMode && !isActuallyWrapped
+                      ? singleLineHeight.current + (animCfgRef.current?.wrap?.preExpandHeight ?? 16)
+                      : undefined,
+                  }}
+                  transition={bubbleSpring}
+                />
+              </div>
 
               {/* Both buttons are trailing — add button stays right of text,
                 send appears to its right. In expanded mode they wrap to the
