@@ -202,6 +202,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const instanceId = useId();
     const editorRef = useRef<HTMLDivElement>(null);
     const editorWrapRef = useRef<HTMLDivElement>(null);
+    const editorClipRef = useRef<HTMLDivElement>(null);
     const textScrollHeightRef = useRef(0);
     const internalChangeRef = useRef(false);
     const measureSpanRef = useRef<HTMLSpanElement>(null);
@@ -256,15 +257,16 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // Sync fade mask on the editor wrapper based on scroll position
     const updateFade = useCallback(() => {
       const wrap = editorWrapRef.current;
-      if (!wrap) return;
+      const clip = editorClipRef.current;
+      if (!wrap || !clip) return;
       const hasOverflow = wrap.scrollHeight > wrap.clientHeight;
-      if (!hasOverflow) { wrap.removeAttribute("data-fade"); return; }
+      if (!hasOverflow) { clip.removeAttribute("data-fade"); return; }
       const atTop = wrap.scrollTop <= 1;
       const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 1;
-      if (!atTop && !atBottom) wrap.dataset.fade = "both";
-      else if (!atTop) wrap.dataset.fade = "top";
-      else if (!atBottom) wrap.dataset.fade = "bottom";
-      else wrap.removeAttribute("data-fade");
+      if (!atTop && !atBottom) clip.dataset.fade = "both";
+      else if (!atTop) clip.dataset.fade = "top";
+      else if (!atBottom) clip.dataset.fade = "bottom";
+      else clip.removeAttribute("data-fade");
     }, []);
 
     useEffect(() => {
@@ -367,7 +369,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       const wrap = editorWrapRef.current;
       if (!wrap) return;
       if (isExpanded) {
-        wrap.removeAttribute("data-fade");
+        editorClipRef.current?.removeAttribute("data-fade");
       } else if (isGlass) {
         requestAnimationFrame(updateFade);
       }
@@ -485,10 +487,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 {value}
               </span>
 
+              <div
+                ref={editorClipRef}
+                className={styles.editorClip}
+                style={{ flexBasis: expandedMode ? "100%" : undefined }}
+              >
               <motion.div
                 ref={editorWrapRef}
                 className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""}`}
-                style={{ flexBasis: expandedMode ? "100%" : undefined }}
                 animate={isGlass && isOverflowing
                   ? { maxHeight: isExpanded ? textScrollHeightRef.current : 240 }
                   : undefined
@@ -510,6 +516,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   data-placeholder={placeholder}
                 />
               </motion.div>
+              </div>
 
               {/* Both buttons are trailing — add button stays right of text,
                 send appears to its right. In expanded mode they wrap to the

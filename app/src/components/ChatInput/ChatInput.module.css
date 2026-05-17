@@ -187,10 +187,29 @@
 }
 
 
-/* ── Editor wrapper — scroll container + gradient fade mask ── */
-.editorWrap {
+/* ── Editor clip — non-scrolling wrapper that holds the fade mask ── */
+.editorClip {
   flex: 1;
   min-width: 0;
+}
+
+.editorClip[data-fade="top"] {
+  mask-image: linear-gradient(to bottom, transparent 0, black 48px 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 48px 100%);
+}
+
+.editorClip[data-fade="bottom"] {
+  mask-image: linear-gradient(to top, transparent 0, black 48px 100%);
+  -webkit-mask-image: linear-gradient(to top, transparent 0, black 48px 100%);
+}
+
+.editorClip[data-fade="both"] {
+  mask-image: linear-gradient(to bottom, transparent 0, black 48px calc(100% - 48px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 48px calc(100% - 48px), transparent 100%);
+}
+
+/* ── Editor wrapper — scroll container ── */
+.editorWrap {
   overflow-x: hidden;
   overflow-y: scroll;
   max-height: 240px;
@@ -199,21 +218,6 @@
 
 .editorWrap::-webkit-scrollbar {
   display: none;
-}
-
-.editorWrap[data-fade="top"] {
-  mask-image: linear-gradient(to bottom, transparent 0, black 20px 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 20px 100%);
-}
-
-.editorWrap[data-fade="bottom"] {
-  mask-image: linear-gradient(to top, transparent 0, black 20px 100%);
-  -webkit-mask-image: linear-gradient(to top, transparent 0, black 20px 100%);
-}
-
-.editorWrap[data-fade="both"] {
-  mask-image: linear-gradient(to bottom, transparent 0, black 20px calc(100% - 20px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 20px calc(100% - 20px), transparent 100%);
 }
 
 /* In glass (bubble) mode: disable scroll, clip text at max-height */
