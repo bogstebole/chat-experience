@@ -533,13 +533,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       key="lead"
                       initial={{ opacity: 0, scale: 0, width: 0, height: 0 }}
                       animate={{ opacity: 1, scale: 1, width: 28, height: 28 }}
-                      exit={{ 
-                        opacity: 0, 
-                        scale: 0, 
+                      exit={{
+                        opacity: 0,
+                        scale: 0,
                         width: 0,
                         height: 0,
-                        transition: pendingExpansion.current 
-                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 } 
+                        transition: pendingExpansion.current
+                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
                           : undefined
                       }}
                       transition={{
@@ -584,14 +584,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         transition: pendingExpansion.current
                           ? { type: "tween", duration: 0.15, ease: "easeOut" }
                           : {
-                              type: "spring",
-                              visualDuration: ac?.enterButton?.visualDuration ?? 0.18,
-                              bounce: ac?.enterButton?.bounce ?? 0.3,
-                              opacity: { type: "tween", duration: 0.15 },
-                              height: bubbleSpring,
-                              width: bubbleSpring,
-                              marginLeft: bubbleSpring
-                            }
+                            type: "spring",
+                            visualDuration: ac?.enterButton?.visualDuration ?? 0.18,
+                            bounce: ac?.enterButton?.bounce ?? 0.3,
+                            opacity: { type: "tween", duration: 0.15 },
+                            height: bubbleSpring,
+                            width: bubbleSpring,
+                            marginLeft: bubbleSpring
+                          }
                       }}
                       transition={{
                         type: "spring",
@@ -599,7 +599,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         bounce: ac?.enterButton?.bounce ?? 0.5,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "hidden", transformOrigin: "right" }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "visible", transformOrigin: "right" }}
                     >
                       <AnimatePresence mode="wait" initial={false}>
                         {showReadMore ? (
