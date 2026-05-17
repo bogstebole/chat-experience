@@ -552,7 +552,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     >
                       <Button
                         variant="secondary"
-                        icon={<Plus size={12} aria-hidden />}
+                        icon={<Plus size={14} aria-hidden />}
                         onClick={(e) => {
                           e.stopPropagation();
                           onAdd?.();
