@@ -187,6 +187,8 @@ export function ChatExperience() {
                   onChange={(v) => handleChange(turn.id, v)}
                   onSubmit={(v) => handleSubmit(turn.id, v)}
                   onStop={() => handleStop(turn.id)}
+                  onCopy={(v) => navigator.clipboard.writeText(v)}
+                  onEdit={() => updateTurn(turn.id, { state: "typing" })}
                   variant="inline"
                   animationConfig={animConfig}
                   placeholder="Ask me about particle physics…"

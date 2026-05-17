@@ -694,29 +694,35 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               <motion.div
                 key="actions"
                 className={styles.actionsRow}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ y: -4 }}
+                animate={{ y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ ...spring, stiffness: 460, damping: 38 }}
               >
-                <button
+                <motion.button
                   type="button"
                   className={styles.actionBtn}
                   onClick={() => onCopy?.(value)}
                   aria-label="Copy"
                   title="Copy"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.12, delay: 0 }}
                 >
                   <Copy aria-hidden />
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
                   className={styles.actionBtn}
                   onClick={() => onEdit?.(value)}
                   aria-label="Edit"
                   title="Edit"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.12, delay: 0.07 }}
                 >
                   <Pencil aria-hidden />
-                </button>
+                </motion.button>
               </motion.div>
             )}
           </AnimatePresence>
