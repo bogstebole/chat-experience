@@ -102,7 +102,7 @@ export function ChatExperience() {
       angle1:       [0,    -90,  90,   1    ],
       angle2:       [-25,  -90,  90,   1    ],
       angle3:       [-50,  -90,  90,   1    ],
-      hoverPull:    [12,   0,    40,   1    ],
+      hoverPull:    [4,    0,    40,   1    ],
     },
   }) as InlineAnimConfig;
 
