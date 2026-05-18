@@ -49,7 +49,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
   actions: { staggerDelay: 0.07, duration: 0.12, stiffness: 400, damping: 22 },
-  addCards: { staggerDelay: 0.04, stiffness: 350, damping: 25, inputScale: 0.95, inputBlur: 2, angle1: -26, angle2: -2, angle3: 22, hoverPull: 8 },
+  addCards: { staggerDelay: 0.06, stiffness: 800, damping: 41, inputScale: 0.95, inputBlur: 2, angle1: 0, angle2: -25, angle3: -50, hoverPull: 12 },
 };
 
 /**
@@ -711,10 +711,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       ];
                       const hoverPull = ac?.addCards?.hoverPull ?? 8;
 
-                      const angleRad = angles[i] * (Math.PI / 180);
-                      const pullX = -hoverPull * Math.cos(angleRad);
-                      const pullY = -hoverPull * Math.sin(angleRad);
-
                       return (
                         <motion.button
                           key={label}
@@ -722,21 +718,23 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                           style={{
                             right: showInlineGlyph && showButtons ? 36 : 0,
                             bottom: 1,
-                            transformOrigin: "138px 21px",
+                            transformOrigin: "calc(100% - 22px) 50%",
                             zIndex: 3 - i
                           }}
-                          initial={{ opacity: 0, scale: 0.5, rotate: 0, x: 0, y: 0 }}
+                          initial={{ opacity: 0, scale: 0.95, rotate: 0, width: 160 }}
                           animate={{
-                            opacity: 1, scale: 1, rotate: angles[i], x: 0, y: 0,
-                            transition: { type: "spring", stiffness: ac?.addCards?.stiffness ?? 350, damping: ac?.addCards?.damping ?? 25, delay: enterDelay },
+                            opacity: 1, scale: 1, rotate: angles[i], width: 160,
+                            transition: { 
+                              type: "spring", stiffness: ac?.addCards?.stiffness ?? 350, damping: ac?.addCards?.damping ?? 25, delay: enterDelay,
+                              opacity: { duration: 0.1, delay: enterDelay }
+                            },
                           }}
                           whileHover={{
-                            x: pullX,
-                            y: pullY,
+                            width: 160 + hoverPull,
                             transition: { type: "spring", stiffness: 400, damping: 25 }
                           }}
                           exit={{
-                            opacity: 0, scale: 0.5, rotate: 0, x: 0, y: 0,
+                            opacity: 0, scale: 0.5, rotate: 0, width: 160,
                             transition: { duration: 0.15, delay: exitDelay, ease: "easeIn" }
                           }}
                           onClick={(e) => {
