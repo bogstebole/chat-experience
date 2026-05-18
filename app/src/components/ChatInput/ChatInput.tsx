@@ -235,7 +235,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const showActions = isRestingHovered;
     const isInline = variant === "inline";
     const showReadMore = isInline && state === "resting" && isOverflowing;
-    const showInlineGlyph = isInline && (showSend || showStop || showReadMore);
+    const showInlineGlyph = isInline && (showSend || showStop);
 
     const ac = animationConfig;
     const bubbleSpring: Transition = isInline && ac
@@ -355,16 +355,19 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }
     }, [isGlass]);
 
-    // Sync fade mask when isExpanded changes
+    // Drive bottom fade from isOverflowing state — more reliable than DOM
+    // measurements in glass mode where overflow:hidden makes scrollHeight
+    // unpredictable across browsers and animation frames.
     useEffect(() => {
-      const wrap = editorWrapRef.current;
-      if (!wrap) return;
-      if (isExpanded) {
-        editorClipRef.current?.removeAttribute("data-fade");
-      } else if (isGlass) {
-        requestAnimationFrame(updateFade);
+      if (!isGlass) return;
+      const clip = editorClipRef.current;
+      if (!clip) return;
+      if (isOverflowing && !isExpanded) {
+        clip.dataset.fade = "bottom";
+      } else {
+        clip.removeAttribute("data-fade");
       }
-    }, [isExpanded, isGlass, updateFade]);
+    }, [isGlass, isOverflowing, isExpanded]);
 
     // ── Variant side effects on responding -> resting ──
     // Triggers a brief shadow pulse on the bubble (mass + baton variants)
@@ -566,13 +569,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     <motion.div
                       key="inline-action"
                       initial={{ opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0 }}
-                      animate={{
-                        opacity: 1,
-                        scale: 1,
-                        width: showReadMore ? 76 : 28,
-                        height: 28,
-                        marginLeft: 8,
-                      }}
+                      animate={{ opacity: 1, scale: 1, width: 28, height: 28, marginLeft: 8 }}
                       exit={{
                         opacity: 0,
                         scale: 0,
@@ -599,48 +596,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       }}
                       style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "visible", transformOrigin: "right" }}
                     >
-                      <AnimatePresence mode="wait" initial={false}>
-                        {showReadMore ? (
-                          <motion.div
-                            key="read-more-text"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ type: "tween", duration: 0.12 }}
-                          >
-                            <Button
-                              variant="secondary"
-                              icon={isExpanded ? "Read less" : "Read more"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsExpanded((v) => !v);
-                              }}
-                              aria-label={isExpanded ? "Read less" : "Read more"}
-                              style={{ width: "auto", padding: "4px 10px", borderRadius: 999, fontSize: 10, letterSpacing: "0.03em", color: "#111" }}
-                            />
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="glyph"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ type: "tween", duration: 0.12 }}
-                          >
-                            <Button
-                              variant="primary"
-                              icon={<MorphGlyph mode={showStop ? "stop" : "send"} color="#111" />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (showStop) onStop?.();
-                                else onSubmit(value);
-                              }}
-                              aria-label={showStop ? "Stop response" : "Send message"}
-                              style={{ flexShrink: 0, width: 28 }}
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <Button
+                        variant="primary"
+                        icon={<MorphGlyph mode={showStop ? "stop" : "send"} color="#111" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (showStop) onStop?.();
+                          else onSubmit(value);
+                        }}
+                        aria-label={showStop ? "Stop response" : "Send message"}
+                        style={{ flexShrink: 0, width: 28 }}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -694,6 +660,28 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 animate="visible"
                 exit="exit"
               >
+                {showReadMore && (
+                  <motion.div
+                    key="read-more"
+                    style={{ marginRight: "auto" }}
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.8 },
+                      visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: ac?.actions?.stiffness ?? 400, damping: ac?.actions?.damping ?? 22 } },
+                      exit: {},
+                    }}
+                  >
+                    <Button
+                      variant="ghost"
+                      icon={isExpanded ? "Read less" : "Read more"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsExpanded((v) => !v);
+                      }}
+                      aria-label={isExpanded ? "Read less" : "Read more"}
+                      style={{ width: "auto", padding: "4px 10px", fontSize: 10, letterSpacing: "0.03em" }}
+                    />
+                  </motion.div>
+                )}
                 {([
                   { icon: <Copy size={14} aria-hidden />, onClick: () => onCopy?.(value), label: "Copy" },
                   { icon: <Pencil size={14} aria-hidden />, onClick: () => onEdit?.(value), label: "Edit" },
