@@ -432,7 +432,3 @@
   pointer-events: auto;
   transition: background-color 0.15s ease;
 }
-
-.addCardFan:hover {
-  background-color: #FAFAFA;
-}

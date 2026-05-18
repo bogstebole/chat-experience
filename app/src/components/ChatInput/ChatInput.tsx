@@ -38,7 +38,7 @@ export interface InlineAnimConfig {
     slideInDelay: number;
   };
   actions: { staggerDelay: number; duration: number; stiffness: number; damping: number };
-  addCards: { staggerDelay: number; stiffness: number; damping: number; inputScale: number; inputBlur: number };
+  addCards: { staggerDelay: number; stiffness: number; damping: number; inputScale: number; inputBlur: number; angle1: number; angle2: number; angle3: number; hoverPull: number };
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
@@ -49,7 +49,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
   actions: { staggerDelay: 0.07, duration: 0.12, stiffness: 400, damping: 22 },
-  addCards: { staggerDelay: 0.06, stiffness: 380, damping: 26, inputScale: 0.95, inputBlur: 2 },
+  addCards: { staggerDelay: 0.04, stiffness: 350, damping: 25, inputScale: 0.95, inputBlur: 2, angle1: -26, angle2: -2, angle3: 22, hoverPull: 8 },
 };
 
 /**
@@ -703,8 +703,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       // Stagger entry: bottom (Add) enters first, then Design, then Connectors
                       const enterDelay = i * sd;
                       const exitDelay = (ADD_CARDS.length - 1 - i) * sd;
-                      // Angles: Add (-26deg, down), Design (-2deg, flat), Connectors (22deg, up)
-                      const angles = [-26, -2, 22];
+                      // Angles from DialKit
+                      const angles = [
+                        ac?.addCards?.angle1 ?? -26,
+                        ac?.addCards?.angle2 ?? -2,
+                        ac?.addCards?.angle3 ?? 22
+                      ];
+                      const hoverPull = ac?.addCards?.hoverPull ?? 8;
+
+                      const angleRad = angles[i] * (Math.PI / 180);
+                      const pullX = -hoverPull * Math.cos(angleRad);
+                      const pullY = -hoverPull * Math.sin(angleRad);
 
                       return (
                         <motion.button
@@ -716,13 +725,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             transformOrigin: "138px 21px",
                             zIndex: 3 - i
                           }}
-                          initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+                          initial={{ opacity: 0, scale: 0.5, rotate: 0, x: 0, y: 0 }}
                           animate={{
-                            opacity: 1, scale: 1, rotate: angles[i],
-                            transition: { type: "spring", stiffness: 350, damping: 25, delay: enterDelay },
+                            opacity: 1, scale: 1, rotate: angles[i], x: 0, y: 0,
+                            transition: { type: "spring", stiffness: ac?.addCards?.stiffness ?? 350, damping: ac?.addCards?.damping ?? 25, delay: enterDelay },
+                          }}
+                          whileHover={{
+                            x: pullX,
+                            y: pullY,
+                            transition: { type: "spring", stiffness: 400, damping: 25 }
                           }}
                           exit={{
-                            opacity: 0, scale: 0.5, rotate: 0,
+                            opacity: 0, scale: 0.5, rotate: 0, x: 0, y: 0,
                             transition: { duration: 0.15, delay: exitDelay, ease: "easeIn" }
                           }}
                           onClick={(e) => {

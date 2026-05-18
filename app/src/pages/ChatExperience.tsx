@@ -94,11 +94,15 @@ export function ChatExperience() {
       damping:      [22,   5,    60,   0.5  ],
     },
     addCards: {
-      staggerDelay: [0.06, 0,    0.3,  0.005],
-      stiffness:    [380,  50,   800,  10   ],
-      damping:      [26,   5,    60,   0.5  ],
+      staggerDelay: [0.04, 0,    0.3,  0.005],
+      stiffness:    [350,  50,   800,  10   ],
+      damping:      [25,   5,    60,   0.5  ],
       inputScale:   [0.95, 0.8,  1,    0.01 ],
       inputBlur:    [2,    0,    8,    0.5  ],
+      angle1:       [-26,  -90,  90,   1    ],
+      angle2:       [-2,   -90,  90,   1    ],
+      angle3:       [22,   -90,  90,   1    ],
+      hoverPull:    [8,    0,    40,   1    ],
     },
   }) as InlineAnimConfig;
 
