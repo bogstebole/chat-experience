@@ -93,6 +93,13 @@ export function ChatExperience() {
       stiffness:    [400,  50,   800,  10   ],
       damping:      [22,   5,    60,   0.5  ],
     },
+    addCards: {
+      staggerDelay: [0.06, 0,    0.3,  0.005],
+      stiffness:    [380,  50,   800,  10   ],
+      damping:      [26,   5,    60,   0.5  ],
+      inputScale:   [0.95, 0.8,  1,    0.01 ],
+      inputBlur:    [2,    0,    8,    0.5  ],
+    },
   }) as InlineAnimConfig;
 
   // Cleanup any in-flight streaming timer on unmount.

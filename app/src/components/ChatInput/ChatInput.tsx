@@ -17,7 +17,7 @@ function placeCursorAtEnd(el: HTMLElement) {
   sel?.addRange(range);
 }
 import { AnimatePresence, LayoutGroup, animate, motion, useAnimationControls, type Transition } from "motion/react";
-import { Copy, Pencil, Plus } from "lucide-react";
+import { Copy, Link2, Palette, Paperclip, Pencil, Plus, X } from "lucide-react";
 import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import styles from "./ChatInput.module.css";
@@ -38,6 +38,7 @@ export interface InlineAnimConfig {
     slideInDelay: number;
   };
   actions: { staggerDelay: number; duration: number; stiffness: number; damping: number };
+  addCards: { staggerDelay: number; stiffness: number; damping: number; inputScale: number; inputBlur: number };
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
@@ -48,6 +49,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
   actions: { staggerDelay: 0.07, duration: 0.12, stiffness: 400, damping: 22 },
+  addCards: { staggerDelay: 0.06, stiffness: 380, damping: 26, inputScale: 0.95, inputBlur: 2 },
 };
 
 /**
@@ -173,6 +175,12 @@ const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
 };
 
 
+const ADD_CARDS = [
+  { Icon: Paperclip, label: "Add" },
+  { Icon: Palette, label: "Design" },
+  { Icon: Link2, label: "Connectors" },
+] as const;
+
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
     {
@@ -203,6 +211,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const [showButtons, setShowButtons] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isOverflowing, setIsOverflowing] = useState(false);
+    const [isAddOpen, setIsAddOpen] = useState(false);
     const singleLineHeight = useRef(0);
     const expandedModeRef = useRef(false);
     const compactAvailWidthRef = useRef(0);
@@ -215,6 +224,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // without needing it as a dependency (avoids re-subscribing on every tweak).
     const animCfgRef = useRef(animationConfig);
     animCfgRef.current = animationConfig;
+    const isAddOpenRef = useRef(false);
+    isAddOpenRef.current = isAddOpen;
 
     useImperativeHandle(ref, () => ({
       focus: () => editorRef.current?.focus(),
@@ -352,6 +363,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       if (!isGlass) {
         setIsExpanded(false);
         setIsOverflowing(false);
+      } else {
+        setIsAddOpen(false);
       }
     }, [isGlass]);
 
@@ -453,7 +466,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
-          <motion.div className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`} layout transition={bubbleSpring}>
+          <motion.div
+            className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`}
+            layout
+            animate={{
+              scale: isAddOpen ? (ac?.addCards?.inputScale ?? 0.95) : 1,
+              filter: isAddOpen ? `blur(${ac?.addCards?.inputBlur ?? 2}px)` : "blur(0px)",
+            }}
+            transition={{
+              ...bubbleSpring,
+              filter: { type: "tween", duration: 0.2, ease: "easeOut" },
+            }}
+          >
             <motion.div
               className={`${styles.surface} ${isGlass ? styles.glass : ""} ${isRestingHovered ? styles.hovered : ""} ${pulsing ? styles.pulsed : ""}`}
               style={{
@@ -529,20 +553,21 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
                   }}
                 >
-                  {!isGlass && showButtons && (
+                  {!isGlass && showButtons && !isAddOpen && (
                     <motion.div
                       key="lead"
+                      layoutId={`${instanceId}-add-dismiss`}
                       initial={{ opacity: 0, scale: 0, width: 0, height: 0 }}
                       animate={{ opacity: 1, scale: 1, width: 28, height: 28 }}
-                      exit={{
-                        opacity: 0,
-                        scale: 0,
-                        width: 0,
-                        height: 0,
-                        transition: pendingExpansion.current
-                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
-                          : undefined
-                      }}
+                      exit={isAddOpenRef.current
+                        ? { opacity: 1, scale: 1, width: 28, height: 28, transition: { duration: 0 } }
+                        : {
+                          opacity: 0, scale: 0, width: 0, height: 0,
+                          transition: pendingExpansion.current
+                            ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
+                            : undefined
+                        }
+                      }
                       transition={{
                         type: "spring",
                         visualDuration: ac?.addButton?.visualDuration ?? 0.4,
@@ -557,9 +582,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         icon={<Plus size={14} aria-hidden />}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onAdd?.();
+                          setIsAddOpen(true);
                         }}
-                        aria-label="Add attachment"
+                        aria-label="Add"
                         title="Add"
                         style={{ flexShrink: 0, width: 28 }}
                       />
@@ -643,6 +668,57 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             </AnimatePresence>
           </motion.div>
 
+          {/* Add cards overlay — appears above the input when + is pressed.
+              Cards stagger right-to-left on enter; the + button FLIPs to the
+              X dismiss position via shared layoutId. */}
+          <AnimatePresence>
+            {isAddOpen && (
+              <motion.div
+                key="add-cards"
+                className={styles.addCardsRow}
+                exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              >
+                {ADD_CARDS.map(({ Icon, label }, i) => {
+                  const sd = ac?.addCards?.staggerDelay ?? 0.06;
+                  const enterDelay = (ADD_CARDS.length - 1 - i) * sd;
+                  return (
+                    <motion.button
+                      key={label}
+                      className={styles.addCard}
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{
+                        opacity: 1, scale: 1, y: 0,
+                        transition: { type: "spring", stiffness: ac?.addCards?.stiffness ?? 380, damping: ac?.addCards?.damping ?? 26, delay: enterDelay },
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsAddOpen(false);
+                        onAdd?.();
+                      }}
+                      aria-label={label}
+                    >
+                      <Icon size={18} aria-hidden />
+                      <span>{label}</span>
+                    </motion.button>
+                  );
+                })}
+                {/* FLIP target — the + button physically flies here */}
+                <motion.div
+                  layoutId={`${instanceId}-add-dismiss`}
+                  style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
+                >
+                  <Button
+                    variant="secondary"
+                    icon={<X size={14} aria-hidden />}
+                    onClick={(e) => { e.stopPropagation(); setIsAddOpen(false); }}
+                    aria-label="Close"
+                    style={{ width: 28 }}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Hover-revealed actions — only on a settled (resting) bubble.
             Animates from beneath; tracks the wrap's hover so cursor can
             move from bubble to actions without dismissing. */}
@@ -652,9 +728,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 key="actions"
                 className={styles.actionsRow}
                 variants={{
-                  hidden: { scale: 0.6, opacity: 0 },
+                  hidden: { scale: 0.85, opacity: 0 },
                   visible: { scale: 1, opacity: 1, transition: { stiffness: 460, damping: 38, staggerChildren: ac?.actions?.staggerDelay ?? 0.07 } },
-                  exit: { scale: 0.6, opacity: 0, transition: { duration: 0.12 } },
+                  exit: { scale: 0.85, opacity: 0, transition: { duration: 0.12 } },
                 }}
                 initial="hidden"
                 animate="visible"

@@ -14,12 +14,10 @@
   top: 0;
   z-index: 5;
   padding: 32px 0 20px;
-  background: linear-gradient(
-    to bottom,
-    var(--bg) 0%,
-    var(--bg) 70%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(to bottom,
+      var(--bg) 0%,
+      var(--bg) 70%,
+      rgba(255, 255, 255, 0) 100%);
 }
 
 .chatFeed {
@@ -30,7 +28,7 @@
   padding-bottom: 99vh;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 48px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -42,7 +40,7 @@
 .chatTurn {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 48px;
   scroll-margin-top: 16px;
 }
 
@@ -76,11 +74,9 @@
   height: 180px;
   pointer-events: none;
   z-index: 5;
-  background: linear-gradient(to top, var(--bg) 10%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(to top, var(--bg) 10%, rgba(255, 255, 255, 0) 100%);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   mask-image: linear-gradient(to top, black 50%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, black 50%, transparent 100%);
 }
-
-

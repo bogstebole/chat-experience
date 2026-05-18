@@ -382,3 +382,68 @@
   height: 14px;
   stroke-width: 1.6;
 }
+
+
+/* ─────────────────────────────────────────────
+   Add cards overlay
+   ───────────────────────────────────────────── */
+
+.addCardsRow {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  z-index: 1;
+}
+
+/* Same visual language as .primary Button — white glassy gradient,
+   subtle elevation shadow, white outline ring — but square layout. */
+.addCard {
+  all: unset;
+  box-sizing: border-box;
+  flex: 1;
+  height: 74px;
+  border-radius: 14px;
+  background: linear-gradient(315deg, rgba(255, 255, 255, 0.26) 21%, #ffffff 83%);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.20),
+    0 2px 3px rgba(0, 0, 0, 0.10);
+  outline: 0.5px solid #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(17, 17, 17, 0.72);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    box-shadow 160ms ease,
+    transform 120ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.addCard:hover {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.20),
+    0 5px 4px rgba(0, 0, 0, 0.10);
+}
+
+.addCard:active {
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.20),
+    0 1px 1px rgba(0, 0, 0, 0.10);
+  transform: scale(0.94);
+  transition-duration: 70ms;
+}
+
+.addCard:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
+  outline-offset: 2px;
+}
