@@ -468,7 +468,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`}
             layout
             animate={{
-              scale: isAddOpen ? (ac?.addCards?.inputScale ?? 0.95) : 1,
               filter: isAddOpen ? `blur(${ac?.addCards?.inputBlur ?? 2}px)` : "blur(0px)",
             }}
             style={{
@@ -593,7 +592,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                               }}
                               aria-label="Add"
                               title="Add"
-                              style={{ width: "100%", height: "100%", backgroundColor: "rgba(0, 0, 0, 0.05)", color: "#111" }}
+                              style={{ width: "100%", height: "100%" }}
                             />
                           </motion.div>
                         )}
