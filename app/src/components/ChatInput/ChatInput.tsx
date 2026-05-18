@@ -224,8 +224,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     // without needing it as a dependency (avoids re-subscribing on every tweak).
     const animCfgRef = useRef(animationConfig);
     animCfgRef.current = animationConfig;
-    const isAddOpenRef = useRef(false);
-    isAddOpenRef.current = isAddOpen;
 
     useImperativeHandle(ref, () => ({
       focus: () => editorRef.current?.focus(),
@@ -473,6 +471,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               scale: isAddOpen ? (ac?.addCards?.inputScale ?? 0.95) : 1,
               filter: isAddOpen ? `blur(${ac?.addCards?.inputBlur ?? 2}px)` : "blur(0px)",
             }}
+            style={{
+              pointerEvents: isAddOpen ? "none" : "auto"
+            }}
             transition={{
               ...bubbleSpring,
               filter: { type: "tween", duration: 0.2, ease: "easeOut" },
@@ -553,21 +554,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
                   }}
                 >
-                  {!isGlass && showButtons && !isAddOpen && (
+                  {!isGlass && showButtons && (
                     <motion.div
                       key="lead"
-                      layoutId={`${instanceId}-add-dismiss`}
                       initial={{ opacity: 0, scale: 0, width: 0, height: 0 }}
                       animate={{ opacity: 1, scale: 1, width: 28, height: 28 }}
-                      exit={isAddOpenRef.current
-                        ? { opacity: 1, scale: 1, width: 28, height: 28, transition: { duration: 0 } }
-                        : {
-                          opacity: 0, scale: 0, width: 0, height: 0,
-                          transition: pendingExpansion.current
-                            ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
-                            : undefined
-                        }
-                      }
+                      exit={{
+                        opacity: 0, scale: 0, width: 0, height: 0,
+                        transition: pendingExpansion.current
+                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
+                          : undefined
+                      }}
                       transition={{
                         type: "spring",
                         visualDuration: ac?.addButton?.visualDuration ?? 0.4,
@@ -575,19 +572,32 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         delay: ac?.button?.staggerEnter ?? 0.055,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative" }}
                     >
-                      <Button
-                        variant="secondary"
-                        icon={<Plus size={14} aria-hidden />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsAddOpen(true);
-                        }}
-                        aria-label="Add"
-                        title="Add"
-                        style={{ flexShrink: 0, width: 28 }}
-                      />
+                      <AnimatePresence>
+                        {!isAddOpen && (
+                          <motion.div
+                            key="plus-btn"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={{ duration: 0.12, ease: "easeOut" }}
+                            style={{ position: "absolute", inset: 0 }}
+                          >
+                            <Button
+                              variant="ghost"
+                              icon={<Plus size={14} aria-hidden />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsAddOpen(true);
+                              }}
+                              aria-label="Add"
+                              title="Add"
+                              style={{ width: "100%", height: "100%", backgroundColor: "rgba(0, 0, 0, 0.05)", color: "#111" }}
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   )}
                   {showInlineGlyph && showButtons && (
@@ -668,54 +678,101 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             </AnimatePresence>
           </motion.div>
 
-          {/* Add cards overlay — appears above the input when + is pressed.
-              Cards stagger right-to-left on enter; the + button FLIPs to the
-              X dismiss position via shared layoutId. */}
+          {/* Add cards overlay — appears visually over the input,
+              button remains in the same layout position unblurred using FLIP. */}
           <AnimatePresence>
             {isAddOpen && (
-              <motion.div
-                key="add-cards"
-                className={styles.addCardsRow}
-                exit={{ opacity: 0, transition: { duration: 0.12 } }}
-              >
-                {ADD_CARDS.map(({ Icon, label }, i) => {
-                  const sd = ac?.addCards?.staggerDelay ?? 0.06;
-                  const enterDelay = (ADD_CARDS.length - 1 - i) * sd;
-                  return (
-                    <motion.button
-                      key={label}
-                      className={styles.addCard}
-                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                      animate={{
-                        opacity: 1, scale: 1, y: 0,
-                        transition: { type: "spring", stiffness: ac?.addCards?.stiffness ?? 380, damping: ac?.addCards?.damping ?? 26, delay: enterDelay },
-                      }}
+              <>
+                <motion.div
+                  key="backdrop"
+                  className={styles.addBackdrop}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAddOpen(false);
+                  }}
+                />
+                <motion.div
+                  key="add-overlay"
+                  className={styles.addOverlay}
+                >
+                  <div className={styles.addCardsContainer}>
+                    {ADD_CARDS.map(({ Icon, label }, i) => {
+                      const sd = ac?.addCards?.staggerDelay ?? 0.04;
+                      // Stagger entry: bottom (Add) enters first, then Design, then Connectors
+                      const enterDelay = i * sd;
+                      const exitDelay = (ADD_CARDS.length - 1 - i) * sd;
+                      // Angles: Add (-26deg, down), Design (-2deg, flat), Connectors (22deg, up)
+                      const angles = [-26, -2, 22];
+
+                      return (
+                        <motion.button
+                          key={label}
+                          className={styles.addCardFan}
+                          style={{
+                            right: showInlineGlyph && showButtons ? 36 : 0,
+                            bottom: 1,
+                            transformOrigin: "138px 21px",
+                            zIndex: 3 - i
+                          }}
+                          initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+                          animate={{
+                            opacity: 1, scale: 1, rotate: angles[i],
+                            transition: { type: "spring", stiffness: 350, damping: 25, delay: enterDelay },
+                          }}
+                          exit={{
+                            opacity: 0, scale: 0.5, rotate: 0,
+                            transition: { duration: 0.15, delay: exitDelay, ease: "easeIn" }
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsAddOpen(false);
+                            onAdd?.();
+                          }}
+                          aria-label={label}
+                        >
+                          <Icon size={16} aria-hidden />
+                          <span>{label}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  <motion.div
+                    key="x-btn-wrap"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.12, ease: "easeOut" }}
+                    style={{
+                      position: "absolute",
+                      right: showInlineGlyph && showButtons ? 44 : 8,
+                      bottom: 8,
+                      width: 28,
+                      height: 28,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      pointerEvents: "auto",
+                      zIndex: 10
+                    }}
+                  >
+                    <Button
+                      variant="ghost"
+                      icon={<X size={14} aria-hidden />}
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsAddOpen(false);
-                        onAdd?.();
                       }}
-                      aria-label={label}
-                    >
-                      <Icon size={18} aria-hidden />
-                      <span>{label}</span>
-                    </motion.button>
-                  );
-                })}
-                {/* FLIP target — the + button physically flies here */}
-                <motion.div
-                  layoutId={`${instanceId}-add-dismiss`}
-                  style={{ display: "flex", alignItems: "center", flexShrink: 0 }}
-                >
-                  <Button
-                    variant="secondary"
-                    icon={<X size={14} aria-hidden />}
-                    onClick={(e) => { e.stopPropagation(); setIsAddOpen(false); }}
-                    aria-label="Close"
-                    style={{ width: 28 }}
-                  />
+                      aria-label="Close"
+                      title="Close"
+                      style={{ flexShrink: 0, width: 28, backgroundColor: "rgba(0, 0, 0, 0.05)", color: "#111" }}
+                    />
+                  </motion.div>
                 </motion.div>
-              </motion.div>
+              </>
             )}
           </AnimatePresence>
 
