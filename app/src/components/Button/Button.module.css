@@ -16,7 +16,8 @@
   border-radius: 999px;
   padding: 4px;
   cursor: pointer;
-  color: #111;
+  color: var(--ink);
+  --glass-gradient: linear-gradient(315deg, rgba(255, 255, 255, 0.26) 21%, #ffffff 83%);
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -33,7 +34,7 @@
 
 /* ── Primary: always glassy ── */
 .primary {
-  background: linear-gradient(315deg, rgba(255, 255, 255, 0.26) 21%, #ffffff 83%);
+  background: var(--glass-gradient);
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.20),
     0 2px 3px rgba(0, 0, 0, 0.10);
@@ -61,7 +62,7 @@
 }
 
 .secondary:hover {
-  background: linear-gradient(315deg, rgba(255, 255, 255, 0.26) 21%, #ffffff 83%);
+  background: var(--glass-gradient);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.20),
     0 5px 4px rgba(0, 0, 0, 0.10);
@@ -69,7 +70,7 @@
 }
 
 .secondary:active {
-  background: linear-gradient(315deg, rgba(255, 255, 255, 0.26) 21%, #ffffff 83%);
+  background: var(--glass-gradient);
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.20),
     0 1px 1px rgba(0, 0, 0, 0.10);
@@ -85,13 +86,13 @@
 }
 
 .ghost:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--ink, #111);
+  background: var(--surface-active);
+  color: var(--ink);
 }
 
 .ghost:active {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--ink, #111);
+  background: var(--surface-press);
+  color: var(--ink);
   transform: scale(0.92);
   transition-duration: 70ms;
 }

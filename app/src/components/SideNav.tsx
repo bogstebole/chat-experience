@@ -10,10 +10,6 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { id: "chat", label: "Chat", hint: "real conversation" },
-  // { id: "original", label: "Original", hint: "current build" },
-  // { id: "absorb", label: "A — Absorb", hint: "button into bubble" },
-  // { id: "mass", label: "B — Heavy bubble", hint: "differentiated mass" },
-  // { id: "baton", label: "C — Baton pass", hint: "fluid hand-off" },
   { id: "inline-saved", label: "D — Inline (ref)", hint: "saved baseline" },
   { id: "inline", label: "D — Inline (wip)", hint: "active experiment" },
 ];

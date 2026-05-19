@@ -5,6 +5,10 @@
   --ink: #111111;
   --ink-soft: rgba(17, 17, 17, 0.6);
   --ink-faint: rgba(17, 17, 17, 0.4);
+  --surface-hover: rgba(0, 0, 0, 0.03);
+  --surface-active: rgba(0, 0, 0, 0.05);
+  --surface-kbd: rgba(0, 0, 0, 0.04);
+  --surface-press: rgba(0, 0, 0, 0.08);
 
   font-family: var(--font-sans);
   color: var(--ink);

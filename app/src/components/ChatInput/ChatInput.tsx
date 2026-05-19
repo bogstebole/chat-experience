@@ -250,9 +250,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const bubbleSpring: Transition = isInline && ac
       ? { type: "spring", stiffness: ac.bubble.stiffness, damping: ac.bubble.damping, mass: ac.bubble.mass }
       : cfg.bubbleSpring;
-    const buttonSpring: Transition = isInline && ac
-      ? { type: "spring", stiffness: ac.button.stiffness, damping: ac.button.damping, mass: ac.button.mass }
-      : spring;
 
     // Sync fade mask on the editor wrapper based on scroll position
     const updateFade = useCallback(() => {

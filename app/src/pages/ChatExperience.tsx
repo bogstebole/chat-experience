@@ -169,7 +169,8 @@ export function ChatExperience() {
     );
     // Small delay so the resting morph plays cleanly before the new input
     // pops in below.
-    window.setTimeout(() => {
+    streamingRef.current = window.setTimeout(() => {
+      streamingRef.current = null;
       setTurns((t) => [...t, newTurn()]);
     }, 320);
   };

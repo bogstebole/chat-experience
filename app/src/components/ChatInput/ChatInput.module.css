@@ -296,15 +296,6 @@
   display: block;
 }
 
-/* Stop pictogram — a square that morphs out of the arrow */
-.stopGlyph {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  background: #f3f3f3;
-}
-
-
 /* ─────────────────────────────────────────────
    Bubble wrapper + hover-revealed actions row
    ───────────────────────────────────────────── */
@@ -343,46 +334,6 @@
   gap: 4px;
   padding: 0 8px;
 }
-
-.actionBtn {
-  all: unset;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  color: var(--ink-soft);
-  transition:
-    background 160ms ease,
-    color 160ms ease,
-    transform 140ms cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.actionBtn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--ink);
-}
-
-.actionBtn:active {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--ink);
-  transform: scale(0.92);
-  transition-duration: 70ms;
-}
-
-.actionBtn:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.2);
-  outline-offset: 2px;
-}
-
-.actionBtn svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 1.6;
-}
-
 
 /* ─────────────────────────────────────────────
    Add cards overlay
