@@ -17,9 +17,12 @@ function placeCursorAtEnd(el: HTMLElement) {
   sel?.addRange(range);
 }
 import { AnimatePresence, LayoutGroup, animate, motion, useAnimationControls, type Transition } from "motion/react";
-import { Copy, Link2, Palette, Paperclip, Pencil, Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
+import { TrailingActionButton } from "./TrailingActionButton";
+import { HoverActionsRow } from "./HoverActionsRow";
+import { AddCardsOverlay } from "./AddCardsOverlay";
 import styles from "./ChatInput.module.css";
 
 
@@ -110,12 +113,12 @@ const spring: Transition = {
  *   - actionExit:   the exit transition + animate target for the trailing
  *     action button (send / stop).
  */
-type ActionExit = {
+export type ActionExit = {
   exit: Record<string, number | string>;
   transition: Transition;
 };
 
-interface VariantConfig {
+export interface VariantConfig {
   bubbleSpring: Transition;
   actionExit: ActionExit;
 }
@@ -174,12 +177,6 @@ const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
   },
 };
 
-
-const ADD_CARDS = [
-  { Icon: Paperclip, label: "Add" },
-  { Icon: Palette, label: "Design" },
-  { Icon: Link2, label: "Connectors" },
-] as const;
 
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
@@ -645,202 +642,40 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             </motion.div>
 
             {/* Trailing action button — single morphing element across
-              send (typing) <-> stop (responding). Same layoutId so the
-              circle persists; only its glyph swaps. Hidden in the inline
-              variant which renders the glyph inside the pill instead. */}
-            <AnimatePresence initial={false}>
-              {!isInline && (showSend || showStop) && (
-                <motion.button
-                  key="action"
-                  layout
-                  layoutId={`${instanceId}-action`}
-                  type="button"
-                  className={styles.action}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={cfg.actionExit.exit}
-                  transition={cfg.actionExit.transition}
-                  onClick={() => {
-                    if (showStop) onStop?.();
-                    else onSubmit(value);
-                  }}
-                  aria-label={showStop ? "Stop response" : "Send message"}
-                >
-                  {/* Single morphing path: send (↵) → L → U → filled square.
-                    One element, one continuous tween — no fade-swap. */}
-                  <MorphGlyph mode={showStop ? "stop" : "send"} />
-                </motion.button>
-              )}
-            </AnimatePresence>
+              send (typing) <-> stop (responding). Hidden in inline variant. */}
+            <TrailingActionButton
+              isInline={isInline}
+              showSend={showSend}
+              showStop={showStop}
+              instanceId={instanceId}
+              actionExit={cfg.actionExit}
+              onStop={onStop}
+              onSubmit={onSubmit}
+              value={value}
+            />
           </motion.div>
 
-          {/* Add cards overlay — appears visually over the input,
-              button remains in the same layout position unblurred using FLIP. */}
-          <AnimatePresence>
-            {isAddOpen && (
-              <>
-                <motion.div
-                  key="backdrop"
-                  className={styles.addBackdrop}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsAddOpen(false);
-                  }}
-                />
-                <motion.div
-                  key="add-overlay"
-                  className={styles.addOverlay}
-                >
-                  <div className={styles.addCardsContainer}>
-                    {ADD_CARDS.map(({ Icon, label }, i) => {
-                      const sd = ac?.addCards?.staggerDelay ?? 0.04;
-                      // Stagger entry: bottom (Add) enters first, then Design, then Connectors
-                      const enterDelay = i * sd;
-                      const exitDelay = (ADD_CARDS.length - 1 - i) * sd;
-                      // Angles from DialKit
-                      const angles = [
-                        ac?.addCards?.angle1 ?? -26,
-                        ac?.addCards?.angle2 ?? -2,
-                        ac?.addCards?.angle3 ?? 22
-                      ];
-                      const hoverPull = ac?.addCards?.hoverPull ?? 8;
+          {/* Add cards overlay — fan menu over the input. */}
+          <AddCardsOverlay
+            isAddOpen={isAddOpen}
+            setIsAddOpen={setIsAddOpen}
+            onAdd={onAdd}
+            showInlineGlyph={showInlineGlyph}
+            showButtons={showButtons}
+            ac={ac}
+          />
 
-                      return (
-                        <motion.button
-                          key={label}
-                          className={styles.addCardFan}
-                          style={{
-                            right: showInlineGlyph && showButtons ? 36 : 0,
-                            bottom: 1,
-                            transformOrigin: "calc(100% - 22px) 50%",
-                            zIndex: 3 - i
-                          }}
-                          initial={{ opacity: 0, scale: 0.95, rotate: 0, width: 160 }}
-                          animate={{
-                            opacity: 1, scale: 1, rotate: angles[i], width: 160,
-                            transition: { 
-                              type: "spring", stiffness: ac?.addCards?.stiffness ?? 350, damping: ac?.addCards?.damping ?? 25, delay: enterDelay,
-                              opacity: { duration: 0.1, delay: enterDelay }
-                            },
-                          }}
-                          whileHover={{
-                            width: 160 + hoverPull,
-                            transition: { type: "spring", stiffness: 400, damping: 25 }
-                          }}
-                          exit={{
-                            opacity: 0, scale: 0.5, rotate: 0, width: 160,
-                            transition: { duration: 0.15, delay: exitDelay, ease: "easeIn" }
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsAddOpen(false);
-                            onAdd?.();
-                          }}
-                          aria-label={label}
-                        >
-                          <Icon size={16} aria-hidden />
-                          <span>{label}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-
-                  <motion.div
-                    key="x-btn-wrap"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.12, ease: "easeOut" }}
-                    style={{
-                      position: "absolute",
-                      right: showInlineGlyph && showButtons ? 44 : 8,
-                      bottom: 8,
-                      width: 28,
-                      height: 28,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      pointerEvents: "auto",
-                      zIndex: 10
-                    }}
-                  >
-                    <Button
-                      variant="ghost"
-                      icon={<X size={14} aria-hidden />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsAddOpen(false);
-                      }}
-                      aria-label="Close"
-                      title="Close"
-                      style={{ flexShrink: 0, width: 28, backgroundColor: "rgba(0, 0, 0, 0.05)", color: "#111" }}
-                    />
-                  </motion.div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-
-          {/* Hover-revealed actions — only on a settled (resting) bubble.
-            Animates from beneath; tracks the wrap's hover so cursor can
-            move from bubble to actions without dismissing. */}
-          <AnimatePresence initial={false}>
-            {showActions && (
-              <motion.div
-                key="actions"
-                className={styles.actionsRow}
-                variants={{
-                  hidden: { scale: 0.85, opacity: 0 },
-                  visible: { scale: 1, opacity: 1, transition: { stiffness: 460, damping: 38, staggerChildren: ac?.actions?.staggerDelay ?? 0.07 } },
-                  exit: { scale: 0.85, opacity: 0, transition: { duration: 0.12 } },
-                }}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                {showReadMore && (
-                  <motion.div
-                    key="read-more"
-                    style={{ marginRight: "auto" }}
-                    variants={{
-                      hidden: { opacity: 0, scale: 0.8 },
-                      visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: ac?.actions?.stiffness ?? 400, damping: ac?.actions?.damping ?? 22 } },
-                      exit: {},
-                    }}
-                  >
-                    <Button
-                      variant="ghost"
-                      icon={isExpanded ? "Read less" : "Read more"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsExpanded((v) => !v);
-                      }}
-                      aria-label={isExpanded ? "Read less" : "Read more"}
-                      style={{ width: "auto", padding: "4px 10px", fontSize: 10, letterSpacing: "0.03em" }}
-                    />
-                  </motion.div>
-                )}
-                {([
-                  { icon: <Copy size={14} aria-hidden />, onClick: () => onCopy?.(value), label: "Copy" },
-                  { icon: <Pencil size={14} aria-hidden />, onClick: () => onEdit?.(value), label: "Edit" },
-                ] as const).map(({ icon, onClick, label }) => (
-                  <motion.div
-                    key={label}
-                    variants={{
-                      hidden: { opacity: 0, scale: 0.8 },
-                      visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: ac?.actions?.stiffness ?? 400, damping: ac?.actions?.damping ?? 22 } },
-                      exit: {},
-                    }}
-                  >
-                    <Button variant="ghost" icon={icon} onClick={onClick} aria-label={label} title={label} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Hover-revealed actions — copy/edit/read-more on resting bubble. */}
+          <HoverActionsRow
+            showActions={showActions}
+            showReadMore={showReadMore}
+            isExpanded={isExpanded}
+            setIsExpanded={setIsExpanded}
+            onCopy={onCopy}
+            onEdit={onEdit}
+            value={value}
+            ac={ac}
+          />
         </div>
       </LayoutGroup>
     );
