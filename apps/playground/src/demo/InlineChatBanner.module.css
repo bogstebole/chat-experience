@@ -1,0 +1,29 @@
+.columns {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 8px 20px;
+  gap: 4px;
+}
+
+.divider {
+  width: 1px;
+  background-color: #dddddd;
+  flex-shrink: 0;
+  margin: 8px 0;
+}
+
+@media (max-width: 540px) {
+  .columns {
+    flex-direction: column;
+    padding: 4px 20px;
+  }
+
+  .divider {
+    width: auto;
+    height: 1px;
+    margin: 0 8px;
+  }
+}

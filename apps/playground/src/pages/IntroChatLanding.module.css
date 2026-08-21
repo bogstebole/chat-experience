@@ -1,0 +1,154 @@
+.page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-page);
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+  width: 100%;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.infoContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 540px;
+}
+
+.introContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.nameContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.welcome {
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: -0.02em;
+  color: #000000;
+}
+
+.title {
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.02em;
+  color: #000000;
+  text-align: center;
+}
+
+.version {
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: -0.02em;
+  color: #000000b3;
+}
+
+.description {
+  font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  color: #000000cc;
+  text-align: center;
+  width: 100%;
+  margin: 0;
+}
+
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.bannerWrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.buttonWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobileNotice {
+  display: none;
+}
+
+.mobileButton {
+  display: none;
+}
+
+@media (max-width: 540px) {
+  .bannerWrapper {
+    display: none;
+  }
+
+  .buttonWrapper {
+    display: none;
+  }
+
+  .mobileNotice {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 24px;
+    padding: 12px 8px 8px;
+    width: 100%;
+    max-width: 540px;
+    box-sizing: border-box;
+  }
+
+  .mobileButton {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+
+.fyi {
+  font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 15px;
+  color: #00000080;
+  text-align: center;
+  margin: 0;
+}

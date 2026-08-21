@@ -18,3 +18,7 @@ dist-ssr
 
 # Tooling caches
 .playwright-cli
+
+# Kit build artefacts
+packages/*/dist
+*.tsbuildinfo

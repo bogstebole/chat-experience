@@ -1,0 +1,32 @@
+/* ─────────────────────────────────────────────
+   inline-chat-kit — host contract defaults
+
+   Everything the kit reads but does not define itself lives here, so the
+   components render correctly with zero setup. Values sit in a named cascade
+   layer: any unlayered rule in the host app overrides them automatically,
+   regardless of import order.
+   ───────────────────────────────────────────── */
+
+@layer inline-chat-kit {
+  :root {
+    /* Typography — override with your own font stacks (or the CSS variables
+       a framework font loader hands you, e.g. next/font). */
+    --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+    --font-geist-sans: "Geist", system-ui, -apple-system, sans-serif;
+    --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+    --font-jetbrains-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+    /* Ink — text colours, strongest to faintest */
+    --ink: #111111;
+    --ink-soft: rgba(17, 17, 17, 0.6);
+    --ink-faint: rgba(17, 17, 17, 0.4);
+
+    /* Interactive surfaces — hover, active and pressed backgrounds */
+    --surface-hover: rgba(17, 17, 17, 0.04);
+    --surface-active: rgba(17, 17, 17, 0.06);
+    --surface-press: rgba(17, 17, 17, 0.1);
+
+    /* Text on glass surfaces, which sit over unpredictable backdrops */
+    --color-text-glass: rgba(0, 0, 0, 0.72);
+  }
+}

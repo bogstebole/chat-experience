@@ -1,0 +1,18 @@
+{
+  "name": "ai-chat-experience",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/playground",
+    "build": "npm run build --workspace packages/inline-chat-kit && npm run build --workspace apps/playground",
+    "build:kit": "npm run build --workspace packages/inline-chat-kit",
+    "dev:kit": "npm run dev --workspace packages/inline-chat-kit",
+    "lint": "npm run lint --workspace apps/playground",
+    "pack:kit": "npm run build:kit && npm pack --workspace packages/inline-chat-kit --pack-destination packages/inline-chat-kit && mv packages/inline-chat-kit/inline-chat-kit-*.tgz packages/inline-chat-kit/inline-chat-kit.tgz"
+  }
+}
