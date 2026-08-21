@@ -23,7 +23,6 @@ import { Plus, X } from "lucide-react";
 import { Button } from "../Button/Button";
 import GlassButton from "../GlassButton/GlassButton";
 import { MorphGlyph } from "./MorphGlyph";
-import { TrailingActionButton } from "./TrailingActionButton";
 import { HoverActionsRow } from "./HoverActionsRow";
 import { AddCardsOverlay } from "./AddCardsOverlay";
 import styles from "./ChatInput.module.css";
@@ -58,8 +57,6 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   addCards: { staggerDelay: 0.06, stiffness: 800, damping: 41, inputScale: 0.95, inputBlur: 2, angle1: 0, angle2: -25, angle3: -50, hoverPull: 12 },
 };
 
-export type ChatInputVariant = "default" | "absorb" | "mass" | "baton" | "inline";
-
 export interface ChatInputHandle {
   focus: (options?: FocusOptions) => void;
   setValue: (value: string) => void;
@@ -78,66 +75,17 @@ export interface ChatInputProps {
   onCancelEdit?: () => void;
   isEditing?: boolean;
   placeholder?: string;
-  variant?: ChatInputVariant;
   animationConfig?: InlineAnimConfig;
   style?: React.CSSProperties;
 }
 
-const spring: Transition = {
+/** Bubble spring used when no animationConfig override is supplied. */
+const defaultBubbleSpring: Transition = {
   type: "spring",
-  stiffness: 380,
-  damping: 34,
-  mass: 0.9,
+  stiffness: 600,
+  damping: 21.5,
+  mass: 0.2,
 };
-
-export type ActionExit = {
-  exit: Record<string, number | string>;
-  transition: Transition;
-};
-
-export interface VariantConfig {
-  bubbleSpring: Transition;
-  actionExit: ActionExit;
-}
-
-const VARIANTS: Record<ChatInputVariant, VariantConfig> = {
-  default: {
-    bubbleSpring: spring,
-    actionExit: {
-      exit: { opacity: 0, scale: 0.6, width: 0, marginLeft: -4 },
-      transition: spring,
-    },
-  },
-  absorb: {
-    bubbleSpring: { type: "spring", stiffness: 260, damping: 26, mass: 1.2 },
-    actionExit: {
-      exit: { opacity: 0, scale: 0, x: -28, width: 0, marginLeft: -4 },
-      transition: { type: "spring", stiffness: 420, damping: 30, mass: 0.7 },
-    },
-  },
-  mass: {
-    bubbleSpring: { type: "spring", stiffness: 180, damping: 14, mass: 1.6 },
-    actionExit: {
-      exit: { opacity: 0, scale: 0.5, width: 0, marginLeft: -4 },
-      transition: { type: "spring", stiffness: 520, damping: 32, mass: 0.55 },
-    },
-  },
-  baton: {
-    bubbleSpring: { type: "spring", stiffness: 240, damping: 22, mass: 1.3 },
-    actionExit: {
-      exit: { opacity: 0, scale: 0, x: -42, width: 0, marginLeft: -4 },
-      transition: { type: "spring", stiffness: 380, damping: 26, mass: 0.8 },
-    },
-  },
-  inline: {
-    bubbleSpring: { type: "spring", stiffness: 600, damping: 21.5, mass: 0.2 },
-    actionExit: {
-      exit: { opacity: 0, scale: 0.6 },
-      transition: spring,
-    },
-  },
-};
-
 
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
@@ -153,7 +101,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onCancelEdit,
       isEditing = false,
       placeholder = "Placeholder text...",
-      variant = "default",
       animationConfig,
       style,
     },
@@ -180,7 +127,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const buttonsTimerRef = useRef<number | null>(null);
     const surfaceControls = useAnimationControls();
     const prevState = useRef(state);
-    const cfg = VARIANTS[variant];
     const animCfgRef = useRef(animationConfig);
     animCfgRef.current = animationConfig;
 
@@ -213,14 +159,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const showStop = state === "responding";
     const isRestingHovered = state === "resting" && hovered;
     const showActions = isRestingHovered;
-    const isInline = variant === "inline";
-    const showReadMore = isInline && state === "resting" && isOverflowing;
-    const showInlineGlyph = isInline && (showSend || showStop);
+    const showReadMore = state === "resting" && isOverflowing;
+    const showInlineGlyph = showSend || showStop;
 
     const ac = animationConfig;
-    const bubbleSpring: Transition = isInline && ac
+    const bubbleSpring: Transition = ac
       ? { type: "spring", stiffness: ac.bubble.stiffness, damping: ac.bubble.damping, mass: ac.bubble.mass }
-      : cfg.bubbleSpring;
+      : defaultBubbleSpring;
 
     const updateFade = useCallback(() => {
       const wrap = editorWrapRef.current;
@@ -348,28 +293,19 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         }
       });
 
-      if (variant === "mass" || variant === "baton" || variant === "inline") {
-        setPulsing(true);
-        if (variant === "inline") {
-          const ac = animCfgRef.current;
-          const scaleX = ac?.ripple?.scaleX ?? 1.018;
-          const duration = ac?.ripple?.duration ?? 0.38;
-          surfaceControls.start({
-            scaleX: [1, scaleX, 1],
-            transition: { duration, times: [0, 0.4, 1], ease: [0.25, 1, 0.5, 1] },
-          });
-        }
-        const pulseDuration = variant === "inline" ? (animCfgRef.current?.ripple?.pulseDuration ?? 260) : 260;
-        const id = window.setTimeout(() => setPulsing(false), pulseDuration);
-        return () => clearTimeout(id);
-      }
-      if (variant === "absorb") {
-        surfaceControls.start({
-          scaleX: [1, 1.015, 1],
-          transition: { duration: 0.42, times: [0, 0.45, 1], ease: [0.25, 1, 0.5, 1] },
-        });
-      }
-    }, [state, variant, surfaceControls, updateFade]);
+      setPulsing(true);
+      const ac = animCfgRef.current;
+      surfaceControls.start({
+        scaleX: [1, ac?.ripple?.scaleX ?? 1.018, 1],
+        transition: {
+          duration: ac?.ripple?.duration ?? 0.38,
+          times: [0, 0.4, 1],
+          ease: [0.25, 1, 0.5, 1],
+        },
+      });
+      const id = window.setTimeout(() => setPulsing(false), ac?.ripple?.pulseDuration ?? 260);
+      return () => clearTimeout(id);
+    }, [state, surfaceControls, updateFade]);
 
     const handleInput = useCallback(() => {
       const el = editorRef.current;
@@ -668,16 +604,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               </div>
             </motion.div>
 
-            <TrailingActionButton
-              isInline={isInline}
-              showSend={showSend}
-              showStop={showStop}
-              instanceId={instanceId}
-              actionExit={cfg.actionExit}
-              onStop={onStop}
-              onSubmit={onSubmit}
-              value={value}
-            />
           </motion.div>
 
           <AddCardsOverlay

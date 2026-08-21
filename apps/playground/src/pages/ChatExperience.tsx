@@ -431,13 +431,12 @@ export function ChatExperience() {
                         onEdit={() => handleEdit(turn.id)}
                         onCancelEdit={() => handleCancelEdit(turn.id)}
                         isEditing={turn.ai.length > 0 && turn.state === "typing"}
-                        variant="inline"
                         animationConfig={animConfig}
                         placeholder="Ask me about particle physics…"
                       />
                     </div>
                     {turn.ai && (
-                      <p className="aiText">
+                      <div className="aiText">
                         <TextHighlighter
                           text={turn.ai}
                           selectionMode={selectionMode}
@@ -450,7 +449,7 @@ export function ChatExperience() {
                             setActiveReply({ text, rect });
                           }}
                         />
-                      </p>
+                      </div>
                     )}
                   </motion.article>
                 );

@@ -370,7 +370,6 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
                       onStop={() => handleThreadStop(turn.id)}
                       onCopy={() => navigator.clipboard.writeText(turn.ai)}
                       onEdit={() => updateThreadTurn(turn.id, { state: "typing" })}
-                      variant="inline"
                       animationConfig={animConfig}
                       placeholder="Ask me about this text..."
                       style={isInputMode ? { width: "100%", maxWidth: "100%" } : {}}

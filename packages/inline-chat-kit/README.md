@@ -41,7 +41,6 @@ function Composer() {
         setState("resting");
       }}
       onStop={() => setState("resting")}
-      variant="inline"
       placeholder="Ask me anything…"
     />
   );
@@ -96,6 +95,10 @@ Wraps streamed text and lets the reader mark it up.
 | `selectionMode` | `"marker" \| "precise"` | Freeform drawn marker, or native char-level selection |
 | `onHighlightComplete` | `(text: string) => void` | Fires when a highlight is drawn |
 | `onReplyInThread` | `(text: string, rect: DOMRect) => void` | Reader chose "reply in thread" |
+
+It renders block-level elements for the marker overlay, so give it a `<div>`
+wrapper, not a `<p>` — a `<div>` inside a `<p>` is invalid HTML and trips a
+hydration mismatch under SSR.
 
 ### `<ReplyThreadPopup>`
 

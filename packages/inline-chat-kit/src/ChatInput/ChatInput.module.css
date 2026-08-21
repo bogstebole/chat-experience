@@ -7,10 +7,8 @@
   --pill-h: 36px;
   --pill-radius: 24px;
   --slot: 28px;
-  --send-w: 42px;
   --pill-fill: rgba(0, 0, 0, 0.03);
   --pill-text: #11111199;
-  --send-fill: #262626;
 
   display: inline-flex;
   align-items: center;
@@ -248,51 +246,6 @@
 .surface.glass .editor {
   color: #111;
   caret-color: transparent;
-}
-
-/* ── Action button (send / stop) ──
-   Same circular black surface persists across send <-> stop via layoutId.
-   Hover lightens the fill; active presses with a slight scale. */
-.action {
-  flex-shrink: 0;
-  height: 36px;
-  width: var(--send-w);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: var(--pill-radius);
-  background: var(--send-fill);
-  color: #fff;
-  cursor: pointer;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    background 180ms cubic-bezier(0.25, 1, 0.5, 1),
-    transform 160ms cubic-bezier(0.25, 1, 0.5, 1),
-    box-shadow 180ms ease;
-}
-
-.action:hover {
-  background: #3a3a3a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-}
-
-.action:active {
-  background: #1c1c1c;
-  transform: scale(0.94);
-  transition-duration: 80ms;
-}
-
-.action:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.4);
-  outline-offset: 2px;
-}
-
-.action svg {
-  width: 12px;
-  height: 12px;
-  display: block;
 }
 
 /* ─────────────────────────────────────────────

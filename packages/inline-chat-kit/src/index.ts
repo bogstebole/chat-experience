@@ -10,10 +10,7 @@ export type {
   ChatInputProps,
   ChatInputHandle,
   ChatInputState,
-  ChatInputVariant,
   InlineAnimConfig,
-  VariantConfig,
-  ActionExit,
 } from "./ChatInput/ChatInput";
 
 /* Input internals — exported so consumers can recompose the input */
@@ -23,8 +20,6 @@ export { HoverActionsRow } from "./ChatInput/HoverActionsRow";
 export type { HoverActionsRowProps } from "./ChatInput/HoverActionsRow";
 export { MorphGlyph } from "./ChatInput/MorphGlyph";
 export type { MorphGlyphProps } from "./ChatInput/MorphGlyph";
-export { TrailingActionButton } from "./ChatInput/TrailingActionButton";
-export type { TrailingActionButtonProps } from "./ChatInput/TrailingActionButton";
 
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";
