@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, type Variants } from "motion/react";
 import { useDialKit } from "dialkit";
 import { ArrowLeft, Share, Highlighter, TextCursor } from "lucide-react";
 import {
@@ -89,7 +89,7 @@ export function ChatExperience() {
     };
   }, []);
 
-  const introContainerVariants: any = {
+  const introContainerVariants: Variants = {
     hidden: {},
     visible: {
       transition: {
@@ -104,7 +104,7 @@ export function ChatExperience() {
     },
   };
 
-  const introItemVariants: any = {
+  const introItemVariants: Variants = {
     hidden: { 
       opacity: 0, 
       filter: `blur(${dial["Entrance Animation"].blur}px)`, 

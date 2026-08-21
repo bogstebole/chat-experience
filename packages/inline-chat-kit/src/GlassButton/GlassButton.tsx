@@ -21,12 +21,10 @@ export interface GlassButtonProps extends ButtonHTMLAttributes<HTMLButtonElement
   iconRight?: ReactNode;
   /** Button size: s=32px, m=40px, l=48px */
   size?: GlassButtonSize;
-  /** Dark mode variant */
-  dark?: boolean;
 }
 
 const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
-  ({ children, loading = false, iconLeft, iconRight, size = "m", dark = false, className, disabled, ...props }, ref) => {
+  ({ children, loading = false, iconLeft, iconRight, size = "m", className, disabled, ...props }, ref) => {
     return (
       <button
         ref={ref}

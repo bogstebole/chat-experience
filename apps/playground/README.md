@@ -1,73 +1,33 @@
-# React + TypeScript + Vite
+# Playground
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Dev environment for [inline-chat-kit](../../packages/inline-chat-kit). Run it
+from the workspace root:
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`inline-chat-kit` is aliased straight to the package source (see
+`vite.config.ts`), so editing a component hot-reloads here with no rebuild.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Routes
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Picked from the sidebar:
+
+- **Chat** — the full experience: intro landing, streaming answers, marker
+  highlighting, reply threads. This is what the website ships.
+- **D — Inline (ref)** / **D — Inline (wip)** — a single `ChatInput` isolated
+  across all four states, for comparing variants side by side.
+
+## Tuning motion
+
+The DialKit panel live-tweaks entrance stagger, spring stiffness, damping and
+blur. Values you settle on belong in `defaultInlineAnimConfig` in
+`packages/inline-chat-kit/src/ChatInput/ChatInput.tsx` — the panel does not
+persist anything.
+
+## What stays here
+
+`src/demo/` holds everything specific to this playground — the logo, the
+feature-status banner, the canned particle physics answers. None of it ships
+in the package.

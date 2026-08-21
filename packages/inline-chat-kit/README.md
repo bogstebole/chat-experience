@@ -124,6 +124,10 @@ hide the native cursor yourself:
 (`s` / `m` / `l`, with `loading`, `iconLeft`, `iconRight`) are exported because
 the kit uses them internally — reuse them or ignore them.
 
+`GlassButton` has a dark treatment, switched by an ancestor rather than a prop:
+put `class="dark"` on any wrapper (or `<html>`) and the buttons beneath it
+follow.
+
 ## Theming
 
 Every colour, font and surface the kit reads is defined in a

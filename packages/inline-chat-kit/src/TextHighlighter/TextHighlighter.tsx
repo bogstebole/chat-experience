@@ -86,16 +86,20 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     return { x: (minX + maxX) / 2, y: minY };
   };
 
-  // Live values for the stable document listener (avoids re-registering on every render).
+  // Live values for the stable document listener (avoids re-registering on every
+  // render). Written after commit — the listener only reads them from event
+  // handlers, which run well after paint.
   const selectionModeRef = useRef(selectionMode);
-  selectionModeRef.current = selectionMode;
   const selectionsRef = useRef(selections);
-  selectionsRef.current = selections;
   const onHighlightCompleteRef = useRef(onHighlightComplete);
-  onHighlightCompleteRef.current = onHighlightComplete;
-
   const menuAnchorRef = useRef(menuAnchor);
-  menuAnchorRef.current = menuAnchor;
+
+  useEffect(() => {
+    selectionModeRef.current = selectionMode;
+    selectionsRef.current = selections;
+    onHighlightCompleteRef.current = onHighlightComplete;
+    menuAnchorRef.current = menuAnchor;
+  });
 
   const getSelectionPathString = (rects: { x: number; y: number; w: number; h: number }[]) => {
     let d = "";
@@ -182,9 +186,11 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   }, []);
 
   // Close any open menu when switching selection mode.
-  useEffect(() => {
+  const [lastSelectionMode, setLastSelectionMode] = useState(selectionMode);
+  if (lastSelectionMode !== selectionMode) {
+    setLastSelectionMode(selectionMode);
     setMenuAnchor(null);
-  }, [selectionMode]);
+  }
 
   const checkHighlight = (clientX: number, clientY: number, indices: Set<number>) => {
     const el = document.elementFromPoint(clientX, clientY);
@@ -340,7 +346,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         WebkitUserSelect: (selectionMode === "precise" && !menuAnchor) ? "text" : "none",
         touchAction: "none", // Prevent scrolling while highlighting on touch devices
         display: "block", // to wrap the text tightly
-        zIndex: !!menuAnchor ? 10 : 1, // elevate above other paragraphs
+        zIndex: menuAnchor ? 10 : 1, // elevate above other paragraphs
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

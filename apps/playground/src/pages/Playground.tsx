@@ -39,12 +39,14 @@ interface PlaygroundProps {
 export function Playground({ title, blurb, variant, callout }: PlaygroundProps) {
   const [state, setState] = useState<ChatInputState>("idle");
   const [value, setValue] = useState("");
-  const stopTimer = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (state === "idle" && value.length > 0) setState("typing");
-    if (state === "typing" && value.length === 0) setState("idle");
-  }, [value, state]);
+  // Derived, not synced in an effect: typing is just "idle plus content".
+  const handleChange = (next: string) => {
+    setValue(next);
+    if (state === "idle" && next.length > 0) setState("typing");
+    else if (state === "typing" && next.length === 0) setState("idle");
+  };
+  const stopTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (state === "responding") {
@@ -103,7 +105,7 @@ export function Playground({ title, blurb, variant, callout }: PlaygroundProps) 
           <ChatInput
             state={state}
             value={value}
-            onChange={setValue}
+            onChange={handleChange}
             onSubmit={handleSubmit}
             onStop={handleStop}
             variant={variant}
