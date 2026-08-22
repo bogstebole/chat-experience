@@ -79,7 +79,6 @@ choreography by moving between these values:
 | `onCancelEdit` | `() => void` | Paired with `isEditing` |
 | `isEditing` | `boolean` | Shows save/cancel instead of send |
 | `placeholder` | `string` | |
-| `variant` | `ChatInputVariant` | `inline` is the one this kit is built around |
 | `animationConfig` | `InlineAnimConfig` | Spring and stagger overrides — see below |
 | `style` | `React.CSSProperties` | |
 
