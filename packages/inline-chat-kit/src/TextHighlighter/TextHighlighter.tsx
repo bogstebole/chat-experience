@@ -374,7 +374,11 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       />
 
       {/* Underlying text */}
-      <span style={{ position: "relative", zIndex: 1 }}>
+      <span
+        className={styles.tokens}
+        style={{ position: "relative", zIndex: 1 }}
+        data-focus={!!menuAnchor || undefined}
+      >
         {tokens.map((token, i) => {
           // Both freeform (path) and precise (selection) highlights dim the surrounding tokens.
           const isHighlightActive = !!menuAnchor;
@@ -390,8 +394,6 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
             }
           }
 
-          const isBlurred = isHighlightActive && !isPartOfActiveHighlight;
-          
           let isPartOfPressed = false;
           if (pressedPathId) {
             const pressedPath = paths.find(p => p.id === pressedPathId);
@@ -406,21 +408,15 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
           }
 
           return (
-            <motion.span 
-              key={i} 
+            <span
+              key={i}
               data-index={i}
-              animate={{
-                filter: isBlurred ? "blur(3px)" : "blur(0px)",
-                opacity: isBlurred ? 0.15 : 1,
-                color: isPartOfActiveHighlight ? "#000000" : "inherit",
-                textShadow: isPartOfActiveHighlight ? "0px 1px 2px rgba(255, 255, 255, 0.4)" : "none",
-                scale: isPartOfPressed ? 0.96 : 1,
-              }}
-              style={{ display: "inline-block", whiteSpace: "pre-wrap" }}
-              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+              className={styles.token}
+              data-active={isPartOfActiveHighlight || undefined}
+              data-pressed={isPartOfPressed || undefined}
             >
               {token}
-            </motion.span>
+            </span>
           );
         })}
       </span>
