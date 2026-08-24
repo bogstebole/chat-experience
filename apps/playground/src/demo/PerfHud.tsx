@@ -14,9 +14,14 @@ import { useEffect, useRef, useState } from "react";
  * the very numbers it is trying to report.
  */
 
-const LONG_FRAME_MS = 16.7; // a dropped frame at 60Hz
-const BAD_FRAME_MS = 33; // two dropped frames
-const AWFUL_FRAME_MS = 50;
+// A frame is only "dropped" relative to the display's own cadence, and rAF
+// timestamps jitter by a millisecond or so. Counting everything over one frame
+// interval flags healthy 60Hz frames as drops, so the bar is 1.5 intervals.
+const DROP_FACTOR = 1.5;
+const BAD_FACTOR = 2.5;
+const FALLBACK_INTERVAL_MS = 16.7;
+// Startup noise: the click that begins a capture lands in the first frames.
+const WARMUP_MS = 600;
 
 interface Mark {
   at: number;
@@ -70,6 +75,7 @@ export function PerfHud() {
   const lastFrameMsRef = useRef(0);
   const hiddenEventsRef = useRef(0);
   const skipNextFrameRef = useRef(false);
+  const intervalRef = useRef(0);
 
   const fpsElRef = useRef<HTMLSpanElement>(null);
   const worstElRef = useRef<HTMLSpanElement>(null);
@@ -86,6 +92,7 @@ export function PerfHud() {
     let windowFrames = 0;
     let windowWorst = 0;
     let movesAtWindowStart = 0;
+    const recentRef: number[] = [];
 
     const tick = (now: number) => {
       const delta = now - last;
@@ -111,6 +118,13 @@ export function PerfHud() {
       windowFrames += 1;
       if (delta > windowWorst) windowWorst = delta;
 
+      recentRef.push(delta);
+      if (recentRef.length > 120) recentRef.shift();
+      if (recentRef.length >= 20) {
+        const med = [...recentRef].sort((a, b) => a - b)[Math.floor(recentRef.length / 2)];
+        intervalRef.current = med;
+      }
+
       // Refresh the readout ~4x/sec, not every frame.
       const elapsed = now - windowStart;
       if (elapsed >= 250) {
@@ -123,8 +137,9 @@ export function PerfHud() {
         if (worstElRef.current) worstElRef.current.textContent = `${windowWorst.toFixed(1)}ms`;
         if (rateElRef.current) rateElRef.current.textContent = `${moveRate.toFixed(0)}/s`;
         if (droppedElRef.current) {
+          const interval = intervalRef.current || FALLBACK_INTERVAL_MS;
           droppedElRef.current.textContent = recordingRef.current
-            ? String(framesRef.current.filter((d) => d > LONG_FRAME_MS).length)
+            ? String(framesRef.current.filter((d) => d > interval * DROP_FACTOR).length)
             : "—";
         }
         if (rendersElRef.current) {
@@ -286,19 +301,25 @@ export function PerfHud() {
   };
 
   const buildReport = () => {
-    const frames = framesRef.current.slice(1);
+    const firstKept = frameAtRef.current.findIndex((t) => t > WARMUP_MS);
+    const from = firstKept > 0 ? firstKept : 1;
+    const frames = framesRef.current.slice(from);
+    const frameAts = frameAtRef.current.slice(from);
+    const warmupSkipped = from - 1;
     const wallMs = performance.now() - startedAtRef.current;
     // Frames from hidden periods are excluded, so wall-clock would understate
     // the rate. Rate has to come from the time actually sampled.
     const sampledMs = frames.reduce((a, b) => a + b, 0);
     const sorted = [...frames].sort((a, b) => a - b);
-    const long = frames.filter((d) => d > LONG_FRAME_MS);
-    const bad = frames.filter((d) => d > BAD_FRAME_MS);
-    const awful = frames.filter((d) => d > AWFUL_FRAME_MS);
+    const interval = pct(sorted, 0.5) || FALLBACK_INTERVAL_MS;
+    const dropAt = interval * DROP_FACTOR;
+    const badAt = interval * BAD_FACTOR;
+    const long = frames.filter((d) => d > dropAt);
+    const bad = frames.filter((d) => d > badAt);
 
     // Worst frames with when they happened, so marks can be correlated.
     const worst = frames
-      .map((d, i) => ({ d, at: frameAtRef.current[i + 1] ?? 0 }))
+      .map((d, i) => ({ d, at: frameAts[i] ?? 0 }))
       .sort((a, b) => b.d - a.d)
       .slice(0, 8);
 
@@ -330,7 +351,10 @@ export function PerfHud() {
       `- Captured ${r2(sampledMs / 1000)}s of visible time (${r2(wallMs / 1000)}s wall clock) · ${frames.length} frames · ${sampledMs > 0 ? r2((1000 * frames.length) / sampledMs) : 0} fps avg`
     );
     lines.push(`- Frame ms — median ${r2(pct(sorted, 0.5))} · p95 ${r2(pct(sorted, 0.95))} · p99 ${r2(pct(sorted, 0.99))} · worst ${r2(sorted[sorted.length - 1] ?? 0)}`);
-    lines.push(`- Dropped — >${LONG_FRAME_MS}ms: ${long.length} · >${BAD_FRAME_MS}ms: ${bad.length} · >${AWFUL_FRAME_MS}ms: ${awful.length}`);
+    lines.push(
+      `- Display cadence: ${r2(interval)}ms/frame (${Math.round(1000 / interval)}Hz) · dropped >${r2(dropAt)}ms: ${long.length} of ${frames.length} (${r2((100 * long.length) / Math.max(1, frames.length))}%) · badly >${r2(badAt)}ms: ${bad.length}`
+    );
+    if (warmupSkipped > 0) lines.push(`- Skipped ${warmupSkipped} warm-up frames in the first ${WARMUP_MS}ms`);
     lines.push(`- Worst frames (ms @ s): ${worst.map((w) => `${r2(w.d)}@${r2(w.at / 1000)}`).join(", ") || "none"}`);
     lines.push("");
     lines.push("### Input");
