@@ -22,6 +22,9 @@ const BAD_FACTOR = 2.5;
 const FALLBACK_INTERVAL_MS = 16.7;
 // Startup noise: the click that begins a capture lands in the first frames.
 const WARMUP_MS = 600;
+// A menu's dim animation keeps writing styles after the click that opened it.
+// Without this tail the tail lands in the hover bucket.
+const MENU_SETTLE_MS = 800;
 
 interface Mark {
   at: number;
@@ -82,6 +85,8 @@ export function PerfHud() {
   const mutHoverRef = useRef(0);
   const mutDrawRef = useRef(0);
   const crossingsRef = useRef(0);
+  const mutMenuRef = useRef(0);
+  const menuSettleUntilRef = useRef(0);
 
   const fpsElRef = useRef<HTMLSpanElement>(null);
   const worstElRef = useRef<HTMLSpanElement>(null);
@@ -273,7 +278,12 @@ export function PerfHud() {
       mo = new MutationObserver((recs) => {
         if (!recordingRef.current) return;
         mutationsRef.current += recs.length;
+        const menuOpen =
+          !!document.querySelector('path[id^="highlight-"][data-active="true"]') ||
+          performance.now() < menuSettleUntilRef.current;
+        if (menuOpen) menuSettleUntilRef.current = performance.now() + MENU_SETTLE_MS;
         if (drawingRef.current) mutDrawRef.current += recs.length;
+        else if (menuOpen) mutMenuRef.current += recs.length;
         else mutHoverRef.current += recs.length;
       });
       mo.observe(target, { subtree: true, childList: true, attributes: true, characterData: true });
@@ -324,6 +334,8 @@ export function PerfHud() {
     mutHoverRef.current = 0;
     mutDrawRef.current = 0;
     crossingsRef.current = 0;
+    mutMenuRef.current = 0;
+    menuSettleUntilRef.current = 0;
     drawingRef.current = false;
     startedAtRef.current = performance.now();
     recordingRef.current = true;
@@ -413,6 +425,9 @@ export function PerfHud() {
     lines.push(`- DOM mutations inside .aiText: ${mutationsRef.current} total`);
     lines.push(
       `  - while drawing (button down): ${mutDrawRef.current} — expected, the path grows on every move`
+    );
+    lines.push(
+      `  - while a marker menu was open or settling: ${mutMenuRef.current} — the dim animation on every token`
     );
     lines.push(
       `  - while only hovering: ${mutHoverRef.current} over ${crossingsRef.current} marker crossings` +
