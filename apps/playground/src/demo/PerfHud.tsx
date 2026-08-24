@@ -76,6 +76,12 @@ export function PerfHud() {
   const hiddenEventsRef = useRef(0);
   const skipNextFrameRef = useRef(false);
   const intervalRef = useRef(0);
+  // Drawing a highlight and hovering one are different code paths with very
+  // different costs. Lumping their DOM churn together hides which is which.
+  const drawingRef = useRef(false);
+  const mutHoverRef = useRef(0);
+  const mutDrawRef = useRef(0);
+  const crossingsRef = useRef(0);
 
   const fpsElRef = useRef<HTMLSpanElement>(null);
   const worstElRef = useRef<HTMLSpanElement>(null);
@@ -184,7 +190,25 @@ export function PerfHud() {
     const onMove = () => {
       pointerMovesRef.current += 1;
     };
+    const onDown = () => {
+      drawingRef.current = true;
+    };
+    const onUp = () => {
+      drawingRef.current = false;
+    };
+    // A "crossing" is the pointer entering or leaving a marker's stroke. This
+    // is the thing hover used to re-render on, so it is the denominator that
+    // matters.
+    const onOverOut = (e: Event) => {
+      const t = e.target as Element | null;
+      if (t && t.id && t.id.startsWith("highlight-")) crossingsRef.current += 1;
+    };
     window.addEventListener("pointermove", onMove, { passive: true, capture: true });
+    window.addEventListener("pointerdown", onDown, { passive: true, capture: true });
+    window.addEventListener("pointerup", onUp, { passive: true, capture: true });
+    window.addEventListener("pointercancel", onUp, { passive: true, capture: true });
+    window.addEventListener("pointerover", onOverOut, { passive: true, capture: true });
+    window.addEventListener("pointerout", onOverOut, { passive: true, capture: true });
 
     const observers: PerformanceObserver[] = [];
     const observe = (
@@ -229,7 +253,13 @@ export function PerfHud() {
     });
 
     return () => {
-      window.removeEventListener("pointermove", onMove, { capture: true } as EventListenerOptions);
+      const cap = { capture: true } as EventListenerOptions;
+      window.removeEventListener("pointermove", onMove, cap);
+      window.removeEventListener("pointerdown", onDown, cap);
+      window.removeEventListener("pointerup", onUp, cap);
+      window.removeEventListener("pointercancel", onUp, cap);
+      window.removeEventListener("pointerover", onOverOut, cap);
+      window.removeEventListener("pointerout", onOverOut, cap);
       observers.forEach((o) => o.disconnect());
     };
   }, []);
@@ -241,7 +271,10 @@ export function PerfHud() {
       const target = document.querySelector(".aiText");
       if (!target || mo) return;
       mo = new MutationObserver((recs) => {
-        if (recordingRef.current) mutationsRef.current += recs.length;
+        if (!recordingRef.current) return;
+        mutationsRef.current += recs.length;
+        if (drawingRef.current) mutDrawRef.current += recs.length;
+        else mutHoverRef.current += recs.length;
       });
       mo.observe(target, { subtree: true, childList: true, attributes: true, characterData: true });
     };
@@ -288,6 +321,10 @@ export function PerfHud() {
     shimmerSeenRef.current = false;
     maxMarkersRef.current = 0;
     hiddenEventsRef.current = 0;
+    mutHoverRef.current = 0;
+    mutDrawRef.current = 0;
+    crossingsRef.current = 0;
+    drawingRef.current = false;
     startedAtRef.current = performance.now();
     recordingRef.current = true;
     setReport(null);
@@ -373,7 +410,16 @@ export function PerfHud() {
         ? `- Long tasks: ${lt.length} · total ${r2(lt.reduce((s, t) => s + t.duration, 0))}ms · worst ${r2(Math.max(...lt.map((t) => t.duration)))}ms`
         : "- Long tasks: none"
     );
-    lines.push(`- DOM mutations inside .aiText: ${mutationsRef.current} (proxy for TextHighlighter re-renders)`);
+    lines.push(`- DOM mutations inside .aiText: ${mutationsRef.current} total`);
+    lines.push(
+      `  - while drawing (button down): ${mutDrawRef.current} — expected, the path grows on every move`
+    );
+    lines.push(
+      `  - while only hovering: ${mutHoverRef.current} over ${crossingsRef.current} marker crossings` +
+        (crossingsRef.current > 0
+          ? ` = ${r2(mutHoverRef.current / crossingsRef.current)} per crossing`
+          : "")
+    );
     lines.push("");
     lines.push("### Scene");
     lines.push(`- Highlights on screen (max): ${maxMarkersRef.current}`);
