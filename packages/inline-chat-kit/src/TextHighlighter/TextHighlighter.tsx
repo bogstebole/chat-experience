@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "../Button/Button";
+import styles from "./TextHighlighter.module.css";
 import { MessageCircle, Trash2 } from "lucide-react";
 
 const SKEW_ANGLE = -20;
@@ -29,6 +30,50 @@ export interface TextHighlighterProps {
   onReplyInThread?: (text: string, rect: DOMRect) => void;
 }
 
+/* Pure geometry helpers — hoisted so memoised values can depend on them. */
+
+const makePathString = (points: { x: number; y: number }[]) => {
+  if (points.length === 0) return "";
+  const start = points[0];
+  let d = `M ${start.x} ${start.y}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L ${points[i].x} ${points[i].y}`;
+  }
+  return d;
+};
+// Menu position: horizontal center + top edge of the highlight (in container coords).
+// Points store skew-corrected x, so reapply the skew (visualX = x + TAN_ANGLE * y) to get the rendered x.
+const getMenuPosition = (points: { x: number; y: number }[]) => {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity;
+  points.forEach((p) => {
+    const visualX = p.x + TAN_ANGLE * p.y;
+    if (visualX < minX) minX = visualX;
+    if (visualX > maxX) maxX = visualX;
+    if (p.y < minY) minY = p.y;
+  });
+  return { x: (minX + maxX) / 2, y: minY };
+};
+// Same idea for precise-mode rect highlights (container-relative rects).
+const getRectsMenuPosition = (rects: { x: number; y: number; w: number; h: number }[]) => {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity;
+  rects.forEach((r) => {
+    if (r.x < minX) minX = r.x;
+    if (r.x + r.w > maxX) maxX = r.x + r.w;
+    if (r.y < minY) minY = r.y;
+  });
+  return { x: (minX + maxX) / 2, y: minY };
+};
+const getSelectionPathString = (rects: { x: number; y: number; w: number; h: number }[]) => {
+  let d = "";
+  rects.forEach(r => {
+    const centerY = r.y + r.h / 2;
+    const startX = r.x - centerY * TAN_ANGLE;
+    const endX = (r.x + r.w) - centerY * TAN_ANGLE;
+    d += `M ${startX} ${centerY} L ${endX} ${centerY} `;
+  });
+  return d.trim();
+};
+
 export function TextHighlighter({ text, selectionMode = "marker", onHighlightComplete, onReplyInThread }: TextHighlighterProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [paths, setPaths] = useState<PathData[]>([]);
@@ -36,7 +81,6 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   const [currentPath, setCurrentPath] = useState<PathData | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number | string, y: number, pathId: string, kind: "path" | "selection" } | null>(null);
-  const [hoveredPathId, setHoveredPathId] = useState<string | null>(null);
   const [pressedPathId, setPressedPathId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,41 +94,10 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   }, [menuAnchor]);
 
   // Split text by words and keep spaces separate so we can render them properly
-  const tokens = text.split(/(\s+)/);
+  const tokens = useMemo(() => text.split(/(\s+)/), [text]);
 
-  const makePathString = (points: { x: number; y: number }[]) => {
-    if (points.length === 0) return "";
-    const start = points[0];
-    let d = `M ${start.x} ${start.y}`;
-    for (let i = 1; i < points.length; i++) {
-      d += ` L ${points[i].x} ${points[i].y}`;
-    }
-    return d;
-  };
 
-  // Menu position: horizontal center + top edge of the highlight (in container coords).
-  // Points store skew-corrected x, so reapply the skew (visualX = x + TAN_ANGLE * y) to get the rendered x.
-  const getMenuPosition = (points: { x: number; y: number }[]) => {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity;
-    points.forEach((p) => {
-      const visualX = p.x + TAN_ANGLE * p.y;
-      if (visualX < minX) minX = visualX;
-      if (visualX > maxX) maxX = visualX;
-      if (p.y < minY) minY = p.y;
-    });
-    return { x: (minX + maxX) / 2, y: minY };
-  };
 
-  // Same idea for precise-mode rect highlights (container-relative rects).
-  const getRectsMenuPosition = (rects: { x: number; y: number; w: number; h: number }[]) => {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity;
-    rects.forEach((r) => {
-      if (r.x < minX) minX = r.x;
-      if (r.x + r.w > maxX) maxX = r.x + r.w;
-      if (r.y < minY) minY = r.y;
-    });
-    return { x: (minX + maxX) / 2, y: minY };
-  };
 
   // Live values for the stable document listener (avoids re-registering on every
   // render). Written after commit — the listener only reads them from event
@@ -101,21 +114,15 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     menuAnchorRef.current = menuAnchor;
   });
 
-  const getSelectionPathString = (rects: { x: number; y: number; w: number; h: number }[]) => {
-    let d = "";
-    rects.forEach(r => {
-      const centerY = r.y + r.h / 2;
-      const startX = r.x - centerY * TAN_ANGLE;
-      const endX = (r.x + r.w) - centerY * TAN_ANGLE;
-      d += `M ${startX} ${centerY} L ${endX} ${centerY} `;
-    });
-    return d.trim();
-  };
 
-  const allMarkers = [
-    ...paths.map(p => ({ id: p.id, d: makePathString(p.points), kind: "path" as const, item: p })),
-    ...selections.map(s => ({ id: s.id, d: getSelectionPathString(s.rects), kind: "selection" as const, item: s }))
-  ];
+  // Rebuilding these path strings on every hover was a large part of the cost.
+  const allMarkers = useMemo(
+    () => [
+      ...paths.map((p) => ({ id: p.id, d: makePathString(p.points), kind: "path" as const, item: p })),
+      ...selections.map((sel) => ({ id: sel.id, d: getSelectionPathString(sel.rects), kind: "selection" as const, item: sel })),
+    ],
+    [paths, selections]
+  );
 
   // Precise (native) selection capture — char-level. Registered once; reads refs.
   useEffect(() => {
@@ -435,34 +442,19 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         <g transform={`skewX(${SKEW_ANGLE})`}>
           {allMarkers.map((marker) => (
             <React.Fragment key={marker.id}>
-              <motion.path
+              <path
                 id={`highlight-${marker.kind}-${marker.id}`}
+                className={styles.marker}
                 d={marker.d}
                 fill="none"
                 stroke={MARKER_COLOR}
                 strokeLinejoin="round"
                 strokeLinecap="butt"
-                animate={{ 
-                  strokeWidth: pressedPathId === marker.id 
-                    ? "16px" 
-                    : menuAnchor?.pathId === marker.id 
-                    ? "28px" 
-                    : hoveredPathId === marker.id ? "24px" : "20px",
-                  opacity: menuAnchor ? (menuAnchor.pathId === marker.id ? 1 : 0.15) : (hoveredPathId === marker.id ? 0.9 : 1),
-                  filter: menuAnchor?.pathId === marker.id 
-                    ? "drop-shadow(0px 6px 16px rgba(204, 255, 0, 0.6))" 
-                    : "drop-shadow(0px 0px 0px rgba(0, 0, 0, 0))"
-                }}
-                transition={{ type: "spring", stiffness: 350, damping: 25 }}
                 data-cursor="pointer"
-                style={{
-                  pointerEvents: isDrawing ? "none" : "stroke",
-                }}
-                onPointerEnter={() => !isDrawing && setHoveredPathId(marker.id)}
-                onPointerLeave={() => {
-                  setHoveredPathId(null);
-                  setPressedPathId(null);
-                }}
+                data-pressed={pressedPathId === marker.id || undefined}
+                data-active={menuAnchor?.pathId === marker.id || undefined}
+                data-dimmed={(menuAnchor && menuAnchor.pathId !== marker.id) || undefined}
+                style={{ pointerEvents: isDrawing ? "none" : "stroke" }}
                 onPointerDown={(e) => {
                   if (isDrawing) return;
                   e.stopPropagation();
@@ -471,33 +463,24 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
                 onPointerUp={(e) => {
                   if (pressedPathId === marker.id) {
                     e.stopPropagation();
-                    const pos = marker.kind === "path" 
-                      ? getMenuPosition((marker.item as PathData).points) 
+                    const pos = marker.kind === "path"
+                      ? getMenuPosition((marker.item as PathData).points)
                       : getRectsMenuPosition((marker.item as SelectionHighlight).rects);
                     setMenuAnchor({ x: pos.x, y: pos.y, pathId: marker.id, kind: marker.kind });
                     setPressedPathId(null);
                   }
                 }}
+                onPointerLeave={() => setPressedPathId(null)}
                 onPointerCancel={() => setPressedPathId(null)}
               />
-              {/* Animated drawing shimmer over the path */}
-              <AnimatePresence>
-                {(hoveredPathId === marker.id || menuAnchor?.pathId === marker.id) && (
-                  <motion.path
-                    initial={{ pathLength: 0, opacity: 0.8 }}
-                    animate={{ pathLength: 1, opacity: 0 }}
-                    exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                    transition={{ duration: 1.6, ease: "easeOut", repeat: Infinity, repeatDelay: 0.4 }}
-                    d={marker.d}
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth={menuAnchor?.pathId === marker.id ? "28px" : "24px"}
-                    strokeLinejoin="round"
-                    strokeLinecap="butt"
-                    style={{ pointerEvents: "none", mixBlendMode: "overlay" }}
-                  />
-                )}
-              </AnimatePresence>
+              {/* Sibling of the marker so CSS can drive it off :hover. Mounted
+                  once and paused, rather than added and removed per crossing. */}
+              <path
+                className={styles.shimmer}
+                d={marker.d}
+                pathLength={1}
+                data-active={menuAnchor?.pathId === marker.id || undefined}
+              />
             </React.Fragment>
           ))}
           {currentPath && (

@@ -149,9 +149,9 @@ export function PerfHud() {
         }
         if (stateElRef.current) {
           const markers = document.querySelectorAll('path[id^="highlight-"]').length;
-          const shimmer = [...document.querySelectorAll("path")].some(
-            (p) => (p as SVGPathElement).style.mixBlendMode === "overlay"
-          );
+          // Hover moved from React state to CSS, so ask the DOM directly
+          // whether a marker is under the pointer.
+          const shimmer = !!document.querySelector('path[id^="highlight-"]:hover');
           if (markers > maxMarkersRef.current) maxMarkersRef.current = markers;
           if (shimmer) shimmerSeenRef.current = true;
           stateElRef.current.textContent = `${markers} hl${shimmer ? " · shimmer" : ""}`;
@@ -380,7 +380,7 @@ export function PerfHud() {
     lines.push(
       `- Tab backgrounded during capture: ${hiddenEventsRef.current === 0 ? "no" : `${hiddenEventsRef.current}x (those frames excluded)`}`
     );
-    lines.push(`- Hover shimmer active at some point: ${shimmerSeenRef.current ? "yes" : "no"}`);
+    lines.push(`- Pointer was over a marker at some point: ${shimmerSeenRef.current ? "yes" : "no"}`);
     lines.push("");
     lines.push("### Marks (pressed M)");
     lines.push(
