@@ -10,6 +10,32 @@ npm run dev
 `inline-chat-kit` is aliased straight to the package source (see
 `vite.config.ts`), so editing a component hot-reloads here with no rebuild.
 
+### Reaching it
+
+The server binds every interface, not just `localhost`, and prints two URLs:
+
+```
+Local:   http://localhost:5173/
+Network: http://192.168.x.x:5173/
+```
+
+`localhost` can resolve to IPv6 `::1` on Node 17+ while a browser asks for
+`127.0.0.1`, which reads as a refused connection in one browser and not
+another. Binding broadly means `localhost`, `127.0.0.1`, `[::1]` and the LAN
+address all work — so a second browser, a phone, or another machine can load
+it. That matters here, because the performance behaviour being chased depends
+on the hardware it runs on.
+
+The port is fixed at 5173 and will refuse to start rather than quietly move to
+5174, so the URL never drifts. If it does refuse, something else holds the
+port:
+
+```bash
+lsof -nP -iTCP:5173 -sTCP:LISTEN
+```
+
+The LAN address is reachable by anything on your network while the server runs.
+
 ## Routes
 
 Picked from the sidebar:
