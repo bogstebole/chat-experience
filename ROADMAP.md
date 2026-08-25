@@ -69,15 +69,31 @@ Only `TextHighlighter.module.css` respected it.
       The reduce path itself is proven by the tests — the browser tooling here
       cannot emulate the OS setting.
 
-### A3 · Let the keyboard select text at all
-`user-select: none` is set permanently on the highlighter in marker mode, so a
-keyboard user cannot select the answer text — not to highlight it, not to copy it.
-- [ ] Apply `user-select: none` only while the pointer is down
-- [ ] Commit a highlight from a **native** selection made with Shift+Arrow —
-      the `precise` path already builds highlights from a Range, but it only
-      listens for `mouseup`. Listen for keyboard-completed selections too.
-- [ ] Test: Shift+Arrow selection produces a highlight and fires
-      `onHighlightComplete`
+### A3 · Let the keyboard select text at all — done
+`user-select: none` was set permanently in marker mode, so the answer could not
+be selected at all — not to highlight it, not even to copy it.
+- [x] `user-select` is suppressed only while a marker is actually being drawn.
+      The drag prevents its own default instead, so drawing does not drag a
+      native selection along behind it.
+- [x] A **word cursor**: the paragraph is focusable, left/right move by word,
+      shift extends, Enter or Space commits the same highlight a drag makes,
+      Escape clears. Up and down are left alone — moving by line would mean
+      guessing where the lines break.
+- [x] Native selections finished with the keyboard commit too, in both modes
+- [x] The three routes to a highlight — drag, native selection, word cursor —
+      now share one commit path instead of one each
+- [x] `aria-describedby` says what the keys do, once, on focus
+- [x] 18 tests
+- [x] Browser: tabbed in, arrowed to a word, shift-selected four, pressed
+      Enter — marker drawn, paragraph dimmed, menu opened, counter incremented.
+      Mouse drawing unaffected, no console errors.
+
+Two things this deliberately does **not** claim:
+- The mouse still draws rather than selects in marker mode. That is the mode's
+  purpose; `precise` is the pointer-selection mode.
+- Shift+Arrow over plain text needs caret browsing, which almost nobody has
+  switched on. That is *why* there is a word cursor — the native path alone
+  would have been a checkbox, not a feature.
 
 ### A4 · Make existing highlights reachable
 The SVG `<path>` markers behave as buttons — press to reopen the menu — but they
