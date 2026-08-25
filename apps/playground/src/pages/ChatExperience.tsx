@@ -243,7 +243,15 @@ export function ChatExperience() {
             scale: (activeReply || showHighlightsModal) ? 0.9 : 1
           }}
           transition={{ type: "spring", stiffness: 260, damping: 30, mass: 0.9 }}
-          onAnimationComplete={() => activeInputRef.current?.focus()}
+          onAnimationComplete={() => {
+            // Only when nobody is anywhere. This fires whenever the page
+            // settles — including after a thread closes, where the dialog has
+            // just handed focus back to the highlight it came from. Taking it
+            // unconditionally undid that and dropped the reader in the
+            // composer instead.
+            if (document.activeElement && document.activeElement !== document.body) return;
+            activeInputRef.current?.focus();
+          }}
         >
           <div className="topBlur" />
           <header className="chatHeader">

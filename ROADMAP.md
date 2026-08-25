@@ -149,13 +149,39 @@ Focus does not yet move **into** the menu when it opens; that is A5.
 
 Choosing "Reply in thread" does not yet move focus into the popup; that is A6.
 
-### A6 · `ReplyThreadPopup` becomes a dialog
-It is a modal overlay with none of the semantics of one.
-- [ ] `role="dialog"`, `aria-modal`, labelled by the quoted passage
-- [ ] Focus moves in on open, is trapped while open, returns to the highlight
-      on close
-- [ ] Escape closes
-- [ ] Test: focus enters, cannot escape by tabbing, returns on close
+### A6 · `ReplyThreadPopup` becomes a dialog — done
+It was a modal overlay with none of the semantics of one.
+- [x] `role="dialog"` and `aria-modal`, named by two nodes — a hidden "Thread
+      on" for meaning, the visible passage for which thread. `aria-modal` is
+      the whole claim to modality: marking the rest of the page inert would
+      mean reaching into a document this component does not own.
+- [x] Focus lands in the thread's input — writing a reply is the only reason
+      to be there
+- [x] Tab wraps at both ends, so focus cannot walk out onto a page the reader
+      can no longer see
+- [x] Escape closes — unless something inside used it first, so a highlight
+      menu open on one of the thread's own answers does not take the whole
+      thread down with it
+- [x] Focus returns to the highlight that opened the thread, and the menu now
+      hands focus back *before* the thread opens, so what the dialog captures
+      is the highlight rather than a menu item about to be removed
+- [x] 11 tests
+- [x] Browser: opened from the word cursor, dialog named "Thread on Particle
+      physics studies", focus in the input, 12 tabs forward and 6 back never
+      left it, Escape closed it and focus returned to the paragraph.
+
+Two bugs the tests caught, both real:
+- the focusable selector looked for `contenteditable="true"`, but the input is
+  `plaintext-only` — the trap was excluding the one control that matters
+- the outgoing focus was read in an effect. A child's effects run before its
+  parent's, and the input focuses itself in one of them, so the dialog was
+  recording *itself* as the place to return to. Read during the first render
+  instead.
+
+And one in the demo, which is the reference consumers copy: the playground
+refocused its composer whenever the page settled, undoing the dialog's focus
+return and dropping the reader in the input instead of back at the highlight.
+It now claims focus only when nothing else holds it.
 
 ### A7 · Automated coverage
 - [ ] `axe-core` assertion over each component's rendered output

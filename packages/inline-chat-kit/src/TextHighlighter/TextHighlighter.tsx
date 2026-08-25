@@ -566,6 +566,10 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   };
 
   const replyInThread = () => {
+    // Focus goes back to the highlight *before* the host app opens its thread,
+    // so whatever the thread captures as its return target is the highlight
+    // and not a menu item that is about to stop existing.
+    const viaKeyboard = menuAnchor?.viaKeyboard;
     if (menuAnchor && onReplyInThread) {
       if (menuAnchor.kind === "selection") {
         const sel = selections.find(s => s.id === menuAnchor.pathId);
@@ -589,7 +593,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         }
       }
     }
-    dismissMenu();
+    dismissMenu(viaKeyboard ? "restore" : "none");
   };
 
   return (
