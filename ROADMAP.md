@@ -88,6 +88,13 @@ be selected at all — not to highlight it, not even to copy it.
       Enter — marker drawn, paragraph dimmed, menu opened, counter incremented.
       Mouse drawing unaffected, no console errors.
 
+Regression it caused, and its fix: making the paragraph focusable put a
+`tabindex` on it, and `CustomCursor` used `[tabindex]` to recognise controls —
+so hovering the answer drew an arrow instead of the marker. The two questions
+now resolve by proximity: a button inside a marker surface still shows the
+arrow, a marker surface that happens to be focusable does not. Pinned by tests
+that fail against the old logic.
+
 Two things this deliberately does **not** claim:
 - The mouse still draws rather than selects in marker mode. That is the mode's
   purpose; `precise` is the pointer-selection mode.

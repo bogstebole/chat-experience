@@ -21,21 +21,26 @@ export function CustomCursor() {
       
       const cursorEl = target.closest('[data-cursor]');
       const activeEl = target.closest('[data-cursor-active="true"]');
-      const isButton = target.closest('a, button, [role="button"], input, select, textarea, [tabindex]');
-      
+      const controlEl = target.closest('a, button, [role="button"], input, select, textarea, [tabindex]');
+
       if (activeEl || e.buttons > 0) {
         setIsActive(true);
       } else {
         setIsActive(false);
       }
 
-      if (isButton) {
+      // Whichever of the two is nearer to the pointer wins. A button sitting
+      // inside a marker surface should still show the arrow — but a marker
+      // surface that is itself focusable is not a button, and `[tabindex]`
+      // alone cannot tell the two apart.
+      const controlWins =
+        !!controlEl && (!cursorEl || (controlEl !== cursorEl && cursorEl.contains(controlEl)));
+
+      if (controlWins || !cursorEl) {
         setVariant("default");
-      } else if (cursorEl) {
+      } else {
         const customVariant = cursorEl.getAttribute("data-cursor");
         setVariant(customVariant === "marker" ? "marker" : customVariant === "text" ? "text" : "default");
-      } else {
-        setVariant("default");
       }
     };
     
