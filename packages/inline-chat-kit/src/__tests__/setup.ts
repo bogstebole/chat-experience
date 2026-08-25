@@ -1,6 +1,12 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, vi } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
+import * as axeMatchers from "vitest-axe/matchers";
+
+// Registered here rather than by importing vitest-axe/extend-expect in each
+// test file — that path does not reach Vitest's `expect` under ESM, and the
+// matcher silently does not exist.
+expect.extend(axeMatchers);
 
 afterEach(cleanup);
 

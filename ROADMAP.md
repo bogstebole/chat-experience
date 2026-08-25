@@ -183,11 +183,43 @@ refocused its composer whenever the page settled, undoing the dialog's focus
 return and dropping the reader in the input instead of back at the highlight.
 It now claims focus only when nothing else holds it.
 
-### A7 · Automated coverage
-- [ ] `axe-core` assertion over each component's rendered output
-- [ ] CI runs it alongside the existing suite
-- [ ] Manual VoiceOver pass — in particular whether splitting the answer into
-      per-word spans makes it read choppily. Automated tools will not catch this.
+### A7 · Automated coverage — automated half done
+- [x] `axe-core` over every exported component: buttons in each variant and
+      disabled, the input in all four states, the highlighter plain, in precise
+      mode, and with a highlight and its menu open, and the thread dialog
+- [x] CI runs it — the workflow already runs the suite, and these are in it
+- [x] Two rule groups switched off, both because they would measure nothing:
+      page-level rules (these are fragments; the host owns landmarks and
+      heading order) and colour contrast (jsdom does not paint, so axe would
+      compare colours it cannot see and pass everything)
+- [x] It found one real bug immediately — see below
+
+**The bug:** `GlassButton` while loading announced as a button with *no name*.
+The label was hidden with `visibility: hidden`, which removes it from the
+accessibility tree, and the spinner is `aria-hidden` — so nothing was left.
+Now hidden with opacity: identical to look at, same space, and with `aria-busy`
+it reads as "Continue, busy", which is what is true. Pinned by its own test as
+well as by axe.
+
+Not verified in the browser: the demo never puts a `GlassButton` into its
+loading state, so there was nothing to look at. The change swaps one
+space-preserving way of hiding for another.
+
+### A7b · The manual pass — **yours to run**
+No number of green axe runs answers whether any of this is usable, and this
+part needs ears. On macOS, ⌘F5 turns VoiceOver on and off.
+
+- [ ] **Does the answer read as prose?** It is split into one `<span>` per word
+      for the focus effect. Some screen readers pause between elements, which
+      would turn every answer into a word. list. like. this. If it does, that
+      is a real finding and the focus effect has to be rebuilt.
+- [ ] **Is the arrival of an answer announced**, once, after it finishes?
+- [ ] **Does the word cursor make sense** — does moving by word say the word?
+- [ ] **Is the key hint heard on focus**, and only then?
+- [ ] **Do highlights announce as "Highlight: …"**, and does the group say how
+      many?
+- [ ] **Does the thread announce itself as a dialog**, with the passage, and
+      does closing it put you back where you were?
 
 ---
 
