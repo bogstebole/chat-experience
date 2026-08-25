@@ -39,7 +39,7 @@ const setup = () => {
   const closeMenu = async () => {
     press("Escape");
     await waitFor(() =>
-      expect(screen.queryByRole("button", { name: /reply in thread/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole("menuitem", { name: /reply in thread/i })).not.toBeInTheDocument()
     );
   };
   return { ...utils, surface, press, highlight, closeMenu };
@@ -104,7 +104,7 @@ describe("TextHighlighter — reopening a highlight", () => {
 
     await user.click(screen.getByRole("button", { name: /^Highlight:/ }));
 
-    expect(screen.getByRole("button", { name: /reply in thread/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /reply in thread/i })).toBeInTheDocument();
   });
 
   it("opens it from the keyboard too", async () => {
@@ -116,7 +116,7 @@ describe("TextHighlighter — reopening a highlight", () => {
     screen.getByRole("button", { name: /^Highlight:/ }).focus();
     await user.keyboard("{Enter}");
 
-    expect(screen.getByRole("button", { name: /reply in thread/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /reply in thread/i })).toBeInTheDocument();
   });
 
   /** So a sighted keyboard user can see which one they are on. */
@@ -156,7 +156,7 @@ describe("TextHighlighter — reopening a highlight", () => {
     fireEvent.keyDown(control, { key: "Escape" });
 
     await waitFor(() =>
-      expect(screen.queryByRole("button", { name: /reply in thread/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole("menuitem", { name: /reply in thread/i })).not.toBeInTheDocument()
     );
   });
 
