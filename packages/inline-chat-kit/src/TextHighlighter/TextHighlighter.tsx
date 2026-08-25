@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Button } from "../Button/Button";
 import styles from "./TextHighlighter.module.css";
@@ -124,73 +124,104 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     [paths, selections]
   );
 
-  // Precise (native) selection capture — char-level. Registered once; reads refs.
-  useEffect(() => {
-    const handleMouseUp = () => {
-      if (menuAnchorRef.current) return;
+  /**
+   * Turn a DOM Range into a committed highlight.
+   *
+   * Three routes arrive at a range — a drag in precise mode, a native
+   * selection finished with the keyboard, and the word cursor below. They
+   * differ only in how the range is arrived at, so everything after it is
+   * shared.
+   */
+  const commitRange = useCallback((range: Range, rawText: string) => {
+    const container = containerRef.current;
+    const text = rawText.trim();
+    if (!container || !text) return;
 
+    const highlightedIndices = new Set<number>();
+    container.querySelectorAll("span[data-index]").forEach((span) => {
+      if (range.intersectsNode(span)) {
+        highlightedIndices.add(parseInt(span.getAttribute("data-index")!, 10));
+      }
+    });
+
+    // Reported before the geometry, and regardless of it. Somebody highlighted
+    // this text; whether a marker can be drawn over it is a separate question,
+    // and one the host app has no stake in.
+    onHighlightCompleteRef.current?.(text);
+
+    const cRect = container.getBoundingClientRect();
+    const rawRects = Array.from(range.getClientRects())
+      .map((r) => ({ x: r.left - cRect.left, y: r.top - cRect.top, w: r.width, h: r.height }))
+      .filter((r) => r.w > 0 && r.h > 0);
+    if (rawRects.length === 0) return;
+
+    // The browser returns a separate rect for each text node. Merge them by
+    // line, so the marker is one continuous stroke per line rather than one
+    // stroke per word.
+    const lines: { [y: string]: { x: number; y: number; w: number; h: number }[] } = {};
+    rawRects.forEach((r) => {
+      // Group rects that share roughly the same Y coordinate (within 5px)
+      const lineY = Object.keys(lines).find((yStr) => Math.abs(parseFloat(yStr) - r.y) < 5);
+      if (lineY) lines[lineY].push(r);
+      else lines[r.y.toString()] = [r];
+    });
+
+    const rects = Object.values(lines).map((lineRects) => {
+      const minX = Math.min(...lineRects.map((r) => r.x));
+      const maxX = Math.max(...lineRects.map((r) => r.x + r.w));
+      const minY = Math.min(...lineRects.map((r) => r.y));
+      const maxH = Math.max(...lineRects.map((r) => r.h));
+      return { x: minX, y: minY, w: maxX - minX, h: maxH };
+    });
+
+    const id = Date.now().toString();
+    setSelections((prev) => [...prev, { id, rects, text, highlightedIndices }]);
+    const pos = getRectsMenuPosition(rects);
+    setMenuAnchor({ x: pos.x, y: pos.y, pathId: id, kind: "selection" });
+  }, []);
+
+  /**
+   * A selection the reader made themselves.
+   *
+   * The pointer half only applies in precise mode, where native selection owns
+   * the pointer. The keyboard half applies in both modes: dragging a marker
+   * has no keyboard equivalent, so refusing keyboard selection in marker mode
+   * would leave that mode with no way in at all.
+   */
+  useEffect(() => {
+    const capture = (fromKeyboard: boolean) => {
+      if (menuAnchorRef.current) return;
       const container = containerRef.current;
       if (!container) return;
+      if (!fromKeyboard && selectionModeRef.current !== "precise") return;
+
       const sel = window.getSelection();
-
-      if (!sel || sel.isCollapsed || sel.rangeCount === 0 || !sel.toString().trim()) {
-        return;
-      }
-
-      if (selectionModeRef.current !== "precise") return;
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0 || !sel.toString().trim()) return;
 
       const range = sel.getRangeAt(0);
-      if (!container.contains(range.commonAncestorContainer)) return; // selection not in this paragraph
+      if (!container.contains(range.commonAncestorContainer)) return; // not this paragraph
 
-      const text = sel.toString().trim();
-      const cRect = container.getBoundingClientRect();
-      const rawRects = Array.from(range.getClientRects())
-        .map((r) => ({ x: r.left - cRect.left, y: r.top - cRect.top, w: r.width, h: r.height }))
-        .filter((r) => r.w > 0 && r.h > 0);
-      if (rawRects.length === 0) return;
-
-      // Browser returns a separate rect for each text node / span.
-      // We must merge them by line so the highlight path is continuous per line.
-      const lines: { [y: string]: { x: number; y: number; w: number; h: number }[] } = {};
-      rawRects.forEach(r => {
-        // Group rects that share roughly the same Y coordinate (within 5px)
-        const lineY = Object.keys(lines).find(yStr => Math.abs(parseFloat(yStr) - r.y) < 5);
-        if (lineY) {
-          lines[lineY].push(r);
-        } else {
-          lines[r.y.toString()] = [r];
-        }
-      });
-
-      const rects = Object.values(lines).map(lineRects => {
-        const minX = Math.min(...lineRects.map(r => r.x));
-        const maxX = Math.max(...lineRects.map(r => r.x + r.w));
-        const minY = Math.min(...lineRects.map(r => r.y));
-        const maxH = Math.max(...lineRects.map(r => r.h));
-        return { x: minX, y: minY, w: maxX - minX, h: maxH };
-      });
-
-      const id = Date.now().toString();
-      
-      const highlightedIndices = new Set<number>();
-      const tokenSpans = container.querySelectorAll("span[data-index]");
-      tokenSpans.forEach((span) => {
-        if (sel.containsNode(span, true)) {
-          highlightedIndices.add(parseInt(span.getAttribute("data-index")!, 10));
-        }
-      });
-
-      setSelections((prev) => [...prev, { id, rects, text, highlightedIndices }]);
-      const pos = getRectsMenuPosition(rects);
-      setMenuAnchor({ x: pos.x, y: pos.y, pathId: id, kind: "selection" });
-      onHighlightCompleteRef.current?.(text);
+      commitRange(range, sel.toString());
       // Clear the native selection on the next frame so it doesn't linger as blue.
       requestAnimationFrame(() => window.getSelection()?.removeAllRanges());
     };
 
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => document.removeEventListener("mouseup", handleMouseUp);
-  }, []);
+    const onMouseUp = () => capture(false);
+    const onKeyUp = (e: KeyboardEvent) => {
+      // Only keys that can have changed a selection. Anything else would
+      // re-commit the same range on every keystroke.
+      const selectAll = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a";
+      if (!e.shiftKey && !selectAll) return;
+      capture(true);
+    };
+
+    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("keyup", onKeyUp);
+    return () => {
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("keyup", onKeyUp);
+    };
+  }, [commitRange]);
 
   // Close any open menu when switching selection mode.
   const [lastSelectionMode, setLastSelectionMode] = useState(selectionMode);
@@ -198,6 +229,101 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     setLastSelectionMode(selectionMode);
     setMenuAnchor(null);
   }
+
+  /**
+   * The word cursor — how this works without a mouse.
+   *
+   * Dragging a marker has no keyboard equivalent, and native selection is not
+   * a way in either: browsers give no caret to non-editable text unless caret
+   * browsing is switched on, which almost nobody has. So the paragraph owns a
+   * cursor of its own, moving over the word tokens that are already there for
+   * hit-testing.
+   *
+   * Left and right move it, shift extends, Enter commits the same kind of
+   * highlight a drag would have made. Up and down are deliberately left alone:
+   * moving by line would need to know where the lines break, and guessing that
+   * would be worse than letting the page scroll.
+   */
+  const wordIndices = useMemo(
+    () => tokens.map((token, i) => (token.trim() ? i : -1)).filter((i) => i >= 0),
+    [tokens]
+  );
+  const [caret, setCaret] = useState<number | null>(null);
+  const [anchorIndex, setAnchorIndex] = useState<number | null>(null);
+  const hintId = useId();
+
+  const cursorRange = useMemo(() => {
+    if (caret === null || anchorIndex === null) return null;
+    return { from: Math.min(anchorIndex, caret), to: Math.max(anchorIndex, caret) };
+  }, [caret, anchorIndex]);
+
+  const clearCursor = () => {
+    setCaret(null);
+    setAnchorIndex(null);
+  };
+
+  const commitCursor = () => {
+    const container = containerRef.current;
+    if (!container || !cursorRange) return;
+    const first = container.querySelector(`span[data-index="${cursorRange.from}"]`);
+    const last = container.querySelector(`span[data-index="${cursorRange.to}"]`);
+    if (!first || !last) return;
+
+    const range = document.createRange();
+    range.setStartBefore(first);
+    range.setEndAfter(last);
+
+    let text = "";
+    for (let i = cursorRange.from; i <= cursorRange.to; i++) text += tokens[i];
+    commitRange(range, text);
+    clearCursor();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (wordIndices.length === 0) return;
+
+    const move = (direction: 1 | -1, extend: boolean) => {
+      e.preventDefault();
+      const at = caret === null ? -1 : wordIndices.indexOf(caret);
+      const next =
+        at === -1
+          ? wordIndices[direction === 1 ? 0 : wordIndices.length - 1]
+          : wordIndices[Math.min(wordIndices.length - 1, Math.max(0, at + direction))];
+      setCaret(next);
+      // Without shift the selection collapses onto the cursor, which is what
+      // makes an unextended move feel like moving rather than selecting.
+      if (!extend || anchorIndex === null) setAnchorIndex(next);
+    };
+
+    const jump = (to: number) => {
+      e.preventDefault();
+      setCaret(to);
+      if (!e.shiftKey || anchorIndex === null) setAnchorIndex(to);
+    };
+
+    switch (e.key) {
+      case "ArrowRight":
+        return move(1, e.shiftKey);
+      case "ArrowLeft":
+        return move(-1, e.shiftKey);
+      case "Home":
+        return jump(wordIndices[0]);
+      case "End":
+        return jump(wordIndices[wordIndices.length - 1]);
+      case "Enter":
+      case " ":
+        if (!cursorRange) return;
+        e.preventDefault();
+        return commitCursor();
+      case "Escape":
+        if (!menuAnchor && caret === null) return; // let the host app have it
+        e.preventDefault();
+        setMenuAnchor(null);
+        return clearCursor();
+      default:
+        return;
+    }
+  };
 
   const checkHighlight = (clientX: number, clientY: number, indices: Set<number>) => {
     const el = document.elementFromPoint(clientX, clientY);
@@ -216,6 +342,11 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     if (selectionMode === "precise") return; // native selection handles this mode
     // Only left click / main touch
     if (e.button !== 0 && e.pointerType === "mouse") return;
+
+    // Text is selectable now, so the drag would otherwise start a native
+    // selection underneath the marker. Preventing the default here suppresses
+    // the compatibility mouse events that would begin one.
+    e.preventDefault();
 
     setIsDrawing(true);
     const target = e.currentTarget as HTMLDivElement;
@@ -352,8 +483,11 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       style={{
         position: "relative",
-        userSelect: (selectionMode === "precise" && !menuAnchor) ? "text" : "none",
-        WebkitUserSelect: (selectionMode === "precise" && !menuAnchor) ? "text" : "none",
+        // Suppressed only while a marker is being drawn. It used to be off
+        // permanently in marker mode, which meant the answer could not be
+        // selected at all — not to highlight it, not even to copy it.
+        userSelect: isDrawing ? "none" : "text",
+        WebkitUserSelect: isDrawing ? "none" : "text",
         touchAction: "none", // Prevent scrolling while highlighting on touch devices
         display: "block", // to wrap the text tightly
         zIndex: menuAnchor ? 10 : 1, // elevate above other paragraphs
@@ -362,7 +496,19 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      className={styles.surface}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onBlur={clearCursor}
+      aria-describedby={hintId}
     >
+      {/* Referenced by aria-describedby, so it is read on focus and nowhere
+          else — a directly referenced node is used even when hidden. Without
+          this, the keys exist but nothing tells anyone they do. */}
+      <span id={hintId} className={styles.srOnly} aria-hidden="true">
+        Left and right arrow keys move by word. Hold shift to select. Enter
+        highlights the selection, Escape clears it.
+      </span>
 
       {/* Proximity Hitbox: proširuje zonu "hvatanja" miša za 20px bez pomeranja layouta */}
       <div 
@@ -417,6 +563,10 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
               className={styles.token}
               data-active={isPartOfActiveHighlight || undefined}
               data-pressed={isPartOfPressed || undefined}
+              data-kbd-cursor={caret === i || undefined}
+              data-kbd-selected={
+                (cursorRange && i >= cursorRange.from && i <= cursorRange.to) || undefined
+              }
             >
               {token}
             </span>

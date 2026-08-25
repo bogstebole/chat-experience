@@ -25,6 +25,14 @@ if (!document.elementFromPoint) {
   document.elementFromPoint = vi.fn(() => null);
 }
 
+// Ranges measure too, and jsdom implements no more geometry for them than it
+// does for elements. An empty list is the honest answer: nothing occupies any
+// space in a document with no layout.
+if (!Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = vi.fn(() => [] as unknown as DOMRectList);
+  Range.prototype.getBoundingClientRect = vi.fn(() => new DOMRect());
+}
+
 // Motion observes element size. jsdom has no layout, so it has no
 // ResizeObserver either — a stub that never reports is the truthful shape:
 // nothing ever resizes in a document with no layout.

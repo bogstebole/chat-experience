@@ -157,3 +157,48 @@
     transition: none;
   }
 }
+
+/* ─────────────────────────────────────────────
+   The word cursor
+
+   The paragraph is focusable, so it needs a focus ring of its own — and the
+   cursor and its selection need to be visible to the sighted keyboard user
+   driving them, not only to the screen reader.
+   ───────────────────────────────────────────── */
+
+.surface:focus {
+  outline: none; /* replaced by the focus-visible ring below */
+}
+
+.surface:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+
+/* Deliberately not the marker yellow. This is a pending selection, not a
+   highlight — they should not look like the same thing. */
+.token[data-kbd-selected] {
+  background: rgba(204, 255, 0, 0.4);
+  border-radius: 2px;
+}
+
+.token[data-kbd-cursor] {
+  outline: 2px solid rgba(17, 17, 17, 0.55);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* Read on focus through aria-describedby, shown to nobody. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
