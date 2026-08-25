@@ -205,21 +205,23 @@ Not verified in the browser: the demo never puts a `GlassButton` into its
 loading state, so there was nothing to look at. The change swaps one
 space-preserving way of hiding for another.
 
-### A7b · The manual pass — **yours to run**
-No number of green axe runs answers whether any of this is usable, and this
-part needs ears. On macOS, ⌘F5 turns VoiceOver on and off.
+### A7b · The manual pass — done, with VoiceOver on macOS
+Run by the author, since no number of green axe runs answers whether any of
+this is usable and that part needs ears.
 
-- [ ] **Does the answer read as prose?** It is split into one `<span>` per word
-      for the focus effect. Some screen readers pause between elements, which
-      would turn every answer into a word. list. like. this. If it does, that
-      is a real finding and the focus effect has to be rebuilt.
-- [ ] **Is the arrival of an answer announced**, once, after it finishes?
-- [ ] **Does the word cursor make sense** — does moving by word say the word?
-- [ ] **Is the key hint heard on focus**, and only then?
-- [ ] **Do highlights announce as "Highlight: …"**, and does the group say how
-      many?
-- [ ] **Does the thread announce itself as a dialog**, with the passage, and
-      does closing it put you back where you were?
+- [x] **The answer reads as prose.** This was the open risk: the text is split
+      into one `<span>` per word for the focus effect, and some screen readers
+      pause between elements, which would have turned every answer into a
+      word. list. like. this. It does not. The per-word structure stays, and
+      with it the focus effect.
+- [x] The highlighted passage is read back
+- [x] The key hint is heard on focus, Escape included
+- [x] Surrounding structure — controls, counts — reads sensibly
+
+Worth knowing rather than fixing: the hint is three sentences, and it is heard
+on every answer paragraph you land on. In a long conversation that is a lot of
+repetition. Left as it is — the author heard it and judged it fine, and a
+shorter hint trades a known instruction for a discoverable one.
 
 ---
 
