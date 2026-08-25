@@ -102,15 +102,30 @@ Two things this deliberately does **not** claim:
   switched on. That is *why* there is a word cursor — the native path alone
   would have been a checkbox, not a feature.
 
-### A4 · Make existing highlights reachable
-The SVG `<path>` markers behave as buttons — press to reopen the menu — but they
-are not focusable and have no accessible name.
-- [ ] A focusable control per highlight, named by its passage
-      ("Highlight: the first few words…")
-- [ ] Enter/Space opens that highlight's menu
-- [ ] Rendered as real buttons rather than focusable SVG paths — SVG focus
-      behaviour differs across browsers and is not worth fighting
-- [ ] Test: tab reaches every committed highlight; Enter opens the menu
+### A4 · Make existing highlights reachable — done
+The SVG `<path>` markers behaved as buttons — press to reopen the menu — but
+were not focusable and had no accessible name.
+- [x] One real `<button>` per highlight, named by the words it covers
+      ("Highlight: Particle physics studies the most fundamental…"), truncated
+      so a screen reader is not made to read a paragraph as a label
+- [x] Real buttons rather than focusable SVG paths — the platform supplies
+      Enter, Space, the role and the focus behaviour, and SVG focus differs in
+      every browser
+- [x] Grouped and counted ("2 highlights"), so arriving there tells you what
+      you have arrived at
+- [x] Invisible, but focusing one lights up **its marker** at full emphasis, so
+      tabbing through is visible on the page and not only to a screen reader
+- [x] Escape reaches the paragraph from any control inside it; every other key
+      belongs to whatever has focus, so the word cursor no longer fires while a
+      button is focused
+- [x] Three copies of "the words these indices cover" collapsed into one
+- [x] 12 tests
+- [x] Browser: tab from the paragraph lands on the first highlight, its stroke
+      goes to full emphasis, activating it reopens that highlight's menu and
+      dims the rest of the paragraph, Escape closes it. The group adds no
+      layout — measured 0px.
+
+Focus does not yet move **into** the menu when it opens; that is A5.
 
 ### A5 · The floating menu becomes a real menu
 - [ ] Focus moves to the first action when it opens
