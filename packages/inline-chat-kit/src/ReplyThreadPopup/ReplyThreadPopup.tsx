@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { motion, MotionConfig } from "motion/react";
 import { X, Save } from "lucide-react";
 import { ChatInput, defaultInlineAnimConfig, type ChatInputHandle } from "../ChatInput/ChatInput";
@@ -26,10 +26,40 @@ export interface ReplyThreadPopupProps {
   ) => AsyncIterable<string> | Promise<string> | string;
 }
 
+/** Read on focus, shown to nobody. */
+const srOnly: React.CSSProperties = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  margin: -1,
+  padding: 0,
+  border: 0,
+  overflow: "hidden",
+  clipPath: "inset(50%)",
+  whiteSpace: "nowrap",
+};
+
+/** Everything inside the panel that can take focus, in tab order. */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
+
 export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }: ReplyThreadPopupProps) {
   const [threadFade, setThreadFade] = useState<"none" | "top" | "bottom" | "both">("none");
   const threadActiveInputRef = useRef<ChatInputHandle>(null);
   const threadFeedRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  /**
+   * Where focus came from. Read during the first render rather than in an
+   * effect: a child's effects run before its parent's, and the thread's input
+   * focuses itself in one of them — so by the time an effect here could look,
+   * the answer would already be "the input", and closing would restore focus
+   * to an element that no longer exists.
+   */
+  const [returnFocusTo] = useState<HTMLElement | null>(() =>
+    typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null)
+  );
+  const labelId = useId();
+  const quoteId = useId();
   const animConfig = defaultInlineAnimConfig;
 
   // Turn state, streaming and the reveal are the same problem here as in the
@@ -45,6 +75,53 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
   } = useChatTurns({
     onSend: (message, context) => onSendMessage(message, quoted, context),
   });
+
+  /**
+   * A dialog owns focus while it is open, and gives it back when it closes.
+   *
+   * Without the first half, someone who opened this from the keyboard is left
+   * behind on a page they can no longer see. Without the second, closing it
+   * drops them at the top of the document with no idea where they were.
+   */
+  useEffect(() => {
+    // The input, not the panel: writing a reply is the only reason to be here.
+    if (threadActiveInputRef.current) threadActiveInputRef.current.focus();
+    else panelRef.current?.focus();
+
+    return () => {
+      if (returnFocusTo?.isConnected) returnFocusTo.focus();
+    };
+  }, [returnFocusTo]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      // Something inside may have wanted it first — a highlight menu open on
+      // one of the thread's own answers, for instance. Those mark the event as
+      // handled; this only acts on what is left.
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      onClose();
+      return;
+    }
+
+    if (e.key !== "Tab") return;
+    const items = [...(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
+    if (items.length === 0) return;
+
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+
+    // Wrap at both ends, so tab cannot walk out of the dialog onto a page the
+    // reader can no longer see.
+    if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   const updateThreadFade = () => {
     const wrap = threadFeedRef.current;
@@ -127,8 +204,18 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
         pointerEvents: "auto",
       }}
       onClick={onClose}
+      onKeyDown={handleKeyDown}
     >
       <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        // Named by both: the phrase gives it meaning, the passage says which
+        // thread. `aria-modal` is the whole claim to modality — marking the
+        // rest of the page inert would mean reaching outside this component,
+        // into a document it does not own.
+        aria-labelledby={`${labelId} ${quoteId}`}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         initial={{ 
         left: activeReply.rect.left, 
@@ -236,7 +323,10 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
               padding: '16px',
               alignItems: 'start'
             }}>
-            <div style={{ color: '#111111', display: 'inline-block', fontFamily: 'var(--font-geist-sans), system-ui, sans-serif', fontSize: '13px', letterSpacing: '0.01em', lineHeight: '150%' }}>
+            <span id={labelId} style={srOnly}>
+              Thread on
+            </span>
+            <div id={quoteId} style={{ color: '#111111', display: 'inline-block', fontFamily: 'var(--font-geist-sans), system-ui, sans-serif', fontSize: '13px', letterSpacing: '0.01em', lineHeight: '150%' }}>
               {activeReply.text}
             </div>
             
