@@ -117,6 +117,13 @@
     --ick-shadow-inset:
       0 1px 1px rgb(var(--ick-ink-rgb) / 0.2),
       0 1px 1px rgb(var(--ick-ink-rgb) / 0.1);
+    /* A card floating over the page — the attachment fan, and anything else
+       that has to read as lifted rather than pressed. */
+    --ick-shadow-float:
+      0 4px 16px -2px rgb(var(--ick-ink-rgb) / 0.08),
+      0 1px 4px -1px rgb(var(--ick-ink-rgb) / 0.04);
+    /* A wash over content, to put something on top of it. */
+    --ick-scrim: rgb(var(--ick-glass-shade-rgb) / 0.2);
 
     /* ═══ Motion ═══════════════════════════════════════════════════════════
        One easing curve did thirteen jobs by being retyped thirteen times. */
@@ -230,6 +237,40 @@
       0 18px 8px 0 rgb(var(--ick-glass-rim-rgb) / 0.35) inset,
       0 3px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.04),
       0 1px 2px 0 rgb(var(--ick-glass-shade-rgb) / 0.06);
+    --ick-shadow-glass-pulse:
+      -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb) / 0.24) inset,
+      -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.55) inset,
+      2px 1px 4px -4px rgb(var(--ick-glass-shade-rgb) / 0.9) inset,
+      0 0 12px 8px rgb(var(--ick-glass-rim-rgb) / 0.18) inset,
+      0 -9px 14px 4px rgb(var(--ick-glass-shade-rgb) / 0.3) inset,
+      -2px -3px 5px 3px rgb(var(--ick-glass-shade-rgb) / 0.18) inset,
+      0 28px 12px -7px rgb(var(--ick-glass-rim-rgb) / 0.18) inset,
+      0 34px 10px -9px rgb(var(--ick-glass-shade-rgb) / 0.16) inset,
+      0 27px 8px rgb(var(--ick-glass-shade-rgb) / 0.04),
+      0 17px 6px rgb(var(--ick-glass-shade-rgb) / 0.06),
+      0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.12),
+      0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.2),
+      0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
+    --ick-shadow-float:
+      0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.5),
+      0 1px 4px -1px rgb(var(--ick-glass-shade-rgb) / 0.35);
+    /* The moment the action button is absorbed into the bubble: the inner
+       highlight brightens, then decays. A separate state rather than a
+       brighter hover, because it fires once and is not about the pointer. */
+    --ick-shadow-glass-pulse:
+      -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb)) inset,
+      -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.41) inset,
+      2px 1px 4px -4px rgb(var(--ick-glass-shade-rgb) / 0.84) inset,
+      0 0 12px 8px rgb(var(--ick-glass-rim-rgb)) inset,
+      0 -9px 14px 4px rgb(var(--ick-glass-shade-rgb) / 0.18) inset,
+      -2px -3px 5px 3px rgb(var(--ick-glass-shade-rgb) / 0.1) inset,
+      0 28px 12px -7px rgb(var(--ick-glass-rim-rgb)) inset,
+      0 34px 10px -9px rgb(var(--ick-glass-shade-rgb) / 0.08) inset,
+      0 27px 8px rgb(var(--ick-glass-shade-rgb) / 0.01),
+      0 17px 6px rgb(var(--ick-glass-shade-rgb) / 0.01),
+      0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.06),
+      0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.1),
+      0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.1);
   }
 
   /* ═══ Dark ═══════════════════════════════════════════════════════════════

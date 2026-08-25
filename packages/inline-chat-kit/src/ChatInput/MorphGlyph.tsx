@@ -11,7 +11,7 @@ import { Check, CornerDownLeft, Square } from "lucide-react";
 
 export interface MorphGlyphProps {
   mode: "send" | "stop" | "check";
-  /** Icon color (stroke + fill). */
+  /** Icon colour. Inherits from whatever contains it unless set. */
   color?: string;
   /** Slide duration in seconds. */
   duration?: number;
@@ -23,7 +23,7 @@ const SLIDE_DISTANCE = 10;
 
 export function MorphGlyph({
   mode,
-  color = "#FFFFFFFA",
+  color = "currentColor",
   duration = 0.22,
   size = 14,
 }: MorphGlyphProps) {

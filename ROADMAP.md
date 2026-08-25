@@ -340,9 +340,32 @@ That is enforced, not remembered:
       instead of forking it, which makes them public API — and public API
       nobody can look at is public API nobody uses correctly.
 
-### D3 · `ChatInput` on tokens
-- [ ] 71 literals out of the stylesheet, 17 inline style blocks out of the TSX
-- [ ] This is what dark mode is waiting on
+### D3 · `ChatInput` on tokens — done
+- [x] **71 colour literals → 4**, and those four are mask stencils, where a
+      mask needs an opaque value and any one does
+- [x] Three 13-layer glass shadow stacks were copies of `GlassButton`'s,
+      pasted, and had drifted from them. They are token references now, so the
+      bubble and the buttons are made of the same glass by construction
+      rather than by somebody remembering to update both.
+- [x] Inline styles out of the TSX: the attached-image tray and the overlay's
+      close button became classes, and `MorphGlyph` inherits `currentColor`
+      instead of being handed `#111` at the call site
+- [x] `--slot` deleted — declared in the stylesheet, read by nothing
+- [x] Component variables prefixed and derived (`--ick-input-h`,
+      `--ick-input-fill`, `--ick-input-text`), so a host can make the input
+      taller or rounder without touching anything else
+- [x] New tokens for what genuinely had no home: `--ick-shadow-glass-pulse`
+      (the one-shot flash when the action button is absorbed),
+      `--ick-shadow-float` and `--ick-scrim`
+- [x] Dark mode is readable: the editor text was
+      `rgba(17, 17, 17, 0.6)` on a dark page and is now
+      `rgba(245, 245, 245, 0.6)`. Verified in the playground and in Storybook,
+      all four states.
+- [x] Light unchanged
+
+One deliberate unification: the bubble's hover edge had slightly different
+alphas from the button's. They share `--ick-glass-edge` now — a difference
+too small to see and too easy to drift.
 
 ### D4 · `ReplyThreadPopup` gets a stylesheet
 - [ ] Inline styles into a CSS module, so it can be themed at all
