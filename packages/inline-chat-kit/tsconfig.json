@@ -19,5 +19,8 @@
     "allowImportingTsExtensions": false,
     "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests are typechecked by the test run, not shipped. Without this they
+  // emit declarations into dist and end up inside the published tarball.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/__tests__"]
 }
