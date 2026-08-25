@@ -22,5 +22,5 @@
   "include": ["src"],
   // Tests are typechecked by the test run, not shipped. Without this they
   // emit declarations into dist and end up inside the published tarball.
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/__tests__"]
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/__tests__", "src/stories"]
 }

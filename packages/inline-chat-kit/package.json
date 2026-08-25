@@ -1,7 +1,7 @@
 {
   "name": "inline-chat-kit",
   "version": "0.1.0",
-  "description": "A drop-in inline AI chat experience — morphing input, hover actions, text highlighting and reply threads.",
+  "description": "A drop-in inline AI chat experience \u2014 morphing input, hover actions, text highlighting and reply threads.",
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -27,7 +27,9 @@
     "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit false --emitDeclarationOnly false --pretty"
+    "typecheck": "tsc -b --noEmit false --emitDeclarationOnly false --pretty",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build"
   },
   "peerDependencies": {
     "lucide-react": ">=0.400.0",
@@ -36,6 +38,7 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
+    "@storybook/react-vite": "^10.5.10",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.6",
@@ -47,6 +50,7 @@
     "motion": "^12.40.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "storybook": "^10.5.10",
     "typescript": "~6.0.2",
     "vite": "^8.0.10",
     "vite-plugin-dts": "^4.5.4",

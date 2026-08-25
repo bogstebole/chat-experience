@@ -1,0 +1,7 @@
+/* Enough page for a component to sit on. Everything else comes from the kit's
+   own tokens, so a story is styled by the same values an application gets. */
+body {
+  font-family: var(--ick-font-sans);
+  color: var(--ick-ink);
+  transition: background 150ms ease;
+}

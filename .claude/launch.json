@@ -12,6 +12,18 @@
       ],
       "port": 5173,
       "autoPort": false
+    },
+    {
+      "name": "storybook",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "storybook",
+        "--workspace",
+        "packages/inline-chat-kit"
+      ],
+      "port": 6006,
+      "autoPort": false
     }
   ]
 }

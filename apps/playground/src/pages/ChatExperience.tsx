@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "motion/react";
 import { useDialKit } from "dialkit";
-import { ArrowLeft, Share, Highlighter, TextCursor } from "lucide-react";
+import { ArrowLeft, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
 import {
   Button,
   ReplyThreadPopup,
@@ -112,6 +112,16 @@ export function ChatExperience() {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
   const [activeReply, setActiveReply] = useState<{ text: string, rect: DOMRect } | null>(null);
+
+  /**
+   * The theme, set the way any host app sets it: `data-theme` on the root
+   * element. Not wired to the system preference — see the note in the kit's
+   * tokens.css, where the same decision is made and for the same reason.
+   */
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
   const [selectionMode, setSelectionMode] = useState<"marker" | "precise">("marker");
   const activeInputRef = useRef<ChatInputHandle>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -290,6 +300,14 @@ export function ChatExperience() {
                   Highlights ({highlights.length})
                 </button>
               )}
+              <button
+                className="secondaryBtn iconBtn"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"}
+                aria-pressed={theme === "dark"}
+              >
+                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
               <button 
                 className="secondaryBtn iconBtn" 
                 onClick={() => navigator.share?.({ title: "Inline chat experience", url: window.location.href })}
