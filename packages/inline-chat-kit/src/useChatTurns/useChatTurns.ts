@@ -109,9 +109,17 @@ export function useChatTurns({
   const pendingRef = useRef<Map<string, string>>(new Map());
   const editingRef = useRef<{ id: string; user: string } | null>(null);
   const onSendRef = useRef(onSend);
+  // A live mirror of `turns`. Reading state inside a setState updater and
+  // acting on it there makes the updater impure: React is free to call it
+  // twice — StrictMode does, in development — and any work scheduled from
+  // inside lands a render late. Both matter here. The morph out of the input
+  // is driven by `state`, so a render's delay shows up as the text lagging
+  // behind the transition.
+  const turnsRef = useRef(turns);
 
   useEffect(() => {
     onSendRef.current = onSend;
+    turnsRef.current = turns;
   });
 
   /**
@@ -127,7 +135,9 @@ export function useChatTurns({
         changed = true;
         return { ...turn, ...patch };
       });
-      return changed ? next : current;
+      if (!changed) return current;
+      turnsRef.current = next;
+      return next;
     });
   }, []);
 
@@ -137,12 +147,14 @@ export function useChatTurns({
     if (pending.size === 0) return;
     const entries = [...pending];
     pending.clear();
-    setTurns((current) =>
-      current.map((turn) => {
+    setTurns((current) => {
+      const next = current.map((turn) => {
         const text = entries.find(([id]) => id === turn.id)?.[1];
         return text === undefined ? turn : { ...turn, ai: text };
-      })
-    );
+      });
+      turnsRef.current = next;
+      return next;
+    });
   }, []);
 
   const schedule = useCallback(() => {
@@ -173,11 +185,14 @@ export function useChatTurns({
       patchTurn(id, { state: "resting" });
       // An edited turn already has an input beneath it; a fresh answer needs one.
       if (!wasEdit) {
-        setTurns((current) =>
-          current.some((t) => t.state === "idle" && t.ai === "" && t.user === "")
-            ? current
-            : [...current, emptyTurn()]
-        );
+        setTurns((current) => {
+          if (current.some((t) => t.state === "idle" && t.ai === "" && t.user === "")) {
+            return current;
+          }
+          const next = [...current, emptyTurn()];
+          turnsRef.current = next;
+          return next;
+        });
       }
     },
     [patchTurn]
@@ -253,19 +268,18 @@ export function useChatTurns({
 
   const submit = useCallback(
     (id: string, value?: string) => {
-      setTurns((current) => {
-        const turn = current.find((t) => t.id === id);
-        if (!turn) return current;
-        const message = (value ?? turn.user).trim();
-        if (!message) return current;
+      const turn = turnsRef.current.find((t) => t.id === id);
+      if (!turn) return;
+      const message = (value ?? turn.user).trim();
+      if (!message) return;
 
-        // Re-submitting a turn that already has an answer regenerates it in
-        // place; it must not spawn a second input below.
-        const wasEdit = turn.ai.length > 0;
-        editingRef.current = null;
-        void run(id, message, wasEdit);
-        return current;
-      });
+      // Re-submitting a turn that already has an answer regenerates it in
+      // place; it must not spawn a second input below.
+      const wasEdit = turn.ai.length > 0;
+      editingRef.current = null;
+      // Synchronous, so the turn enters `responding` in the same update as the
+      // keystroke that sent it and the morph starts with the text already set.
+      void run(id, message, wasEdit);
     },
     [run]
   );
@@ -276,11 +290,8 @@ export function useChatTurns({
 
   const beginEdit = useCallback(
     (id: string) => {
-      setTurns((current) => {
-        const turn = current.find((t) => t.id === id);
-        if (turn) editingRef.current = { id, user: turn.user };
-        return current;
-      });
+      const turn = turnsRef.current.find((t) => t.id === id);
+      if (turn) editingRef.current = { id, user: turn.user };
       patchTurn(id, { state: "typing" });
     },
     [patchTurn]
