@@ -63,6 +63,25 @@ const getRectsMenuPosition = (rects: { x: number; y: number; w: number; h: numbe
   });
   return { x: (minX + maxX) / 2, y: minY };
 };
+/**
+ * The words a set of token indices covers, gaps included.
+ *
+ * A fast drag skips tokens — the pointer lands on "the" and "matter" without
+ * ever being over the space between them — so the run is filled in from the
+ * first index to the last rather than joining only what was touched.
+ */
+const textFromIndices = (indices: Set<number>, tokens: string[]) => {
+  if (indices.size === 0) return "";
+  const sorted = [...indices].sort((a, b) => a - b);
+  let out = "";
+  for (let i = sorted[0]; i <= sorted[sorted.length - 1]; i++) out += tokens[i];
+  return out.trim();
+};
+
+/** Long passages make unusable labels; a screen reader reads every character. */
+const shorten = (text: string, max = 60) =>
+  text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+
 const getSelectionPathString = (rects: { x: number; y: number; w: number; h: number }[]) => {
   let d = "";
   rects.forEach(r => {
@@ -82,6 +101,10 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   const [isDrawing, setIsDrawing] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number | string, y: number, pathId: string, kind: "path" | "selection" } | null>(null);
   const [pressedPathId, setPressedPathId] = useState<string | null>(null);
+  // Which highlight the keyboard is currently on. Drives the same emphasis the
+  // open menu does, so tabbing through them is visible on the page and not
+  // only to a screen reader.
+  const [focusedMarkerId, setFocusedMarkerId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleGlobalPointerDown = (e: PointerEvent) => {
@@ -118,11 +141,34 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   // Rebuilding these path strings on every hover was a large part of the cost.
   const allMarkers = useMemo(
     () => [
-      ...paths.map((p) => ({ id: p.id, d: makePathString(p.points), kind: "path" as const, item: p })),
-      ...selections.map((sel) => ({ id: sel.id, d: getSelectionPathString(sel.rects), kind: "selection" as const, item: sel })),
+      ...paths.map((p) => ({
+        id: p.id,
+        d: makePathString(p.points),
+        kind: "path" as const,
+        item: p,
+        text: textFromIndices(p.highlightedIndices, tokens),
+      })),
+      ...selections.map((sel) => ({
+        id: sel.id,
+        d: getSelectionPathString(sel.rects),
+        kind: "selection" as const,
+        item: sel,
+        text: sel.text,
+      })),
     ],
-    [paths, selections]
+    [paths, selections, tokens]
   );
+
+  type Marker = (typeof allMarkers)[number];
+
+  /** Where the menu sits for a marker, in container coordinates. */
+  const openMenuFor = (marker: Marker) => {
+    const pos =
+      marker.kind === "path"
+        ? getMenuPosition((marker.item as PathData).points)
+        : getRectsMenuPosition((marker.item as SelectionHighlight).rects);
+    setMenuAnchor({ x: pos.x, y: pos.y, pathId: marker.id, kind: marker.kind });
+  };
 
   /**
    * Turn a DOM Range into a committed highlight.
@@ -280,6 +326,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Something inside has focus — a highlight's button, or a menu action.
+    // Only Escape is still ours; the rest belongs to whatever is focused.
+    if (e.target !== e.currentTarget && e.key !== "Escape") return;
     if (wordIndices.length === 0) return;
 
     const move = (direction: 1 | -1, extend: boolean) => {
@@ -403,33 +452,15 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     }
 
     if (onHighlightComplete && currentPath.highlightedIndices.size > 0) {
-      // Reconstruct highlighted text by filling in any gaps (e.g., spaces missed by fast mouse movement)
-      const sortedIndices = Array.from(currentPath.highlightedIndices).sort((a, b) => a - b);
-      const minIdx = sortedIndices[0];
-      const maxIdx = sortedIndices[sortedIndices.length - 1];
-      
-      let highlightedText = "";
-      for (let i = minIdx; i <= maxIdx; i++) {
-        highlightedText += tokens[i];
-      }
-      onHighlightComplete(highlightedText.trim());
+      onHighlightComplete(textFromIndices(currentPath.highlightedIndices, tokens));
     }
     
     setCurrentPath(null);
   };
 
   const getHighlightedText = (pathId: string) => {
-    const pathData = paths.find(p => p.id === pathId);
-    if (!pathData || pathData.highlightedIndices.size === 0) return "";
-    const sortedIndices = Array.from(pathData.highlightedIndices).sort((a, b) => a - b);
-    const minIdx = sortedIndices[0];
-    const maxIdx = sortedIndices[sortedIndices.length - 1];
-    
-    let highlightedText = "";
-    for (let i = minIdx; i <= maxIdx; i++) {
-      highlightedText += tokens[i];
-    }
-    return highlightedText.trim();
+    const pathData = paths.find((p) => p.id === pathId);
+    return pathData ? textFromIndices(pathData.highlightedIndices, tokens) : "";
   };
 
   const removeHighlight = (id: string) => {
@@ -601,7 +632,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
                 strokeLinecap="butt"
                 data-cursor="pointer"
                 data-pressed={pressedPathId === marker.id || undefined}
-                data-active={menuAnchor?.pathId === marker.id || undefined}
+                data-active={
+                  menuAnchor?.pathId === marker.id || focusedMarkerId === marker.id || undefined
+                }
                 data-dimmed={(menuAnchor && menuAnchor.pathId !== marker.id) || undefined}
                 style={{ pointerEvents: isDrawing ? "none" : "stroke" }}
                 onPointerDown={(e) => {
@@ -612,10 +645,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
                 onPointerUp={(e) => {
                   if (pressedPathId === marker.id) {
                     e.stopPropagation();
-                    const pos = marker.kind === "path"
-                      ? getMenuPosition((marker.item as PathData).points)
-                      : getRectsMenuPosition((marker.item as SelectionHighlight).rects);
-                    setMenuAnchor({ x: pos.x, y: pos.y, pathId: marker.id, kind: marker.kind });
+                    openMenuFor(marker);
                     setPressedPathId(null);
                   }
                 }}
@@ -628,7 +658,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
                 className={styles.shimmer}
                 d={marker.d}
                 pathLength={1}
-                data-active={menuAnchor?.pathId === marker.id || undefined}
+                data-active={
+                  menuAnchor?.pathId === marker.id || focusedMarkerId === marker.id || undefined
+                }
               />
             </React.Fragment>
           ))}
@@ -644,6 +676,36 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
           )}
         </g>
       </svg>
+
+      {/* Every committed highlight, as something the keyboard can reach.
+          Real buttons rather than focusable SVG paths — focus on SVG elements
+          behaves differently in every browser and is not a fight worth having.
+          They are invisible, but focusing one lights up the marker it belongs
+          to, so tabbing through them is visible on the page and not only to a
+          screen reader. */}
+      {allMarkers.length > 0 && (
+        <div
+          role="group"
+          aria-label={`${allMarkers.length} highlight${allMarkers.length === 1 ? "" : "s"}`}
+        >
+          {allMarkers.map((marker) => (
+            <button
+              key={marker.id}
+              type="button"
+              className={styles.srOnly}
+              onPointerDown={(e) => e.stopPropagation()} // must not start a new drawing
+              onFocus={() => setFocusedMarkerId(marker.id)}
+              onBlur={() => setFocusedMarkerId(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                openMenuFor(marker);
+              }}
+            >
+              {`Highlight: ${shorten(marker.text)}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Floating Action Menu */}
       <AnimatePresence>
