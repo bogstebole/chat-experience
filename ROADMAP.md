@@ -308,6 +308,22 @@ is dark is worse than not shipping dark at all. `[data-theme="dark"]` and
 `.dark` work today; the media query goes back in D6, once nothing is left
 behind.
 
+### D2b · Somewhere to look at it — done
+- [x] Storybook on port 6006, stories reading the kit's **source**, so what is
+      on screen is what the next commit ships
+- [x] A theme switch in the toolbar that sets `data-theme` on the root element
+      — the same mechanism a host app uses, so if it works here it works there
+- [x] Stories for `Button` (variants, the whole size scale, states),
+      `ChatInput` (interactive, and all four states side by side),
+      `TextHighlighter` (both modes) and `ReplyThreadPopup`
+- [x] **A live token table.** Not a hand-written list — it reads every
+      `--ick-` declaration out of the stylesheets and resolves it against the
+      current theme. A table kept in step by hand is wrong within a month;
+      this one cannot drift, and it re-reads itself when the theme changes.
+- [x] A theme toggle in the playground too, so dark can be judged in the real
+      thing and not only in isolation
+- [x] Stories excluded from the published package, same as the tests
+
 ### D3 · `ChatInput` on tokens
 - [ ] 71 literals out of the stylesheet, 17 inline style blocks out of the TSX
 - [ ] This is what dark mode is waiting on
