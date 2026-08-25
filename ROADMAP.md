@@ -52,12 +52,22 @@ Today an answer arrives with no announcement at all.
 - [x] Verified in the browser: region present with the full answer, `aria-busy`
       flipping true → absent across a turn, no console errors in a clean tab
 
-### A2 · Honour `prefers-reduced-motion` everywhere
-Only `TextHighlighter.module.css` respects it today.
-- [ ] `useChatTurns` reveal publishes the full answer immediately under reduce
-- [ ] `ChatInput` morph springs collapse to no animation
-- [ ] Entrance/exit transitions in the playground rows likewise
-- [ ] Test: reveal is instant when the media query matches
+### A2 · Honour `prefers-reduced-motion` everywhere — done
+Only `TextHighlighter.module.css` respected it.
+- [x] `useChatTurns` hands over the whole answer at once — a typewriter is an
+      animation
+- [x] `MotionConfig reducedMotion="user"` inside each exported component, not
+      left to the host app: a host that forgets leaves every reader with the
+      full morph. Transforms and layout snap, opacity and colour still fade.
+- [x] Playground wraps its root the same way — the pattern a consumer copies
+- [x] CSS: `Button` and `GlassButton` transitioned `transform`. Now they name
+      their properties, so the fades stay and the movement goes. The spinner
+      keeps turning — it is the only sign anything is happening.
+- [x] 4 tests, including the other half of the claim: without the preference it
+      really does still type
+- [x] Browser: morph, streaming and reveal unchanged, no console errors.
+      The reduce path itself is proven by the tests — the browser tooling here
+      cannot emulate the OS setting.
 
 ### A3 · Let the keyboard select text at all
 `user-select: none` is set permanently on the highlighter in marker mode, so a

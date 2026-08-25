@@ -18,7 +18,7 @@ function placeCursorAtEnd(el: HTMLElement) {
   sel?.removeAllRanges();
   sel?.addRange(range);
 }
-import { AnimatePresence, LayoutGroup, animate, motion, useAnimationControls, type Transition } from "motion/react";
+import { AnimatePresence, LayoutGroup, MotionConfig, animate, motion, useAnimationControls, type Transition } from "motion/react";
 import { Plus, X } from "lucide-react";
 import { Button } from "../Button/Button";
 import GlassButton from "../GlassButton/GlassButton";
@@ -379,6 +379,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, [value]);
 
     return (
+      // `reducedMotion="user"` is set here rather than left to the host app,
+      // because a host that never sets it leaves every reader with the full
+      // morph. Motion snaps transforms and layout to their final values and
+      // keeps opacity and colour, which is the right split: the input still
+      // reads as changing state, it just stops travelling to get there.
+      <MotionConfig reducedMotion="user">
       <LayoutGroup id={instanceId}>
         <div
           className={styles.wrap}
@@ -678,6 +684,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           />
         </div>
       </LayoutGroup>
+      </MotionConfig>
     );
   }
 );

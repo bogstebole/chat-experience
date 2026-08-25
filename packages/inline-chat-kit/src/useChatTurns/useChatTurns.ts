@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatInputState } from "../ChatInput/ChatInput";
 import { announce } from "../announce/announce";
+import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 
 export interface ChatTurn {
   id: string;
@@ -226,6 +227,14 @@ export function useChatTurns({
   const reveal = useCallback(
     (id: string, text: string, signal: AbortSignal) =>
       new Promise<void>((resolve) => {
+        // A typewriter is an animation, and this reader has asked for fewer of
+        // them. The answer arrives whole.
+        if (prefersReducedMotion()) {
+          publish(id, text);
+          resolve();
+          return;
+        }
+
         const times = revealSchedule(text, revealSpeed, sentencePause);
         const start = performance.now();
         let shown = 0;
