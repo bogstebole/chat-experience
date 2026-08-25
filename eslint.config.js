@@ -6,7 +6,9 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["**/dist", "**/node_modules"]),
+  // `storybook-static` is build output, not source. Linting it reports on
+  // Storybook's own bundled code, which is neither ours nor fixable.
+  globalIgnores(["**/dist", "**/node_modules", "**/storybook-static"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [

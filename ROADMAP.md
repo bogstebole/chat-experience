@@ -324,6 +324,22 @@ behind.
       thing and not only in isolation
 - [x] Stories excluded from the published package, same as the tests
 
+### The rule, from here on
+**Storybook is the source of truth for what this package looks like.** A
+component change is not finished until its story shows it.
+
+That is enforced, not remembered:
+- [x] A test fails when something is exported with no story. The exemption
+      list needs a reason per entry, and a second test fails when an exemption
+      outlives its export — a stale exemption hides a gap as well as a real one.
+- [x] CI builds Storybook, so a story that has drifted out of step with its
+      component fails there rather than on somebody's machine a month later
+- [x] Stories written for the four components that were exported and
+      undocumented: `MorphGlyph`, `HoverActionsRow`, `AddCardsOverlay` and
+      `CustomCursor`. They are exported so a consumer can recompose the input
+      instead of forking it, which makes them public API — and public API
+      nobody can look at is public API nobody uses correctly.
+
 ### D3 · `ChatInput` on tokens
 - [ ] 71 literals out of the stylesheet, 17 inline style blocks out of the TSX
 - [ ] This is what dark mode is waiting on
@@ -341,6 +357,27 @@ behind.
 - [ ] A test that fails when a new hardcoded colour appears in a stylesheet —
       the same kind of guard as the one pinning tokens free of inline styles
 - [ ] `theming.md`: the tokens a host can set, and what each one moves
+
+### D7 · Make it somebody else's brand
+Not started, and deliberately after D3–D6: a theming system laid over
+stylesheets that still contain literals would be a theming system that lies.
+
+The shape it should take:
+
+- **One surface, and only one.** A client sets `--ick-` custom properties on
+  `:root`. No build step, no provider, no JavaScript API to learn. The cascade
+  layer already means their unlayered rules win without fighting specificity.
+- **A brand tier above the primitives.** Most brands should need under a dozen
+  values — the channel triplets for ink, paper and marker, two font stacks,
+  the radius scale, and the glass rim and shade. Everything else derives from
+  those and needs no attention. The rest of the tokens stay reachable as an
+  escape hatch, but nobody should have to touch them to look like themselves.
+- **Prove it rather than claim it.** A "Themes" story applying two or three
+  invented brands live, so the claim that a dozen values are enough either
+  holds on screen or visibly does not.
+- **`theming.md`**: every token, what it moves, and which ones are the dozen.
+- Depends on D6's guard: a stylesheet that can still hide a literal is a
+  stylesheet where a brand colour will not reach everywhere it should.
 
 ## Later
 

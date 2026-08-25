@@ -36,6 +36,13 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Storybook is the source of truth for what the components look like,
+      # which is only worth anything if it still builds. A story that has
+      # drifted out of step with its component fails here rather than on
+      # somebody's machine a month later.
+      - name: Build Storybook
+        run: npm run build-storybook --workspace packages/inline-chat-kit
+
       # The published surface is the dist directory, not the source. Packing
       # verifies the files list and the exports map actually resolve.
       - name: Verify the package can be packed
