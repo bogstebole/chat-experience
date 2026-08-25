@@ -1,0 +1,159 @@
+/* ─────────────────────────────────────────────
+   Marker hover, driven by CSS
+
+   Hover used to live in React state. Every crossing of the marker's stroke
+   re-rendered the whole highlighter — every word span, every path string —
+   and started springs that wrote stroke-width, opacity and filter on each
+   frame. Tracing a paragraph crosses that boundary hundreds of times, which
+   is why input-to-paint stretched past 100ms while the frame rate itself
+   looked fine.
+
+   The browser already knows what the pointer is over. Nothing here needs
+   React to find out.
+   ───────────────────────────────────────────── */
+
+.marker {
+  --marker-stroke: 20px;
+
+  stroke-width: var(--marker-stroke);
+  opacity: 1;
+  transition:
+    stroke-width 200ms cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 200ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.marker:hover {
+  --marker-stroke: 24px;
+  opacity: 0.9;
+}
+
+/* Pressed and menu-open are click-driven, so they stay in React — clicks are
+   rare and a re-render there costs nothing. They win over hover. */
+.marker[data-pressed="true"],
+.marker[data-pressed="true"]:hover {
+  --marker-stroke: 16px;
+  opacity: 1;
+}
+
+.marker[data-active="true"],
+.marker[data-active="true"]:hover {
+  --marker-stroke: 28px;
+  opacity: 1;
+  filter: drop-shadow(0 6px 16px rgba(204, 255, 0, 0.6));
+}
+
+/* Every other marker recedes while one has its menu open. */
+.marker[data-dimmed="true"],
+.marker[data-dimmed="true"]:hover {
+  opacity: 0.15;
+}
+
+/* ── Shimmer ──
+   Mounted once per marker rather than added and removed on every crossing.
+   Paused costs nothing, so it simply runs while hovered. `pathLength="1"`
+   normalises the geometry so the dash values work for any path. */
+
+.shimmer {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 24px;
+  stroke-linejoin: round;
+  stroke-linecap: butt;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+
+  animation: shimmer-sweep 2s ease-out infinite;
+  animation-play-state: paused;
+}
+
+.marker:hover + .shimmer,
+.marker[data-active="true"] + .shimmer {
+  animation-play-state: running;
+}
+
+.marker[data-active="true"] + .shimmer {
+  stroke-width: 28px;
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.8;
+  }
+  80% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marker {
+    transition: none;
+  }
+  .shimmer {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Tokens
+
+   The text is split per word because the marker needs to know which words a
+   stroke crossed, and because the focus effect blurs everything except them —
+   something no range-level API can express. `::highlight()` styles colour and
+   shadow but not `filter` or `opacity`, so per-word elements are the only way
+   to get this look.
+
+   What was wrong was not the splitting. It was giving each of the ~120 words
+   its own animation engine: opening one menu wrote 350 inline styles, one word
+   at a time, for identical values. Two attributes and a stylesheet do the same
+   job, and the browser composites it.
+   ───────────────────────────────────────────── */
+
+.tokens {
+  --token-ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --token-ease-press: cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+.token {
+  display: inline-block;
+  white-space: pre-wrap;
+  transition:
+    filter 320ms var(--token-ease),
+    opacity 320ms var(--token-ease),
+    color 320ms var(--token-ease),
+    text-shadow 320ms var(--token-ease),
+    transform 240ms var(--token-ease-press);
+}
+
+/* One attribute on the container recedes the whole paragraph. */
+.tokens[data-focus="true"] .token {
+  filter: blur(3px);
+  opacity: 0.15;
+}
+
+/* …except the words the open menu belongs to, which come forward. */
+.tokens[data-focus="true"] .token[data-active="true"] {
+  filter: blur(0);
+  opacity: 1;
+  color: #000000;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.token[data-pressed="true"] {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token {
+    transition: none;
+  }
+}

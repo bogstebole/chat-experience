@@ -4,8 +4,14 @@
     {
       "name": "playground",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace", "apps/playground"],
-      "port": 5173
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--workspace",
+        "apps/playground"
+      ],
+      "port": 5173,
+      "autoPort": false
     }
   ]
 }
