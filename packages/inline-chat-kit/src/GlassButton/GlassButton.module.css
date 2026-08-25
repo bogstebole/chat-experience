@@ -684,3 +684,20 @@
     0 2px 3px 0 rgba(0, 0, 0, 0.06),
     0 0 2px 0 rgba(0, 0, 0, 0.07);
 }
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   `transition: all` above includes transform, which is the lift on hover and
+   the dip on press. Naming the properties explicitly keeps the fades and drops
+   the movement.
+
+   The spinner keeps turning: it is not decoration, it is the only sign that
+   something is still happening. */
+@media (prefers-reduced-motion: reduce) {
+  .glassBtn,
+  .glassBtn::before,
+  .glassBtn::after,
+  .socialIconBtn,
+  .socialIconBtn::before,
+  .socialIconBtn::after {
+    transition-property: background, box-shadow, color, opacity, filter, border-color;
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, MotionConfig } from "motion/react";
 import { X, Save } from "lucide-react";
 import { ChatInput, defaultInlineAnimConfig, type ChatInputHandle } from "../ChatInput/ChatInput";
 import { useChatTurns, type ChatTurn, type SendContext } from "../useChatTurns/useChatTurns";
@@ -115,6 +115,9 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
 
 
   return (
+    // See the note in ChatInput: the kit sets this itself rather than relying
+    // on the host app to.
+    <MotionConfig reducedMotion="user">
     <div 
       style={{
         position: "fixed",
@@ -290,5 +293,6 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
       </div>
       </motion.div>
     </div>
+    </MotionConfig>
   );
 }

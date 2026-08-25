@@ -106,3 +106,14 @@
   transform: scale(0.92);
   transition-duration: 70ms;
 }
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   The colour, shadow and outline fades stay — nothing about them moves, and
+   dropping them would take the interactive states with them. Only the press
+   scale moves, so it snaps rather than animating. That is the same trade
+   Motion makes for transforms under `reducedMotion="user"`. */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition-property: box-shadow, background, outline-color;
+  }
+}

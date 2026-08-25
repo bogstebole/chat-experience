@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Button } from "../Button/Button";
 import styles from "./TextHighlighter.module.css";
 import { MessageCircle, Trash2 } from "lucide-react";
@@ -338,6 +338,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   };
 
   return (
+    // See the note in ChatInput: the kit sets this itself rather than relying
+    // on the host app to.
+    <MotionConfig reducedMotion="user">
     <motion.div
       ref={containerRef}
       data-cursor={selectionMode === "precise" ? "text" : "marker"}
@@ -551,5 +554,6 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         )}
       </AnimatePresence>
     </motion.div>
+    </MotionConfig>
   );
 }
