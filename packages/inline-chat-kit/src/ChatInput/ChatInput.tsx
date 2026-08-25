@@ -450,7 +450,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       }}
                       style={{ overflow: "hidden", width: "100%", flexShrink: 0, transformOrigin: "center" }}
                     >
-                      <div style={{ height: 80, backgroundColor: isGlass ? 'transparent' : '#FFFFFF', borderRadius: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', padding: 8, marginBottom: 8 }}>
+                      <div className={styles.attachedTray} data-glass={isGlass || undefined}>
                         <div className={styles.attachedImgWrap}>
                           <div className={styles.attachedImgBg} style={{ backgroundImage: `url(${attachedImage})` }} />
                           {!isGlass && (
@@ -649,7 +649,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     >
                       <Button
                         variant="primary"
-                        icon={<MorphGlyph mode={showStop ? "stop" : isEditing ? "check" : "send"} color="#111" />}
+                        icon={<MorphGlyph mode={showStop ? "stop" : isEditing ? "check" : "send"} />}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (showStop) onStop?.();

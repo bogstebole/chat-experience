@@ -129,7 +129,7 @@ export function AddCardsOverlay({
                 }}
                 aria-label="Close"
                 title="Close"
-                style={{ flexShrink: 0, width: 28, backgroundColor: "rgba(0, 0, 0, 0.05)", color: "#111" }}
+                className={styles.closeAdd}
               />
             </motion.div>
           </motion.div>
