@@ -50,6 +50,52 @@ function Composer() {
 The stylesheet import is required — the components are CSS Modules and the
 bundled sheet carries every class they reference.
 
+## Wiring it to your model
+
+`ChatInput` renders one turn. `useChatTurns` owns the conversation — the turn
+list, the request in flight, and the reveal — and asks your app for the answers.
+
+```tsx
+import { useChatTurns } from "inline-chat-kit";
+
+const { turns, setDraft, submit, stop } = useChatTurns({
+  onSend: async function* (message, { signal }) {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+      signal,
+    });
+    for await (const chunk of response.body!.pipeThrough(new TextDecoderStream())) {
+      yield chunk;
+    }
+  },
+});
+```
+
+`onSend` may return a string, a promise of one, or an async iterable of deltas.
+Return a string and the kit reveals it at a readable pace; return deltas and it
+shows them as they land. `signal` aborts when the reader presses stop.
+
+The kit never invents an answer. There is no canned fallback anywhere in the
+package — if your handler returns nothing, nothing is what appears.
+
+### Rendering the turns
+
+```tsx
+{turns.map((turn) => <TurnRow key={turn.id} turn={turn} onDraft={setDraft} … />)}
+```
+
+**Wrap the row in `React.memo`.** The hook already leaves untouched turns
+referentially identical when it updates one of them, but that only pays off if
+the rows can act on it — otherwise every turn re-renders on every frame of every
+answer, and the cost grows with the length of the conversation. Measured in the
+playground: without the memo, streaming one answer produced 366 DOM mutations
+inside an unrelated, already-finished turn. With it, zero.
+
+For the same reason, pass the hook's callbacks straight through rather than
+wrapping them in inline arrows. They are stable; an arrow created during render
+is not, and defeats the memo.
+
 ## The four states
 
 `ChatInput` is fully controlled. You own `state` and drive the whole

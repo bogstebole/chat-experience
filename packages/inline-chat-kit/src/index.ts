@@ -21,6 +21,16 @@ export type { HoverActionsRowProps } from "./ChatInput/HoverActionsRow";
 export { MorphGlyph } from "./ChatInput/MorphGlyph";
 export type { MorphGlyphProps } from "./ChatInput/MorphGlyph";
 
+/* Turn state, streaming and the reveal — the half a host app owns */
+export { useChatTurns } from "./useChatTurns/useChatTurns";
+export type {
+  ChatTurn,
+  SendContext,
+  SendHandler,
+  UseChatTurnsOptions,
+  UseChatTurnsResult,
+} from "./useChatTurns/useChatTurns";
+
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";
 export type { ReplyThreadPopupProps, Turn } from "./ReplyThreadPopup/ReplyThreadPopup";

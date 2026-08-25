@@ -20,14 +20,14 @@ const activeReply = { text: "the quoted passage", rect: anchorRect() };
 
 describe("ReplyThreadPopup", () => {
   it("shows the passage the thread hangs off", () => {
-    render(<ReplyThreadPopup activeReply={activeReply} onClose={vi.fn()} />);
+    render(<ReplyThreadPopup activeReply={activeReply} onClose={vi.fn()} onSendMessage={() => ""} />);
     expect(screen.getByText("the quoted passage")).toBeInTheDocument();
   });
 
   it("closes when asked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<ReplyThreadPopup activeReply={activeReply} onClose={onClose} />);
+    render(<ReplyThreadPopup activeReply={activeReply} onClose={onClose} onSendMessage={() => ""} />);
 
     await user.click(screen.getByRole("button", { name: /close/i }));
 
@@ -35,7 +35,9 @@ describe("ReplyThreadPopup", () => {
   });
 
   it("offers an input for the reply", () => {
-    const { container } = render(<ReplyThreadPopup activeReply={activeReply} onClose={vi.fn()} />);
+    const { container } = render(
+      <ReplyThreadPopup activeReply={activeReply} onClose={vi.fn()} onSendMessage={() => ""} />
+    );
     expect(container.querySelector("[contenteditable]")).toBeInTheDocument();
   });
 });
@@ -59,7 +61,11 @@ describe("ReplyThreadPopup — onSendMessage", () => {
     fireEvent.keyDown(editor, { key: "Enter" });
 
     await waitFor(() => expect(onSendMessage).toHaveBeenCalled());
-    expect(onSendMessage).toHaveBeenCalledWith("a question in the thread", "the quoted passage");
+    expect(onSendMessage).toHaveBeenCalledWith(
+      "a question in the thread",
+      "the quoted passage",
+      expect.objectContaining({ signal: expect.any(AbortSignal), turnId: expect.any(String) })
+    );
   });
 
   it("accepts a synchronous reply as readily as a promise", async () => {
@@ -73,7 +79,13 @@ describe("ReplyThreadPopup — onSendMessage", () => {
     fireEvent.input(editor);
     fireEvent.keyDown(editor, { key: "Enter" });
 
-    await waitFor(() => expect(onSendMessage).toHaveBeenCalledWith("sync please", "the quoted passage"));
+    await waitFor(() =>
+      expect(onSendMessage).toHaveBeenCalledWith(
+        "sync please",
+        "the quoted passage",
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      )
+    );
   });
 
   it("does not fall back to canned copy once the hook is supplied", async () => {

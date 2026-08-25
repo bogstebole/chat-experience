@@ -4,57 +4,47 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { X, Save } from "lucide-react";
 import { ChatInput, defaultInlineAnimConfig, type ChatInputHandle } from "../ChatInput/ChatInput";
+import { useChatTurns, type ChatTurn, type SendContext } from "../useChatTurns/useChatTurns";
+
+/** @deprecated Use `ChatTurn`. Kept so existing imports keep resolving. */
+export type Turn = ChatTurn;
 import { Button } from '../Button/Button';
-
-export interface Turn {
-  id: string;
-  user: string;
-  ai: string;
-  state: "idle" | "typing" | "responding" | "resting";
-}
-
-const generateId = () => Math.random().toString(36).substring(2, 9);
-const newTurn = (): Turn => ({ id: generateId(), user: "", ai: "", state: "idle" });
-
-const AI_RESPONSE = [
-  "This", "is", "a", "simulated", "response", "specifically", "for", "the",
-  "thread.", "The", "actual", "logic", "will", "be", "implemented", "later.",
-];
-const HIGGS_RESPONSE = [
-  "Particle", "physics", "studies", "the", "most", "fundamental", "constituents", "of", "matter", "and", "the",
-  "forces", "that", "act", "between", "them.", "The", "Standard", "Model", "organises", "twelve", "fermions",
-  "—", "six", "quarks", "and", "six", "leptons", "—", "plus", "the", "force-carrying", "bosons", "into", "a", "single",
-  "coherent", "framework.", "The", "Higgs", "boson,", "found", "at", "CERN", "in", "2012,", "completes", "the",
-  "picture", "by", "giving", "elementary", "particles", "their", "mass", "through", "interaction", "with", "the",
-  "Higgs", "field."
-];
 
 export interface ReplyThreadPopupProps {
   activeReply: { text: string; rect: DOMRect };
   onClose: () => void;
   onSave?: () => void;
   /**
-   * Resolve the reply for a message sent inside the thread. Receives the
-   * user's message and the quoted text the thread hangs off. Without it the
-   * popup streams canned placeholder copy, which is demo behaviour only.
+   * Produce the reply to a message sent inside the thread. Receives the
+   * message and the passage the thread hangs off. Required — the popup has no
+   * answers of its own to fall back on.
    */
-  onSendMessage?: (message: string, quotedText: string) => Promise<string> | string;
+  onSendMessage: (
+    message: string,
+    quotedText: string,
+    context: SendContext
+  ) => AsyncIterable<string> | Promise<string> | string;
 }
 
 export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }: ReplyThreadPopupProps) {
-  const [threadTurns, setThreadTurns] = useState<Turn[]>([newTurn()]);
   const [threadFade, setThreadFade] = useState<"none" | "top" | "bottom" | "both">("none");
-  const threadStreamingRef = useRef<number | null>(null);
   const threadActiveInputRef = useRef<ChatInputHandle>(null);
   const threadFeedRef = useRef<HTMLDivElement>(null);
-  const turnCountRef = useRef(0);
   const animConfig = defaultInlineAnimConfig;
 
-  useEffect(() => {
-    return () => {
-      if (threadStreamingRef.current) clearTimeout(threadStreamingRef.current);
-    };
-  }, []);
+  // Turn state, streaming and the reveal are the same problem here as in the
+  // main feed, so they come from the same place rather than being written
+  // twice. The quoted passage is closed over and handed to the host app.
+  const quoted = activeReply.text;
+  const {
+    turns: threadTurns,
+    setDraft,
+    submit,
+    stop,
+    beginEdit,
+  } = useChatTurns({
+    onSend: (message, context) => onSendMessage(message, quoted, context),
+  });
 
   const updateThreadFade = () => {
     const wrap = threadFeedRef.current;
@@ -101,103 +91,12 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
     };
   }, [threadTurns]);
 
-  const updateThreadTurn = (id: string, patch: Partial<Turn>) => {
-    setThreadTurns((t) => t.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
-  };
-
-  const handleThreadChange = (id: string, value: string) => {
-    updateThreadTurn(id, { user: value, state: value.length > 0 ? "typing" : "idle" });
-  };
-
-  const handleThreadSubmit = (id: string, value: string) => {
-    const trimmed = value.trim();
-    updateThreadTurn(id, { user: trimmed, state: "responding" });
-
-    setTimeout(() => {
-      const el = document.getElementById(`thread-turn-${id}`);
-      if (el && threadFeedRef.current) {
-        // Use getBoundingClientRect for foolproof scroll calculation regardless of offsetParent
-        const feedRect = threadFeedRef.current.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const relativeTop = elRect.top - feedRect.top + threadFeedRef.current.scrollTop;
-        threadFeedRef.current.scrollTo({ top: relativeTop - 16, behavior: "smooth" });
-      } else if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 150);
-
-    if (onSendMessage) {
-      Promise.resolve(onSendMessage(trimmed, activeReply.text)).then((reply) =>
-        streamAiThread(id, reply.split(" "))
-      );
-      return;
-    }
-
-    const response = turnCountRef.current % 2 === 0 ? HIGGS_RESPONSE : AI_RESPONSE;
-    turnCountRef.current += 1;
-    streamAiThread(id, response);
-  };
-
-  const streamAiThread = (turnId: string, response: string[]) => {
-    const fullText = response.join(" ");
-    let i = 0;
-
-    const tick = () => {
-      if (i >= fullText.length) {
-        finishThreadTurn(turnId);
-        return;
-      }
-      setThreadTurns((t) =>
-        t.map((turn) =>
-          turn.id === turnId ? { ...turn, ai: fullText.slice(0, i + 1) } : turn
-        )
-      );
-      const char = fullText[i];
-      i += 1;
-      
-      if (i % 2 === 0 && threadFeedRef.current) {
-        const el = document.getElementById(`thread-turn-${turnId}`);
-        if (el) {
-          const feedRect = threadFeedRef.current.getBoundingClientRect();
-          const elRect = el.getBoundingClientRect();
-          const relativeTop = elRect.top - feedRect.top + threadFeedRef.current.scrollTop;
-          threadFeedRef.current.scrollTo({ top: relativeTop - 16, behavior: "auto" });
-        }
-      }
-
-      const delay = char === "." ? 40 : char === "," ? 18 : 3;
-      threadStreamingRef.current = window.setTimeout(tick, delay);
-    };
-    threadStreamingRef.current = window.setTimeout(tick, 300);
-  };
-
-  const finishThreadTurn = (turnId: string) => {
-    threadStreamingRef.current = null;
-    setThreadTurns((t) =>
-      t.map((turn) => (turn.id === turnId ? { ...turn, state: "resting" } : turn))
-    );
-    threadStreamingRef.current = window.setTimeout(() => {
-      threadStreamingRef.current = null;
-      setThreadTurns((t) => [...t, newTurn()]);
-      // New input reserves its full height immediately (transform-based entrance,
-      // no layout reflow), so scrollHeight is final and a single smooth scroll lands cleanly.
-      requestAnimationFrame(() => {
-        if (threadFeedRef.current) {
-          threadFeedRef.current.scrollTo({ top: threadFeedRef.current.scrollHeight, behavior: "smooth" });
-        }
-        // preventScroll so focusing the input doesn't fight our smooth scroll.
-        threadActiveInputRef.current?.focus({ preventScroll: true });
-      });
-    }, 400);
-  };
-
-  const handleThreadStop = (turnId: string) => {
-    if (threadStreamingRef.current) {
-      clearTimeout(threadStreamingRef.current);
-      threadStreamingRef.current = null;
-    }
-    finishThreadTurn(turnId);
-  };
+  // Keep the newest turn in view as the answer grows.
+  useEffect(() => {
+    const feed = threadFeedRef.current;
+    if (!feed) return;
+    feed.scrollTo({ top: feed.scrollHeight, behavior: "smooth" });
+  }, [threadTurns]);
 
   let replyTargetX = 0;
   let replyTargetY = 0;
@@ -365,11 +264,11 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
                       ref={isActiveInput ? threadActiveInputRef : null}
                       state={turn.state}
                       value={turn.user}
-                      onChange={(v) => handleThreadChange(turn.id, v)}
-                      onSubmit={(v) => handleThreadSubmit(turn.id, v)}
-                      onStop={() => handleThreadStop(turn.id)}
+                      onChange={(v) => setDraft(turn.id, v)}
+                      onSubmit={(v) => submit(turn.id, v)}
+                      onStop={stop}
                       onCopy={() => navigator.clipboard.writeText(turn.ai)}
-                      onEdit={() => updateThreadTurn(turn.id, { state: "typing" })}
+                      onEdit={() => beginEdit(turn.id)}
                       animationConfig={animConfig}
                       placeholder="Ask me about this text..."
                       style={isInputMode ? { width: "100%", maxWidth: "100%" } : {}}
