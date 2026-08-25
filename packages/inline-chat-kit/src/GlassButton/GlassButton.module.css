@@ -237,12 +237,19 @@
   pointer-events: none;
 }
 
+/* Hidden with opacity, not visibility.
+   `visibility: hidden` takes the label out of the accessibility tree, so a
+   loading button announced as a button with no name at all — the spinner is
+   `aria-hidden`, and there was nothing else left. Opacity looks identical,
+   holds the same space, and leaves the name where a screen reader can still
+   reach it. Together with `aria-busy` that reads as "Continue, busy", which
+   is what is actually true. */
 .loading .label {
-  visibility: hidden;
+  opacity: 0;
 }
 
 .loading .icon {
-  visibility: hidden;
+  opacity: 0;
 }
 
 /* ═══════════════════════════════════════════

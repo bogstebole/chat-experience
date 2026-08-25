@@ -1,7 +1,7 @@
 {
   "name": "inline-chat-kit",
   "version": "0.1.0",
-  "description": "A drop-in inline AI chat experience \u2014 morphing input, hover actions, text highlighting and reply threads.",
+  "description": "A drop-in inline AI chat experience — morphing input, hover actions, text highlighting and reply threads.",
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -50,6 +50,7 @@
     "typescript": "~6.0.2",
     "vite": "^8.0.10",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "vitest-axe": "^0.1.0"
   }
 }

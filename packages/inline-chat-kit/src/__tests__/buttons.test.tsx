@@ -110,4 +110,16 @@ describe("GlassButton", () => {
       unmount();
     }
   });
+
+  /**
+   * The label used to be hidden with `visibility: hidden` while loading, which
+   * takes it out of the accessibility tree — and the spinner is `aria-hidden`,
+   * so the button announced as a button with no name at all. It is still
+   * called what it was called; it is just busy.
+   */
+  it("keeps its name while loading", () => {
+    render(<GlassButton loading>Continue</GlassButton>);
+    const button = screen.getByRole("button", { name: /continue/i });
+    expect(button).toHaveAttribute("aria-busy", "true");
+  });
 });
