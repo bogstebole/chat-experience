@@ -99,22 +99,64 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   const [selections, setSelections] = useState<SelectionHighlight[]>([]);
   const [currentPath, setCurrentPath] = useState<PathData | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState<{ x: number | string, y: number, pathId: string, kind: "path" | "selection" } | null>(null);
+  // `viaKeyboard` decides whether focus moves into the menu when it opens.
+  // Pulling focus out from under someone who just drew with a mouse would be
+  // an interruption; for someone who arrived by keyboard it is the only way in.
+  const [menuAnchor, setMenuAnchor] = useState<{
+    x: number | string;
+    y: number;
+    pathId: string;
+    kind: "path" | "selection";
+    viaKeyboard?: boolean;
+  } | null>(null);
+  /** Which action the menu's roving tabindex is currently on. */
+  const [menuIndex, setMenuIndex] = useState(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+  /** Where focus goes when a keyboard-opened menu is dismissed. */
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const [pressedPathId, setPressedPathId] = useState<string | null>(null);
   // Which highlight the keyboard is currently on. Drives the same emphasis the
   // open menu does, so tabbing through them is visible on the page and not
   // only to a screen reader.
   const [focusedMarkerId, setFocusedMarkerId] = useState<string | null>(null);
 
+  type MenuAnchor = NonNullable<typeof menuAnchor>;
+
+  /** Open the menu, remembering how it was opened and what focus came from. */
+  const openMenu = useCallback((anchor: MenuAnchor) => {
+    if (anchor.viaKeyboard) {
+      returnFocusRef.current = document.activeElement as HTMLElement | null;
+    }
+    setMenuIndex(0);
+    setMenuAnchor(anchor);
+  }, []);
+
+  /**
+   * Close the menu, and decide what focus does next.
+   *
+   * "restore" hands it back to whatever opened the menu — a highlight's button,
+   * or the paragraph. "container" is for when that thing is about to stop
+   * existing, as when the highlight itself is deleted. "none" is for the
+   * pointer, where moving focus at all would be an interruption.
+   */
+  const dismissMenu = useCallback((focus: "restore" | "container" | "none" = "none") => {
+    const target = returnFocusRef.current;
+    returnFocusRef.current = null;
+    setMenuAnchor(null);
+    if (focus === "none") return;
+    if (focus === "restore" && target?.isConnected) target.focus();
+    else containerRef.current?.focus();
+  }, []);
+
   useEffect(() => {
     const handleGlobalPointerDown = (e: PointerEvent) => {
       if (menuAnchor && containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setMenuAnchor(null);
+        dismissMenu();
       }
     };
     window.addEventListener("pointerdown", handleGlobalPointerDown);
     return () => window.removeEventListener("pointerdown", handleGlobalPointerDown);
-  }, [menuAnchor]);
+  }, [menuAnchor, dismissMenu]);
 
   // Split text by words and keep spaces separate so we can render them properly
   const tokens = useMemo(() => text.split(/(\s+)/), [text]);
@@ -162,12 +204,12 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   type Marker = (typeof allMarkers)[number];
 
   /** Where the menu sits for a marker, in container coordinates. */
-  const openMenuFor = (marker: Marker) => {
+  const openMenuFor = (marker: Marker, viaKeyboard = false) => {
     const pos =
       marker.kind === "path"
         ? getMenuPosition((marker.item as PathData).points)
         : getRectsMenuPosition((marker.item as SelectionHighlight).rects);
-    setMenuAnchor({ x: pos.x, y: pos.y, pathId: marker.id, kind: marker.kind });
+    openMenu({ x: pos.x, y: pos.y, pathId: marker.id, kind: marker.kind, viaKeyboard });
   };
 
   /**
@@ -178,7 +220,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
    * differ only in how the range is arrived at, so everything after it is
    * shared.
    */
-  const commitRange = useCallback((range: Range, rawText: string) => {
+  const commitRange = useCallback((range: Range, rawText: string, viaKeyboard = false) => {
     const container = containerRef.current;
     const text = rawText.trim();
     if (!container || !text) return;
@@ -223,8 +265,8 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     const id = Date.now().toString();
     setSelections((prev) => [...prev, { id, rects, text, highlightedIndices }]);
     const pos = getRectsMenuPosition(rects);
-    setMenuAnchor({ x: pos.x, y: pos.y, pathId: id, kind: "selection" });
-  }, []);
+    openMenu({ x: pos.x, y: pos.y, pathId: id, kind: "selection", viaKeyboard });
+  }, [openMenu]);
 
   /**
    * A selection the reader made themselves.
@@ -247,7 +289,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       const range = sel.getRangeAt(0);
       if (!container.contains(range.commonAncestorContainer)) return; // not this paragraph
 
-      commitRange(range, sel.toString());
+      commitRange(range, sel.toString(), fromKeyboard);
       // Clear the native selection on the next frame so it doesn't linger as blue.
       requestAnimationFrame(() => window.getSelection()?.removeAllRanges());
     };
@@ -321,8 +363,56 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
 
     let text = "";
     for (let i = cursorRange.from; i <= cursorRange.to; i++) text += tokens[i];
-    commitRange(range, text);
+    commitRange(range, text, true);
     clearCursor();
+  };
+
+  const menuItems = () => [
+    ...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+  ];
+
+  /**
+   * Focus follows the roving tabindex — but only once focus is already in the
+   * menu, or the menu was opened by someone who has no other way in. A menu
+   * that grabs focus from a reader who opened it with a mouse is a menu that
+   * interrupts.
+   */
+  useEffect(() => {
+    if (!menuAnchor) return;
+    const items = menuItems();
+    if (items.length === 0) return;
+    const inside = menuRef.current?.contains(document.activeElement);
+    if (menuAnchor.viaKeyboard || inside) items[Math.min(menuIndex, items.length - 1)]?.focus();
+  }, [menuAnchor, menuIndex]);
+
+  const handleMenuKeyDown = (e: React.KeyboardEvent) => {
+    const count = menuItems().length;
+    if (count === 0) return;
+
+    const step = (delta: number) => {
+      e.preventDefault();
+      // Stopped here so the paragraph's own arrow keys do not also move the
+      // word cursor behind the open menu.
+      e.stopPropagation();
+      setMenuIndex((i) => (i + delta + count) % count);
+    };
+
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        return step(1);
+      case "ArrowLeft":
+      case "ArrowUp":
+        return step(-1);
+      case "Home":
+        e.preventDefault();
+        return setMenuIndex(0);
+      case "End":
+        e.preventDefault();
+        return setMenuIndex(count - 1);
+      default:
+        return;
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -367,7 +457,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       case "Escape":
         if (!menuAnchor && caret === null) return; // let the host app have it
         e.preventDefault();
-        setMenuAnchor(null);
+        dismissMenu("restore");
         return clearCursor();
       default:
         return;
@@ -384,7 +474,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (menuAnchor) {
-      setMenuAnchor(null);
+      dismissMenu();
       return;
     }
 
@@ -412,7 +502,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       highlightedIndices: new Set<number>(),
     };
     setCurrentPath(newPath);
-    setMenuAnchor(null); // Hide menu when starting a new highlight
+    dismissMenu(); // Hide menu when starting a new highlight
     checkHighlight(e.clientX, e.clientY, newPath.highlightedIndices);
   };
 
@@ -448,7 +538,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     
     if (currentPath.highlightedIndices.size > 0) {
       const pos = getMenuPosition(currentPath.points);
-      setMenuAnchor({ x: pos.x, y: pos.y, pathId: currentPath.id, kind: "path" });
+      openMenu({ x: pos.x, y: pos.y, pathId: currentPath.id, kind: "path" });
     }
 
     if (onHighlightComplete && currentPath.highlightedIndices.size > 0) {
@@ -464,12 +554,15 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
   };
 
   const removeHighlight = (id: string) => {
+    const viaKeyboard = menuAnchor?.viaKeyboard;
     if (menuAnchor?.kind === "selection") {
       setSelections(prev => prev.filter(s => s.id !== id));
     } else {
       setPaths(prev => prev.filter(p => p.id !== id));
     }
-    setMenuAnchor(null);
+    // The control focus would return to is the one being deleted, so focus
+    // goes back to the paragraph instead of nowhere.
+    dismissMenu(viaKeyboard ? "container" : "none");
   };
 
   const replyInThread = () => {
@@ -496,7 +589,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         }
       }
     }
-    setMenuAnchor(null);
+    dismissMenu();
   };
 
   return (
@@ -698,7 +791,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
               onBlur={() => setFocusedMarkerId(null)}
               onClick={(e) => {
                 e.stopPropagation();
-                openMenuFor(marker);
+                // These are invisible, so they can only have been activated
+                // from the keyboard.
+                openMenuFor(marker, true);
               }}
             >
               {`Highlight: ${shorten(marker.text)}`}
@@ -711,6 +806,15 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       <AnimatePresence>
         {menuAnchor && (
           <motion.div
+            ref={menuRef}
+            role="menu"
+            aria-label="Highlight actions"
+            onKeyDown={handleMenuKeyDown}
+            onBlur={(e) => {
+              // Tab out and the menu goes with you. Leaving one open behind
+              // the focus ring is how a menu becomes a thing to get lost in.
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) dismissMenu();
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { staggerChildren: 0.05 } }}
             exit={{ opacity: 0, transition: { staggerChildren: 0.05, staggerDirection: -1 } }}
@@ -735,6 +839,8 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
             >
               <Button
                 variant="primary"
+                role="menuitem"
+                tabIndex={menuIndex === 0 ? 0 : -1}
                 icon={<MessageCircle size={14} />}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -753,6 +859,8 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
             >
               <Button
                 variant="primary"
+                role="menuitem"
+                tabIndex={menuIndex === 1 ? 0 : -1}
                 icon={<Trash2 size={14} />}
                 onClick={(e) => {
                   e.stopPropagation();

@@ -127,12 +127,27 @@ were not focusable and had no accessible name.
 
 Focus does not yet move **into** the menu when it opens; that is A5.
 
-### A5 · The floating menu becomes a real menu
-- [ ] Focus moves to the first action when it opens
-- [ ] Arrow keys move between actions
-- [ ] Escape closes it and returns focus to the highlight that opened it
-      (today only an outside pointer-down closes it — Escape does nothing)
-- [ ] Test: full open → navigate → escape → focus-returned cycle
+### A5 · The floating menu becomes a real menu — done
+- [x] `role="menu"` named "Highlight actions", its actions `menuitem`
+- [x] One tab stop for the whole menu, not one per action — a roving tabindex,
+      arrows move inside it, with wrap-around and Home/End
+- [x] Focus moves in when it opens **from the keyboard only**. A menu that
+      takes focus from someone who just drew with a mouse is a menu that
+      interrupts; someone who arrived by keyboard has no other way in.
+- [x] Escape closes it and hands focus back to whatever opened it — the
+      highlight's own control, or the paragraph. Deleting the highlight falls
+      back to the paragraph, since the control it would return to is the one
+      being removed.
+- [x] Tabbing out closes it. An open menu left behind the focus ring is how a
+      menu becomes somewhere to get lost.
+- [x] Arrow keys inside the menu no longer move the word cursor behind it
+- [x] 14 tests, plus the four A4 tests updated to the new roles
+- [x] Browser: full cycle — paragraph → word cursor → Enter → focus lands on
+      "Reply in thread" → arrow to "Remove highlight" (tabindex 0 follows) →
+      Escape → menu gone, focus back on the paragraph. Drawing with the mouse
+      opens the menu and leaves focus where it was.
+
+Choosing "Reply in thread" does not yet move focus into the popup; that is A6.
 
 ### A6 · `ReplyThreadPopup` becomes a dialog
 It is a modal overlay with none of the semantics of one.
