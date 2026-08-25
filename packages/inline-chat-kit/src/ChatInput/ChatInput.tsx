@@ -21,7 +21,6 @@ function placeCursorAtEnd(el: HTMLElement) {
 import { AnimatePresence, LayoutGroup, MotionConfig, animate, motion, useAnimationControls, type Transition } from "motion/react";
 import { Plus, X } from "lucide-react";
 import { Button } from "../Button/Button";
-import GlassButton from "../GlassButton/GlassButton";
 import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
 import { AddCardsOverlay } from "./AddCardsOverlay";
@@ -456,8 +455,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                           <div className={styles.attachedImgBg} style={{ backgroundImage: `url(${attachedImage})` }} />
                           {!isGlass && (
                             <div className={styles.attachedImgOverlay}>
-                              <GlassButton 
-                                size="s" 
+                              <Button
+                                variant="glass"
+                                size="s"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setAttachedImage(null);
@@ -466,10 +466,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                                   }
                                 }}
                                 aria-label="Remove attached image"
-                                style={{ padding: 0, width: 28, height: 28, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                              >
-                                <X size={14} />
-                              </GlassButton>
+                                icon={<X size={14} aria-hidden />}
+                              />
                             </div>
                           )}
                         </div>

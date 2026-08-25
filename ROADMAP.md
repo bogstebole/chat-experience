@@ -271,18 +271,46 @@ every font silently became the browser default. Stated outright now.
 **Dark mode is not true yet** — it is true for the parts that read tokens, and
 almost nothing does until D2–D5 land.
 
-### D2 · One button, and 216 fewer lines
-- [ ] Merge `GlassButton` into `Button` as `variant="glass"` — 710 lines for
-      two call sites, next to a second button component doing the same job
-- [ ] Delete the dead `.socialIconBtn` / `.iconSpan` blocks
-- [ ] The merged button on tokens, with its own dark values dropped in favour
-      of the semantic tier
-- [ ] `GlassButton` kept as a deprecated alias, since the website consumes the
-      packed tarball and should not break
-- [ ] Visual parity checked in both schemes before and after
+### D2 · One button — done
+- [x] `GlassButton` merged into `Button` as `variant="glass"`. **907 lines
+      became 390.** Two components, two size scales and two sets of states,
+      doing one job and disagreeing about all of it.
+- [x] One size scale — xs 24, s 28, m 32, l 40, xl 48. Both old sets of values
+      survive; only the glass names moved up a step, which is what the
+      deprecated wrapper absorbs so no existing call site changes.
+- [x] Dead CSS gone: `.socialIconBtn` and `.iconSpan` (216 lines, nothing
+      rendered them), plus `.sizeXs`, `.ghost` and the `.hovered`/`.pressed`
+      state classes, all unreachable from the component
+- [x] **Not one literal colour** in the new stylesheet — the only `#fff` left
+      are mask stencils, where any opaque value does
+- [x] All 27 `:global(.dark)` rules deleted. The theme lives in the token
+      layer now, so the component has no dark block at all.
+- [x] `GlassButton` kept as a deprecated wrapper, since the website installs
+      the packed tarball
+- [x] The `ChatInput` call site was forcing `GlassButton` to 28×28 with inline
+      styles — fighting to be the other component. Now `<Button variant="glass"
+      size="s" icon={…} />` with no overrides.
+- [x] Verified in both themes; light is pixel-unchanged apart from one
+      deliberate difference: the 32px glass label goes 12px → 13px, so the type
+      scale stops going backwards between 28 and 32.
+
+Two changes I made and reverted, because the existing tests were right:
+`pointer-events: none` on disabled (the glass button had it; `disabled`
+already refuses activation, and switching off hit-testing only removes the
+hover feedback and any tooltip saying why), and dropping `aria-busy` when
+idle (stating "not busy" is the contract that was already there).
+
+**Dark mode is opt-in only for now.** It was briefly wired to the system
+preference, and the first look showed why that was wrong: `ChatInput` still
+carries light-theme literals, so its text stayed a hardcoded near-black on
+what had become a dark page — unreadable. Shipping that to everyone whose OS
+is dark is worse than not shipping dark at all. `[data-theme="dark"]` and
+`.dark` work today; the media query goes back in D6, once nothing is left
+behind.
 
 ### D3 · `ChatInput` on tokens
 - [ ] 71 literals out of the stylesheet, 17 inline style blocks out of the TSX
+- [ ] This is what dark mode is waiting on
 
 ### D4 · `ReplyThreadPopup` gets a stylesheet
 - [ ] Inline styles into a CSS module, so it can be themed at all
@@ -292,6 +320,8 @@ almost nothing does until D2–D5 land.
 - [ ] Easings and z-indexes onto the scales
 
 ### D6 · Keep it that way
+- [ ] Wire dark back to `prefers-color-scheme`, once nothing is left behind
+- [ ] The playground's own banner still paints itself white
 - [ ] A test that fails when a new hardcoded colour appears in a stylesheet —
       the same kind of guard as the one pinning tokens free of inline styles
 - [ ] `theming.md`: the tokens a host can set, and what each one moves

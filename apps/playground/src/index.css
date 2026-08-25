@@ -18,6 +18,22 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* The demo follows the kit's theme rather than keeping one of its own. It has
+   to: with a white page behind it, dark glass is invisible and there is no way
+   to judge whether the dark theme is right. The kit's tokens already carry
+   both themes, so this is a handful of lines rather than a second palette. */
+/* Opt-in only, matching the kit — see the note in tokens.css. */
+:root[data-theme="dark"] {
+  --bg: rgb(var(--ick-paper-rgb));
+  --ink: var(--ick-ink);
+  --ink-soft: var(--ick-ink-soft);
+  --ink-faint: var(--ick-ink-faint);
+  --surface-hover: var(--ick-surface-hover);
+  --surface-active: var(--ick-surface-active);
+  --surface-kbd: var(--ick-surface-hover);
+  --surface-press: var(--ick-surface-press);
+}
+
 * {
   box-sizing: border-box;
 }
