@@ -1,119 +1,264 @@
 /* ─────────────────────────────────────────────
-   Button — circular icon button
-   Variants: primary | secondary
+   Button
+
+   One component for what used to be two. `Button` was a 28px round icon
+   button; `GlassButton` was a 710-line pill that did the same job in a
+   different material. They shared a size range, a set of states and most of
+   their behaviour, and disagreed about all of it.
+
+   Not one literal colour in this file. Everything comes from the token layer,
+   which is also where the dark theme lives — so there is no dark block here.
    ───────────────────────────────────────────── */
 
 .btn {
   all: unset;
   box-sizing: border-box;
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
   flex-shrink: 0;
-  border-radius: 999px;
-  padding: 4px;
+  border-radius: var(--ick-radius-pill);
   cursor: pointer;
-  color: var(--ink);
-  --glass-gradient: linear-gradient(315deg, rgba(255, 255, 255, 0.26) 21%, #ffffff 83%);
   overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    box-shadow 160ms ease,
-    background 160ms ease,
-    outline-color 160ms ease,
-    transform 120ms cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.hasText {
-  width: auto;
-  padding: 0 12px 0 8px;
-  gap: 6px;
-  font-family: var(--font-geist-sans), sans-serif;
-  font-size: 13px;
-  font-weight: 500;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--ick-font-sans);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+  transition:
+    box-shadow var(--ick-duration-fast) ease,
+    background var(--ick-duration-fast) ease,
+    outline-color var(--ick-duration-fast) ease,
+    color var(--ick-duration-fast) ease,
+    transform 120ms var(--ick-ease);
 }
 
 .btn:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.2);
-  outline-offset: 2px;
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: var(--ick-space-1);
 }
 
-/* ── Primary: always glassy ── */
+/* ── Sizes ──────────────────────────────────────────────────────────────────
+   Square while it holds only an icon; grows to fit once it has words. The
+   type scale is non-decreasing rather than strictly increasing — 28 and 32
+   both read at 13px, which is what both of the old components used at those
+   heights. */
+
+.xs { height: 24px; min-width: 24px; font-size: var(--ick-text-xs); gap: var(--ick-space-2); }
+.s  { height: 28px; min-width: 28px; font-size: var(--ick-text-md); gap: var(--ick-space-3); }
+.m  { height: 32px; min-width: 32px; font-size: var(--ick-text-md); gap: var(--ick-space-3); }
+.l  { height: 40px; min-width: 40px; font-size: var(--ick-text-lg); gap: var(--ick-space-4); }
+.xl { height: 48px; min-width: 48px; font-size: 1rem;               gap: var(--ick-space-4); }
+
+.hasText.xs { padding: 0 var(--ick-space-3); }
+.hasText.s  { padding: 0 var(--ick-space-5) 0 var(--ick-space-4); }
+.hasText.m  { padding: 0 var(--ick-space-6); }
+.hasText.l  { padding: 0 var(--ick-space-7); }
+.hasText.xl { padding: 0 var(--ick-space-8); }
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.label {
+  position: relative;
+  z-index: var(--ick-z-base);
+}
+
+/* ── Primary: glassy at rest ────────────────────────────────────────────── */
+
 .primary {
-  background: var(--glass-gradient);
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.20),
-    0 2px 3px rgba(0, 0, 0, 0.10);
-  outline: 0.5px solid #ffffff;
+  background: var(--ick-glass-gradient);
+  box-shadow: var(--ick-shadow-1);
+  outline: 0.5px solid var(--ick-border-bright);
 }
 
-.primary:hover {
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.20),
-    0 5px 4px rgba(0, 0, 0, 0.10);
+.primary:hover:not(:disabled) {
+  box-shadow: var(--ick-shadow-2);
 }
 
-.primary:active {
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.20),
-    0 1px 1px rgba(0, 0, 0, 0.10);
+.primary:active:not(:disabled) {
+  box-shadow: var(--ick-shadow-inset);
   transform: scale(0.94);
-  transition-duration: 70ms;
+  transition-duration: var(--ick-duration-press);
 }
 
-/* ── Secondary: naked by default, glassy on hover/active ── */
+/* ── Secondary: naked until touched ─────────────────────────────────────── */
+
 .secondary {
   background: transparent;
   outline: 0.5px solid transparent;
 }
 
-.secondary:hover {
-  background: var(--glass-gradient);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.20),
-    0 5px 4px rgba(0, 0, 0, 0.10);
-  outline-color: #ffffff;
+.secondary:hover:not(:disabled) {
+  background: var(--ick-glass-gradient);
+  box-shadow: var(--ick-shadow-2);
+  outline-color: var(--ick-border-bright);
 }
 
-.secondary:active {
-  background: var(--glass-gradient);
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.20),
-    0 1px 1px rgba(0, 0, 0, 0.10);
-  outline-color: #ffffff;
+.secondary:active:not(:disabled) {
+  background: var(--ick-glass-gradient);
+  box-shadow: var(--ick-shadow-inset);
+  outline-color: var(--ick-border-bright);
   transform: scale(0.94);
-  transition-duration: 70ms;
+  transition-duration: var(--ick-duration-press);
 }
 
-/* ── Ghost: flat, subtle gray hover ── */
+/* ── Ghost: flat ────────────────────────────────────────────────────────── */
+
 .ghost {
   background: transparent;
-  color: var(--ink-soft, #11111199);
+  color: var(--ick-ink-soft);
 }
 
-.ghost:hover {
-  background: var(--surface-active);
-  color: var(--ink);
+.ghost:hover:not(:disabled) {
+  background: var(--ick-surface-active);
+  color: var(--ick-ink);
 }
 
-.ghost:active {
-  background: var(--surface-press);
-  color: var(--ink);
+.ghost:active:not(:disabled) {
+  background: var(--ick-surface-press);
+  color: var(--ick-ink);
   transform: scale(0.92);
-  transition-duration: 70ms;
+  transition-duration: var(--ick-duration-press);
+}
+
+/* ── Glass: the concave-glass material ──────────────────────────────────────
+   A gradient border through ::before and a top rim highlight through ::after,
+   over a stack of thirteen shadow layers. The layers are tokens because they
+   are the one part that has to be restated for the dark theme. */
+
+.glass {
+  font-family: var(--ick-font-mono);
+  letter-spacing: -0.01em;
+  color: var(--ick-ink-glass);
+  background: var(--ick-glass-fill);
+  box-shadow: var(--ick-shadow-glass);
+  backdrop-filter: blur(var(--ick-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ick-glass-blur));
+  transition: all var(--ick-duration-slow) var(--ick-ease);
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--ick-glass-border-width);
+  background: var(--ick-glass-edge);
+  /* The only literal colours in this file, and they are not colours: a mask
+     needs an opaque stencil, and any opaque value does. */
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  transition: background var(--ick-duration-slow) var(--ick-ease);
+}
+
+.glass::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: var(--ick-glass-border-width);
+  background: var(--ick-glass-highlight);
+  border-radius: var(--ick-radius-pill);
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity var(--ick-duration-slow) var(--ick-ease);
+}
+
+.glass:hover:not(:disabled) {
+  background: var(--ick-glass-fill-hover);
+  color: var(--ick-ink-glass-strong);
+  box-shadow: var(--ick-shadow-glass-hover);
+  transform: translateY(-1px);
+}
+
+.glass:hover:not(:disabled)::after {
+  opacity: 0.6;
+}
+
+.glass:active:not(:disabled) {
+  background: var(--ick-glass-fill-press);
+  box-shadow: var(--ick-shadow-glass-press);
+  transform: translateY(1px) scale(0.99);
+  transition-duration: 80ms;
+}
+
+.glass:active:not(:disabled)::before {
+  background: var(--ick-glass-edge-press);
+}
+
+.glass:active:not(:disabled)::after {
+  opacity: 0.3;
+}
+
+.glass:disabled {
+  box-shadow: var(--ick-shadow-glass-disabled);
+}
+
+.glass:disabled::after {
+  opacity: 0.15;
+}
+
+/* ── Disabled ───────────────────────────────────────────────────────────── */
+
+/* No `pointer-events: none` here, though the glass button used to have it.
+   `disabled` already refuses activation; switching off hit-testing on top of
+   that only removes the hover feedback and any tooltip explaining why the
+   button cannot be used. */
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ── Loading ────────────────────────────────────────────────────────────────
+   Hidden with opacity, not visibility. `visibility: hidden` takes the label
+   out of the accessibility tree, and the spinner is aria-hidden, so the button
+   announced as one with no name at all. */
+
+.loading .label,
+.loading .icon {
+  opacity: 0;
+}
+
+.spinner {
+  position: absolute;
+  z-index: var(--ick-z-base);
+  width: 1.25em;
+  height: 1.25em;
+  border: 2px solid var(--ick-border);
+  border-top-color: var(--ick-ink-soft);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Reduced motion ─────────────────────────────────────────────────────────
    The colour, shadow and outline fades stay — nothing about them moves, and
-   dropping them would take the interactive states with them. Only the press
-   scale moves, so it snaps rather than animating. That is the same trade
-   Motion makes for transforms under `reducedMotion="user"`. */
+   dropping them would take the interactive states with them. Only transform
+   goes, so the press snaps rather than travelling. The spinner keeps turning:
+   it is the only sign that anything is happening. */
+
 @media (prefers-reduced-motion: reduce) {
-  .btn {
-    transition-property: box-shadow, background, outline-color;
+  .btn,
+  .glass {
+    transition-property: box-shadow, background, outline-color, color;
   }
 }

@@ -3,9 +3,9 @@ import { motion, AnimatePresence, type Variants } from "motion/react";
 import { useDialKit } from "dialkit";
 import { ArrowLeft, Share, Highlighter, TextCursor } from "lucide-react";
 import {
+  Button,
   ReplyThreadPopup,
   CustomCursor,
-  GlassButton,
   defaultInlineAnimConfig,
   useChatTurns,
   type ChatInputHandle,
@@ -209,7 +209,7 @@ export function ChatExperience() {
 
             <motion.div variants={introItemVariants} className={introStyles.mobileButton}>
               <a href="/">
-                <GlassButton size="s">Back to home</GlassButton>
+                <Button variant="glass" size="m">Back to home</Button>
               </a>
             </motion.div>
 
@@ -223,9 +223,9 @@ export function ChatExperience() {
             <motion.div variants={introItemVariants} style={{ display: "none" }} />
 
             <motion.div variants={introItemVariants} className={introStyles.buttonWrapper}>
-              <GlassButton size="s" onClick={handleStart}>
+              <Button variant="glass" size="m" onClick={handleStart}>
                 Start experience
-              </GlassButton>
+              </Button>
               <a href="/" className="secondaryBtn">
                 Back to home
               </a>

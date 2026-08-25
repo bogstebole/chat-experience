@@ -45,8 +45,9 @@ export { TextHighlighter } from "./TextHighlighter/TextHighlighter";
 export type { TextHighlighterProps } from "./TextHighlighter/TextHighlighter";
 export { CustomCursor } from "./CustomCursor/CustomCursor";
 
-/* Buttons */
+/* Buttons — one component, four materials */
 export { Button } from "./Button/Button";
-export type { ButtonProps, ButtonVariant } from "./Button/Button";
+export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button/Button";
+/** @deprecated Use `<Button variant="glass">`. A wrapper, not a component. */
 export { default as GlassButton } from "./GlassButton/GlassButton";
 export type { GlassButtonProps, GlassButtonSize } from "./GlassButton/GlassButton";
