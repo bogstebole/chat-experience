@@ -87,6 +87,40 @@ const defaultBubbleSpring: Transition = {
   mass: 0.2,
 };
 
+/**
+ * Insert text at the caret of a contenteditable.
+ *
+ * `execCommand` is deprecated but remains the only way to insert into a
+ * contenteditable while keeping the browser's native undo stack, so it stays
+ * as the preferred path. It is absent in some environments and can refuse the
+ * command, hence the range-based fallback — which the browser does not follow
+ * with an `input` event, so the caller is told to sync state itself.
+ *
+ * Returns true when the browser handled it and an input event is coming.
+ */
+const insertTextAtCaret = (text: string): boolean => {
+  if (typeof document.execCommand === "function") {
+    try {
+      if (document.execCommand("insertText", false, text)) return true;
+    } catch {
+      // Fall through to the manual path.
+    }
+  }
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return false;
+};
+
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
   function ChatInput(
     {
@@ -314,21 +348,24 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onChange(el.textContent ?? "");
     }, [onChange]);
 
-    const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const text = e.clipboardData.getData("text/plain");
-      document.execCommand("insertText", false, text);
-    }, []);
+    const handlePaste = useCallback(
+      (e: React.ClipboardEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData("text/plain");
+        if (!insertTextAtCaret(text)) handleInput();
+      },
+      [handleInput]
+    );
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter") {
           e.preventDefault();
           if (!e.shiftKey && (value.trim().length > 0 || !!attachedImage)) onSubmit(value);
-          else if (e.shiftKey) document.execCommand("insertText", false, "\n");
+          else if (e.shiftKey && !insertTextAtCaret("\n")) handleInput();
         }
       },
-      [value, onSubmit, attachedImage]
+      [value, onSubmit, attachedImage, handleInput]
     );
 
     useEffect(() => {

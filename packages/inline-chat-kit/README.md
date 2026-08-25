@@ -177,6 +177,28 @@ import { ChatInput, defaultInlineAnimConfig } from "inline-chat-kit";
 Works in the App Router as-is — the bundle carries a `"use client"` directive.
 Import the stylesheet from a client component or your root layout.
 
+## Contributing
+
+```bash
+npm install
+npm test          # 53 tests, jsdom
+npm run lint
+npm run build
+```
+
+Tests cover the controlled contract of `ChatInput`, the export surface, the
+button semantics, and `ReplyThreadPopup`'s `onSendMessage` hook.
+
+They deliberately stop at the edge of what jsdom can honestly answer. It has no
+layout engine and does not implement contenteditable editing, so the wrap
+thresholds, the overflow fade, and the marker's hit-testing are not asserted
+here — a passing tick for those would be a lie about untested code. Those live
+in the playground, with a real pointer and a real display.
+
+`TextHighlighter` carries one regression guard worth knowing about: it asserts
+that token spans have no inline styles at rest. Motion writes styles onto
+elements it drives, so if that test fails, per-word animation has come back.
+
 ## License
 
 MIT
