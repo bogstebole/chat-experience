@@ -24,12 +24,19 @@ export type { MorphGlyphProps } from "./ChatInput/MorphGlyph";
 /* Turn state, streaming and the reveal — the half a host app owns */
 export { useChatTurns } from "./useChatTurns/useChatTurns";
 export type {
+  ChatAnnouncements,
   ChatTurn,
   SendContext,
   SendHandler,
   UseChatTurnsOptions,
   UseChatTurnsResult,
 } from "./useChatTurns/useChatTurns";
+
+/* Screen-reader announcements. `useChatTurns` speaks through this already;
+   exported so a host app can announce its own errors into the same region
+   rather than adding a competing one. */
+export { announce } from "./announce/announce";
+export type { Politeness } from "./announce/announce";
 
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";

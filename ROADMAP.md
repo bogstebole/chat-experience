@@ -38,13 +38,19 @@ The component is mouse-only. For a library other people install, this is the
 largest remaining gap. Phases are ordered cheapest-and-most-valuable first; each
 is independently shippable.
 
-### A1 · Announce answers to screen readers
+### A1 · Announce answers to screen readers — done
 Today an answer arrives with no announcement at all.
-- [ ] `role="status"` region per turn, `aria-live="polite"`
-- [ ] Announce **once on settle**, not per character — streaming into a live
+- [x] One shared `role="status"` / `aria-live="polite"` region, created lazily
+      and written to on a later tick — a region inserted together with its text
+      is silent
+- [x] Announced **once on settle**, not per character — streaming into a live
       region makes screen readers re-read the whole answer on every frame
-- [ ] `aria-busy` on the turn while responding
-- [ ] Test: region receives the full text exactly once
+- [x] `aria-busy` on the turn while responding (feed and thread popup)
+- [x] Spoken strings are overridable, and can be switched off entirely — the
+      defaults are English and would otherwise be unusable elsewhere
+- [x] 13 tests: region behaviour in the DOM, and call counts from the hook
+- [x] Verified in the browser: region present with the full answer, `aria-busy`
+      flipping true → absent across a turn, no console errors in a clean tab
 
 ### A2 · Honour `prefers-reduced-motion` everywhere
 Only `TextHighlighter.module.css` respects it today.

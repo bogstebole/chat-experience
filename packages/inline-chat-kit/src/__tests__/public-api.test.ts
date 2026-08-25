@@ -17,6 +17,7 @@ const EXPECTED_EXPORTS = [
   "MorphGlyph",
   "ReplyThreadPopup",
   "TextHighlighter",
+  "announce",
   "defaultInlineAnimConfig",
   "useChatTurns",
 ] as const;

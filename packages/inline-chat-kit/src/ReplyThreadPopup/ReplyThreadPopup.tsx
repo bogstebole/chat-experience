@@ -248,6 +248,7 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
                 <motion.div
                   key={turn.id}
                   id={`thread-turn-${turn.id}`}
+                  aria-busy={turn.state === "responding" || undefined}
                   initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   transition={{ type: "spring", stiffness: 260, damping: 30, mass: 0.8 }}
