@@ -1,19 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "motion/react";
 import { useDialKit } from "dialkit";
 import { ArrowLeft, Share, Highlighter, TextCursor } from "lucide-react";
 import {
-  ChatInput,
-  TextHighlighter,
   ReplyThreadPopup,
   CustomCursor,
   GlassButton,
   defaultInlineAnimConfig,
-  type ChatInputState,
+  useChatTurns,
   type ChatInputHandle,
 } from "inline-chat-kit";
 import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
+import { ChatTurnRow } from "../demo/ChatTurnRow";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
 import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
@@ -32,29 +31,10 @@ const HIGGS_RESPONSE = [
   "So 'how big is it' has only one honest answer: it has no size, only mass and quantum numbers.",
 ];
 
-interface Turn {
-  id: string;
-  user: string;
-  ai: string;
-  state: ChatInputState;
-}
-
 interface Highlight {
   turnId: string;
   text: string;
 }
-
-const randomId = () =>
-  typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2) + Date.now().toString(36);
-
-const newTurn = (): Turn => ({
-  id: randomId(),
-  user: "",
-  ai: "",
-  state: "idle",
-});
 
 export function ChatExperience() {
   const dial = useDialKit("Animation Setup", {
@@ -129,134 +109,51 @@ export function ChatExperience() {
   };
 
   const [phase, setPhase] = useState<Phase>("intro");
-  const [turns, setTurns] = useState<Turn[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
   const [activeReply, setActiveReply] = useState<{ text: string, rect: DOMRect } | null>(null);
   const [selectionMode, setSelectionMode] = useState<"marker" | "precise">("marker");
-  const [editingTurnId, setEditingTurnId] = useState<string | null>(null);
-  const streamingRef = useRef<number | null>(null);
-  const turnCountRef = useRef(0);
-  const editingRef = useRef(false);
-  const editSnapshotRef = useRef<{ id: string; user: string } | null>(null);
   const activeInputRef = useRef<ChatInputHandle>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const animConfig = defaultInlineAnimConfig;
+  const turnCountRef = useRef(0);
 
-  useEffect(() => {
-    return () => {
-      if (streamingRef.current) clearTimeout(streamingRef.current);
-    };
+  /**
+   * Where a real app would call its model. The kit owns the turn state, the
+   * streaming and the reveal; everything below is this demo pretending to be
+   * an API, so the playground costs nothing to run.
+   *
+   * Yielding word by word exercises the streaming path rather than the
+   * simpler "resolve a whole string" one.
+   */
+  const fakeApi = useCallback(async function* (): AsyncGenerator<string> {
+    const response = turnCountRef.current % 2 === 0 ? AI_RESPONSE : HIGGS_RESPONSE;
+    turnCountRef.current += 1;
+    const words = response.join(" ").split(/(\s+)/);
+    for (const word of words) {
+      await new Promise((r) => setTimeout(r, 24));
+      yield word;
+    }
   }, []);
 
-
-  const updateTurn = (id: string, patch: Partial<Turn>) => {
-    setTurns((t) => t.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
-  };
+  const { turns, setDraft, submit, stop, beginEdit, cancelEdit } = useChatTurns({
+    onSend: fakeApi,
+  });
 
   const handleStart = () => {
     setPhase("chat");
-    setTurns([newTurn()]);
   };
 
-  const handleChange = (id: string, value: string) => {
-    updateTurn(id, {
-      user: value,
-      state: value.length > 0 ? "typing" : "idle",
-    });
-  };
-
-  const handleEdit = (id: string) => {
-    const turn = turns.find((t) => t.id === id);
-    if (turn) editSnapshotRef.current = { id, user: turn.user };
-    updateTurn(id, { state: "typing" });
-  };
-
-  const handleCancelEdit = (id: string) => {
-    const snap = editSnapshotRef.current;
-    editSnapshotRef.current = null;
-    const patch: Partial<Turn> = { state: "resting" };
-    if (snap && snap.id === id) patch.user = snap.user;
-    updateTurn(id, patch);
-  };
-
-  const handleSubmit = (id: string, value: string) => {
-    const trimmed = value.trim();
-    // An edit is a re-submit of a turn that was already answered — it
-    // already has an input below it, so we must not append another one.
-    editingRef.current = turns.some((turn) => turn.id === id && turn.ai.length > 0);
-    editSnapshotRef.current = null;
-    // While the answer regenerates, hide the trailing input so only the
-    // streaming response is visible; it re-appears once finished.
-    if (editingRef.current) setEditingTurnId(id);
-    updateTurn(id, { user: trimmed, state: "responding", ai: "" });
-
-    setTimeout(() => {
-      const el = document.getElementById(`turn-${id}`);
-      const feed = document.querySelector('.chatFeed');
-      const header = document.querySelector('.chatHeader');
-      if (el && feed) {
-        const headerHeight = header ? (header as HTMLElement).offsetHeight : 80;
-        // Scroll so the element is exactly 16px below the bottom of the header
-        feed.scrollTo({ top: el.offsetTop - headerHeight - 16, behavior: "smooth" });
-      } else {
-        el?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 150);
-
-    const response = turnCountRef.current % 2 === 0 ? AI_RESPONSE : HIGGS_RESPONSE;
-    turnCountRef.current += 1;
-    streamAi(id, response);
-  };
-
-  const streamAi = (turnId: string, response: string[]) => {
-    const fullText = response.join(" ");
-    let i = 0;
-
-    const tick = () => {
-      if (i >= fullText.length) {
-        finishTurn(turnId);
-        return;
-      }
-      setTurns((t) =>
-        t.map((turn) =>
-          turn.id === turnId ? { ...turn, ai: fullText.slice(0, i + 1) } : turn
-        )
-      );
-      const char = fullText[i];
-      i += 1;
-      const delay = char === "." ? 40 : char === "," ? 18 : 3;
-      streamingRef.current = window.setTimeout(tick, delay);
-    };
-    streamingRef.current = window.setTimeout(tick, 300);
-  };
-
-  const finishTurn = (turnId: string) => {
-    streamingRef.current = null;
-    setTurns((t) =>
-      t.map((turn) => (turn.id === turnId ? { ...turn, state: "resting" } : turn))
-    );
-    // Editing an existing turn regenerates its answer in place — the
-    // trailing input is already present, so don't spawn a duplicate.
-    // Reveal it again now that the response is complete.
-    if (editingRef.current) {
-      editingRef.current = false;
-      setEditingTurnId(null);
-      return;
+  const handleHighlight = useCallback((turnId: string, text: string) => {
+    if (text.trim().length > 0) {
+      setHighlights((prev) => [...prev, { turnId, text: text.trim() }]);
     }
-    streamingRef.current = window.setTimeout(() => {
-      streamingRef.current = null;
-      setTurns((t) => [...t, newTurn()]);
-    }, 320);
-  };
+  }, []);
 
-  const handleStop = (turnId: string) => {
-    if (streamingRef.current) {
-      clearTimeout(streamingRef.current);
-      streamingRef.current = null;
-    }
-    finishTurn(turnId);
-  };
+  const handleReplyInThread = useCallback((text: string, rect: DOMRect) => {
+    setActiveReply({ text, rect });
+  }, []);
+
 
   return (
     <>
@@ -396,64 +293,31 @@ export function ChatExperience() {
           </header>
           <div className="chatFeed" ref={feedRef}>
             <AnimatePresence>
-              {turns.map((turn, i) => {
-                const isActiveInput =
-                  i === turns.length - 1 &&
-                  (turn.state === "idle" || turn.state === "typing");
-                // Trailing empty input hides while an earlier turn regenerates,
-                // then animates back in once that response finishes.
-                if (editingTurnId !== null && isActiveInput && turn.ai.length === 0) {
-                  return null;
-                }
-                return (
-                  <motion.article
-                    key={turn.id}
-                    id={`turn-${turn.id}`}
-                    className={`chatTurn${isActiveInput ? " activeInput" : ""}`}
-                    initial={{ opacity: 0, y: -16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -16 }}
-                    transition={{
-                      duration: 0.4,
-                      ease: [0.22, 1, 0.36, 1],
-                      delay: i === 0 ? dial["Chat Feed"].delay : 0
-                    }}
-                  >
-                    <div className="userRow">
-                      <ChatInput
-                        ref={isActiveInput ? activeInputRef : null}
-                        state={turn.state}
-                        value={turn.user}
-                        onChange={(v) => handleChange(turn.id, v)}
-                        onSubmit={(v) => handleSubmit(turn.id, v)}
-                        onStop={() => handleStop(turn.id)}
-                        onCopy={(v) => navigator.clipboard.writeText(v)}
-                        onEdit={() => handleEdit(turn.id)}
-                        onCancelEdit={() => handleCancelEdit(turn.id)}
-                        isEditing={turn.ai.length > 0 && turn.state === "typing"}
-                        animationConfig={animConfig}
-                        placeholder="Ask me about particle physics…"
-                      />
-                    </div>
-                    {turn.ai && (
-                      <div className="aiText">
-                        <TextHighlighter
-                          text={turn.ai}
-                          selectionMode={selectionMode}
-                          onHighlightComplete={(text) => {
-                            if (text.trim().length > 0) {
-                              setHighlights(prev => [...prev, { turnId: turn.id, text: text.trim() }]);
-                            }
-                          }}
-                          onReplyInThread={(text, rect) => {
-                            setActiveReply({ text, rect });
-                          }}
-                        />
-                      </div>
-                    )}
-                  </motion.article>
-                );
-              })}
+              {turns.map((turn, i) => (
+                <ChatTurnRow
+                  key={turn.id}
+                  turn={turn}
+                  isActiveInput={
+                    i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing")
+                  }
+                  inputRef={
+                    i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing")
+                      ? activeInputRef
+                      : null
+                  }
+                  entranceDelay={i === 0 ? dial["Chat Feed"].delay : 0}
+                  selectionMode={selectionMode}
+                  animationConfig={animConfig}
+                  placeholder="Ask me about particle physics…"
+                  onDraft={setDraft}
+                  onSubmit={submit}
+                  onStop={stop}
+                  onEdit={beginEdit}
+                  onCancelEdit={cancelEdit}
+                  onHighlight={handleHighlight}
+                  onReplyInThread={handleReplyInThread}
+                />
+              ))}
             </AnimatePresence>
           </div>
           <div className="bottomBlur" />
@@ -554,10 +418,11 @@ export function ChatExperience() {
 
       <AnimatePresence>
         {activeReply && (
-          <ReplyThreadPopup 
-            key="thread-popup" 
-            activeReply={activeReply} 
-            onClose={() => setActiveReply(null)} 
+          <ReplyThreadPopup
+            key="thread-popup"
+            activeReply={activeReply}
+            onClose={() => setActiveReply(null)}
+            onSendMessage={fakeApi}
           />
         )}
       </AnimatePresence>

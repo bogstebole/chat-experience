@@ -18,6 +18,7 @@ const EXPECTED_EXPORTS = [
   "ReplyThreadPopup",
   "TextHighlighter",
   "defaultInlineAnimConfig",
+  "useChatTurns",
 ] as const;
 
 describe("public API", () => {
