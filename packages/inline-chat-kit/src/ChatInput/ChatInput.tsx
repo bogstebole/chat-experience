@@ -159,6 +159,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const compactAvailWidthRef = useRef(0);
     const pendingExpansion = useRef(false);
     const buttonsTimerRef = useRef<number | null>(null);
+
+    // The timer below outlives the component otherwise. In a browser React
+    // shrugs at a setState on an unmounted component; in a test environment
+    // that has already been torn down it throws, which made the suite fail at
+    // random depending on how long the last render happened to take.
+    useEffect(
+      () => () => {
+        if (buttonsTimerRef.current) clearTimeout(buttonsTimerRef.current);
+      },
+      []
+    );
     const surfaceControls = useAnimationControls();
     const prevState = useRef(state);
     const animCfgRef = useRef(animationConfig);

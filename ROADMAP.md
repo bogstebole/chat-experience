@@ -225,6 +225,77 @@ shorter hint trades a known instruction for a discoverable one.
 
 ---
 
+## Now — the design system
+
+An audit before starting: 11 tokens existed, against roughly 290 hardcoded
+colour values. The architecture was right — CSS Modules, and a named cascade
+layer so a host's unlayered rules win automatically — but almost nothing went
+through it.
+
+| file | hardcoded | via `var()` |
+|---|---|---|
+| GlassButton.module.css | 197 | 27 |
+| ChatInput.module.css | 71 | 7 |
+| Button.module.css | 17 | 10 |
+| TextHighlighter.module.css | 7 | 6 |
+
+`ReplyThreadPopup` had no stylesheet at all — 17 inline `style={{}}` blocks —
+so nothing about it could be themed. No spacing, radius, shadow or type scale.
+One easing curve retyped thirteen times. Ten different z-index literals. And
+216 lines of dead CSS for social icon buttons no component renders.
+
+### D1 · The token file — done
+- [x] Three tiers: primitive → semantic → component. A component reads the
+      third; only the token file reads the first.
+- [x] Everything prefixed `--ick-`. The old names sat on the host's `:root` as
+      `--ink`, `--surface-hover`, `--font-sans` — a host that defines any of
+      those silently repaints the kit. The playground defines **four of them**,
+      which is the collision arriving on schedule rather than in theory.
+- [x] Colours built from channel triplets — `rgb(var(--ick-ink-rgb) / 0.6)`,
+      not `rgba(17, 17, 17, 0.6)`. Dark mode is then two lines instead of two
+      hundred.
+- [x] Dark mode in three states: system preference unless an explicit light
+      choice was made, and `[data-theme="dark"]` or `.dark` over both
+- [x] Scales for space, radius, elevation, motion, type and z-index
+- [x] Old names kept as aliases so nothing breaks mid-migration; they go when
+      the last component stops reading them
+- [x] Fixed a pre-existing leak found on the way: `ChatInput` left a timer
+      running past unmount, which failed the suite at random depending on how
+      long the previous render took
+
+Caught by checking rather than assuming: the first version had
+`--ick-font-sans` read `var(--font-geist-sans, …)` while aliasing
+`--font-geist-sans` back to it. CSS resolves a cycle by discarding both, so
+every font silently became the browser default. Stated outright now.
+
+**Dark mode is not true yet** — it is true for the parts that read tokens, and
+almost nothing does until D2–D5 land.
+
+### D2 · One button, and 216 fewer lines
+- [ ] Merge `GlassButton` into `Button` as `variant="glass"` — 710 lines for
+      two call sites, next to a second button component doing the same job
+- [ ] Delete the dead `.socialIconBtn` / `.iconSpan` blocks
+- [ ] The merged button on tokens, with its own dark values dropped in favour
+      of the semantic tier
+- [ ] `GlassButton` kept as a deprecated alias, since the website consumes the
+      packed tarball and should not break
+- [ ] Visual parity checked in both schemes before and after
+
+### D3 · `ChatInput` on tokens
+- [ ] 71 literals out of the stylesheet, 17 inline style blocks out of the TSX
+
+### D4 · `ReplyThreadPopup` gets a stylesheet
+- [ ] Inline styles into a CSS module, so it can be themed at all
+
+### D5 · The highlighter
+- [ ] `#CCFF00` out of the TSX constant and onto `--ick-marker`
+- [ ] Easings and z-indexes onto the scales
+
+### D6 · Keep it that way
+- [ ] A test that fails when a new hardcoded colour appears in a stylesheet —
+      the same kind of guard as the one pinning tokens free of inline styles
+- [ ] `theming.md`: the tokens a host can set, and what each one moves
+
 ## Later
 
 - [ ] **Touch:** the highlighter sets `touch-action: none` on every answer, so a

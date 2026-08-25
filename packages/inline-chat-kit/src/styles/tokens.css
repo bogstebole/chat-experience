@@ -1,32 +1,230 @@
 /* ─────────────────────────────────────────────
-   inline-chat-kit — host contract defaults
+   inline-chat-kit — design tokens
 
-   Everything the kit reads but does not define itself lives here, so the
-   components render correctly with zero setup. Values sit in a named cascade
-   layer: any unlayered rule in the host app overrides them automatically,
-   regardless of import order.
+   Three tiers, and the rule is that a component only ever reads the third:
+
+     primitive   the raw value                --ick-yellow-400: #ccff00
+     semantic    what it means here           --ick-marker: …
+     component   what one part uses it for    --ick-glass-fill: …
+
+   Everything is prefixed `--ick-`. Without a prefix these sit on the host
+   app's `:root` under names like `--ink` and `--surface-hover`, and a host
+   that already defines one of those silently repaints the kit. That is a
+   collision, not a feature; deliberate overriding is what the prefixed names
+   and the cascade layer below are for.
+
+   The layer matters: any unlayered rule in the host app beats everything in
+   here automatically, whatever the import order. So a host overrides by
+   writing `--ick-ink` on `:root` and nothing else.
+
+   Colours are built from channel triplets rather than finished colours —
+   `rgb(var(--ick-ink-rgb) / 0.6)` instead of `rgba(17, 17, 17, 0.6)`. Two
+   reasons: the alpha steps stay legible, and dark mode is then a swap of two
+   lines rather than a rewrite of two hundred.
    ───────────────────────────────────────────── */
 
 @layer inline-chat-kit {
   :root {
-    /* Typography — override with your own font stacks (or the CSS variables
-       a framework font loader hands you, e.g. next/font). */
-    --font-sans: "Geist", system-ui, -apple-system, sans-serif;
-    --font-geist-sans: "Geist", system-ui, -apple-system, sans-serif;
-    --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
-    --font-jetbrains-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+    /* ═══ Primitives ═══════════════════════════════════════════════════════
+       Raw values. Components should not read these directly. */
 
-    /* Ink — text colours, strongest to faintest */
-    --ink: #111111;
-    --ink-soft: rgba(17, 17, 17, 0.6);
-    --ink-faint: rgba(17, 17, 17, 0.4);
+    --ick-ink-rgb: 17 17 17;
+    --ick-paper-rgb: 255 255 255;
+    --ick-marker-rgb: 204 255 0;
 
-    /* Interactive surfaces — hover, active and pressed backgrounds */
-    --surface-hover: rgba(17, 17, 17, 0.04);
-    --surface-active: rgba(17, 17, 17, 0.06);
-    --surface-press: rgba(17, 17, 17, 0.1);
+    /* ═══ Semantic ═════════════════════════════════════════════════════════
+       What a value means, which is what dark mode swaps. */
 
-    /* Text on glass surfaces, which sit over unpredictable backdrops */
-    --color-text-glass: rgba(0, 0, 0, 0.72);
+    /* Text, strongest to faintest */
+    --ick-ink: rgb(var(--ick-ink-rgb));
+    --ick-ink-soft: rgb(var(--ick-ink-rgb) / 0.6);
+    --ick-ink-faint: rgb(var(--ick-ink-rgb) / 0.4);
+    /* Text over glass, which sits on an unpredictable backdrop */
+    --ick-ink-glass: rgb(var(--ick-ink-rgb) / 0.72);
+    --ick-ink-glass-strong: rgb(var(--ick-ink-rgb) / 0.62);
+
+    /* Surfaces */
+    --ick-surface: rgb(var(--ick-paper-rgb));
+    --ick-surface-hover: rgb(var(--ick-ink-rgb) / 0.04);
+    --ick-surface-active: rgb(var(--ick-ink-rgb) / 0.06);
+    --ick-surface-press: rgb(var(--ick-ink-rgb) / 0.1);
+    --ick-surface-sunken: rgb(var(--ick-ink-rgb) / 0.04);
+
+    /* Edges */
+    --ick-border: rgb(var(--ick-ink-rgb) / 0.1);
+    --ick-border-bright: rgb(var(--ick-paper-rgb));
+    --ick-focus-ring: rgb(var(--ick-ink-rgb) / 0.2);
+
+    /* The marker. The signature colour of the whole thing, and until now a
+       hex literal sitting in a TSX constant. */
+    --ick-marker: rgb(var(--ick-marker-rgb) / 0.7);
+    --ick-marker-glow: rgb(var(--ick-marker-rgb) / 0.6);
+    --ick-marker-tint: rgb(var(--ick-marker-rgb) / 0.4);
+
+    /* ═══ Typography ═══════════════════════════════════════════════════════
+       Stated outright rather than chained to the host's own font variables.
+       The first attempt read `var(--font-geist-sans, …)` here while aliasing
+       `--font-geist-sans` back to this — a cycle, which CSS resolves by
+       throwing both away, so every font silently became the browser default.
+       A host sets `--ick-font-sans`; that is the whole contract. */
+
+    --ick-font-sans: "Geist", system-ui, -apple-system, sans-serif;
+    --ick-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+    --ick-text-xs: 0.625rem;   /* 10px */
+    --ick-text-sm: 0.75rem;    /* 12px */
+    --ick-text-md: 0.8125rem;  /* 13px */
+    --ick-text-lg: 0.875rem;   /* 14px */
+
+    --ick-weight-regular: 400;
+    --ick-weight-medium: 500;
+    --ick-weight-semibold: 600;
+
+    /* ═══ Space ════════════════════════════════════════════════════════════ */
+
+    --ick-space-1: 2px;
+    --ick-space-2: 4px;
+    --ick-space-3: 6px;
+    --ick-space-4: 8px;
+    --ick-space-5: 12px;
+    --ick-space-6: 16px;
+    --ick-space-7: 24px;
+    --ick-space-8: 40px;
+
+    /* ═══ Shape ════════════════════════════════════════════════════════════ */
+
+    --ick-radius-xs: 2px;
+    --ick-radius-sm: 6px;
+    --ick-radius-md: 8px;
+    --ick-radius-lg: 12px;
+    --ick-radius-xl: 24px;
+    --ick-radius-pill: 999px;
+
+    /* ═══ Elevation ════════════════════════════════════════════════════════
+       Named by how far off the page a thing sits, not by how it is drawn. */
+
+    --ick-shadow-1:
+      0 1px 1px rgb(var(--ick-ink-rgb) / 0.2),
+      0 2px 3px rgb(var(--ick-ink-rgb) / 0.1);
+    --ick-shadow-2:
+      0 1px 2px rgb(var(--ick-ink-rgb) / 0.2),
+      0 5px 4px rgb(var(--ick-ink-rgb) / 0.1);
+    --ick-shadow-3:
+      0 10px 6px rgb(var(--ick-ink-rgb) / 0.06),
+      0 4px 4px rgb(var(--ick-ink-rgb) / 0.1),
+      0 1px 3px rgb(var(--ick-ink-rgb) / 0.1);
+    /* Pressed: the shadow collapses towards the surface */
+    --ick-shadow-inset:
+      0 1px 1px rgb(var(--ick-ink-rgb) / 0.2),
+      0 1px 1px rgb(var(--ick-ink-rgb) / 0.1);
+
+    /* ═══ Motion ═══════════════════════════════════════════════════════════
+       One easing curve did thirteen jobs by being retyped thirteen times. */
+
+    --ick-ease: cubic-bezier(0.25, 1, 0.5, 1);
+    --ick-ease-overshoot: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --ick-ease-overshoot-strong: cubic-bezier(0.34, 1.6, 0.64, 1);
+
+    --ick-duration-press: 70ms;
+    --ick-duration-fast: 160ms;
+    --ick-duration-base: 200ms;
+    --ick-duration-slow: 400ms;
+
+    /* ═══ Layers ═══════════════════════════════════════════════════════════
+       The old values were 0, 1, 2, 3, 5, 10, 50, 200, 10000 and 99999, which
+       is not a scale, it is an argument nobody won. */
+
+    --ick-z-base: 1;
+    --ick-z-raised: 2;
+    --ick-z-sticky: 10;
+    --ick-z-overlay: 100;
+    --ick-z-modal: 200;
+    --ick-z-menu: 300;
+    --ick-z-cursor: 400;
+
+    /* ═══ Glass ════════════════════════════════════════════════════════════
+       Component tier. Glass is a material rather than a colour, so its parts
+       are named here and used by anything that wants to be made of it. */
+
+    --ick-glass-fill: rgb(var(--ick-paper-rgb) / 0.1);
+    --ick-glass-fill-hover: rgb(var(--ick-paper-rgb) / 0.2);
+    --ick-glass-fill-press: rgb(var(--ick-paper-rgb) / 0.05);
+    --ick-glass-gradient: linear-gradient(
+      315deg,
+      rgb(var(--ick-paper-rgb) / 0.26) 21%,
+      rgb(var(--ick-paper-rgb)) 83%
+    );
+    --ick-glass-border-width: 1px;
+    --ick-glass-blur: 2.5px;
+  }
+
+  /* ═══ Dark ═══════════════════════════════════════════════════════════════
+     Ink and paper trade places, and everything built from them follows. Only
+     what cannot be derived that way is restated.
+
+     Three states, in the order the cascade needs them: the system preference
+     applies unless an explicit light choice was made, and an explicit dark
+     choice wins over both. `.dark` is kept alongside `[data-theme]` because
+     Tailwind projects already have it. */
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not(.light) {
+      --ick-ink-rgb: 245 245 245;
+      --ick-paper-rgb: 18 18 18;
+
+      /* Glass over a dark backdrop catches light rather than losing it, so
+         its fill comes from the ink side and its text stops being black. */
+      --ick-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
+      --ick-ink-glass-strong: rgb(var(--ick-ink-rgb));
+      --ick-glass-fill: rgb(var(--ick-ink-rgb) / 0.08);
+      --ick-glass-fill-hover: rgb(var(--ick-ink-rgb) / 0.14);
+      --ick-glass-fill-press: rgb(var(--ick-ink-rgb) / 0.05);
+      --ick-glass-gradient: linear-gradient(
+        315deg,
+        rgb(var(--ick-ink-rgb) / 0.12) 21%,
+        rgb(var(--ick-ink-rgb) / 0.22) 83%
+      );
+      --ick-border-bright: rgb(var(--ick-ink-rgb) / 0.24);
+      --ick-focus-ring: rgb(var(--ick-ink-rgb) / 0.45);
+    }
+  }
+
+  :root[data-theme="dark"],
+  :root.dark {
+    --ick-ink-rgb: 245 245 245;
+    --ick-paper-rgb: 18 18 18;
+
+    --ick-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
+    --ick-ink-glass-strong: rgb(var(--ick-ink-rgb));
+    --ick-glass-fill: rgb(var(--ick-ink-rgb) / 0.08);
+    --ick-glass-fill-hover: rgb(var(--ick-ink-rgb) / 0.14);
+    --ick-glass-fill-press: rgb(var(--ick-ink-rgb) / 0.05);
+    --ick-glass-gradient: linear-gradient(
+      315deg,
+      rgb(var(--ick-ink-rgb) / 0.12) 21%,
+      rgb(var(--ick-ink-rgb) / 0.22) 83%
+    );
+    --ick-border-bright: rgb(var(--ick-ink-rgb) / 0.24);
+    --ick-focus-ring: rgb(var(--ick-ink-rgb) / 0.45);
+  }
+
+  /* ═══ Migration aliases ══════════════════════════════════════════════════
+     The unprefixed names components still read, pointed at the new ones so
+     nothing breaks while they move over one at a time. Deleted when the last
+     component stops reading them — they are the collision the prefix exists
+     to end, and keeping them would defeat the point. */
+
+  :root {
+    --font-sans: var(--ick-font-sans);
+    --font-geist-sans: var(--ick-font-sans);
+    --font-geist-mono: var(--ick-font-mono);
+    --font-jetbrains-mono: var(--ick-font-mono);
+    --ink: var(--ick-ink);
+    --ink-soft: var(--ick-ink-soft);
+    --ink-faint: var(--ick-ink-faint);
+    --surface-hover: var(--ick-surface-hover);
+    --surface-active: var(--ick-surface-active);
+    --surface-press: var(--ick-surface-press);
+    --color-text-glass: var(--ick-ink-glass);
   }
 }
