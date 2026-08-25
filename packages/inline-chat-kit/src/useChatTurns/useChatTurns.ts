@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatInputState } from "../ChatInput/ChatInput";
+import { announce } from "../announce/announce";
 
 export interface ChatTurn {
   id: string;
@@ -28,6 +29,21 @@ export type SendHandler = (
   context: SendContext
 ) => AsyncIterable<string> | Promise<string> | string;
 
+/**
+ * What a screen reader is told, and in which language.
+ *
+ * An answer that appears silently is an answer a blind reader never learns
+ * about, so this is on by default. It is spoken once, when the answer settles
+ * — never per character. A live region updated on every frame makes a screen
+ * reader restart the whole answer on every frame, which is worse than silence.
+ */
+export interface ChatAnnouncements {
+  /** Spoken when a request starts. `null` for silence. */
+  responding?: string | null;
+  /** Spoken when the answer settles. Return `null` for silence. */
+  answer?: (text: string) => string | null;
+}
+
 export interface UseChatTurnsOptions {
   onSend: SendHandler;
   /**
@@ -37,6 +53,8 @@ export interface UseChatTurnsOptions {
   revealSpeed?: number;
   /** Pause after a full stop, in ms. Gives read-aloud rhythm to the reveal. */
   sentencePause?: number;
+  /** Override the spoken strings, or pass `false` to say nothing at all. */
+  announcements?: ChatAnnouncements | false;
 }
 
 export interface UseChatTurnsResult {
@@ -53,6 +71,7 @@ export interface UseChatTurnsResult {
 
 const DEFAULT_REVEAL_SPEED = 260;
 const DEFAULT_SENTENCE_PAUSE = 220;
+const DEFAULT_RESPONDING = "Generating response";
 
 const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -99,6 +118,7 @@ export function useChatTurns({
   onSend,
   revealSpeed = DEFAULT_REVEAL_SPEED,
   sentencePause = DEFAULT_SENTENCE_PAUSE,
+  announcements,
 }: UseChatTurnsOptions): UseChatTurnsResult {
   const [turns, setTurns] = useState<ChatTurn[]>(() => [emptyTurn()]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -109,6 +129,10 @@ export function useChatTurns({
   const pendingRef = useRef<Map<string, string>>(new Map());
   const editingRef = useRef<{ id: string; user: string } | null>(null);
   const onSendRef = useRef(onSend);
+  // Consumers write this as an object literal, so it is a new object on every
+  // render. Held in a ref rather than a dependency, or every callback below
+  // would be rebuilt each render and the memoised rows would stop skipping.
+  const announcementsRef = useRef(announcements);
   // A live mirror of `turns`. Reading state inside a setState updater and
   // acting on it there makes the updater impure: React is free to call it
   // twice — StrictMode does, in development — and any work scheduled from
@@ -120,6 +144,7 @@ export function useChatTurns({
   useEffect(() => {
     onSendRef.current = onSend;
     turnsRef.current = turns;
+    announcementsRef.current = announcements;
   });
 
   /**
@@ -228,35 +253,55 @@ export function useChatTurns({
     [publish, revealSpeed, sentencePause]
   );
 
+  /** Route one of the two spoken moments through the live region. */
+  const speak = useCallback((moment: "responding" | "answer", text = "") => {
+    const config = announcementsRef.current;
+    if (config === false) return;
+
+    if (moment === "responding") {
+      // `in` rather than `??`, so an explicit `null` can mean silence.
+      const message = config && "responding" in config ? config.responding : DEFAULT_RESPONDING;
+      if (message) announce(message);
+      return;
+    }
+
+    const message = config?.answer ? config.answer(text) : text;
+    if (message) announce(message);
+  }, []);
+
   const run = useCallback(
     async (id: string, message: string, wasEdit: boolean) => {
       const controller = new AbortController();
       abortRef.current = controller;
       setIsStreaming(true);
       patchTurn(id, { user: message, state: "responding", ai: "" });
+      speak("responding");
 
+      // Held out here so the announcement can read it in `finally`, whether
+      // the answer completed, was stopped, or threw partway through.
+      let answer = "";
       try {
         const result = onSendRef.current(message, { signal: controller.signal, turnId: id });
 
         if (isAsyncIterable(result)) {
-          let text = "";
           for await (const chunk of result) {
             if (controller.signal.aborted) break;
-            text += chunk;
-            publish(id, text);
+            answer += chunk;
+            publish(id, answer);
           }
         } else {
-          const text = await result;
-          await reveal(id, text ?? "", controller.signal);
+          answer = (await result) ?? "";
+          await reveal(id, answer, controller.signal);
         }
       } catch (error) {
         if (!controller.signal.aborted) throw error;
       } finally {
         flush();
         settle(id, wasEdit);
+        speak("answer", answer);
       }
     },
-    [flush, patchTurn, publish, reveal, settle]
+    [flush, patchTurn, publish, reveal, settle, speak]
   );
 
   const setDraft = useCallback(

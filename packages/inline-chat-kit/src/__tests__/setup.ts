@@ -16,6 +16,15 @@ if (!Element.prototype.setPointerCapture) {
   Element.prototype.releasePointerCapture = vi.fn();
   Element.prototype.hasPointerCapture = vi.fn(() => false);
 }
+// Hit-testing. In a document with no layout there is nothing under any point,
+// so `null` is the truthful answer rather than a convenient one. Without the
+// stub the highlighter's pointer handler throws inside React's event dispatch,
+// which surfaces as an unhandled error and fails the run even though every
+// test passes.
+if (!document.elementFromPoint) {
+  document.elementFromPoint = vi.fn(() => null);
+}
+
 // Motion observes element size. jsdom has no layout, so it has no
 // ResizeObserver either — a stub that never reports is the truthful shape:
 // nothing ever resizes in a document with no layout.
