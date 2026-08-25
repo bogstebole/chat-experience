@@ -492,7 +492,16 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     ? { maxHeight: isExpanded ? textScrollHeightRef.current : 240 }
                     : undefined
                   }
-                  transition={{ type: "spring", stiffness: 300, damping: 35, mass: 0.8 }}
+                  // The text has to travel on the same spring as the box around
+                  // it. Given its own — this used to be a slower, heavier one —
+                  // it lags the morph and visibly slides outside the bubble
+                  // before catching up, for about half a second after the
+                  // bubble itself has settled. Height is a separate concern and
+                  // keeps its own easing.
+                  transition={{
+                    ...bubbleSpring,
+                    maxHeight: { type: "spring", stiffness: 300, damping: 35, mass: 0.8 },
+                  }}
                 >
                   <div
                     ref={editorRef}
