@@ -1,29 +1,9 @@
 :root {
-  --font-sans: "Geist Sans", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --bg: #ffffff;
-  --ink: #111111;
-  --ink-soft: rgba(17, 17, 17, 0.6);
-  --ink-faint: rgba(17, 17, 17, 0.4);
-  --surface-hover: rgba(0, 0, 0, 0.03);
-  --surface-active: rgba(0, 0, 0, 0.05);
-  --surface-kbd: rgba(0, 0, 0, 0.04);
-  --surface-press: rgba(0, 0, 0, 0.08);
-
-  font-family: var(--font-sans);
-  color: var(--ink);
-  background: var(--bg);
-  font-synthesis: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* The demo follows the kit's theme rather than keeping one of its own. It has
-   to: with a white page behind it, dark glass is invisible and there is no way
-   to judge whether the dark theme is right. The kit's tokens already carry
-   both themes, so this is a handful of lines rather than a second palette. */
-/* Opt-in only, matching the kit — see the note in tokens.css. */
-:root[data-theme="dark"] {
+  /* The demo adopts the kit's palette rather than keeping one of its own.
+     Every value below flips with the theme because the kit's do, so there is
+     no second set to keep in step and no media query to write here. */
+  --font-sans: var(--ick-font-sans);
+  --font-mono: var(--ick-font-mono);
   --bg: rgb(var(--ick-paper-rgb));
   --ink: var(--ick-ink);
   --ink-soft: var(--ick-ink-soft);
@@ -32,6 +12,13 @@
   --surface-active: var(--ick-surface-active);
   --surface-kbd: var(--ick-surface-hover);
   --surface-press: var(--ick-surface-press);
+
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
