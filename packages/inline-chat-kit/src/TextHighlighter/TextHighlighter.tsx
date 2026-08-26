@@ -8,7 +8,6 @@ import { MessageCircle, Trash2 } from "lucide-react";
 
 const SKEW_ANGLE = -20;
 const TAN_ANGLE = Math.tan((SKEW_ANGLE * Math.PI) / 180);
-const MARKER_COLOR = "rgba(204, 255, 0, 0.7)"; // #CCFF00 at 70% opacity
 
 interface PathData {
   id: string;
@@ -609,17 +608,8 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         y: 0,
       }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      style={{
-        position: "relative",
-        // Suppressed only while a marker is being drawn. It used to be off
-        // permanently in marker mode, which meant the answer could not be
-        // selected at all — not to highlight it, not even to copy it.
-        userSelect: isDrawing ? "none" : "text",
-        WebkitUserSelect: isDrawing ? "none" : "text",
-        touchAction: "none", // Prevent scrolling while highlighting on touch devices
-        display: "block", // to wrap the text tightly
-        zIndex: menuAnchor ? 10 : 1, // elevate above other paragraphs
-      }}
+      data-drawing={isDrawing || undefined}
+      data-menu={!!menuAnchor || undefined}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -638,24 +628,10 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         highlights the selection, Escape clears it.
       </span>
 
-      {/* Proximity Hitbox: proširuje zonu "hvatanja" miša za 20px bez pomeranja layouta */}
-      <div 
-        style={{
-          position: "absolute",
-          top: -20,
-          left: -20,
-          right: -20,
-          bottom: -20,
-          zIndex: 0,
-        }}
-      />
+      <div className={styles.hitbox} />
 
       {/* Underlying text */}
-      <span
-        className={styles.tokens}
-        style={{ position: "relative", zIndex: 1 }}
-        data-focus={!!menuAnchor || undefined}
-      >
+      <span className={styles.tokens} data-focus={!!menuAnchor || undefined}>
         {tokens.map((token, i) => {
           // Both freeform (path) and precise (selection) highlights dim the surrounding tokens.
           const isHighlightActive = !!menuAnchor;
@@ -703,19 +679,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       </span>
 
       {/* SVG Canvas overlay */}
-      <svg
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          mixBlendMode: "multiply",
-          zIndex: 2,
-          overflow: "visible", // allows stroke to go slightly outside bounds
-        }}
-      >
+      <svg className={styles.canvas}>
         <g transform={`skewX(${SKEW_ANGLE})`}>
           {allMarkers.map((marker) => (
             <React.Fragment key={marker.id}>
@@ -723,10 +687,6 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
                 id={`highlight-${marker.kind}-${marker.id}`}
                 className={styles.marker}
                 d={marker.d}
-                fill="none"
-                stroke={MARKER_COLOR}
-                strokeLinejoin="round"
-                strokeLinecap="butt"
                 data-cursor="pointer"
                 data-pressed={pressedPathId === marker.id || undefined}
                 data-active={
@@ -762,14 +722,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
             </React.Fragment>
           ))}
           {currentPath && (
-            <path
-              d={makePathString(currentPath.points)}
-              fill="none"
-              stroke={MARKER_COLOR}
-              strokeWidth="20px"
-              strokeLinejoin="round"
-              strokeLinecap="butt"
-            />
+            <path className={styles.marker} d={makePathString(currentPath.points)} />
           )}
         </g>
       </svg>
@@ -822,18 +775,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { staggerChildren: 0.05 } }}
             exit={{ opacity: 0, transition: { staggerChildren: 0.05, staggerDirection: -1 } }}
-            style={{
-              position: "absolute",
-              left: menuAnchor.x,
-              top: menuAnchor.y,
-              transform: "translate(-50%, calc(-100% - 16px))",
-              zIndex: 10000,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              pointerEvents: "auto",
-            }}
+            className={styles.menu}
+            // Where the menu sits is the one thing that cannot be a class.
+            style={{ left: menuAnchor.x, top: menuAnchor.y }}
             onPointerDown={(e) => e.stopPropagation()} // Sprečava da klik na dugme započne novo crtananje
           >
             <motion.div

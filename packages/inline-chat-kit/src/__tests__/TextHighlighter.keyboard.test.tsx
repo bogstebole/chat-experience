@@ -49,7 +49,20 @@ describe("TextHighlighter — reachable by keyboard", () => {
    */
   it("leaves the text selectable at rest", () => {
     const { surface } = setup();
-    expect(surface.style.userSelect).toBe("text");
+    // The rule lives in the stylesheet now, keyed off this attribute, so the
+    // thing to pin is the state rather than the declaration: absent at rest,
+    // present only while a stroke is being drawn.
+    expect(surface.hasAttribute("data-drawing")).toBe(false);
+  });
+
+  it("suppresses selection only while a marker is being drawn", () => {
+    const { surface } = setup();
+
+    fireEvent.pointerDown(surface, { button: 0, clientX: 10, clientY: 10 });
+    expect(surface.hasAttribute("data-drawing")).toBe(true);
+
+    fireEvent.pointerUp(surface, { clientX: 60, clientY: 10 });
+    expect(surface.hasAttribute("data-drawing")).toBe(false);
   });
 });
 

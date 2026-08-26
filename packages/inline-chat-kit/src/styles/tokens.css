@@ -66,6 +66,16 @@
     --ick-marker: rgb(var(--ick-marker-rgb) / 0.7);
     --ick-marker-glow: rgb(var(--ick-marker-rgb) / 0.6);
     --ick-marker-tint: rgb(var(--ick-marker-rgb) / 0.4);
+    /* Text sitting on the marker. It does not follow the theme: the marker is
+       the same yellow in the dark, so the words on it stay dark or they stop
+       being readable. */
+    --ick-marker-ink: rgb(var(--ick-glass-shade-rgb));
+    --ick-marker-sheen: rgb(var(--ick-glass-rim-rgb));
+    /* How far the rest of a paragraph recedes while one highlight has the
+       floor. Not symmetric between the themes: 15% of near-black on white is
+       still a legible grey, while 15% of near-white on black is very nearly
+       nothing. */
+    --ick-recede: 0.15;
 
     /* ═══ Typography ═══════════════════════════════════════════════════════
        Stated outright rather than chained to the host's own font variables.
@@ -172,6 +182,12 @@
     --ick-glass-border-width: 1px;
     --ick-glass-blur: 2.5px;
 
+    /* The pointer, which is drawn over content the kit does not control. It
+       keeps a light body and a dark outline in both themes for the same
+       reason road signs do: it has to be legible against anything. */
+    --ick-cursor-fill: #ffffff;
+    --ick-cursor-ink: #111111;
+
     /* The rim catches light; the shade is what it is lit against. Kept apart
        from ink and paper because glass does not invert with the theme — in
        the dark it is still lit from above, only more faintly. */
@@ -259,6 +275,7 @@
       0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.12),
       0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.2),
       0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
+    --ick-recede: 0.32;
     --ick-shadow-modal: 0 12px 31px -9px rgb(var(--ick-glass-shade-rgb) / 0.65);
     --ick-shadow-float:
       0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.5),
