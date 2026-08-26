@@ -418,9 +418,21 @@ The shape it should take:
       install for everyone and this is a marketing tool. The script resolves a
       global install and says how to get one if it is missing.
 
-Output is webm. mp4 needs a real `ffmpeg`: Playwright ships a stripped build
-that can record VP8 and not re-encode it, and macOS's `avconvert` cannot read
-VP8 at all. The script says so rather than failing quietly.
+Captured through CDP rather than Playwright's own recorder, after measuring
+why the first cut looked soft: the built-in recorder writes VP8 at a bitrate it
+does not expose — around 340 kb/s at 1280×680, which smears text — and asking
+for a larger `recordVideo.size` does not help, it pads the canvas rather than
+scaling the page. A screencast hands over JPEG frames and leaves the encoding
+to us: **340 kb/s → 2000 kb/s**, and the text reads.
+
+Frames arrive only when something changes, so they are resampled onto a steady
+30fps clock before encoding. Two plumbing bugs found on the way, both of which
+hid the real error: writing to a pipe ffmpeg had already closed surfaced as a
+bare `EPIPE`, and awaiting a `drain` from a dead process left a promise nothing
+could settle — which exits node **silently, with a success code**.
+
+Output is webm. mp4 would need a real `ffmpeg`: the one Playwright ships can
+mux webm and nothing else, and macOS's `avconvert` cannot read VP8.
 
 ## Later
 
