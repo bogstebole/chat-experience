@@ -387,9 +387,33 @@ rendered a `<style>` element containing `div::-webkit-scrollbar { display: none 
 — unscoped, so for as long as a thread was open it hid the scrollbar on
 **every div in the host application**. It is a scoped rule in the module now.
 
-### D5 · The highlighter
-- [ ] `#CCFF00` out of the TSX constant and onto `--ick-marker`
-- [ ] Easings and z-indexes onto the scales
+### D5 · The highlighter — done
+- [x] `#CCFF00` is gone from the TSX. It could not simply move to the
+      stylesheet as an SVG `stroke` attribute — an attribute cannot read a
+      custom property — so the stroke is a CSS property now and the colour
+      comes from `--ick-marker`.
+- [x] Easings onto `--ick-ease` and `--ick-ease-overshoot`; the z-indexes
+      (1, 2, 10, 10000) onto the layer scale
+- [x] Five inline style blocks became classes — the surface, the proximity
+      hitbox, the token span, the SVG canvas and the menu. What is left inline
+      is the menu's position, which is the one thing that genuinely changes
+      per render.
+- [x] `CustomCursor` too: its SVG fills and strokes read
+      `--ick-cursor-fill` / `--ick-cursor-ink`, which deliberately do **not**
+      flip with the theme — it is drawn over content the kit does not control
+      and has to stay legible against anything, the way a road sign does.
+- [x] Text on the marker got its own token. It must not follow the theme
+      either: the marker is the same yellow in the dark, so the words on it
+      stay dark or they stop being readable.
+- [x] **`--ick-recede`**, the depth the rest of a paragraph falls to while one
+      highlight has the floor. It was a flat `opacity: 0.15`, which is not
+      symmetric: 15% of near-black on white is a legible grey, 15% of
+      near-white on black is very nearly nothing. Dark gets 0.32, and the
+      paragraph comes back.
+
+**The kit now has no colour literals outside the token file.** What remains in
+`Button` and `ChatInput` are four mask stencils each, where a mask needs an
+opaque value and any one does.
 
 ### D6 · Keep it that way
 - [ ] Wire dark back to `prefers-color-scheme`, once nothing is left behind
