@@ -402,6 +402,26 @@ The shape it should take:
 - Depends on D6's guard: a stylesheet that can still hide a literal is a
   stylesheet where a brand colour will not reach everywhere it should.
 
+### Showcase recording
+- [x] `npm run showcase` (and `node tools/showcase/record.mjs dark`) drives the
+      **real playground** through the whole story — ask, morph, stream,
+      highlight, thread — and records it. Driving the real thing rather than a
+      mock means the video cannot show something the component does not do,
+      and re-running it after a change is how the video stops going stale.
+- [x] `?showcase` hides the perf HUD and the dial panel; `?theme=dark` sets
+      the starting theme. Useful for showing the demo live, not only for
+      recording.
+- [x] The demo questions were rewritten to fit the fixed answers. A video
+      where the answer does not address the question reads as broken however
+      good the animation is.
+- [x] Playwright is deliberately not a dependency — browsers are a heavy
+      install for everyone and this is a marketing tool. The script resolves a
+      global install and says how to get one if it is missing.
+
+Output is webm. mp4 needs a real `ffmpeg`: Playwright ships a stripped build
+that can record VP8 and not re-encode it, and macOS's `avconvert` cannot read
+VP8 at all. The script says so rather than failing quietly.
+
 ## Later
 
 - [ ] **Touch:** the highlighter sets `touch-action: none` on every answer, so a

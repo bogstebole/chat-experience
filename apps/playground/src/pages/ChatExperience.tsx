@@ -14,6 +14,7 @@ import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
 import { ChatTurnRow } from "../demo/ChatTurnRow";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
+import { initialTheme } from "../demo/showcase";
 import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
 
@@ -118,7 +119,7 @@ export function ChatExperience() {
    * element. Not wired to the system preference — see the note in the kit's
    * tokens.css, where the same decision is made and for the same reason.
    */
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
