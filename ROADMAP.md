@@ -415,12 +415,35 @@ rendered a `<style>` element containing `div::-webkit-scrollbar { display: none 
 `Button` and `ChatInput` are four mask stencils each, where a mask needs an
 opaque value and any one does.
 
-### D6 · Keep it that way
-- [ ] Wire dark back to `prefers-color-scheme`, once nothing is left behind
-- [ ] The playground's own banner still paints itself white
-- [ ] A test that fails when a new hardcoded colour appears in a stylesheet —
-      the same kind of guard as the one pinning tokens free of inline styles
-- [ ] `theming.md`: the tokens a host can set, and what each one moves
+### D6 · Keep it that way — done
+- [x] **A test that fails on a new literal colour.** It names the file and the
+      line, and its exception list carries a reason per entry — currently one:
+      a mask stencil, which needs an opaque value and is not a colour at all.
+      Checked against a deliberately planted `#ff0000`.
+- [x] **Dark wired to `prefers-color-scheme`**, now that nothing is left
+      behind. Verified in all four states: system light, system dark, and
+      either one overridden by an explicit `data-theme`.
+- [x] The dark palette is declared **once**, as `--ick-dark-*`, and the two
+      rules assign from it. Wiring up the media query would otherwise have
+      meant a third copy of the same eighty lines, and three copies drift.
+- [x] The playground adopts the kit's palette instead of keeping its own, so
+      it follows the theme with no second set of values and no media query
+- [x] Its banner too: 12 inline style blocks onto tokens
+- [x] `theming.md` — the contract, the handful that matter, dark, and the two
+      things that deliberately do not follow the theme
+
+**Two real bugs found while doing it.**
+
+The first was mine, from D4 and D5: every "dark" value I added — `--ick-recede`,
+`--ick-shadow-modal`, `--ick-shadow-float`, `--ick-shadow-glass-pulse` — had
+landed **inside the light `:root` block**, where it silently overrode the light
+one. Light mode had been running with dark's values since D4. The restructure
+is what surfaced it, and is what makes it hard to repeat.
+
+The second was the playground's: it wrote `data-theme` on every render, even
+when nobody had chosen a theme, which pinned the page and meant the media query
+could never get a turn. It only writes the attribute on an explicit choice now
+— which is the right advice for any host app, so the demo is showing it.
 
 ### D7 · Make it somebody else's brand
 Not started, and deliberately after D3–D6: a theming system laid over

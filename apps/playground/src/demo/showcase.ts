@@ -12,5 +12,14 @@ const params = () =>
 
 export const isShowcase = () => params().has("showcase");
 
-export const initialTheme = (): "light" | "dark" =>
-  params().get("theme") === "dark" ? "dark" : "light";
+/**
+ * The theme asked for in the URL, or `null` for "whatever the system says".
+ *
+ * `null` matters: setting `data-theme` unconditionally would pin the page to
+ * one theme and the kit's `prefers-color-scheme` rule would never get a turn.
+ * Only an explicit choice belongs on the element.
+ */
+export const requestedTheme = (): "light" | "dark" | null => {
+  const value = params().get("theme");
+  return value === "dark" || value === "light" ? value : null;
+};

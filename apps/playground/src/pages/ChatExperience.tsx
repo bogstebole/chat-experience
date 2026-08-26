@@ -14,7 +14,7 @@ import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
 import { ChatTurnRow } from "../demo/ChatTurnRow";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
-import { initialTheme } from "../demo/showcase";
+import { requestedTheme } from "../demo/showcase";
 import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
 
@@ -116,13 +116,26 @@ export function ChatExperience() {
 
   /**
    * The theme, set the way any host app sets it: `data-theme` on the root
-   * element. Not wired to the system preference — see the note in the kit's
-   * tokens.css, where the same decision is made and for the same reason.
+   * element — but only once somebody has actually chosen one. Until then the
+   * attribute stays off and the kit follows the system preference, which is
+   * what it is there for.
    */
-  const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
+  const [chosen, setChosen] = useState<"light" | "dark" | null>(requestedTheme);
+  const [systemDark, setSystemDark] = useState(
+    () => typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches
+  );
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => setSystemDark(query.matches);
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  const theme = chosen ?? (systemDark ? "dark" : "light");
+  useEffect(() => {
+    if (chosen) document.documentElement.setAttribute("data-theme", chosen);
+    else document.documentElement.removeAttribute("data-theme");
+  }, [chosen]);
   const [selectionMode, setSelectionMode] = useState<"marker" | "precise">("marker");
   const activeInputRef = useRef<ChatInputHandle>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -303,7 +316,7 @@ export function ChatExperience() {
               )}
               <button
                 className="secondaryBtn iconBtn"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() => setChosen(theme === "dark" ? "light" : "dark")}
                 aria-label={theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"}
                 aria-pressed={theme === "dark"}
               >

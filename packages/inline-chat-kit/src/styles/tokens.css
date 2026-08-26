@@ -261,82 +261,37 @@
       0 18px 8px 0 rgb(var(--ick-glass-rim-rgb) / 0.35) inset,
       0 3px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.04),
       0 1px 2px 0 rgb(var(--ick-glass-shade-rgb) / 0.06);
-    --ick-shadow-glass-pulse:
-      -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb) / 0.24) inset,
-      -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.55) inset,
-      2px 1px 4px -4px rgb(var(--ick-glass-shade-rgb) / 0.9) inset,
-      0 0 12px 8px rgb(var(--ick-glass-rim-rgb) / 0.18) inset,
-      0 -9px 14px 4px rgb(var(--ick-glass-shade-rgb) / 0.3) inset,
-      -2px -3px 5px 3px rgb(var(--ick-glass-shade-rgb) / 0.18) inset,
-      0 28px 12px -7px rgb(var(--ick-glass-rim-rgb) / 0.18) inset,
-      0 34px 10px -9px rgb(var(--ick-glass-shade-rgb) / 0.16) inset,
-      0 27px 8px rgb(var(--ick-glass-shade-rgb) / 0.04),
-      0 17px 6px rgb(var(--ick-glass-shade-rgb) / 0.06),
-      0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.12),
-      0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.2),
-      0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
-    --ick-recede: 0.32;
-    --ick-shadow-modal: 0 12px 31px -9px rgb(var(--ick-glass-shade-rgb) / 0.65);
-    --ick-shadow-float:
-      0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.5),
-      0 1px 4px -1px rgb(var(--ick-glass-shade-rgb) / 0.35);
-    /* The moment the action button is absorbed into the bubble: the inner
-       highlight brightens, then decays. A separate state rather than a
-       brighter hover, because it fires once and is not about the pointer. */
-    --ick-shadow-glass-pulse:
-      -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb)) inset,
-      -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.41) inset,
-      2px 1px 4px -4px rgb(var(--ick-glass-shade-rgb) / 0.84) inset,
-      0 0 12px 8px rgb(var(--ick-glass-rim-rgb)) inset,
-      0 -9px 14px 4px rgb(var(--ick-glass-shade-rgb) / 0.18) inset,
-      -2px -3px 5px 3px rgb(var(--ick-glass-shade-rgb) / 0.1) inset,
-      0 28px 12px -7px rgb(var(--ick-glass-rim-rgb)) inset,
-      0 34px 10px -9px rgb(var(--ick-glass-shade-rgb) / 0.08) inset,
-      0 27px 8px rgb(var(--ick-glass-shade-rgb) / 0.01),
-      0 17px 6px rgb(var(--ick-glass-shade-rgb) / 0.01),
-      0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.06),
-      0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.1),
-      0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.1);
   }
+
 
   /* ═══ Dark ═══════════════════════════════════════════════════════════════
      Ink and paper trade places, and everything built from them follows. Only
-     what cannot be derived that way is restated.
+     what cannot be derived that way is restated below.
 
-     Three states, in the order the cascade needs them: the system preference
-     applies unless an explicit light choice was made, and an explicit dark
-     choice wins over both. `.dark` is kept alongside `[data-theme]` because
-     Tailwind projects already have it. */
+     The palette is declared once, here, and stays inert: nothing reads
+     `--ick-dark-*`. The two rules underneath are what turn it on, and they
+     assign rather than restate — otherwise wiring up the system preference
+     would mean a third copy of the same eighty lines, and three copies drift.
 
-  /* The system preference is deliberately NOT wired up yet.
-     `ChatInput`, `ReplyThreadPopup` and the highlighter still carry
-     light-theme literals — the input's text is a hardcoded near-black on what
-     would be a dark page, which is unreadable. Turning the theme on for
-     everyone whose OS is dark would ship that. Dark is opt-in until D5 lands;
-     the media query goes back in D6, wrapping the same declarations. */
+     Values that reference `--ick-ink-rgb` resolve against the root's own,
+     which is the dark one by the time either rule applies. */
 
-  :root[data-theme="dark"],
-  :root.dark {
-    --ick-ink-rgb: 245 245 245;
-    --ick-paper-rgb: 18 18 18;
-
-    --ick-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
-    --ick-ink-glass-strong: rgb(var(--ick-ink-rgb));
-    --ick-glass-fill: rgb(var(--ick-ink-rgb) / 0.08);
-    --ick-glass-fill-hover: rgb(var(--ick-ink-rgb) / 0.14);
-    --ick-glass-fill-press: rgb(var(--ick-ink-rgb) / 0.05);
-    --ick-glass-gradient: linear-gradient(
+  :root {
+    --ick-dark-ink-rgb: 245 245 245;
+    --ick-dark-paper-rgb: 18 18 18;
+    --ick-dark-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
+    --ick-dark-ink-glass-strong: rgb(var(--ick-ink-rgb));
+    --ick-dark-glass-fill: rgb(var(--ick-ink-rgb) / 0.08);
+    --ick-dark-glass-fill-hover: rgb(var(--ick-ink-rgb) / 0.14);
+    --ick-dark-glass-fill-press: rgb(var(--ick-ink-rgb) / 0.05);
+    --ick-dark-glass-gradient: linear-gradient(
       315deg,
       rgb(var(--ick-ink-rgb) / 0.12) 21%,
       rgb(var(--ick-ink-rgb) / 0.22) 83%
-    );
-    --ick-border-bright: rgb(var(--ick-ink-rgb) / 0.24);
-    --ick-focus-ring: rgb(var(--ick-ink-rgb) / 0.45);
-
-    /* Glass in the dark is still lit from above, only faintly: the rim keeps its
-       colour and loses most of its alpha, the shade gains it. */
-    --ick-shadow-glass:
-      3px -1px 3px 0 rgb(var(--ick-glass-rim-rgb) / 0.16) inset,
+      );
+    --ick-dark-border-bright: rgb(var(--ick-ink-rgb) / 0.24);
+    --ick-dark-focus-ring: rgb(var(--ick-ink-rgb) / 0.45);
+    --ick-dark-shadow-glass: 3px -1px 3px 0 rgb(var(--ick-glass-rim-rgb) / 0.16) inset,
       -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.5) inset,
       2px 1px 5px -5px rgb(var(--ick-glass-shade-rgb) / 0.8) inset,
       0 0 10px 8px rgb(var(--ick-glass-rim-rgb) / 0.09) inset,
@@ -348,8 +303,7 @@
       0 13px 9px -1px rgb(var(--ick-glass-shade-rgb) / 0.14),
       0 6px 6px 0 rgb(var(--ick-glass-shade-rgb) / 0.2),
       0 2px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.25);
-    --ick-shadow-glass-hover:
-      -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb) / 0.22) inset,
+    --ick-dark-shadow-glass-hover: -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb) / 0.22) inset,
       -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.55) inset,
       2px 1px 4px -4px rgb(var(--ick-glass-shade-rgb) / 0.9) inset,
       0 0 7px 4px rgb(var(--ick-glass-rim-rgb) / 0.14) inset,
@@ -362,8 +316,7 @@
       0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.12),
       0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.2),
       0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
-    --ick-shadow-glass-press:
-      2px -1px 1px 0 rgb(var(--ick-glass-rim-rgb) / 0.12) inset,
+    --ick-dark-shadow-glass-press: 2px -1px 1px 0 rgb(var(--ick-glass-rim-rgb) / 0.12) inset,
       -1px -2px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.45) inset,
       2px 1px 5px -5px rgb(var(--ick-glass-shade-rgb) / 0.75) inset,
       0 0 5px 4px rgb(var(--ick-glass-rim-rgb) / 0.08) inset,
@@ -375,26 +328,99 @@
       0 4px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.06),
       0 2px 3px 0 rgb(var(--ick-glass-shade-rgb) / 0.08),
       0 0 2px 0 rgb(var(--ick-glass-shade-rgb) / 0.1);
-    --ick-shadow-glass-disabled:
-      0 0 6px 4px rgb(var(--ick-glass-rim-rgb) / 0.08) inset,
+    --ick-dark-shadow-glass-disabled: 0 0 6px 4px rgb(var(--ick-glass-rim-rgb) / 0.08) inset,
       0 -6px 10px -3px rgb(var(--ick-glass-shade-rgb) / 0.25) inset,
       0 2px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.2) inset,
       0 18px 8px 0 rgb(var(--ick-glass-rim-rgb) / 0.07) inset,
       0 3px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.12),
       0 1px 2px 0 rgb(var(--ick-glass-shade-rgb) / 0.16);
-    --ick-glass-edge: linear-gradient(145deg,
+    --ick-dark-glass-edge: linear-gradient(145deg,
       rgb(var(--ick-glass-rim-rgb) / 0.28) 0%,
       rgb(var(--ick-glass-shade-rgb) / 0.2) 40%,
       rgb(var(--ick-glass-shade-rgb) / 0.32) 70%,
       rgb(var(--ick-glass-shade-rgb) / 0.24) 100%);
-    --ick-glass-edge-press: var(--ick-glass-edge);
-    --ick-glass-highlight: linear-gradient(90deg,
+    --ick-dark-glass-edge-press: var(--ick-glass-edge);
+    --ick-dark-glass-highlight: linear-gradient(90deg,
       transparent 0%,
       rgb(var(--ick-glass-rim-rgb) / 0.18) 30%,
       rgb(var(--ick-glass-rim-rgb) / 0.28) 50%,
       rgb(var(--ick-glass-rim-rgb) / 0.18) 70%,
       transparent 100%);
+    --ick-dark-shadow-glass-pulse: -2px 2px 2px 1px rgb(var(--ick-glass-rim-rgb) / 0.24) inset,
+      -1px -3px 3px -2px rgb(var(--ick-glass-shade-rgb) / 0.55) inset,
+      2px 1px 4px -4px rgb(var(--ick-glass-shade-rgb) / 0.9) inset,
+      0 0 12px 8px rgb(var(--ick-glass-rim-rgb) / 0.18) inset,
+      0 -9px 14px 4px rgb(var(--ick-glass-shade-rgb) / 0.3) inset,
+      -2px -3px 5px 3px rgb(var(--ick-glass-shade-rgb) / 0.18) inset,
+      0 28px 12px -7px rgb(var(--ick-glass-rim-rgb) / 0.18) inset,
+      0 34px 10px -9px rgb(var(--ick-glass-shade-rgb) / 0.16) inset,
+      0 27px 8px rgb(var(--ick-glass-shade-rgb) / 0.04),
+      0 17px 6px rgb(var(--ick-glass-shade-rgb) / 0.06),
+      0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.12),
+      0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.2),
+      0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
+    --ick-dark-recede: 0.32;
+    --ick-dark-shadow-modal: 0 12px 31px -9px rgb(var(--ick-glass-shade-rgb) / 0.65);
+    --ick-dark-shadow-float: 0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.5),
+      0 1px 4px -1px rgb(var(--ick-glass-shade-rgb) / 0.35);
   }
+
+  /* Three states, in the order the cascade needs them: the system preference
+     applies unless an explicit light choice was made, and an explicit dark
+     choice wins over both. `.dark` is kept alongside `[data-theme]` because
+     Tailwind projects already have it. */
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not(.light) {
+      --ick-ink-rgb: var(--ick-dark-ink-rgb);
+      --ick-paper-rgb: var(--ick-dark-paper-rgb);
+      --ick-ink-glass: var(--ick-dark-ink-glass);
+      --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
+      --ick-glass-fill: var(--ick-dark-glass-fill);
+      --ick-glass-fill-hover: var(--ick-dark-glass-fill-hover);
+      --ick-glass-fill-press: var(--ick-dark-glass-fill-press);
+      --ick-glass-gradient: var(--ick-dark-glass-gradient);
+      --ick-border-bright: var(--ick-dark-border-bright);
+      --ick-focus-ring: var(--ick-dark-focus-ring);
+      --ick-shadow-glass: var(--ick-dark-shadow-glass);
+      --ick-shadow-glass-hover: var(--ick-dark-shadow-glass-hover);
+      --ick-shadow-glass-press: var(--ick-dark-shadow-glass-press);
+      --ick-shadow-glass-disabled: var(--ick-dark-shadow-glass-disabled);
+      --ick-glass-edge: var(--ick-dark-glass-edge);
+      --ick-glass-edge-press: var(--ick-dark-glass-edge-press);
+      --ick-glass-highlight: var(--ick-dark-glass-highlight);
+      --ick-shadow-glass-pulse: var(--ick-dark-shadow-glass-pulse);
+      --ick-recede: var(--ick-dark-recede);
+      --ick-shadow-modal: var(--ick-dark-shadow-modal);
+      --ick-shadow-float: var(--ick-dark-shadow-float);
+    }
+  }
+
+  :root[data-theme="dark"],
+  :root.dark {
+    --ick-ink-rgb: var(--ick-dark-ink-rgb);
+    --ick-paper-rgb: var(--ick-dark-paper-rgb);
+    --ick-ink-glass: var(--ick-dark-ink-glass);
+    --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
+    --ick-glass-fill: var(--ick-dark-glass-fill);
+    --ick-glass-fill-hover: var(--ick-dark-glass-fill-hover);
+    --ick-glass-fill-press: var(--ick-dark-glass-fill-press);
+    --ick-glass-gradient: var(--ick-dark-glass-gradient);
+    --ick-border-bright: var(--ick-dark-border-bright);
+    --ick-focus-ring: var(--ick-dark-focus-ring);
+    --ick-shadow-glass: var(--ick-dark-shadow-glass);
+    --ick-shadow-glass-hover: var(--ick-dark-shadow-glass-hover);
+    --ick-shadow-glass-press: var(--ick-dark-shadow-glass-press);
+    --ick-shadow-glass-disabled: var(--ick-dark-shadow-glass-disabled);
+    --ick-glass-edge: var(--ick-dark-glass-edge);
+    --ick-glass-edge-press: var(--ick-dark-glass-edge-press);
+    --ick-glass-highlight: var(--ick-dark-glass-highlight);
+    --ick-shadow-glass-pulse: var(--ick-dark-shadow-glass-pulse);
+    --ick-recede: var(--ick-dark-recede);
+    --ick-shadow-modal: var(--ick-dark-shadow-modal);
+    --ick-shadow-float: var(--ick-dark-shadow-float);
+  }
+
 
   /* ═══ Migration aliases ══════════════════════════════════════════════════
      The unprefixed names components still read, pointed at the new ones so
