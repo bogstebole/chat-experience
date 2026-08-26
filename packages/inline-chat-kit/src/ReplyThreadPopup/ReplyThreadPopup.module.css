@@ -1,0 +1,201 @@
+/* ─────────────────────────────────────────────
+   ReplyThreadPopup
+
+   This component had no stylesheet at all — seventeen inline `style={{}}`
+   blocks, which meant nothing about it could be themed and nothing about it
+   respected the tokens the rest of the kit reads.
+
+   What stays inline is only what changes per render: the panel's animated
+   geometry, which Motion owns.
+   ───────────────────────────────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ick-z-modal);
+  display: block;
+  pointer-events: auto;
+}
+
+.panel {
+  position: absolute;
+  padding: var(--ick-space-2);
+  overflow: hidden;
+  transform-origin: center center;
+  z-index: var(--ick-z-raised);
+  /* Set here rather than animated. Motion was fading the background and the
+     shadow in alongside the panel's own opacity, which is the same picture
+     with two more properties to keep in step — and two more colours that
+     could not come from a token. */
+  background-color: var(--ick-surface-raised);
+  box-shadow: var(--ick-shadow-modal);
+}
+
+/* The panel is `replyTargetWidth` wide with 4px of padding, so the column is
+   simply the space left over. It used to be told `replyTargetWidth - 8` from
+   JavaScript. */
+.column {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ick-space-2);
+  border-radius: var(--ick-radius-lg);
+  padding: 6px var(--ick-space-6) var(--ick-space-5);
+}
+
+.headerLabel {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ick-space-2);
+  color: var(--ick-ink-soft);
+}
+
+.headerIcon {
+  width: 16px;
+  height: auto;
+  overflow: visible;
+  flex-shrink: 0;
+  /* Inherits, so the icon and its label cannot drift apart. */
+  fill: currentColor;
+}
+
+.headerText {
+  margin: 0;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-xs);
+  font-weight: var(--ick-weight-medium);
+  letter-spacing: 0.01em;
+  line-height: 14px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+}
+
+/* ── Feed ───────────────────────────────────────────────────────────────── */
+
+.feedClip {
+  position: relative;
+  border-radius: var(--ick-radius-xl);
+  overflow: hidden;
+}
+
+/* The fades that say there is more above or below. */
+.fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 48px;
+  pointer-events: none;
+  z-index: var(--ick-z-sticky);
+  opacity: 0;
+  transition: opacity var(--ick-duration-base) ease;
+}
+
+.fadeTop {
+  top: 0;
+  background: linear-gradient(to bottom, var(--ick-surface) 0%, transparent 100%);
+}
+
+.fadeBottom {
+  bottom: 0;
+  background: linear-gradient(to top, var(--ick-surface) 0%, transparent 100%);
+}
+
+.fade[data-visible] {
+  opacity: 1;
+}
+
+.feed {
+  background-color: var(--ick-surface);
+  border-radius: var(--ick-radius-xl);
+  max-height: 640px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+/* This used to be a `<style>` element rendered inside the component, carrying
+   `div::-webkit-scrollbar { display: none }` — an unscoped rule that hid the
+   scrollbar on every div in the host application for as long as the thread
+   was open. */
+.feed::-webkit-scrollbar {
+  display: none;
+}
+
+.feedInner {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  padding: var(--ick-space-6);
+}
+
+/* ── Text ───────────────────────────────────────────────────────────────── */
+
+.quote,
+.answer {
+  display: inline-block;
+  color: var(--ick-ink);
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-md);
+  letter-spacing: 0.01em;
+  line-height: 150%;
+}
+
+/* ── Turns ──────────────────────────────────────────────────────────────── */
+
+.turn {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: var(--ick-space-8);
+  margin-top: var(--ick-space-8);
+}
+
+/* A settled turn sits to the right, as a bubble; one still being written
+   stretches, because it is an input. */
+.turnRow {
+  display: flex;
+  align-self: flex-end;
+  justify-content: flex-end;
+  max-width: 100%;
+  width: auto;
+}
+
+.turnRow[data-editing] {
+  align-self: stretch;
+  justify-content: stretch;
+  width: 100%;
+}
+
+/* The input has a fixed width of its own, so stretching the row is not enough
+   — the child has to be told. Reached as a direct child rather than by class,
+   since its class name is hashed and belongs to another module. */
+.turnRow[data-editing] > * {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Screen readers only: names the dialog together with the quoted passage. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

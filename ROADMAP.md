@@ -367,8 +367,25 @@ One deliberate unification: the bubble's hover edge had slightly different
 alphas from the button's. They share `--ick-glass-edge` now — a difference
 too small to see and too easy to drift.
 
-### D4 · `ReplyThreadPopup` gets a stylesheet
-- [ ] Inline styles into a CSS module, so it can be themed at all
+### D4 · `ReplyThreadPopup` gets a stylesheet — done
+- [x] **17 inline `style={{}}` blocks → 0.** It had no stylesheet at all, so
+      nothing about it could be themed and none of it read the tokens the rest
+      of the kit reads.
+- [x] The background and shadow were being *animated* in by Motion alongside
+      the panel's own opacity — the same picture with two more properties to
+      keep in step, and two more colours that could not come from a token.
+      They are CSS now; Motion keeps the geometry.
+- [x] Two new tokens: `--ick-surface-raised`, mixed from the ink and paper
+      channels so the panel stays one step off the page in either theme, and
+      `--ick-shadow-modal`, which has to bite harder against a dark page
+- [x] `width: replyTargetWidth - 8` computed in JavaScript became `width: 100%`
+      inside a padded box, which is the same number without the arithmetic
+- [x] Dark verified in the browser: panel, feed, header and text all follow
+
+**A bug found on the way, and it was leaving the package.** The component
+rendered a `<style>` element containing `div::-webkit-scrollbar { display: none }`
+— unscoped, so for as long as a thread was open it hid the scrollbar on
+**every div in the host application**. It is a scoped rule in the module now.
 
 ### D5 · The highlighter
 - [ ] `#CCFF00` out of the TSX constant and onto `--ick-marker`
