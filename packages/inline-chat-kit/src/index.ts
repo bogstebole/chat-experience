@@ -38,6 +38,16 @@ export type {
 export { announce } from "./announce/announce";
 export type { Politeness } from "./announce/announce";
 
+/* The chrome above the conversation */
+export { ChatHeader } from "./ChatHeader/ChatHeader";
+export type {
+  ChatHeaderAction,
+  ChatHeaderProps,
+  ChatHeaderSize,
+  ChatHeaderStatus,
+  ChatHeaderVariant,
+} from "./ChatHeader/ChatHeader";
+
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";
 export type { ReplyThreadPopupProps, Turn } from "./ReplyThreadPopup/ReplyThreadPopup";

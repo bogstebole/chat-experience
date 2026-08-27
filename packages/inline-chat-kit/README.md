@@ -4,8 +4,9 @@ An inline AI chat experience for React. The input **is** the message: when you
 send, the pill you typed into morphs into the bubble that holds your text, and
 the answer streams in below it. No separate composer, no jump cut.
 
-Ships the surrounding pieces too — hover actions on each bubble, freeform
-marker highlighting over streamed text, and reply-in-thread popups.
+Ships the surrounding pieces too — a header for the conversation, hover
+actions on each bubble, freeform marker highlighting over streamed text, and
+reply-in-thread popups.
 
 ## Install
 
@@ -130,6 +131,60 @@ choreography by moving between these values:
 
 `ref` exposes `focus()`, `setValue(v)` and `getValue()` via `ChatInputHandle`.
 
+### `<ChatHeader>`
+
+The chrome above the conversation: who you are talking to, what about, and the
+handful of things you can do to the whole thread.
+
+```tsx
+<ChatHeader
+  title={firstQuestion}
+  subtitle="Claude Opus 5"
+  status={isStreaming ? "thinking" : null}
+  backHref="/"
+  actions={[
+    { id: "bookmarks", label: "Saved highlights", icon: <Bookmark size={16} />, count: 3, pinned: true },
+    { id: "share", label: "Share", icon: <Share2 size={16} />, onClick: share },
+  ]}
+>
+  <YourModelPicker />
+</ChatHeader>
+```
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `title` | `ReactNode` | | What the conversation is about |
+| `subtitle` | `ReactNode` | | Second line — the model, a count, a state |
+| `avatar` | `ReactNode` | | Drawn before the title |
+| `status` | `"online" \| "busy" \| "thinking" \| null` | `null` | A dot beside the title |
+| `statusLabel` | `string` | the status word | What the dot means, spoken |
+| `headingLevel` | `1`–`6` \| `false` | `2` | The level belongs to your document |
+| `truncate` | `boolean` | `true` | Long titles get an ellipsis, not a second line |
+| `onBack` | `() => void` | | Renders a back button |
+| `backHref` | `string` | | Renders a back link instead |
+| `backLabel` | `string` | `"Back"` | |
+| `actions` | `ChatHeaderAction[]` | `[]` | The managed actions. These are what collapse |
+| `overflowLabel` | `string` | `"More actions"` | |
+| `variant` | `"plain" \| "glass" \| "bordered"` | `"plain"` | |
+| `size` | `"s" \| "m" \| "l"` | `"m"` | 40 / 48 / 56px |
+| `align` | `"start" \| "center"` | `"start"` | `center` is the native arrangement |
+| `sticky` | `boolean` | `false` | |
+| `elevateOnScroll` | `boolean` | `sticky` | Border and backdrop appear once content scrolls under |
+| `collapseActionsAt` | `number \| false` | `520` | Header width, not viewport width |
+| `landmark` | `boolean` | `true` | `false` inside a panel, where `banner` would be a lie |
+| `children` | `ReactNode` | | Anything the kit should not manage. Never collapses |
+
+Each action is `{ id, label, icon, onClick?, href?, count?, active?, disabled?, pinned? }`.
+`label` is required because an icon has no name of its own, and `count` is
+folded into that name — the badge is decorative, so a reader who cannot see it
+still hears "Saved highlights, 3".
+
+Actions are described rather than handed over as children for one reason:
+`collapseActionsAt` folds them into a menu when the header is narrow, and a
+header cannot summarise children it cannot read. Anything with no icon-and-label
+shape — a segmented control, a model picker — goes in as `children` instead and
+stays put.
+
 ### `<TextHighlighter>`
 
 Wraps streamed text and lets the reader mark it up.
@@ -168,13 +223,15 @@ hide the native cursor yourself:
 
 ### Buttons
 
-`Button` (icon button, `primary` / `secondary` / `ghost`) and `GlassButton`
-(`s` / `m` / `l`, with `loading`, `iconLeft`, `iconRight`) are exported because
-the kit uses them internally — reuse them or ignore them.
+`Button` is one component in four materials — `primary`, `secondary`, `ghost`,
+`glass` — across five sizes (`xs` `s` `m` `l` `xl`, 24 through 48px). It takes
+`icon`, `iconRight` and `loading`. Icon-only needs an `aria-label`.
 
-`GlassButton` has a dark treatment, switched by an ancestor rather than a prop:
-put `class="dark"` on any wrapper (or `<html>`) and the buttons beneath it
-follow.
+`GlassButton` is a deprecated wrapper around `<Button variant="glass">`, kept so
+existing call sites keep working. Its `s` / `m` / `l` map to `m` / `l` / `xl`.
+
+Neither takes a dark-mode prop: the theme is a token swap on an ancestor. See
+[theming.md](./theming.md).
 
 ## Theming
 

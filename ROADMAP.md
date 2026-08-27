@@ -524,6 +524,54 @@ next line and pushed the whole line a character right. Two of six lines.
 - [x] Two tests: that the spaces are marked, and that a rule keeps them inline.
       The second reads the stylesheet and fails if `inline-block` comes back.
 
+## Now — components
+
+### E1 · ChatHeader — done
+
+The kit had every part of a conversation except the one that says what the
+conversation *is*. The demo had a hand-rolled header with a hardcoded label
+and a `Highlights (3)` text button.
+
+Surveyed nine kits first. Two findings shaped the API: shadcn's own chat
+components (June 2026) ship **no header at all**, and Stream — the one kit
+that made it props-driven — has since **removed** `live` and `MenuIcon`. So:
+props for the common case, one slot for everything else, and nothing named
+after a specific button.
+
+- [x] Title, subtitle, avatar, status dot, back, actions
+- [x] Three materials, three sizes (40/48/56), start and centre alignment
+- [x] `headingLevel`, because the level belongs to the host's document, and
+      `landmark`, because a header inside a panel is not the page's banner
+- [x] **Actions are described, not passed in.** `{ id, label, icon, … }` is
+      what makes `collapseActionsAt` possible: a header cannot fold children
+      into a menu when it has no idea what any of them are. Anything with no
+      icon-and-label shape — the selection toggle — goes in as `children` and
+      never collapses.
+- [x] Overflow menu: one tab stop, arrows and Home/End, Escape returns focus
+      to the trigger, Tab away closes it. A toggle in it is a
+      `menuitemcheckbox`, since `menuitem` takes no pressed state.
+- [x] `count` is folded into the accessible name. The badge is `aria-hidden`,
+      so without that a reader is told "Saved highlights" and never learns
+      there are three.
+- [x] Fourteen new tokens, none literal: `--ick-header-*`, plus the status
+      dot on two channels that do not invert with the theme, only lift.
+- [x] 32 tests, 3 more axe cases, 8 stories, README and theming.md. `0.3.0`.
+
+One bug the tests caught, and it was not a test artifact: `elevateOnScroll`
+told window from element with `instanceof Window`, which is a realm check —
+false under jsdom, and false in a browser the moment the node is in an iframe.
+`"scrollTop" in window` is no better: jsdom answers true. It compares identity
+against the object `scrollParent` just returned.
+
+### E2 · The demo header
+
+- [x] `Highlights (3)` is a bookmark icon with a badge, as asked
+- [x] The title is the **first question actually asked**, not a fixed label —
+      matched on turn state, because the turn's text is written on every
+      keystroke and matching on text alone retitled the page letter by letter
+- [x] The status dot pulses while an answer is streaming
+- [x] Two dead CSS rules removed; the page now says only where the header sits
+
 ## Later
 
 - [x] **Touch — done.** `touch-action: none` on every answer meant a finger

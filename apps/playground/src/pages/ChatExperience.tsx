@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "motion/react";
 import { useDialKit } from "dialkit";
-import { ArrowLeft, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
+import { Bookmark, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
 import {
   Button,
+  ChatHeader,
   ReplyThreadPopup,
   CustomCursor,
   defaultInlineAnimConfig,
@@ -160,9 +161,20 @@ export function ChatExperience() {
     }
   }, []);
 
-  const { turns, setDraft, submit, stop, beginEdit, cancelEdit } = useChatTurns({
+  const { turns, setDraft, submit, stop, beginEdit, cancelEdit, isStreaming } = useChatTurns({
     onSend: fakeApi,
   });
+
+  /* What the header shows. The first question actually asked, so someone
+     arriving at a conversation already in progress can see what it is about —
+     falling back to the name of the thing before anyone has asked anything.
+
+     `state` is what makes it the first question rather than the first draft:
+     the turn's text is written on every keystroke, so matching on the text
+     alone retitled the page letter by letter as somebody typed. */
+  const conversationTitle =
+    turns.find((turn) => turn.state !== "idle" && turn.state !== "typing" && turn.user.trim())
+      ?.user.trim() ?? "inline chat experience";
 
   const handleStart = () => {
     setPhase("chat");
@@ -278,59 +290,74 @@ export function ChatExperience() {
           }}
         >
           <div className="topBlur" />
-          <header className="chatHeader">
-            <div className="chatHeaderLeft">
-              <a href="/" className="secondaryBtn iconBtn" aria-label="Back to home">
-                <ArrowLeft size={16} />
-              </a>
-              <span className="chatHeaderTitle">inline chat experience</span>
-            </div>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <div className="selectModeToggle" role="group" aria-label="Selection mode">
-                <button
-                  type="button"
-                  data-active={selectionMode === "marker"}
-                  onClick={() => setSelectionMode("marker")}
-                  aria-label="Freeform marker"
-                  title="Freeform marker"
-                >
-                  <Highlighter size={15} />
-                </button>
-                <button
-                  type="button"
-                  data-active={selectionMode === "precise"}
-                  onClick={() => setSelectionMode("precise")}
-                  aria-label="Precise text selection"
-                  title="Precise text selection"
-                >
-                  <TextCursor size={15} />
-                </button>
-              </div>
-              {highlights.length > 0 && (
-                <button 
-                  className="secondaryBtn" 
-                  onClick={() => setShowHighlightsModal(true)}
-                >
-                  Highlights ({highlights.length})
-                </button>
-              )}
+          <ChatHeader
+            className="chatHeader"
+            /* The first question, so a reader arriving mid-conversation can
+               see what it is about. `truncate` is what makes that safe: a
+               question is a sentence, not a label. */
+            title={conversationTitle}
+            backHref="/"
+            backLabel="Back to home"
+            status={isStreaming ? "thinking" : null}
+            statusLabel="Generating response"
+            /* The page already has its own gradient doing this job. */
+            elevateOnScroll={false}
+            collapseActionsAt={480}
+            actions={[
+              ...(highlights.length > 0
+                ? [
+                    {
+                      id: "bookmarks",
+                      label: "Saved highlights",
+                      icon: <Bookmark size={16} aria-hidden />,
+                      count: highlights.length,
+                      pinned: true,
+                      onClick: () => setShowHighlightsModal(true),
+                    },
+                  ]
+                : []),
+              {
+                id: "theme",
+                label: theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme",
+                icon: theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />,
+                active: theme === "dark",
+                onClick: () => setChosen(theme === "dark" ? "light" : "dark"),
+              },
+              {
+                id: "share",
+                label: "Share",
+                icon: <Share size={16} aria-hidden />,
+                onClick: () =>
+                  navigator.share?.({
+                    title: "Inline chat experience",
+                    url: window.location.href,
+                  }),
+              },
+            ]}
+          >
+            {/* The kit does not manage this one: a segmented control has no
+                icon-and-label shape to fold into a menu. */}
+            <div className="selectModeToggle" role="group" aria-label="Selection mode">
               <button
-                className="secondaryBtn iconBtn"
-                onClick={() => setChosen(theme === "dark" ? "light" : "dark")}
-                aria-label={theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"}
-                aria-pressed={theme === "dark"}
+                type="button"
+                data-active={selectionMode === "marker"}
+                onClick={() => setSelectionMode("marker")}
+                aria-label="Freeform marker"
+                title="Freeform marker"
               >
-                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                <Highlighter size={15} />
               </button>
-              <button 
-                className="secondaryBtn iconBtn" 
-                onClick={() => navigator.share?.({ title: "Inline chat experience", url: window.location.href })}
-                aria-label="Share"
+              <button
+                type="button"
+                data-active={selectionMode === "precise"}
+                onClick={() => setSelectionMode("precise")}
+                aria-label="Precise text selection"
+                title="Precise text selection"
               >
-                <Share size={16} />
+                <TextCursor size={15} />
               </button>
             </div>
-          </header>
+          </ChatHeader>
           <div className="chatFeed" ref={feedRef}>
             <AnimatePresence>
               {turns.map((turn, i) => (
