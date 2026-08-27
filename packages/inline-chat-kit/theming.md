@@ -37,6 +37,48 @@ one line moves every tint and every alpha step derived from it.
 Write triplets **without commas** — `20 20 24`, not `20, 20, 24` — because
 they are used as `rgb(var(--ick-ink-rgb) / 0.6)`.
 
+## A brand, in practice
+
+Three invented ones live in Storybook under **Design tokens → Themes**, side by
+side with the default. They set between six and nine tokens each and nothing
+component-specific — which is the claim, rendered rather than asserted:
+
+```css
+/* "Ledger": warm, editorial, and a highlighter that looks like one. */
+:root {
+  --ick-ink-rgb: 38 32 26;
+  --ick-paper-rgb: 250 246 238;
+  --ick-marker-rgb: 255 176 46;
+  --ick-font-sans: "Iowan Old Style", Georgia, serif;
+  --ick-font-mono: "SF Mono", ui-monospace, monospace;
+  --ick-radius-xl: 10px;
+  --ick-radius-lg: 8px;
+  --ick-radius-pill: 8px;
+}
+```
+
+## Theming part of a page
+
+Put the overrides on `:root` for the whole document, or on any element with
+**`class="ick-theme"`** for a subtree:
+
+```html
+<div class="ick-theme" style="--ick-marker-rgb: 255 64 160">
+  <!-- the kit is pink in here, and unchanged everywhere else -->
+</div>
+```
+
+The class is required, and the reason is worth knowing because it is not
+obvious. A derived token like `--ick-marker` is substituted where it is
+*declared*, and the finished value is what inherits — so setting
+`--ick-marker-rgb` on a wrapper without the class changes the channel and
+nothing else. `.ick-theme` re-declares the derived tokens on that element, so
+they recompute from whatever it inherits. Only elements carrying the class pay
+for it.
+
+`data-theme` works on such an element too, so a subtree can be dark on a light
+page.
+
 ## Everything else
 
 The complete list, with every value resolved live in the current theme, is the

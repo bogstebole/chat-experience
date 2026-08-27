@@ -445,58 +445,32 @@ when nobody had chosen a theme, which pinned the page and meant the media query
 could never get a turn. It only writes the attribute on an explicit choice now
 — which is the right advice for any host app, so the demo is showing it.
 
-### D7 · Make it somebody else's brand
-Not started, and deliberately after D3–D6: a theming system laid over
-stylesheets that still contain literals would be a theming system that lies.
+### D7 · Make it somebody else's brand — done
 
-The shape it should take:
+- [x] **Three invented brands, rendered side by side** in Storybook under
+      *Design tokens → Themes*, next to the default. Six to nine tokens each,
+      nothing component-specific. The claim that a handful is enough is now
+      something to look at rather than something to believe.
+- [x] **A theme can be applied to a subtree**, with `class="ick-theme"` on any
+      element. `data-theme` works there too, so part of a light page can be
+      dark.
+- [x] Tests that pin the structure: every rule declaring tokens must name
+      `.ick-theme` alongside `:root`, no brand may exceed a dozen tokens or
+      reach for a component's own, and every token a brand sets must be one
+      the kit actually defines
+- [x] `theming.md` and the README updated with both
 
-- **One surface, and only one.** A client sets `--ick-` custom properties on
-  `:root`. No build step, no provider, no JavaScript API to learn. The cascade
-  layer already means their unlayered rules win without fighting specificity.
-- **A brand tier above the primitives.** Most brands should need under a dozen
-  values — the channel triplets for ink, paper and marker, two font stacks,
-  the radius scale, and the glass rim and shade. Everything else derives from
-  those and needs no attention. The rest of the tokens stay reachable as an
-  escape hatch, but nobody should have to touch them to look like themselves.
-- **Prove it rather than claim it.** A "Themes" story applying two or three
-  invented brands live, so the claim that a dozen values are enough either
-  holds on screen or visibly does not.
-- **`theming.md`**: every token, what it moves, and which ones are the dozen.
-- Depends on D6's guard: a stylesheet that can still hide a literal is a
-  stylesheet where a brand colour will not reach everywhere it should.
+**The thing worth knowing, which was not obvious and had to be measured.**
+Setting `--ick-marker-rgb` on a wrapper changes the channel and *nothing else*.
+A derived token is substituted where it is **declared**, and the finished value
+is what inherits — so `--ick-marker`, computed on `:root`, arrives downstream
+already resolved. Overriding the channel underneath it is too late.
 
-### Showcase recording
-- [x] `npm run showcase` (and `node tools/showcase/record.mjs dark`) drives the
-      **real playground** through the whole story — ask, morph, stream,
-      highlight, thread — and records it. Driving the real thing rather than a
-      mock means the video cannot show something the component does not do,
-      and re-running it after a change is how the video stops going stale.
-- [x] `?showcase` hides the perf HUD and the dial panel; `?theme=dark` sets
-      the starting theme. Useful for showing the demo live, not only for
-      recording.
-- [x] The demo questions were rewritten to fit the fixed answers. A video
-      where the answer does not address the question reads as broken however
-      good the animation is.
-- [x] Playwright is deliberately not a dependency — browsers are a heavy
-      install for everyone and this is a marketing tool. The script resolves a
-      global install and says how to get one if it is missing.
-
-Captured through CDP rather than Playwright's own recorder, after measuring
-why the first cut looked soft: the built-in recorder writes VP8 at a bitrate it
-does not expose — around 340 kb/s at 1280×680, which smears text — and asking
-for a larger `recordVideo.size` does not help, it pads the canvas rather than
-scaling the page. A screencast hands over JPEG frames and leaves the encoding
-to us: **340 kb/s → 2000 kb/s**, and the text reads.
-
-Frames arrive only when something changes, so they are resampled onto a steady
-30fps clock before encoding. Two plumbing bugs found on the way, both of which
-hid the real error: writing to a pipe ffmpeg had already closed surfaced as a
-bare `EPIPE`, and awaiting a `drain` from a dead process left a promise nothing
-could settle — which exits node **silently, with a success code**.
-
-Output is webm. mp4 would need a real `ffmpeg`: the one Playwright ships can
-mux webm and nothing else, and macOS's `avconvert` cannot read VP8.
+That is why `.ick-theme` exists: it re-declares the derived tokens on the
+element carrying it, so they recompute from whatever that element inherits.
+Only elements with the class pay for it. Without this the brand story could not
+have shown four brands on one page — and, more to the point, a consumer
+theming a panel would have found half their values silently doing nothing.
 
 ## Later
 
