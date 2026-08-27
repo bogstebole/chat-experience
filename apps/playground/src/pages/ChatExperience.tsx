@@ -215,16 +215,16 @@ export function ChatExperience() {
 
             <motion.div variants={introItemVariants} className={introStyles.mobileNotice}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, paddingInline: 4, paddingBottom: 4 }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, marginTop: 1 }}>
-                  <circle cx="8" cy="8" r="7" stroke="#111111" strokeWidth="1.2" />
-                  <path d="M8 7v4" stroke="#111111" strokeWidth="1.2" strokeLinecap="round" />
-                  <circle cx="8" cy="5" r="0.8" fill="#111111" />
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, marginTop: 1, color: "var(--ick-ink)" }}>
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M8 7v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <circle cx="8" cy="5" r="0.8" fill="currentColor" />
                 </svg>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "-0.02em", color: "#111111" }}>
+                  <span style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "-0.02em", color: "var(--ick-ink)" }}>
                     Desktop only for now
                   </span>
-                  <span style={{ fontFamily: "var(--font-geist-sans), 'Geist', system-ui, sans-serif", fontSize: 12, lineHeight: "18px", color: "rgba(17,17,17,0.7)" }}>
+                  <span style={{ fontFamily: "var(--font-geist-sans), 'Geist', system-ui, sans-serif", fontSize: 12, lineHeight: "18px", color: "var(--ick-ink-soft)" }}>
                     Inline chat experience is built for desktop. Mobile support is on the way, check back soon.
                   </span>
                 </div>
@@ -374,7 +374,7 @@ export function ChatExperience() {
             style={{
               position: "fixed",
               top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
+              backgroundColor: "var(--ick-scrim)",
               backdropFilter: "blur(4px)",
               zIndex: 100,
               display: "flex",
@@ -390,19 +390,19 @@ export function ChatExperience() {
               exit={{ y: 20, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: "var(--color-bg-page, #fff)",
+                backgroundColor: "var(--ick-surface-raised)",
                 borderRadius: "24px",
                 padding: "32px",
                 width: "100%",
                 maxWidth: "600px",
                 maxHeight: "80vh",
                 overflowY: "auto",
-                boxShadow: "0 24px 48px rgba(0,0,0,0.1)",
-                border: "1px solid rgba(0,0,0,0.05)"
+                boxShadow: "var(--ick-shadow-modal)",
+                border: "1px solid var(--ick-border)"
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                <h2 style={{ margin: 0, fontFamily: "var(--font-geist-mono), monospace", fontSize: "16px", color: "var(--color-text, #111)" }}>Highlights</h2>
+                <h2 style={{ margin: 0, fontFamily: "var(--font-geist-mono), monospace", fontSize: "16px", color: "var(--ick-ink)" }}>Highlights</h2>
                 <button className="secondaryBtn iconBtn" onClick={() => setShowHighlightsModal(false)}>
                   Close
                 </button>
@@ -410,7 +410,7 @@ export function ChatExperience() {
               
               {Array.from(new Set(highlights.map(h => h.turnId))).map((turnId, index) => (
                 <div key={turnId} style={{ marginBottom: "24px" }}>
-                  <h3 style={{ fontSize: "12px", color: "rgba(17,17,17,0.5)", marginBottom: "8px", fontFamily: "var(--font-geist-mono), monospace" }}>
+                  <h3 style={{ fontSize: "12px", color: "var(--ick-ink-faint)", marginBottom: "8px", fontFamily: "var(--font-geist-mono), monospace" }}>
                     Paragraph {index + 1}
                   </h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -433,17 +433,17 @@ export function ChatExperience() {
                         }}
                         style={{ 
                           padding: "12px 16px", 
-                          backgroundColor: "rgba(204, 255, 0, 0.2)", 
+                          backgroundColor: "var(--ick-marker-tint)", 
                           borderRadius: "12px",
                           fontSize: "14px",
                           fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           lineHeight: 1.5,
-                          color: "var(--color-text, #111)",
+                          color: "var(--ick-ink)",
                           cursor: "pointer",
                           transition: "background-color 0.2s"
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = "rgba(204, 255, 0, 0.4)"}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = "rgba(204, 255, 0, 0.2)"}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = "var(--ick-marker)"}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = "var(--ick-marker-tint)"}
                       >
                         {h.text}
                       </div>

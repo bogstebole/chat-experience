@@ -35,7 +35,7 @@ function walk(dir: string, hits: string[] = []): string[] {
     if (entry.isDirectory()) {
       if (entry.name === "__tests__" || entry.name === "stories") continue;
       walk(path, hits);
-    } else if (/\.(module\.css|tsx|ts)$/.test(entry.name)) {
+    } else if (/\.(css|tsx|ts)$/.test(entry.name)) {
       hits.push(path);
     }
   }
@@ -58,6 +58,35 @@ const offenders = () => {
   return found;
 };
 
+/**
+ * The demo is held to the same rule.
+ *
+ * It is the reference a consumer copies, and it is the only place the whole
+ * thing is looked at — a literal here breaks the theme exactly as surely, and
+ * that is not hypothetical: `.aiText` carried a hardcoded near-black, so every
+ * answer was invisible in the dark theme while the kit's own components were
+ * fine.
+ */
+const DEMO = join(import.meta.dirname, "..", "..", "..", "..", "apps", "playground", "src");
+
+/** Values the demo may state outright, each because it is not really a colour. */
+const DEMO_ALLOWED: { match: RegExp; reason: string }[] = [
+  {
+    match: /--(bg|demo-chip|demo-tray):/,
+    reason: "the demo's own tokens, built from the kit's channels",
+  },
+  {
+    match: /demo\/Logo\.tsx/,
+    reason: "a brand mark: its colours are the mark, and do not follow a theme",
+  },
+  {
+    match: /demo\/PerfHud\.tsx/,
+    reason:
+      "a debugging overlay, deliberately the same dark panel in either theme — " +
+      "a measuring instrument that changed with the thing it measures would be a poor one",
+  },
+];
+
 describe("colours live in the token file", () => {
   it("has none anywhere else", () => {
     const found = offenders();
@@ -67,6 +96,21 @@ describe("colours live in the token file", () => {
   /** A scan that reads nothing would pass this suite without checking it. */
   it("is actually reading the source", () => {
     expect(walk(SRC).length).toBeGreaterThan(10);
+  });
+
+  it("has none in the demo either", () => {
+    const found: string[] = [];
+    for (const file of walk(DEMO)) {
+      readFileSync(file, "utf8")
+        .split("\n")
+        .forEach((line, i) => {
+          if (!COLOUR.test(line)) return;
+          const where = relative(DEMO, file);
+          if (DEMO_ALLOWED.some((a) => a.match.test(line) || a.match.test(where))) return;
+          found.push(`${where}:${i + 1}  ${line.trim()}`);
+        });
+    }
+    expect(found, `literal colours in the demo:\n${found.join("\n")}`).toEqual([]);
   });
 
   it("finds colours in the token file, where they belong", () => {
