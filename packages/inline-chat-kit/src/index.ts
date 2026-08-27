@@ -47,6 +47,10 @@ export type {
   ChatHeaderVariant,
 } from "./ChatHeader/ChatHeader";
 
+/* One turn: the question as a composer that became a bubble, and the answer */
+export { ChatTurnRow } from "./ChatTurnRow/ChatTurnRow";
+export type { ChatTurnRowProps } from "./ChatTurnRow/ChatTurnRow";
+
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";
 export type { ReplyThreadPopupProps, Turn } from "./ReplyThreadPopup/ReplyThreadPopup";

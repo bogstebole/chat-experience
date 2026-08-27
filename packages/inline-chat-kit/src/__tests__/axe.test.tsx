@@ -7,6 +7,7 @@ import { ChatInput, type ChatInputState } from "../ChatInput/ChatInput";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { ReplyThreadPopup } from "../ReplyThreadPopup/ReplyThreadPopup";
 import { ChatHeader } from "../ChatHeader/ChatHeader";
+import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
@@ -192,5 +193,33 @@ describe("axe — the header", () => {
     await check(container);
 
     vi.unstubAllGlobals();
+  });
+});
+
+describe("axe — a turn", () => {
+  const turn = {
+    id: "t1",
+    user: "What does particle physics study?",
+    ai: "",
+    state: "idle" as const,
+  };
+
+  it("passes as an empty composer", async () => {
+    const { container } = render(<ChatTurnRow turn={turn} isActiveInput placeholder="Ask" />);
+    await check(container);
+  });
+
+  it("passes while the answer is arriving", async () => {
+    const { container } = render(
+      <ChatTurnRow turn={{ ...turn, state: "responding", ai: "Matter, and the forces." }} />
+    );
+    await check(container);
+  });
+
+  it("passes once it has settled and can be marked", async () => {
+    const { container } = render(
+      <ChatTurnRow turn={{ ...turn, state: "resting", ai: "Matter, and the forces." }} />
+    );
+    await check(container);
   });
 });

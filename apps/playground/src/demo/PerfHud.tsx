@@ -273,7 +273,14 @@ export function PerfHud() {
   useEffect(() => {
     let mo: MutationObserver | null = null;
     const attach = () => {
-      const target = document.querySelector(".aiText");
+      /* The highlighter's own root, not the wrapper around it.
+         `.aiText` was a plain class in this app until the turn row moved into
+         the package, where it became a hashed CSS-module name — a selector
+         that matches nothing and reports zero mutations forever, which is the
+         worst way for a measuring instrument to fail. `data-cursor-active` is
+         part of the kit's DOM contract: `CustomCursor` reads it, and it is
+         there in both selection modes. */
+      const target = document.querySelector("[data-cursor-active]");
       if (!target || mo) return;
       mo = new MutationObserver((recs) => {
         if (!recordingRef.current) return;
@@ -422,7 +429,7 @@ export function PerfHud() {
         ? `- Long tasks: ${lt.length} · total ${r2(lt.reduce((s, t) => s + t.duration, 0))}ms · worst ${r2(Math.max(...lt.map((t) => t.duration)))}ms`
         : "- Long tasks: none"
     );
-    lines.push(`- DOM mutations inside .aiText: ${mutationsRef.current} total`);
+    lines.push(`- DOM mutations inside the answer: ${mutationsRef.current} total`);
     lines.push(
       `  - while drawing (button down): ${mutDrawRef.current} — expected, the path grows on every move`
     );
@@ -517,7 +524,7 @@ export function PerfHud() {
               <span ref={droppedElRef}>—</span>
               <span style={dim}>pointermove rate</span>
               <span ref={rateElRef}>—</span>
-              <span style={dim}>.aiText mutations</span>
+              <span style={dim}>answer mutations</span>
               <span ref={rendersElRef}>—</span>
               <span style={dim}>scene</span>
               <span ref={stateElRef}>—</span>

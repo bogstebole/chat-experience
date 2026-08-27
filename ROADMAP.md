@@ -605,11 +605,26 @@ before it acts. Those are listed below; the coding-specific ones are not.
 
 ### F · The floor — it is not a chat without these
 
-Every kit surveyed ships all six. We ship none of them.
+Every kit surveyed ships all six. One down.
 
-- [ ] **F1 · `Message` / turn row.** `ChatTurnRow` lives in the *playground*,
-      not the package. Anyone installing the kit has to rewrite the one thing
-      the kit is about. This is the biggest single gap.
+- [x] **F1 · `ChatTurnRow` — done.** It lived in the *playground*, so anyone
+      installing the kit had to rewrite the one thing the kit is about; the
+      README could only tell them to, and explain the memo they would need.
+
+      Not named `Message`. The user half is a live input that morphs into its
+      own bubble, not a record of what was typed — that is the whole idea, and
+      the reason the row is a turn.
+
+      Five tokens went with it, the answer's measure in `ch` rather than pixels
+      so it follows whatever font a brand sets. 14 tests, 3 axe cases, 4
+      stories including a live one driven by `useChatTurns`. `0.4.0`.
+
+      One thing nearly broke silently: the perf HUD measured DOM churn by
+      querying `.aiText`, a plain class in the demo that became a hashed
+      CSS-module name the moment the row moved. A selector matching nothing
+      reports zero mutations forever, which is the worst way for a measuring
+      instrument to fail. It reads `[data-cursor-active]` now — part of the
+      kit's own DOM contract, which `CustomCursor` already depends on.
 - [ ] **F2 · `Response` — streaming markdown.** Answers are plain text today.
       Bold, lists, headings, links, tables. Has to be memoised per block or
       every token re-renders the whole answer. Interacts with
@@ -670,12 +685,13 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-F1 → F2 → F3 → F4/F5/F6 → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → **F2** → F3 → F4/F5/F6 → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
 
-F1 first because everything else renders inside it. F2 second because it is
-the one that collides with `TextHighlighter`, and finding that out late would
-be expensive. G3 before G1 because a tool call is the harder shape and
-reasoning is close to a special case of it.
+F1 first because everything else renders inside it. F2 next because it is the
+one that collides with `TextHighlighter`, and finding that out late would be
+expensive — the marker has to survive rich text, which means markdown has to
+render *inside* the highlighter rather than around it. G3 before G1 because a
+tool call is the harder shape and reasoning is close to a special case of it.
 
 ## Later
 

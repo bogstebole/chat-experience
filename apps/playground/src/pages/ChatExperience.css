@@ -41,28 +41,6 @@
   display: none;
 }
 
-.chatTurn {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-  scroll-margin-top: 16px;
-}
-
-.userRow {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.aiText {
-  margin: 0;
-  font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
-  font-size: 12px;
-  line-height: 1.7;
-  letter-spacing: 0.01em;
-  color: var(--ick-ink);
-  max-width: 56ch;
-}
-
 .chatEmpty {
   margin-top: 64px;
   text-align: center;
@@ -112,15 +90,6 @@
 }
 
 /* Precise-mode native selection looks like the marker, not the default blue */
-.aiText ::selection {
-  background: var(--ick-marker);
-  color: var(--ick-marker-ink);
-}
-.aiText ::-moz-selection {
-  background: var(--ick-marker);
-  color: var(--ick-marker-ink);
-}
-
 /* Selection-mode segmented toggle (freeform marker | precise selection) */
 .selectModeToggle {
   display: inline-flex;

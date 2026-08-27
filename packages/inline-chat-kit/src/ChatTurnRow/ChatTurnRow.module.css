@@ -1,0 +1,45 @@
+/* ─────────────────────────────────────────────
+   ChatTurnRow
+
+   The question sits right, the answer sits left and full width. That asymmetry
+   is the only layout opinion in here; everything else is measurement, and
+   every measurement is a token.
+   ───────────────────────────────────────────── */
+
+.turn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-turn-gap);
+  /* Room above a turn scrolled to by id, so it does not land flush against
+     whatever is fixed at the top of the page. */
+  scroll-margin-top: var(--ick-space-6);
+}
+
+.question {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.answer {
+  margin: 0;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-answer-size);
+  line-height: var(--ick-answer-leading);
+  letter-spacing: var(--ick-answer-tracking);
+  color: var(--ick-ink);
+  /* Measured in characters, not pixels: the comfortable line length is a
+     count of letters, so it should follow the font rather than fight it. */
+  max-width: var(--ick-answer-measure);
+}
+
+/* Dragging across the answer with the OS selection still reads as marking it,
+   so it is marked in the marker's colour. */
+.answer ::selection {
+  background: var(--ick-marker);
+  color: var(--ick-marker-ink);
+}
+
+.answer ::-moz-selection {
+  background: var(--ick-marker);
+  color: var(--ick-marker-ink);
+}
