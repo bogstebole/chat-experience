@@ -134,6 +134,8 @@
 }
 
 .token {
+  /* `inline-block` so the press transform applies — transforms do nothing to a
+     non-replaced inline box. Filters work either way. */
   display: inline-block;
   white-space: pre-wrap;
   transition:
@@ -142,6 +144,15 @@
     color 320ms var(--token-ease),
     text-shadow 320ms var(--token-ease),
     transform 240ms var(--token-ease-press);
+}
+
+/* The spaces between words stay inline.
+   As `inline-block` each one is an atomic box, and an atomic box cannot hang
+   at the end of a line the way a space does — so a line breaking *before* a
+   space put that space at the start of the next line and pushed the text one
+   character to the right. Only the words need to be transformable. */
+.token[data-space] {
+  display: inline;
 }
 
 /* One attribute on the container recedes the whole paragraph. */

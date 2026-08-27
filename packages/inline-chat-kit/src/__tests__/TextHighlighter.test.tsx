@@ -108,6 +108,43 @@ describe("TextHighlighter — callbacks", () => {
   });
 });
 
+describe("TextHighlighter — line breaking", () => {
+  /**
+   * Words are `inline-block` so the press transform applies to them. The
+   * spaces must not be: an atomic box cannot hang at the end of a line the way
+   * a space does, so a line breaking *before* one put that space at the start
+   * of the next line and pushed the whole line a character to the right. Two
+   * of six lines were visibly indented.
+   */
+  it("marks the spaces between words, so they can stay inline", () => {
+    const { container } = render(<TextHighlighter text="two words here" />);
+    const tokens = [...container.querySelectorAll("span[data-index]")];
+    const spaces = tokens.filter((t) => !t.textContent?.trim());
+    const words = tokens.filter((t) => t.textContent?.trim());
+
+    expect(spaces).toHaveLength(2);
+    expect(spaces.every((s) => s.hasAttribute("data-space"))).toBe(true);
+    expect(words.some((w) => w.hasAttribute("data-space"))).toBe(false);
+  });
+
+  it("keeps them out of the inline-block box the words need", () => {
+    const rule = [...document.styleSheets]
+      .flatMap((sheet) => {
+        try {
+          return [...sheet.cssRules];
+        } catch {
+          return [];
+        }
+      })
+      .find((r) => (r as CSSStyleRule).selectorText?.endsWith("[data-space]")) as
+      | CSSStyleRule
+      | undefined;
+
+    expect(rule, "no rule keeps the spaces inline").toBeDefined();
+    expect(rule!.style.display).toBe("inline");
+  });
+});
+
 describe("TextHighlighter — touch", () => {
   /**
    * The paragraph used to carry `touch-action: none`, which stops a finger
