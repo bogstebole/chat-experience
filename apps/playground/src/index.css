@@ -13,12 +13,30 @@
   --surface-kbd: var(--ick-surface-hover);
   --surface-press: var(--ick-surface-press);
 
+  /* A chip lifted inside a recessed tray — the segmented toggle's thumb.
+     The one value here that cannot be derived from the channels: in light it
+     is paper sitting on a grey tray, and in dark it has to be *lighter* than
+     its tray, which means moving towards ink rather than paper. Opposite
+     directions, so it is stated per theme rather than mixed. */
+  --demo-chip: rgb(var(--ick-paper-rgb));
+  --demo-tray: rgb(var(--ick-ink-rgb) / 0.08);
+
   font-family: var(--font-sans);
   color: var(--ink);
   background: var(--bg);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --demo-chip: rgb(var(--ick-ink-rgb) / 0.2);
+  }
+}
+
+:root[data-theme="dark"] {
+  --demo-chip: rgb(var(--ick-ink-rgb) / 0.2);
 }
 
 * {

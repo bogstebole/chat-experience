@@ -472,6 +472,38 @@ Only elements with the class pay for it. Without this the brand story could not
 have shown four brands on one page — and, more to the point, a consumer
 theming a panel would have found half their values silently doing nothing.
 
+### D6b · The demo was never checked — done
+
+Reported from a screenshot: in dark mode the answer text was black, and the
+segmented toggle's tray was invisible against the page.
+
+Both real, and both mine. D6 verified the **kit** in dark — its tokens, its
+components in Storybook, the page background — and stopped there. The demo has
+stylesheets of its own, and nothing had looked at them.
+
+- [x] `.aiText { color: #000000e0 }` — the answer text, hardcoded near-black.
+      Every answer was invisible in the dark theme.
+- [x] The segmented toggle's dark rules hung off a **`.dark` class this app
+      never sets** — it uses `data-theme`. So the dark theme was still painting
+      the light values: a 4%-black tray, invisible on a dark page. Six such
+      rules, all dead. Deleted.
+- [x] Its active thumb was `--ick-surface`, which in dark **is the page
+      colour** — it read as a hole rather than a chip. The one value here that
+      cannot be derived: light wants paper on a grey tray, dark wants something
+      *lighter* than its tray, which means moving towards ink. Stated per theme.
+- [x] `--color-bg-page` was referenced in three gradients and **defined
+      nowhere**, so all three were invalid and painted nothing. The fades under
+      the sticky input bar had never worked.
+- [x] The highlights modal was inline literals throughout — invisible in dark
+      too, just behind a click.
+- [x] The landing page and its notice, likewise.
+
+**The guard only covered the kit.** It covers the demo now, which is what would
+have caught every one of these — with two documented exemptions: the logo,
+whose colours are the mark, and the perf HUD, which is deliberately the same
+dark panel in either theme, because a measuring instrument that changes with
+the thing it measures is a poor one.
+
 ## Later
 
 - [x] **Touch — done.** `touch-action: none` on every answer meant a finger
