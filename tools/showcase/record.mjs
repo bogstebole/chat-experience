@@ -49,13 +49,35 @@ const THEME = process.argv[2] === "dark" ? "dark" : "light";
 // Narrower than the first cut: the chat column is about 660px, so a 1280 frame
 // left 300px of nothing down each side.
 const VIEWPORT = { width: 1120, height: 680 };
-const SCALE = 2; // captured at 2×, so it is sharp on the displays people have
 const FPS = 30;
+
+/**
+ * Resolution, and the thing about it that is not obvious.
+ *
+ * `Page.startScreencast` **ignores the context's `deviceScaleFactor`**.
+ * Measured at 1, 2 and 3: the frames come back 1120×680 every time, while
+ * `devicePixelRatio` inside the page dutifully reports 1, 2 and 3. The
+ * previous cut therefore asked for 2× and shipped 1×, and the comment
+ * claiming otherwise was wrong for as long as it stood.
+ *
+ * What the screencast does read is the browser's own scale factor, set at
+ * launch. With this flag the frames arrive at 2240×1360 while the layout
+ * viewport stays 1120 CSS px — same design, twice the pixels, nothing moved.
+ *
+ * `zoom` on the root is the obvious-looking alternative and it does not work:
+ * viewport units are not divided by it, so `100vh` becomes twice the frame
+ * height and the intro is pushed off screen.
+ */
+const SCALE = 2;
 
 /**
  * The demo answers are fixed, so the questions are written to fit them. A
  * video whose answer does not address its question reads as broken, however
  * good the animation is.
+ *
+ * The question doubles as the header's title once it is sent, so it has to
+ * read as a title too — short enough to survive the truncation, and specific
+ * enough that seeing it up there is worth something.
  */
 const QUESTION = "What does particle physics actually study?";
 const THREAD_QUESTION = "How big is the Higgs boson?";
@@ -153,13 +175,55 @@ async function startCapture(page, dir) {
  * unevenly. Encoding needs a steady rate: for each slot on a fixed clock,
  * write whichever frame was the most recent at that moment.
  */
-async function encode(frames, out) {
-  if (frames.length === 0) throw new Error("no frames were captured");
-
-  const ffmpeg = execSync("ls -d ~/Library/Caches/ms-playwright/ffmpeg-*/ffmpeg-mac | tail -1", {
+/**
+ * ffmpeg, twice over.
+ *
+ * Playwright ships one, which is how this runs on a machine with nothing
+ * installed — but it is a stripped build with no H.264 encoder, so it can
+ * only write webm. A system ffmpeg, if there is one, writes the mp4 as well.
+ */
+const bundledFfmpeg = () =>
+  execSync("ls -d ~/Library/Caches/ms-playwright/ffmpeg-*/ffmpeg-mac | tail -1", {
     shell: "/bin/bash",
     encoding: "utf8",
   }).trim();
+
+const systemFfmpeg = () => {
+  try {
+    return execSync("command -v ffmpeg", { shell: "/bin/bash", encoding: "utf8" }).trim() || null;
+  } catch {
+    return null;
+  }
+};
+
+const VP8 = [
+  "-c:v", "libvpx",
+  // Constant quality, which for libvpx means `-b:v 0` — a bitrate of zero is
+  // how it is told to obey the CRF instead. The first version asked for a
+  // flat 8M and got a 15MB file for twenty seconds, while H.264 at constant
+  // quality wrote 0.9MB of the same frames. Almost all of it was being spent
+  // on flat background nobody was looking at.
+  "-crf", "24",
+  "-b:v", "0",
+  "-deadline", "good",
+  "-cpu-used", "1",
+  "-auto-alt-ref", "0",
+];
+
+const H264 = [
+  "-c:v", "libx264",
+  // Constant quality rather than a bitrate: the frame is mostly flat colour
+  // with small text, which is exactly where a fixed bitrate wastes bits on
+  // the background and starves the letters.
+  "-crf", "20",
+  "-preset", "slow",
+  "-profile:v", "high",
+  // Every player, including the ones that decode on the GPU only.
+  "-movflags", "+faststart",
+];
+
+async function encode(frames, out, ffmpeg, codec) {
+  if (frames.length === 0) throw new Error("no frames were captured");
 
   const start = frames[0].t;
   const duration = frames[frames.length - 1].t - start;
@@ -173,14 +237,7 @@ async function encode(frames, out) {
     // `pipe:0`, not `-`: this build enables the pipe and file protocols only,
     // and the shorthand resolves to neither.
     "-i", "pipe:0",
-    "-c:v", "libvpx",
-    // The bitrate the built-in recorder would not give us. Text stays text.
-    "-b:v", "8M",
-    "-qmin", "4",
-    "-qmax", "24",
-    "-deadline", "good",
-    "-cpu-used", "1",
-    "-auto-alt-ref", "0",
+    ...codec,
     "-pix_fmt", "yuv420p",
     out,
   ]);
@@ -227,9 +284,11 @@ async function main() {
   await mkdir(OUT, { recursive: true });
   const framesDir = join(OUT, `.frames-${THEME}`);
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: [`--force-device-scale-factor=${SCALE}`] });
   const context = await browser.newContext({
     viewport: VIEWPORT,
+    // The flag above is what the screencast reads; this is what the page
+    // reads. Both, so anything drawing per device pixel agrees with the frame.
     deviceScaleFactor: SCALE,
     colorScheme: THEME,
     reducedMotion: "no-preference",
@@ -287,7 +346,7 @@ async function main() {
   });
   if (sent) {
     await page.mouse.move(sent.x, sent.y, { steps: 12 });
-    await beat(page, 1100);
+    await beat(page, 700);
   }
   await bubble.scrollIntoViewIfNeeded().catch(() => {});
   await beat(page, 200);
@@ -309,22 +368,45 @@ async function main() {
   await page.keyboard.type(THREAD_QUESTION, { delay: 34 });
   await beat(page, 350);
   await page.keyboard.press("Enter");
-  await beat(page, 4200);
+  await beat(page, 3400);
 
   // ── Out ───────────────────────────────────────────────────────────────
   await page.keyboard.press("Escape");
-  await beat(page, 900);
+  await beat(page, 700);
+
+  // ── The theme ─────────────────────────────────────────────────────────
+  // One click, and every colour in the frame is repainted from two channel
+  // triplets. It is the only way to show a token system in a video: the work
+  // is invisible right up until the moment it is not.
+  const theme = page.getByRole("button", { name: /switch to the (dark|light) theme/i });
+  await theme.hover();
+  await beat(page, 260);
+  await theme.click();
+  // The last frame is the one people see when the loop pauses, so it holds.
+  await beat(page, 2000);
 
   await capture.stop();
   await context.close();
   await browser.close();
 
   const webm = join(OUT, `inline-chat-${THEME}.webm`);
-  await encode(capture.frames, webm);
+  await encode(capture.frames, webm, bundledFfmpeg(), VP8);
+
+  // Written from the frames rather than from the webm. Transcoding VP8 to
+  // H.264 would put the second encoder's artefacts on top of the first's,
+  // and the small text is where that shows first.
+  const system = systemFfmpeg();
+  const mp4 = join(OUT, `inline-chat-${THEME}.mp4`);
+  if (system) await encode(capture.frames, mp4, system, H264);
+
   await rm(framesDir, { recursive: true, force: true });
 
-  const size = (await readdir(OUT)).includes(`inline-chat-${THEME}.webm`);
-  console.log(`\n  ${webm}${size ? "" : "  (missing?)"}\n`);
+  const written = await readdir(OUT);
+  console.log(`\n  ${webm}`);
+  if (system) console.log(`  ${mp4}`);
+  else console.log("  (no system ffmpeg on PATH, so no mp4 — `brew install ffmpeg`)");
+  console.log();
+  void written;
 }
 
 main().catch((error) => {
