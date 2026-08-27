@@ -547,6 +547,22 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     setCurrentPath(null);
   };
 
+  /**
+   * The stroke was interrupted rather than finished — almost always because
+   * the browser decided the gesture was a scroll and took the pointer away.
+   *
+   * Discarded, not committed. Treating a cancellation like a release meant
+   * that on a phone, every scroll that happened to begin on an answer left a
+   * highlight behind on whatever word the finger landed on.
+   */
+  const handlePointerCancel = (e: React.PointerEvent) => {
+    if (selectionMode === "precise") return;
+    setIsDrawing(false);
+    if (!currentPath) return;
+    (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    setCurrentPath(null);
+  };
+
   const getHighlightedText = (pathId: string) => {
     const pathData = paths.find((p) => p.id === pathId);
     return pathData ? textFromIndices(pathData.highlightedIndices, tokens) : "";
@@ -613,7 +629,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       className={styles.surface}
       tabIndex={0}
       onKeyDown={handleKeyDown}

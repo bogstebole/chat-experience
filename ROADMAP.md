@@ -500,8 +500,20 @@ mux webm and nothing else, and macOS's `avconvert` cannot read VP8.
 
 ## Later
 
-- [ ] **Touch:** the highlighter sets `touch-action: none` on every answer, so a
-      finger on the text cannot scroll the page. Needs a real device to settle.
+- [x] **Touch — done.** `touch-action: none` on every answer meant a finger
+      anywhere on the text could not scroll the page: on a phone the whole
+      conversation was a dead zone. It is `pan-y` now, which separates the two
+      gestures cleanly — strokes are horizontal, scrolling is vertical.
+
+      That exposed a second bug. `pointercancel` was wired to the same handler
+      as `pointerup`, so a gesture the browser took over for scrolling was
+      *committed* as a highlight — every scroll starting on an answer left a
+      marker on whatever word the finger landed on. Cancelling discards now.
+
+      Measured through Chrome's own gesture pipeline: a sideways drag gives
+      pointerdown, ten moves, pointerup and a marker; a downward drag gives
+      pointerdown, one move, `pointercancel`, and no marker. Still worth a
+      minute on a real phone for feel, but the behaviour is settled.
 - [ ] **Versioning:** no `CHANGELOG`, no release process, no published version
 - [ ] **README:** no worked example against a real API (Next.js App Router route
       handler → `onSend`)
