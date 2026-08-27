@@ -554,7 +554,7 @@ after a specific button.
       so without that a reader is told "Saved highlights" and never learns
       there are three.
 - [x] Thirteen new tokens, none literal, all `--ick-header-*`.
-- [x] 29 tests, 3 more axe cases, 7 stories, README and theming.md. `0.3.0`.
+- [x] 34 tests, 3 more axe cases, 7 stories, README and theming.md. `0.3.0`.
 
 One bug the tests caught, and it was not a test artifact: `elevateOnScroll`
 told window from element with `instanceof Window`, which is a realm check —
