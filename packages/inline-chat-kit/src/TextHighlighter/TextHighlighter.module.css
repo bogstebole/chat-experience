@@ -186,7 +186,12 @@
      at all — not to highlight it, not even to copy it. */
   user-select: text;
   -webkit-user-select: text;
-  touch-action: none; /* no scrolling mid-stroke on a touch device */
+  /* `pan-y`, not `none`. `none` meant a finger anywhere on an answer could
+     not scroll the page at all — the whole conversation became a dead zone on
+     a phone. Marker strokes are horizontal, scrolling is vertical, so the two
+     gestures separate cleanly: a sideways drag draws, a downward drag
+     scrolls, and the browser cancels the stroke it took over. */
+  touch-action: pan-y;
   z-index: var(--ick-z-base);
 }
 

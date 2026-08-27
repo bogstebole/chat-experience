@@ -108,6 +108,56 @@ describe("TextHighlighter — callbacks", () => {
   });
 });
 
+describe("TextHighlighter — touch", () => {
+  /**
+   * The paragraph used to carry `touch-action: none`, which stops a finger
+   * scrolling the page from anywhere on an answer — on a phone the whole
+   * conversation became a dead zone. Strokes are horizontal and scrolling is
+   * vertical, so `pan-y` separates them.
+   */
+  it("lets a finger scroll the page vertically", () => {
+    const { container } = render(<TextHighlighter text={TEXT} />);
+    const surface = container.querySelector('[data-cursor="marker"]') as HTMLElement;
+    const rule = [...document.styleSheets]
+      .flatMap((sheet) => {
+        try {
+          return [...sheet.cssRules];
+        } catch {
+          return []; // a cross-origin sheet; none of ours are
+        }
+      })
+      .find(
+        (r) =>
+          (r as CSSStyleRule).selectorText === `.${surface.className.split(" ")[0]}` &&
+          (r as CSSStyleRule).style.touchAction
+      ) as CSSStyleRule | undefined;
+
+    // No fallback: a test that passes when it cannot find the rule is a test
+    // that passes when the rule is deleted.
+    expect(rule, "no rule sets touch-action on the surface").toBeDefined();
+    expect(rule!.style.touchAction).toBe("pan-y");
+  });
+
+  /**
+   * A cancelled stroke is one the browser took over to scroll with. Committing
+   * it left a highlight behind on whatever word the finger happened to land
+   * on, every time somebody scrolled past an answer.
+   */
+  it("throws away a stroke the browser cancelled", () => {
+    const onHighlightComplete = vi.fn();
+    const { container } = render(
+      <TextHighlighter text={TEXT} onHighlightComplete={onHighlightComplete} />
+    );
+    const surface = container.querySelector('[data-cursor="marker"]') as HTMLElement;
+
+    fireEvent.pointerDown(surface, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerCancel(surface, { clientX: 10, clientY: 40 });
+
+    expect(onHighlightComplete).not.toHaveBeenCalled();
+    expect(surface.hasAttribute("data-drawing")).toBe(false);
+  });
+});
+
 describe("TextHighlighter — no per-element animation", () => {
   /**
    * A regression guard, not a style preference. Every word used to carry its
