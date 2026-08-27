@@ -583,6 +583,100 @@ appearing. Surface nobody asked for is surface somebody later has to support.
       carries a green and an amber for one dot
 - [x] `.srOnly` went too — it existed to name the dot and nothing else
 
+## Next — what a chat still needs
+
+Surveyed against AI Elements (Vercel), prompt-kit, assistant-ui, shadcn's own
+chat components and the Claude Code desktop app, 2026-08-27.
+
+**What we have:** `ChatInput` (+ `AddCardsOverlay`, `HoverActionsRow`,
+`MorphGlyph`), `ChatHeader`, `TextHighlighter`, `ReplyThreadPopup`,
+`CustomCursor`, `Button`, `useChatTurns`, `announce`.
+
+Two of those are ours alone. Nobody surveyed has marker highlighting over
+streamed text, and nobody has a thread anchored to a quoted passage — the
+nearest thing is Claude Code's side chat (`/btw`), which has no anchor.
+
+**The honest caveat about the Claude Code reference:** roughly half of its
+surface — diff review, PR status, terminal panes, permission modes, worktree
+isolation — exists because it edits code on your machine. Those do not
+transfer to a general chat kit. What does transfer is everything about how an
+*agent* narrates itself: thinking, steps, tool calls, a todo list, and asking
+before it acts. Those are listed below; the coding-specific ones are not.
+
+### F · The floor — it is not a chat without these
+
+Every kit surveyed ships all six. We ship none of them.
+
+- [ ] **F1 · `Message` / turn row.** `ChatTurnRow` lives in the *playground*,
+      not the package. Anyone installing the kit has to rewrite the one thing
+      the kit is about. This is the biggest single gap.
+- [ ] **F2 · `Response` — streaming markdown.** Answers are plain text today.
+      Bold, lists, headings, links, tables. Has to be memoised per block or
+      every token re-renders the whole answer. Interacts with
+      `TextHighlighter`: highlighting has to survive rich text, not just a
+      flat string. That is the hard part and it is ours specifically.
+- [ ] **F3 · `CodeBlock`.** Syntax highlighting, copy button, language label.
+      Nobody accepts an AI chat without it.
+- [ ] **F4 · `Conversation`.** The scroll container: pinned to the bottom
+      while streaming, released the moment the reader scrolls up, plus the
+      jump-to-bottom button. The demo does this ad hoc with a ref.
+- [ ] **F5 · `MessageActions`.** Copy, regenerate, edit, feedback. We have a
+      hover row for the *input*; answers have nothing.
+- [ ] **F6 · `Loader` / empty state / starter prompts.** What is on screen
+      before the first question, and between sending and the first token.
+
+### G · The agent tier — what makes it an AI chat rather than a chat
+
+This is the "thinking, reasoning" the brief asks for.
+
+- [ ] **G1 · `Reasoning`.** Collapsible, streams while it thinks, collapses
+      itself when the answer starts, and keeps the duration — "Thought for
+      12s". Present in prompt-kit, AI Elements and assistant-ui alike; the
+      auto-collapse is the detail they all converged on.
+- [ ] **G2 · `ChainOfThought` / `Steps`.** A sequence with per-step status.
+      Distinct from G1: reasoning is prose, steps are structure.
+- [ ] **G3 · `Tool`.** Name, input, output, and state — pending, running,
+      done, error. Collapsed by default, because most of the time nobody
+      cares. This is the component that makes an agent legible.
+- [ ] **G4 · `TaskList`.** Claude Code's todo list: what it plans to do, what
+      it is doing now, what is finished.
+- [ ] **G5 · `Sources` + `InlineCitation`.** A numbered marker in the text
+      and the list underneath. **Ours has an unfair advantage:** the citation
+      marker and the highlight marker are the same interaction seen twice.
+- [ ] **G6 · `Approval`.** "Claude wants to run X" with allow / allow always
+      / deny, inline in the thread. The one Claude Code pattern that
+      generalises to any agent that acts.
+- [ ] **G7 · `Context`.** How full the window is. Small, and the only honest
+      way to explain why a long conversation starts forgetting.
+
+### H · Worth having, not urgent
+
+- [ ] **H1 · `Attachment`.** Chips with previews for image and PDF, drag and
+      drop, remove. AI Elements spends nine components on this; two would do.
+- [ ] **H2 · `Branch`.** Edit a question and the answer forks: `‹ 2/3 ›`.
+      `useChatTurns` already regenerates in place — this is the UI for it.
+- [ ] **H3 · `Artifact` / preview pane.** Rendering what the answer produced.
+- [ ] **H4 · `SystemMessage` banner.** `InlineChatBanner` exists in the demo
+      and could move up.
+- [ ] **H5 · `ThreadList`.** Only once conversations are persisted anywhere.
+- [ ] **H6 · Voice input.**
+
+### Deliberately not ours
+
+Diff review, PR status bars, terminal panes, permission-mode selectors,
+worktree isolation, session sidebars. They belong to a coding agent, not to a
+chat kit. If a consumer needs them they compose them; the kit should not
+pretend to know what a hunk is.
+
+### Suggested order
+
+F1 → F2 → F3 → F4/F5/F6 → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+
+F1 first because everything else renders inside it. F2 second because it is
+the one that collides with `TextHighlighter`, and finding that out late would
+be expensive. G3 before G1 because a tool call is the harder shape and
+reasoning is close to a special case of it.
+
 ## Later
 
 - [x] **Touch — done.** `touch-action: none` on every answer meant a finger
