@@ -161,7 +161,7 @@ export function ChatExperience() {
     }
   }, []);
 
-  const { turns, setDraft, submit, stop, beginEdit, cancelEdit, isStreaming } = useChatTurns({
+  const { turns, setDraft, submit, stop, beginEdit, cancelEdit } = useChatTurns({
     onSend: fakeApi,
   });
 
@@ -298,8 +298,6 @@ export function ChatExperience() {
             title={conversationTitle}
             backHref="/"
             backLabel="Back to home"
-            status={isStreaming ? "thinking" : null}
-            statusLabel="Generating response"
             /* The page already has its own gradient doing this job. */
             elevateOnScroll={false}
             collapseActionsAt={480}

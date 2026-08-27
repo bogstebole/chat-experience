@@ -44,7 +44,6 @@ export type {
   ChatHeaderAction,
   ChatHeaderProps,
   ChatHeaderSize,
-  ChatHeaderStatus,
   ChatHeaderVariant,
 } from "./ChatHeader/ChatHeader";
 

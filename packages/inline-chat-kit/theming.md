@@ -149,18 +149,6 @@ these to move one thing without moving its neighbours:
 }
 ```
 
-The status dot has its own three, and they are the one part of the palette that
-does not invert: green stays green. They lift a little in the dark, where a
-mid-tone goes muddy.
-
-```css
-:root {
-  --ick-status-online: rgb(var(--ick-live-rgb));
-  --ick-status-busy: rgb(var(--ick-warn-rgb));
-  --ick-status-thinking: var(--ick-ink-faint);
-}
-```
-
 ## Motion
 
 `--ick-ease`, `--ick-ease-overshoot`, and the `--ick-duration-*` scale. The kit

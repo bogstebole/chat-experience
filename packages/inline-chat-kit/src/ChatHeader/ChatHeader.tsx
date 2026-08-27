@@ -16,7 +16,6 @@ import styles from "./ChatHeader.module.css";
 
 export type ChatHeaderVariant = "plain" | "glass" | "bordered";
 export type ChatHeaderSize = "s" | "m" | "l";
-export type ChatHeaderStatus = "online" | "busy" | "thinking";
 
 /**
  * One action in the end region.
@@ -63,10 +62,6 @@ export interface ChatHeaderProps
   subtitle?: ReactNode;
   /** Logo or agent avatar, drawn before the title. */
   avatar?: ReactNode;
-  /** A dot beside the title. Silent decoration until `statusLabel` names it. */
-  status?: ChatHeaderStatus | null;
-  /** What the dot means, spoken. Defaults to the status word itself. */
-  statusLabel?: string;
   /**
    * How the title is exposed to assistive technology. A heading is what makes
    * the conversation reachable by heading navigation; the level belongs to the
@@ -157,8 +152,6 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
     title,
     subtitle,
     avatar,
-    status = null,
-    statusLabel,
     headingLevel = 2,
     truncate = true,
     onBack,
@@ -279,12 +272,6 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
                 className={[styles.title, truncate ? styles.truncate : ""].filter(Boolean).join(" ")}
                 title={typeof title === "string" && truncate ? title : undefined}
               >
-                {status && (
-                  <span className={styles.status} data-status={status}>
-                    {/* The dot is a picture of the state; this is the state. */}
-                    <span className={styles.srOnly}>{statusLabel ?? status}</span>
-                  </span>
-                )}
                 {title}
               </Heading>
             )}
