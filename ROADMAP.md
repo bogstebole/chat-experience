@@ -524,4 +524,5 @@ mux webm and nothing else, and macOS's `avconvert` cannot read VP8.
       worked Next.js example: a route handler that streams from a model, the
       `onSend` that reads it, and the same shape for a thread with its quoted
       passage. The contributing section said 53 tests; there are 167.
-- [ ] **Push to origin** — nothing has been pushed yet
+- [x] **Pushed.** The remote was HTTPS with no credential helper, so it is SSH
+      now. CI runs on GitHub for the first time as of this push.
