@@ -198,14 +198,3 @@
   }
 }
 
-.chatHeaderLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.chatHeaderTitle {
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 0.75rem;
-  color: var(--ick-ink-faint);
-}

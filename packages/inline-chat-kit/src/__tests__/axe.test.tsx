@@ -6,7 +6,8 @@ import GlassButton from "../GlassButton/GlassButton";
 import { ChatInput, type ChatInputState } from "../ChatInput/ChatInput";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { ReplyThreadPopup } from "../ReplyThreadPopup/ReplyThreadPopup";
-import { MessageCircle } from "lucide-react";
+import { ChatHeader } from "../ChatHeader/ChatHeader";
+import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
  * axe over every component the package exports.
@@ -137,5 +138,60 @@ describe("axe — the reply thread", () => {
       />
     );
     await check(container);
+  });
+});
+
+describe("axe — the header", () => {
+  const icon = <Bookmark size={16} aria-hidden />;
+  const actions = [
+    { id: "bookmarks", label: "Bookmarks", icon, count: 3, pinned: true },
+    { id: "share", label: "Share", icon: <Share2 size={16} aria-hidden /> },
+    { id: "settings", label: "Settings", icon: <Settings size={16} aria-hidden /> },
+  ];
+
+  it("passes with a title, a status and named actions", async () => {
+    const { container } = render(
+      <ChatHeader
+        title="Particle physics"
+        subtitle="Claude Opus 5"
+        status="thinking"
+        backHref="/"
+        actions={actions}
+      />
+    );
+    await check(container);
+  });
+
+  it("passes with no title at all", async () => {
+    const { container } = render(<ChatHeader actions={actions} />);
+    await check(container);
+  });
+
+  /** The one arrangement with an open menu, which is where ARIA goes wrong. */
+  it("passes with the overflow menu open", async () => {
+    class FakeResizeObserver {
+      constructor(cb: (entries: { contentRect: { width: number } }[]) => void) {
+        // Narrow enough to fold, reported the moment it is observed.
+        queueMicrotask(() => cb([{ contentRect: { width: 300 } }]));
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+
+    const { container, findByRole } = render(
+      <ChatHeader
+        title="Particle physics"
+        actions={[...actions, { id: "t", label: "Dark theme", icon, active: false }]}
+        collapseActionsAt={520}
+      />
+    );
+
+    fireEvent.click(await findByRole("button", { name: "More actions" }));
+    expect(container.querySelector('[role="menu"]')).toBeInTheDocument();
+    await check(container);
+
+    vi.unstubAllGlobals();
   });
 });

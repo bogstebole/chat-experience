@@ -3,8 +3,38 @@
 Dates are the day the work landed on `main`.
 
 The versions before 1.0 follow the pre-release convention: **a breaking change
-bumps the minor**, and the patch is for fixes. Anything that would break an
+or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
+
+## 0.3.0 — 2026-08-27
+
+Additive. Nothing in 0.2.0 changes behaviour.
+
+### Added
+
+- **`<ChatHeader>`.** The chrome above a conversation: title, subtitle, status
+  dot, back, and a row of actions. Three materials (`plain`, `glass`,
+  `bordered`), three sizes (40 / 48 / 56px), and a centred arrangement for the
+  native/mobile pattern.
+
+  Actions are described rather than passed as children:
+
+  ```tsx
+  actions={[{ id: "share", label: "Share", icon: <Share2 size={16} />, onClick: share }]}
+  ```
+
+  which is what lets `collapseActionsAt` fold them into a keyboard-navigable
+  overflow menu when the header is narrow — a header cannot summarise children
+  it cannot read. Anything with no icon-and-label shape goes in as `children`
+  and stays put.
+
+  `label` is required, and a `count` is folded into it: the badge on the glyph
+  is `aria-hidden`, so without that a reader would never learn the number.
+
+- **Header and status tokens.** `--ick-header-*` for height, padding, backdrop,
+  title, subtitle and badge; `--ick-status-online` / `-busy` / `-thinking` for
+  the dot, built on two new channels (`--ick-live-rgb`, `--ick-warn-rgb`) that
+  do not invert with the theme, only lift.
 
 ## 0.2.0 — 2026-08-26
 

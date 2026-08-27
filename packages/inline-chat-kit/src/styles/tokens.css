@@ -41,6 +41,12 @@
     --ick-ink-rgb: 17 17 17;
     --ick-paper-rgb: 255 255 255;
     --ick-marker-rgb: 204 255 0;
+    /* The two hues that mean something rather than look like something: a
+       thing is running, a thing needs attention. They do not follow ink and
+       paper — green stays green — so they are their own channels, lifted a
+       little in the dark where a mid-tone goes muddy. */
+    --ick-live-rgb: 34 197 94;
+    --ick-warn-rgb: 217 119 6;
 
     /* ═══ Semantic ═════════════════════════════════════════════════════════
        What a value means, which is what dark mode swaps. */
@@ -271,6 +277,30 @@
       0 18px 8px 0 rgb(var(--ick-glass-rim-rgb) / 0.35) inset,
       0 3px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.04),
       0 1px 2px 0 rgb(var(--ick-glass-shade-rgb) / 0.06);
+
+    /* ═══ Header ════════════════════════════════════════════════════════════
+       Component tier. The three heights are the sizes; everything else is
+       what a brand would reach for first. */
+
+    --ick-header-height-s: 40px;
+    --ick-header-height-m: 48px;
+    --ick-header-height-l: 56px;
+    --ick-header-pad: var(--ick-space-6);
+    --ick-header-gap: var(--ick-space-4);
+    /* Translucent, because a header sits over the conversation rather than
+       beside it — the blur behind it is the point. */
+    --ick-header-bg: rgb(var(--ick-paper-rgb) / 0.72);
+    --ick-header-blur: 12px;
+    --ick-header-border: var(--ick-border);
+    --ick-header-title: var(--ick-ink);
+    --ick-header-subtitle: var(--ick-ink-faint);
+    --ick-header-badge-bg: var(--ick-marker);
+    --ick-header-badge-ink: var(--ick-marker-ink);
+
+    /* The dot beside a title. */
+    --ick-status-online: rgb(var(--ick-live-rgb));
+    --ick-status-busy: rgb(var(--ick-warn-rgb));
+    --ick-status-thinking: var(--ick-ink-faint);
   }
 
 
@@ -290,6 +320,13 @@
   .ick-theme {
     --ick-dark-ink-rgb: 245 245 245;
     --ick-dark-paper-rgb: 18 18 18;
+    /* Lifted, not swapped. The mid-tones that read as green and amber on
+       white go muddy against near-black. */
+    --ick-dark-live-rgb: 74 222 128;
+    --ick-dark-warn-rgb: 251 191 36;
+    /* A darker header needs more of itself to hide the text scrolling
+       underneath: white at 72% over dark content still shows it through. */
+    --ick-dark-header-bg: rgb(var(--ick-paper-rgb) / 0.85);
     --ick-dark-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
     --ick-dark-ink-glass-strong: rgb(var(--ick-ink-rgb));
     --ick-dark-glass-fill: rgb(var(--ick-ink-rgb) / 0.08);
@@ -386,6 +423,9 @@
     .ick-theme:not([data-theme="light"]):not(.light) {
       --ick-ink-rgb: var(--ick-dark-ink-rgb);
       --ick-paper-rgb: var(--ick-dark-paper-rgb);
+      --ick-live-rgb: var(--ick-dark-live-rgb);
+      --ick-warn-rgb: var(--ick-dark-warn-rgb);
+      --ick-header-bg: var(--ick-dark-header-bg);
       --ick-ink-glass: var(--ick-dark-ink-glass);
       --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
       --ick-glass-fill: var(--ick-dark-glass-fill);
@@ -414,6 +454,9 @@
   .ick-theme.dark {
     --ick-ink-rgb: var(--ick-dark-ink-rgb);
     --ick-paper-rgb: var(--ick-dark-paper-rgb);
+    --ick-live-rgb: var(--ick-dark-live-rgb);
+    --ick-warn-rgb: var(--ick-dark-warn-rgb);
+    --ick-header-bg: var(--ick-dark-header-bg);
     --ick-ink-glass: var(--ick-dark-ink-glass);
     --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
     --ick-glass-fill: var(--ick-dark-glass-fill);

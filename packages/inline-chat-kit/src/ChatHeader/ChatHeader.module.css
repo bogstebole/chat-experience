@@ -1,0 +1,379 @@
+/* ─────────────────────────────────────────────
+   ChatHeader
+
+   Two regions and a rule about which one owns what. `start` holds identity —
+   back, avatar, title, subtitle — and is the part allowed to shrink, because
+   a title can always be cut short. `end` holds actions and never shrinks: an
+   action that is half visible is worse than one folded into the menu.
+
+   No literal colours. Everything is a token, and the dark theme lives with
+   the tokens rather than in a block down here.
+   ───────────────────────────────────────────── */
+
+.header {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ick-header-gap);
+  width: 100%;
+  padding-inline: var(--ick-header-pad);
+  font-family: var(--ick-font-sans);
+  color: var(--ick-ink);
+  transition:
+    background var(--ick-duration-base) ease,
+    box-shadow var(--ick-duration-base) ease,
+    border-color var(--ick-duration-base) ease,
+    backdrop-filter var(--ick-duration-base) ease;
+}
+
+/* ── Sizes ──────────────────────────────────────────────────────────────── */
+
+.s { min-height: var(--ick-header-height-s); }
+.m { min-height: var(--ick-header-height-m); }
+.l { min-height: var(--ick-header-height-l); }
+
+.s .title { font-size: var(--ick-text-md); }
+.m .title { font-size: var(--ick-text-lg); }
+.l .title { font-size: 1rem; }
+
+/* ── Materials ──────────────────────────────────────────────────────────── */
+
+.plain {
+  background: transparent;
+  border-bottom: 1px solid transparent;
+}
+
+.bordered {
+  background: transparent;
+  border-bottom: 1px solid var(--ick-header-border);
+}
+
+.glass {
+  background: var(--ick-header-bg);
+  backdrop-filter: blur(var(--ick-header-blur));
+  -webkit-backdrop-filter: blur(var(--ick-header-blur));
+  border-bottom: 1px solid var(--ick-header-border);
+}
+
+/* Nothing until the conversation has moved under it. A border drawn over
+   untouched content is a line for its own sake; a border that appears at the
+   moment content slides beneath says what it is for. */
+.plain[data-scrolled] {
+  background: var(--ick-header-bg);
+  backdrop-filter: blur(var(--ick-header-blur));
+  -webkit-backdrop-filter: blur(var(--ick-header-blur));
+  border-bottom-color: var(--ick-header-border);
+}
+
+.bordered[data-scrolled],
+.glass[data-scrolled] {
+  box-shadow: var(--ick-shadow-float);
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--ick-z-sticky);
+}
+
+/* ── Regions ────────────────────────────────────────────────────────────── */
+
+.start {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-header-gap);
+  /* Without this a flex item refuses to go below its content's width, and the
+     ellipsis never appears however narrow the header gets. */
+  min-width: 0;
+}
+
+.end {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-2);
+  flex-shrink: 0;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-3);
+  margin: 0;
+  font-weight: var(--ick-weight-medium);
+  font-size: var(--ick-text-lg);
+  line-height: 1.3;
+  color: var(--ick-header-title);
+}
+
+.subtitle {
+  font-size: var(--ick-text-sm);
+  line-height: 1.4;
+  color: var(--ick-header-subtitle);
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* `display: flex` on the title beats `text-overflow`, which only applies to
+     a block container. The title keeps its dot beside it by making the text
+     itself the thing that overflows. */
+  display: block;
+}
+
+.title.truncate {
+  display: block;
+}
+
+.title.truncate .status {
+  /* Back inline, since the flex row is gone. */
+  margin-right: var(--ick-space-3);
+  vertical-align: baseline;
+}
+
+/* Centred: the native arrangement. The title leaves the flow so the two side
+   regions can be different widths without pushing it off centre. */
+.center .titles {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 50%;
+  text-align: center;
+  align-items: center;
+}
+
+.center .title {
+  justify-content: center;
+}
+
+/* ── Status ─────────────────────────────────────────────────────────────── */
+
+.status {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-status-thinking);
+}
+
+.status[data-status="online"] {
+  background: var(--ick-status-online);
+}
+
+.status[data-status="busy"] {
+  background: var(--ick-status-busy);
+}
+
+.status[data-status="thinking"] {
+  background: var(--ick-status-thinking);
+  animation: pulse 1.4s var(--ick-ease) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* ── Links styled as buttons ────────────────────────────────────────────────
+   Back and any action carrying an `href`. An anchor rather than a button
+   because it navigates, and the browser's own affordances — middle click,
+   copy link, open in a tab — only exist on an anchor. It borrows the
+   `secondary` button's material so the row reads as one set of controls. */
+
+.back {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  height: 32px;
+  min-width: 32px;
+  border-radius: var(--ick-radius-pill);
+  color: var(--ick-ink);
+  text-decoration: none;
+  outline: 0.5px solid transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--ick-duration-fast) ease,
+    box-shadow var(--ick-duration-fast) ease,
+    outline-color var(--ick-duration-fast) ease,
+    transform 120ms var(--ick-ease);
+}
+
+.s .back { height: 28px; min-width: 28px; }
+.l .back { height: 40px; min-width: 40px; }
+
+.back:hover {
+  background: var(--ick-glass-gradient);
+  box-shadow: var(--ick-shadow-2);
+  outline-color: var(--ick-border-bright);
+}
+
+.back:active {
+  background: var(--ick-glass-gradient);
+  box-shadow: var(--ick-shadow-inset);
+  outline-color: var(--ick-border-bright);
+  transform: scale(0.94);
+  transition-duration: var(--ick-duration-press);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: var(--ick-space-1);
+}
+
+/* ── Badge ──────────────────────────────────────────────────────────────────
+   Decoration. The number it shows is in the button's accessible name, so a
+   reader who never sees this still hears the count. */
+
+.actionWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 var(--ick-space-2);
+  box-sizing: border-box;
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-header-badge-bg);
+  color: var(--ick-header-badge-ink);
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  font-weight: var(--ick-weight-semibold);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ── Overflow menu ──────────────────────────────────────────────────────── */
+
+.overflow {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--ick-space-3));
+  right: 0;
+  z-index: var(--ick-z-menu);
+  display: flex;
+  flex-direction: column;
+  /* Wide enough that an ordinary label — "Switch to the dark theme" — sits on
+     one line, capped so an unusually long one wraps instead of running off
+     the edge of a phone. */
+  min-width: 210px;
+  max-width: 280px;
+  padding: var(--ick-space-2);
+  border-radius: var(--ick-radius-lg);
+  background: var(--ick-surface-raised);
+  border: 1px solid var(--ick-border);
+  box-shadow: var(--ick-shadow-float);
+}
+
+.menuItem {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+  padding: var(--ick-space-3) var(--ick-space-4);
+  border-radius: var(--ick-radius-md);
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--ick-surface-active);
+}
+
+.menuItem:active:not(:disabled) {
+  background: var(--ick-surface-press);
+}
+
+.menuItem:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+.menuItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.menuItem[aria-checked="true"] {
+  background: var(--ick-surface-active);
+}
+
+.menuIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--ick-ink-soft);
+}
+
+.menuCount {
+  margin-left: auto;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-ink-faint);
+}
+
+/* ── Screen-reader only ─────────────────────────────────────────────────────
+   Clipped rather than hidden. `display: none` and `visibility: hidden` both
+   take a node out of the accessibility tree, which is the opposite of what
+   this is for. */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .status[data-status="thinking"] {
+    animation: none;
+    /* The state still has to be visible without the pulse carrying it. */
+    opacity: 0.6;
+  }
+
+  .back {
+    transition-property: background, box-shadow, outline-color;
+  }
+}

@@ -138,6 +138,26 @@ these to move one thing without moving its neighbours:
   --ick-input-h: 44px;              /* a taller composer */
   --ick-input-radius: 12px;         /* squarer, without touching other radii */
   --ick-input-fill: transparent;    /* an input with no fill at all */
+
+  --ick-header-height-m: 56px;      /* a roomier header */
+  --ick-header-bg: rgb(0 0 0 / 0.6);/* what sits behind the blur */
+  --ick-header-blur: 20px;
+  --ick-header-title: var(--ick-ink);
+  --ick-header-subtitle: var(--ick-ink-faint);
+  --ick-header-badge-bg: var(--ick-marker);   /* the count on an action */
+  --ick-header-badge-ink: var(--ick-marker-ink);
+}
+```
+
+The status dot has its own three, and they are the one part of the palette that
+does not invert: green stays green. They lift a little in the dark, where a
+mid-tone goes muddy.
+
+```css
+:root {
+  --ick-status-online: rgb(var(--ick-live-rgb));
+  --ick-status-busy: rgb(var(--ick-warn-rgb));
+  --ick-status-thinking: var(--ick-ink-faint);
 }
 ```
 
