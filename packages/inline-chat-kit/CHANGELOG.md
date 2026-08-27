@@ -6,6 +6,30 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.4.0 — 2026-08-27
+
+Additive.
+
+### Added
+
+- **`<ChatTurnRow>`.** One turn: the question as a composer that has become a
+  bubble, and the answer under it. It existed all along in the playground,
+  which meant anyone installing the package had to rewrite the one thing the
+  package is about — the README could only tell them to, and explain the memo
+  they would need.
+
+  Not named `Message`. The user half is a live input that morphs into its own
+  bubble, not a rendered record of what was typed, and that is the whole idea.
+
+  Memoised, and the memo is load-bearing: `useChatTurns` leaves untouched turns
+  referentially identical, which only pays off if the rows act on it. Every
+  callback takes the turn's id rather than being closed over per row, so a
+  consumer can hoist them and not hand the memo a new prop each render.
+
+- **Turn tokens.** `--ick-turn-gap`, and `--ick-answer-size` / `-leading` /
+  `-tracking` / `-measure` for the answer. The measure is in `ch` rather than
+  pixels, so a comfortable line length follows whatever font a brand sets.
+
 ## 0.3.0 — 2026-08-27
 
 Additive. Nothing in 0.2.0 changes behaviour.

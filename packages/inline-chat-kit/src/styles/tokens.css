@@ -290,6 +290,18 @@
     --ick-header-subtitle: var(--ick-ink-faint);
     --ick-header-badge-bg: var(--ick-marker);
     --ick-header-badge-ink: var(--ick-marker-ink);
+
+    /* ═══ Turn ══════════════════════════════════════════════════════════════
+       One question and its answer. The gap is generous on purpose: the two
+       halves are a pair, and the pairs need to read as separate from each
+       other without a rule between them. */
+
+    --ick-turn-gap: 48px;
+    --ick-answer-size: 0.75rem;
+    --ick-answer-leading: 1.7;
+    --ick-answer-tracking: 0.01em;
+    /* In characters, so it follows the font instead of fighting it. */
+    --ick-answer-measure: 56ch;
   }
 
 

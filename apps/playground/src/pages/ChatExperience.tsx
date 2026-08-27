@@ -5,6 +5,7 @@ import { Bookmark, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-reac
 import {
   Button,
   ChatHeader,
+  ChatTurnRow,
   ReplyThreadPopup,
   CustomCursor,
   defaultInlineAnimConfig,
@@ -13,7 +14,6 @@ import {
 } from "inline-chat-kit";
 import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
-import { ChatTurnRow } from "../demo/ChatTurnRow";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
 import { requestedTheme } from "../demo/showcase";
 import introStyles from "./IntroChatLanding.module.css";

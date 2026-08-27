@@ -4,9 +4,9 @@ An inline AI chat experience for React. The input **is** the message: when you
 send, the pill you typed into morphs into the bubble that holds your text, and
 the answer streams in below it. No separate composer, no jump cut.
 
-Ships the surrounding pieces too — a header for the conversation, hover
-actions on each bubble, freeform marker highlighting over streamed text, and
-reply-in-thread popups.
+Ships the surrounding pieces too — a turn row, a header for the conversation,
+hover actions on each bubble, freeform marker highlighting over streamed text,
+and reply-in-thread popups.
 
 ## Install
 
@@ -83,19 +83,35 @@ package — if your handler returns nothing, nothing is what appears.
 ### Rendering the turns
 
 ```tsx
-{turns.map((turn) => <TurnRow key={turn.id} turn={turn} onDraft={setDraft} … />)}
+{turns.map((turn, i) => {
+  const isActive = i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing");
+  return (
+    <ChatTurnRow
+      key={turn.id}
+      turn={turn}
+      isActiveInput={isActive}
+      onDraft={setDraft}
+      onSubmit={submit}
+      onStop={stop}
+      onEdit={beginEdit}
+      onCancelEdit={cancelEdit}
+    />
+  );
+})}
 ```
 
-**Wrap the row in `React.memo`.** The hook already leaves untouched turns
-referentially identical when it updates one of them, but that only pays off if
-the rows can act on it — otherwise every turn re-renders on every frame of every
-answer, and the cost grows with the length of the conversation. Measured in the
-playground: without the memo, streaming one answer produced 366 DOM mutations
-inside an unrelated, already-finished turn. With it, zero.
+`ChatTurnRow` is already memoised, and that memo is load-bearing. The hook
+leaves untouched turns referentially identical when it rewrites one of them,
+but that only pays off if the rows act on it — otherwise every turn re-renders
+on every frame of every answer, and the cost grows with the conversation.
+Measured before the memo existed: streaming one answer produced 366 DOM
+mutations inside an unrelated, already-finished turn. With it, zero.
 
-For the same reason, pass the hook's callbacks straight through rather than
-wrapping them in inline arrows. They are stable; an arrow created during render
-is not, and defeats the memo.
+Which is why the callbacks take the turn's id rather than being closed over per
+row. Pass the hook's own functions straight through — they are stable. An arrow
+created during render is not, and hands the memo a new prop every time.
+
+If you write your own row instead, wrap it in `React.memo` and do the same.
 
 ## The four states
 
@@ -130,6 +146,34 @@ choreography by moving between these values:
 | `style` | `React.CSSProperties` | |
 
 `ref` exposes `focus()`, `setValue(v)` and `getValue()` via `ChatInputHandle`.
+
+### `<ChatTurnRow>`
+
+One turn: the question as a composer that has become a bubble, and the answer
+beneath it. Not `Message`, because it is not one — the user half is a live
+input that morphs into its own bubble rather than a record of what was typed.
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `turn` | `ChatTurn` | | Required. Straight from `useChatTurns` |
+| `isActiveInput` | `boolean` | `false` | This row owns the live composer |
+| `inputRef` | `Ref<ChatInputHandle>` | `null` | For `focus()` |
+| `placeholder` | `string` | | |
+| `animationConfig` | `InlineAnimConfig` | | Passed to the input |
+| `entranceDelay` | `number` | `0` | Stagger, in seconds |
+| `selectionMode` | `"marker" \| "precise"` | `"marker"` | Passed to the highlighter |
+| `onDraft` | `(id, value) => void` | | |
+| `onSubmit` | `(id, value) => void` | | |
+| `onStop` | `() => void` | | |
+| `onEdit` | `(id) => void` | | |
+| `onCancelEdit` | `(id) => void` | | |
+| `onCopy` | `(value) => void` | writes to the clipboard | |
+| `onHighlight` | `(turnId, text) => void` | | A passage was marked |
+| `onReplyInThread` | `(text, rect) => void` | | Open a thread on the marked passage |
+
+Every callback is optional; a row with none of them renders and can be marked.
+The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
+while its answer is arriving.
 
 ### `<ChatHeader>`
 
