@@ -504,6 +504,26 @@ whose colours are the mark, and the perf HUD, which is deliberately the same
 dark panel in either theme, because a measuring instrument that changes with
 the thing it measures is a poor one.
 
+### D5b · The spaces between words — done
+
+Reported from a screenshot: some lines of an answer were indented by a
+character and some were not.
+
+The highlighter renders one `<span>` per token, words *and* the spaces between
+them, all `display: inline-block`. Words need that — a transform does nothing
+to a non-replaced inline box, and the press state scales them. Spaces do not,
+and being an atomic box cost them the one thing a space does at a line break:
+**hang**. A line breaking *before* a space put that space at the start of the
+next line and pushed the whole line a character right. Two of six lines.
+
+- [x] Spaces are marked and stay `display: inline`
+- [x] Lines are flush left, measured — and the paragraph breaks later, because
+      atomic space boxes had been constraining where it could break at all
+- [x] Marker drawing, the word cursor and the selection tint all still span
+      the gaps; checked with a real drag
+- [x] Two tests: that the spaces are marked, and that a rule keeps them inline.
+      The second reads the stylesheet and fails if `inline-block` comes back.
+
 ## Later
 
 - [x] **Touch — done.** `touch-action: none` on every answer meant a finger

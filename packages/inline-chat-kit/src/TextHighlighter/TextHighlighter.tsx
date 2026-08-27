@@ -681,6 +681,7 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
               key={i}
               data-index={i}
               className={styles.token}
+              data-space={token.trim() ? undefined : true}
               data-active={isPartOfActiveHighlight || undefined}
               data-pressed={isPartOfPressed || undefined}
               data-kbd-cursor={caret === i || undefined}
