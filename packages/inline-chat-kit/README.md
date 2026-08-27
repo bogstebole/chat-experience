@@ -178,26 +178,44 @@ follow.
 
 ## Theming
 
-Every colour, font and surface the kit reads is defined in a
-`@layer inline-chat-kit` cascade layer, so **any unlayered rule in your app
-overrides it** regardless of import order. Redefine what you want on `:root`:
+The kit reads CSS custom properties, all prefixed `--ick-`. That is the whole
+interface: no provider, no build step. They sit in a `@layer inline-chat-kit`
+cascade layer, so **any unlayered rule in your app wins** regardless of import
+order.
+
+Colours are built from channel triplets, so a handful of lines moves everything
+derived from them:
 
 ```css
 :root {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --ink: #0a0a0a;
-  --ink-soft: rgba(10, 10, 10, 0.6);
-  --ink-faint: rgba(10, 10, 10, 0.4);
-  --surface-hover: rgba(10, 10, 10, 0.04);
-  --surface-active: rgba(10, 10, 10, 0.06);
-  --surface-press: rgba(10, 10, 10, 0.1);
-  --color-text-glass: rgba(0, 0, 0, 0.72);
+  --ick-ink-rgb: 20 20 24;        /* text, hovers, borders */
+  --ick-paper-rgb: 253 252 250;   /* surfaces, and the light side of glass */
+  --ick-marker-rgb: 120 200 255;  /* the highlighter */
+  --ick-font-sans: "Inter", system-ui, sans-serif;
+  --ick-radius-xl: 12px;
 }
 ```
 
-The kit also reads `--font-geist-sans`, `--font-geist-mono` and
-`--font-jetbrains-mono`; point them at your own stacks, or at the CSS variables
-a font loader hands you.
+Note the spaces rather than commas — they are used as
+`rgb(var(--ick-ink-rgb) / 0.6)`.
+
+If a font loader hands you a CSS variable, point the kit at it:
+
+```css
+:root {
+  --ick-font-sans: var(--font-geist-sans);
+  --ick-font-mono: var(--font-geist-mono);
+}
+```
+
+**Dark** follows `prefers-color-scheme` on its own. Set `data-theme="light"` or
+`data-theme="dark"` on the root element to pin it; `.light` and `.dark` work
+too, for projects that already have them.
+
+[theming.md](./theming.md) has the rest — the per-component tokens, how to
+adjust dark without touching light, and the two values that deliberately do not
+follow the theme. The complete list, resolved live, is the first entry in
+Storybook.
 
 ## Tuning the motion
 
@@ -223,27 +241,123 @@ import { ChatInput, defaultInlineAnimConfig } from "inline-chat-kit";
 Works in the App Router as-is — the bundle carries a `"use client"` directive.
 Import the stylesheet from a client component or your root layout.
 
+A route handler that streams, and the `onSend` that reads it:
+
+```ts
+// app/api/chat/route.ts
+import Anthropic from "@anthropic-ai/sdk";
+
+const anthropic = new Anthropic();
+
+export async function POST(request: Request) {
+  const { message, quotedText } = await request.json();
+
+  const stream = anthropic.messages.stream({
+    model: "claude-sonnet-5",
+    max_tokens: 1024,
+    // The passage a thread hangs off, when there is one.
+    system: quotedText
+      ? `The reader highlighted this passage and is asking about it:\n\n${quotedText}`
+      : undefined,
+    messages: [{ role: "user", content: message }],
+  });
+
+  return new Response(
+    new ReadableStream({
+      async start(controller) {
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            controller.enqueue(new TextEncoder().encode(event.delta.text));
+          }
+        }
+        controller.close();
+      },
+    }),
+    { headers: { "content-type": "text/plain; charset=utf-8" } }
+  );
+}
+```
+
+```tsx
+"use client";
+
+const { turns, setDraft, submit, stop } = useChatTurns({
+  onSend: async function* (message, { signal }) {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message }),
+      signal,
+    });
+    if (!response.ok) throw new Error(`chat failed: ${response.status}`);
+    // `signal` aborts the request when the reader presses stop, which ends
+    // this loop and settles the turn with whatever had already arrived.
+    yield* response.body!.pipeThrough(new TextDecoderStream());
+  },
+});
+```
+
+`ReplyThreadPopup` takes the same shape with the quoted passage as a second
+argument:
+
+```tsx
+<ReplyThreadPopup
+  activeReply={activeReply}
+  onClose={() => setActiveReply(null)}
+  onSendMessage={async function* (message, quotedText, { signal }) {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message, quotedText }),
+      signal,
+    });
+    yield* response.body!.pipeThrough(new TextDecoderStream());
+  }}
+/>
+```
+
 ## Contributing
 
 ```bash
 npm install
-npm test          # 53 tests, jsdom
+npm test              # 167 tests, jsdom
 npm run lint
 npm run build
+npm run storybook --workspace packages/inline-chat-kit
 ```
 
-Tests cover the controlled contract of `ChatInput`, the export surface, the
-button semantics, and `ReplyThreadPopup`'s `onSendMessage` hook.
+**Storybook is the source of truth for what this looks like.** A component
+change is not finished until its story shows it — and that is enforced rather
+than remembered: one test fails when something is exported without a story, and
+CI builds Storybook so a story that has drifted out of step fails there.
 
-They deliberately stop at the edge of what jsdom can honestly answer. It has no
-layout engine and does not implement contenteditable editing, so the wrap
-thresholds, the overflow fade, and the marker's hit-testing are not asserted
-here — a passing tick for those would be a lie about untested code. Those live
-in the playground, with a real pointer and a real display.
+A second guard fails when a literal colour appears anywhere outside
+`styles/tokens.css`. Its exception list carries a reason per entry, because a
+list of paths to ignore becomes a list of things nobody looks at.
 
-`TextHighlighter` carries one regression guard worth knowing about: it asserts
-that token spans have no inline styles at rest. Motion writes styles onto
-elements it drives, so if that test fails, per-word animation has come back.
+The tests stop at the edge of what jsdom can honestly answer. It has no layout
+engine and does not implement contenteditable editing, so the wrap thresholds,
+the overflow fade and the marker's hit-testing are not asserted there — a
+passing tick for those would be a lie about untested code. They live in the
+playground, with a real pointer and a real display.
+
+`TextHighlighter` carries one regression guard worth knowing about: token spans
+must have no inline styles at rest. Motion writes styles onto elements it
+drives, so if that test fails, per-word animation has come back — and it cost
+350 style writes per menu open the last time.
+
+### Releasing
+
+Versions before 1.0 follow the pre-release convention: a breaking change bumps
+the **minor**, a fix bumps the patch.
+
+```bash
+npm version minor --workspace packages/inline-chat-kit
+npm run pack:kit
+```
+
+Write the entry in [CHANGELOG.md](./CHANGELOG.md) first, and put anything that
+would break an existing install under **Breaking** with what to do about it.
 
 ## License
 

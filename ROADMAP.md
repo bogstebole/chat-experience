@@ -514,7 +514,14 @@ mux webm and nothing else, and macOS's `avconvert` cannot read VP8.
       pointerdown, ten moves, pointerup and a marker; a downward drag gives
       pointerdown, one move, `pointercancel`, and no marker. Still worth a
       minute on a real phone for feel, but the behaviour is settled.
-- [ ] **Versioning:** no `CHANGELOG`, no release process, no published version
-- [ ] **README:** no worked example against a real API (Next.js App Router route
-      handler → `onSend`)
+- [x] **Versioning — done.** `0.2.0`, a `CHANGELOG` with the breaking changes
+      and what to do about each, and a release section in the README. Before
+      1.0 a breaking change bumps the minor. `CHANGELOG.md` and `theming.md`
+      ship in the tarball; `files` was `dist` only, so neither would have
+      reached anyone installing it.
+- [x] **README — done.** The theming section was still documenting the old
+      unprefixed tokens, which had been wrong since D1. Rewritten, plus a
+      worked Next.js example: a route handler that streams from a model, the
+      `onSend` that reads it, and the same shape for a thread with its quoted
+      passage. The contributing section said 53 tests; there are 167.
 - [ ] **Push to origin** — nothing has been pushed yet
