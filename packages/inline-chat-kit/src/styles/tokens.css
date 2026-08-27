@@ -24,7 +24,17 @@
    ───────────────────────────────────────────── */
 
 @layer inline-chat-kit {
-  :root {
+  /* `.ick-theme` alongside `:root` throughout, so a brand can be applied to a
+     subtree and not only to the page.
+     
+     It has to be spelled out rather than inherited: a derived token like
+     `--ick-marker` is substituted where it is *declared*, and its finished
+     value is what inherits. Overriding `--ick-marker-rgb` further down the
+     tree would therefore change nothing. Repeating the declarations for the
+     class is what makes them recompute there. Only elements carrying it pay
+     for it. */
+  :root,
+  .ick-theme {
     /* ═══ Primitives ═══════════════════════════════════════════════════════
        Raw values. Components should not read these directly. */
 
@@ -276,7 +286,8 @@
      Values that reference `--ick-ink-rgb` resolve against the root's own,
      which is the dark one by the time either rule applies. */
 
-  :root {
+  :root,
+  .ick-theme {
     --ick-dark-ink-rgb: 245 245 245;
     --ick-dark-paper-rgb: 18 18 18;
     --ick-dark-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
@@ -371,7 +382,8 @@
      Tailwind projects already have it. */
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]):not(.light) {
+    :root:not([data-theme="light"]):not(.light),
+    .ick-theme:not([data-theme="light"]):not(.light) {
       --ick-ink-rgb: var(--ick-dark-ink-rgb);
       --ick-paper-rgb: var(--ick-dark-paper-rgb);
       --ick-ink-glass: var(--ick-dark-ink-glass);
@@ -397,7 +409,9 @@
   }
 
   :root[data-theme="dark"],
-  :root.dark {
+  :root.dark,
+  .ick-theme[data-theme="dark"],
+  .ick-theme.dark {
     --ick-ink-rgb: var(--ick-dark-ink-rgb);
     --ick-paper-rgb: var(--ick-dark-paper-rgb);
     --ick-ink-glass: var(--ick-dark-ink-glass);
@@ -428,7 +442,8 @@
      component stops reading them — they are the collision the prefix exists
      to end, and keeping them would defeat the point. */
 
-  :root {
+  :root,
+  .ick-theme {
     --font-sans: var(--ick-font-sans);
     --font-geist-sans: var(--ick-font-sans);
     --font-geist-mono: var(--ick-font-mono);

@@ -212,6 +212,10 @@ If a font loader hands you a CSS variable, point the kit at it:
 `data-theme="dark"` on the root element to pin it; `.light` and `.dark` work
 too, for projects that already have them.
 
+Overrides go on `:root` for the whole page, or on any element with
+`class="ick-theme"` for a subtree — the class is what makes the derived tokens
+recompute there.
+
 [theming.md](./theming.md) has the rest — the per-component tokens, how to
 adjust dark without touching light, and the two values that deliberately do not
 follow the theme. The complete list, resolved live, is the first entry in
