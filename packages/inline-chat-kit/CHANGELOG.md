@@ -12,10 +12,10 @@ Additive. Nothing in 0.2.0 changes behaviour.
 
 ### Added
 
-- **`<ChatHeader>`.** The chrome above a conversation: title, subtitle, status
-  dot, back, and a row of actions. Three materials (`plain`, `glass`,
-  `bordered`), three sizes (40 / 48 / 56px), and a centred arrangement for the
-  native/mobile pattern.
+- **`<ChatHeader>`.** The chrome above a conversation: title, subtitle, avatar,
+  back, and a row of actions. Three materials (`plain`, `glass`, `bordered`),
+  three sizes (40 / 48 / 56px), and a centred arrangement for the native/mobile
+  pattern.
 
   Actions are described rather than passed as children:
 
@@ -31,10 +31,10 @@ Additive. Nothing in 0.2.0 changes behaviour.
   `label` is required, and a `count` is folded into it: the badge on the glyph
   is `aria-hidden`, so without that a reader would never learn the number.
 
-- **Header and status tokens.** `--ick-header-*` for height, padding, backdrop,
-  title, subtitle and badge; `--ick-status-online` / `-busy` / `-thinking` for
-  the dot, built on two new channels (`--ick-live-rgb`, `--ick-warn-rgb`) that
-  do not invert with the theme, only lift.
+- **Header tokens.** `--ick-header-*` for height, padding, gap, backdrop, blur,
+  border, title, subtitle and the count badge — twelve, plus one that restates
+  the backdrop for the dark theme, where a lighter wash still shows the text
+  scrolling underneath.
 
 ## 0.2.0 — 2026-08-26
 

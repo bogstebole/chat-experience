@@ -16,7 +16,6 @@ const meta: Meta<typeof ChatHeader> = {
     variant: { control: "inline-radio", options: ["plain", "glass", "bordered"] },
     size: { control: "inline-radio", options: ["s", "m", "l"] },
     align: { control: "inline-radio", options: ["start", "center"] },
-    status: { control: "inline-radio", options: [null, "online", "busy", "thinking"] },
     headingLevel: { control: "inline-radio", options: [1, 2, 3, 4, 5, 6, false] },
   },
   args: {
@@ -60,7 +59,7 @@ const Frame = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 export const Playground: Story = {
-  args: { actions: ACTIONS.slice(0, 2), status: "online" },
+  args: { actions: ACTIONS.slice(0, 2) },
 };
 
 /** The three materials. `plain` grows its own border only once content scrolls under it. */
@@ -99,22 +98,6 @@ export const Alignment: Story = {
       <Frame label="center">
         <ChatHeader {...args} align="center" actions={ACTIONS.slice(0, 2)} />
       </Frame>
-    </div>
-  ),
-};
-
-/**
- * The dot is a picture of the state and carries no text of its own; the word
- * beside each one here is what a screen reader is given.
- */
-export const Status: Story = {
-  render: (args) => (
-    <div>
-      {(["online", "busy", "thinking"] as const).map((status) => (
-        <Frame key={status} label={status}>
-          <ChatHeader {...args} status={status} subtitle={`Claude Opus 5 · ${status}`} />
-        </Frame>
-      ))}
     </div>
   ),
 };
@@ -233,8 +216,7 @@ function DemoHeader(args: React.ComponentProps<typeof ChatHeader>) {
       <ChatHeader
         {...args}
         variant="glass"
-        status="thinking"
-        subtitle="Claude Opus 5 · answering"
+        subtitle="Claude Opus 5"
         actions={[
           {
             id: "bookmarks",

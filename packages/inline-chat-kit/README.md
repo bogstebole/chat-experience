@@ -140,7 +140,6 @@ handful of things you can do to the whole thread.
 <ChatHeader
   title={firstQuestion}
   subtitle="Claude Opus 5"
-  status={isStreaming ? "thinking" : null}
   backHref="/"
   actions={[
     { id: "bookmarks", label: "Saved highlights", icon: <Bookmark size={16} />, count: 3, pinned: true },
@@ -156,8 +155,6 @@ handful of things you can do to the whole thread.
 | `title` | `ReactNode` | | What the conversation is about |
 | `subtitle` | `ReactNode` | | Second line — the model, a count, a state |
 | `avatar` | `ReactNode` | | Drawn before the title |
-| `status` | `"online" \| "busy" \| "thinking" \| null` | `null` | A dot beside the title |
-| `statusLabel` | `string` | the status word | What the dot means, spoken |
 | `headingLevel` | `1`–`6` \| `false` | `2` | The level belongs to your document |
 | `truncate` | `boolean` | `true` | Long titles get an ellipsis, not a second line |
 | `onBack` | `() => void` | | Renders a back button |

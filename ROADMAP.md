@@ -538,7 +538,7 @@ that made it props-driven — has since **removed** `live` and `MenuIcon`. So:
 props for the common case, one slot for everything else, and nothing named
 after a specific button.
 
-- [x] Title, subtitle, avatar, status dot, back, actions
+- [x] Title, subtitle, avatar, back, actions
 - [x] Three materials, three sizes (40/48/56), start and centre alignment
 - [x] `headingLevel`, because the level belongs to the host's document, and
       `landmark`, because a header inside a panel is not the page's banner
@@ -553,9 +553,8 @@ after a specific button.
 - [x] `count` is folded into the accessible name. The badge is `aria-hidden`,
       so without that a reader is told "Saved highlights" and never learns
       there are three.
-- [x] Fourteen new tokens, none literal: `--ick-header-*`, plus the status
-      dot on two channels that do not invert with the theme, only lift.
-- [x] 32 tests, 3 more axe cases, 8 stories, README and theming.md. `0.3.0`.
+- [x] Thirteen new tokens, none literal, all `--ick-header-*`.
+- [x] 29 tests, 3 more axe cases, 7 stories, README and theming.md. `0.3.0`.
 
 One bug the tests caught, and it was not a test artifact: `elevateOnScroll`
 told window from element with `instanceof Window`, which is a realm check —
@@ -569,8 +568,20 @@ against the object `scrollParent` just returned.
 - [x] The title is the **first question actually asked**, not a fixed label —
       matched on turn state, because the turn's text is written on every
       keystroke and matching on text alone retitled the page letter by letter
-- [x] The status dot pulses while an answer is streaming
 - [x] Two dead CSS rules removed; the page now says only where the header sits
+
+### E3 · The status dot, removed
+
+Shipped in E1 as a `status` prop and taken out the same day, unasked for and
+unused. A green dot is standard in a *messaging* header, where it says the
+other person is there; in an AI chat there is nobody to be online, and the one
+honest reading — an answer is streaming — is already carried by the answer
+appearing. Surface nobody asked for is surface somebody later has to support.
+
+- [x] `status`, `statusLabel`, `ChatHeaderStatus` and the dot gone
+- [x] With them, five tokens and two colour channels: the palette no longer
+      carries a green and an amber for one dot
+- [x] `.srOnly` went too — it existed to name the dot and nothing else
 
 ## Later
 

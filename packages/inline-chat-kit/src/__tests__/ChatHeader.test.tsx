@@ -72,24 +72,6 @@ describe("the title", () => {
   });
 });
 
-describe("the status dot", () => {
-  it("says in words what the colour shows", () => {
-    render(<ChatHeader title="Chat" status="thinking" />);
-    expect(screen.getByText("thinking")).toBeInTheDocument();
-  });
-
-  it("takes a spoken label of its own", () => {
-    render(<ChatHeader title="Chat" status="online" statusLabel="Connected" />);
-    expect(screen.getByText("Connected")).toBeInTheDocument();
-    expect(screen.queryByText("online")).not.toBeInTheDocument();
-  });
-
-  it("is absent when there is no status", () => {
-    const { container } = render(<ChatHeader title="Chat" />);
-    expect(container.querySelector("[data-status]")).toBeNull();
-  });
-});
-
 describe("going back", () => {
   it("is an anchor when it navigates, so the browser's own affordances work", () => {
     render(<ChatHeader title="Chat" backHref="/" />);

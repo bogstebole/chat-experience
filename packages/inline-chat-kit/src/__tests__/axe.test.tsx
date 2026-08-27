@@ -149,12 +149,11 @@ describe("axe — the header", () => {
     { id: "settings", label: "Settings", icon: <Settings size={16} aria-hidden /> },
   ];
 
-  it("passes with a title, a status and named actions", async () => {
+  it("passes with a title, a subtitle and named actions", async () => {
     const { container } = render(
       <ChatHeader
         title="Particle physics"
         subtitle="Claude Opus 5"
-        status="thinking"
         backHref="/"
         actions={actions}
       />
