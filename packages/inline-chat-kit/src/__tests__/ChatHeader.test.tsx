@@ -335,3 +335,38 @@ describe("elevation", () => {
     expect(container.firstElementChild).not.toHaveAttribute("data-scrolled");
   });
 });
+
+describe("the materials, read out of the stylesheet", () => {
+  /**
+   * A sticky header has content moving underneath it, so what it is made of is
+   * not decoration. `bordered` was transparent, and the answer scrolled
+   * straight through the title. Read from the rule rather than a render,
+   * because jsdom does not paint and this is exactly the kind of thing that
+   * comes back once nobody is looking at it.
+   */
+  const block = (css: string, selector: string) => {
+    const at = css.indexOf(`${selector} {`);
+    return at === -1 ? "" : css.slice(at, css.indexOf("}", at));
+  };
+
+  const sheet = async () =>
+    (await import("../ChatHeader/ChatHeader.module.css?raw")).default as string;
+
+  it("gives `bordered` something to hide the content behind it", async () => {
+    const rule = block(await sheet(), ".bordered");
+    expect(rule).toContain("background: var(--ick-surface)");
+    expect(rule).not.toContain("transparent");
+  });
+
+  it("leaves `plain` transparent until something scrolls under it", async () => {
+    const css = await sheet();
+    expect(block(css, ".plain")).toContain("background: transparent");
+    expect(css).toContain(".plain[data-scrolled]");
+  });
+
+  it("keeps `glass` translucent, which is what makes the blur mean anything", async () => {
+    const rule = block(await sheet(), ".glass");
+    expect(rule).toContain("var(--ick-header-bg)");
+    expect(rule).toContain("backdrop-filter");
+  });
+});

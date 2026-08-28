@@ -62,14 +62,118 @@ export const Playground: Story = {
   args: { actions: ACTIONS.slice(0, 2) },
 };
 
-/** The three materials. `plain` grows its own border only once content scrolls under it. */
+/**
+ * A column with something to scroll, so a sticky header has content passing
+ * under it. On a blank page all three materials look identical, which is the
+ * whole reason this scaffolding exists.
+ */
+function Scroller({
+  children,
+  height = 260,
+}: {
+  children: React.ReactNode;
+  height?: number;
+}) {
+  return (
+    <div
+      style={{
+        height,
+        overflowY: "auto",
+        border: "1px dashed var(--ick-border)",
+        borderRadius: 12,
+        background: "var(--ick-surface)",
+      }}
+    >
+      {children}
+      <div style={{ padding: "0 16px 24px" }}>
+        {Array.from({ length: 8 }, (_, i) => (
+          <p
+            key={i}
+            style={{
+              margin: "0 0 12px",
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: "var(--ick-ink-soft)",
+            }}
+          >
+            The Standard Model organises{" "}
+            {/* Something with a colour in it. Over a flat white column, glass
+                and bordered are the same picture — a blur needs something to
+                blur, and uniform grey text is not it. */}
+            <mark style={{ background: "var(--ick-marker)", color: "var(--ick-marker-ink)" }}>
+              twelve fermions — six quarks and six leptons
+            </mark>{" "}
+            plus the force-carrying bosons into a single coherent framework.
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The three materials, each with text running underneath.
+ *
+ * - **plain** is nothing at all until something scrolls under it, and then it
+ *   grows a backdrop and a hairline. Chrome that stays out of the way.
+ * - **bordered** keeps its hairline whether or not anything has moved.
+ * - **glass** is frosted the whole time; the text passing beneath it blurs.
+ *
+ * Scroll each one. Still, they are three headers on a page; moving, they are
+ * three different answers to "should this line be here yet".
+ */
 export const Variants: Story = {
   render: (args) => (
     <div>
       {(["plain", "bordered", "glass"] as ChatHeaderVariant[]).map((variant) => (
-        <Frame key={variant} label={variant}>
-          <ChatHeader {...args} variant={variant} actions={ACTIONS.slice(0, 2)} />
-        </Frame>
+        <div key={variant} style={{ marginBottom: 28 }}>
+          <div
+            style={{
+              marginBottom: 6,
+              fontFamily: "var(--ick-font-mono)",
+              fontSize: 11,
+              color: "var(--ick-ink-faint)",
+            }}
+          >
+            {variant} — scroll the column
+          </div>
+          <Scroller>
+            <ChatHeader {...args} variant={variant} sticky actions={ACTIONS.slice(0, 2)} />
+          </Scroller>
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/**
+ * The same three with the column scrolled, which is the state that separates
+ * them: `plain` has grown the backdrop it did not have, and `glass` is
+ * blurring the marked text passing behind it rather than hiding it.
+ *
+ * Identical to `Variants` apart from the shorter column — the screenshot tool
+ * scrolls it before capturing, so this is a still of a real scroll position
+ * rather than an attribute set by hand.
+ */
+export const VariantsScrolled: Story = {
+  render: (args) => (
+    <div>
+      {(["plain", "bordered", "glass"] as ChatHeaderVariant[]).map((variant) => (
+        <div key={variant} style={{ marginBottom: 28 }}>
+          <div
+            style={{
+              marginBottom: 6,
+              fontFamily: "var(--ick-font-mono)",
+              fontSize: 11,
+              color: "var(--ick-ink-faint)",
+            }}
+          >
+            {variant} — scrolled
+          </div>
+          <Scroller height={200}>
+            <ChatHeader {...args} variant={variant} sticky actions={ACTIONS.slice(0, 2)} />
+          </Scroller>
+        </div>
       ))}
     </div>
   ),

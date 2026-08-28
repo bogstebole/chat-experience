@@ -97,6 +97,24 @@ const SHOTS = [
     themes: ["light", "dark"],
   },
   {
+    name: "header-variants-scrolled",
+    story: "components-chatheader--variants-scrolled",
+    themes: ["light", "dark"],
+    /**
+     * Actually scroll each column. Setting `data-scrolled` by hand produced a
+     * still where nothing was behind the header — which is the one thing the
+     * shot needs to show, since a blur with nothing under it is just a tint.
+     */
+    act: async (page) => {
+      await page.evaluate(() => {
+        document.querySelectorAll("div").forEach((el) => {
+          if (el.scrollHeight > el.clientHeight + 20) el.scrollTop = 90;
+        });
+      });
+      await page.waitForTimeout(500);
+    },
+  },
+  {
     name: "header-collapsing",
     story: "components-chatheader--collapsing",
     themes: ["light"],

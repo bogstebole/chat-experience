@@ -6,6 +6,24 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.5.1 — 2026-08-28
+
+### Fixed
+
+- **`<ChatHeader variant="bordered">` is opaque.** It was transparent with a
+  hairline under it, so a sticky header had the conversation scrolling visibly
+  through its own title. It now sits on `--ick-surface`, which is also what
+  separates it from `glass`: a panel with a line under it, rather than a
+  frosted pane.
+
+  Found by fixing the Storybook story rather than the component. The three
+  materials were being shown on a blank page with nothing under them, where
+  all three look identical — so the story now scrolls real content beneath a
+  sticky header, and the bug was in the first frame of it.
+
+  Three tests read the rules out of the stylesheet, since jsdom does not paint
+  and this is the kind of thing that comes back once nobody is looking.
+
 ## 0.5.0 — 2026-08-28
 
 ### Breaking
