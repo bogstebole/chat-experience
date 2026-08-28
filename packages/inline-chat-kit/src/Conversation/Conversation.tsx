@@ -26,6 +26,26 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
   /** The button offering a way back. `false` for none. */
   scrollButton?: boolean;
   scrollButtonLabel?: string;
+  /**
+   * The id of an element to hold at the top of the view — a turn, usually.
+   *
+   * Without it the view follows the end of the content, which is what a chat
+   * that stacks downwards wants. With it, the named element is brought to the
+   * top and **held** there while the answer grows underneath, so a reader sees
+   * their question and its answer and nothing else. Change the id and the view
+   * moves to the new one.
+   *
+   * This needs room to scroll into: an element cannot be brought to the top of
+   * a container that ends just below it. That is what a large bottom padding
+   * on the viewport is for.
+   */
+  anchorId?: string;
+  /**
+   * How far below the top edge the anchor sits, in pixels. A fixed header over
+   * the conversation is the usual reason — without it the turn is scrolled
+   * neatly underneath and out of sight.
+   */
+  anchorOffset?: number;
   /** Switch the whole thing off and it is a plain scroll container. */
   follow?: boolean;
   /**
@@ -63,6 +83,8 @@ const THRESHOLD = 64;
 export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(function Conversation(
   {
     children,
+    anchorId,
+    anchorOffset = 0,
     threshold = THRESHOLD,
     scrollButton = true,
     scrollButtonLabel = "Jump to the latest",
@@ -89,17 +111,40 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     return Math.max(0, inner.offsetTop + inner.offsetHeight - view.clientHeight);
   }, []);
 
+  /**
+   * Where the view wants to be: the anchor's top when there is one, otherwise
+   * the end of the content.
+   *
+   * Clamped to what the container can actually scroll. An anchor near the
+   * bottom cannot be brought to the top of a container that ends just below
+   * it — the answer is then "as far as it goes", and the padding under the
+   * conversation is what makes "as far as it goes" far enough.
+   */
+  const target = useCallback(() => {
+    const view = viewport.current;
+    if (!view) return 0;
+
+    if (anchorId) {
+      const el = view.querySelector<HTMLElement>(`[id="${CSS.escape(anchorId)}"]`);
+      if (el) {
+        const max = Math.max(0, view.scrollHeight - view.clientHeight);
+        return Math.max(0, Math.min(el.offsetTop - anchorOffset, max));
+      }
+    }
+    return endOfContent();
+  }, [anchorId, anchorOffset, endOfContent]);
+
   const jump = useCallback(
     (smooth: boolean) => {
       const view = viewport.current;
       if (!view) return;
       view.scrollTo({
-        top: endOfContent(),
+        top: target(),
         behavior: smooth && !prefersReducedMotion() ? "smooth" : "auto",
       });
       setFollowing(true);
     },
-    [endOfContent]
+    [target]
   );
 
   /* ── Keeping up ────────────────────────────────────────────────────────
@@ -113,14 +158,17 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     if (!view || !inner || typeof ResizeObserver === "undefined") return;
 
     const keepUp = () => {
-      view.scrollTop = endOfContent();
+      view.scrollTop = target();
     };
     keepUp();
 
     const observer = new ResizeObserver(keepUp);
     observer.observe(inner);
     return () => observer.disconnect();
-  }, [follow, following, endOfContent]);
+    /* `anchorId` is in here on purpose: a new turn means the view moves to it,
+       and it moves whether or not the reader had scrolled away from the last
+       one. Sending a message is asking to be taken to it. */
+  }, [follow, following, target, anchorId]);
 
   /* ── Letting go ────────────────────────────────────────────────────────
      Intent, read from the input rather than inferred from the scroll event.
@@ -132,14 +180,23 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     if (!view) return;
 
     const away = () => {
-      if (view.scrollTop < endOfContent() - threshold) setFollowing(false);
+      if (Math.abs(view.scrollTop - target()) > threshold) setFollowing(false);
     };
 
     const onWheel = (event: WheelEvent) => {
-      if (event.deltaY < 0) setFollowing(false);
+      // Upwards means "not here" only when the place to be is above. With an
+      // anchor held at the top, scrolling up is often how a reader returns to
+      // it, so the distance decides rather than the direction.
+      if (anchorId) away();
+      else if (event.deltaY < 0) setFollowing(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (["ArrowUp", "PageUp", "Home"].includes(event.key)) setFollowing(false);
+      if (["ArrowUp", "PageUp", "Home", "ArrowDown", "PageDown", "End"].includes(event.key)) {
+        // Same reasoning: with an anchor, any key that moves the view is only
+        // "away" if it lands somewhere else.
+        if (anchorId) requestAnimationFrame(away);
+        else if (["ArrowUp", "PageUp", "Home"].includes(event.key)) setFollowing(false);
+      }
     };
 
     view.addEventListener("wheel", onWheel, { passive: true });
@@ -150,7 +207,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       view.removeEventListener("touchmove", away);
       view.removeEventListener("keydown", onKey);
     };
-  }, [follow, threshold, endOfContent]);
+  }, [follow, threshold, target, anchorId]);
 
   /** Back at the end by any route — dragging the bar, momentum, the button. */
   const handleScroll = useCallback(
@@ -159,9 +216,9 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       if (!follow) return;
       const view = viewport.current;
       if (!view) return;
-      if (view.scrollTop >= endOfContent() - threshold) setFollowing(true);
+      if (Math.abs(view.scrollTop - target()) <= threshold) setFollowing(true);
     },
-    [follow, onScroll, threshold, endOfContent]
+    [follow, onScroll, threshold, target]
   );
 
   const detached = follow && !following;

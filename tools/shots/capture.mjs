@@ -87,6 +87,16 @@ const SHOTS = [
     },
   },
   {
+    name: "conversation-anchored",
+    story: "components-conversation--anchored-to-a-turn",
+    themes: ["light"],
+    /** Two turns, so the second has to travel to the top to be held there. */
+    act: async (page) => {
+      await page.getByRole("button", { name: "send a message" }).click();
+      await page.waitForTimeout(3200);
+    },
+  },
+  {
     name: "conversation-following",
     story: "components-conversation--with-padding-below",
     themes: ["light"],
@@ -191,6 +201,14 @@ const APP_SHOTS = [
         { polling: 300, timeout: 30000 }
       );
       await page.waitForTimeout(400);
+
+      // A second turn: the first is what proves nothing, since it is already
+      // at the top. This one has to travel there.
+      const next = page.locator("[contenteditable]").last();
+      await next.click();
+      await page.keyboard.type("How big is the Higgs boson?", { delay: 8 });
+      await page.getByRole("button", { name: /send message/i }).last().click();
+      await page.waitForTimeout(1400);
     },
   },
 ];

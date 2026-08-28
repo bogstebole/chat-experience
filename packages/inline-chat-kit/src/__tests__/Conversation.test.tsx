@@ -263,3 +263,138 @@ describe("the way back", () => {
     expect(screen.getByRole("button", { name: "Back to the newest" })).toBeInTheDocument();
   });
 });
+
+describe("holding a turn at the top", () => {
+  /**
+   * The behaviour this kit is built around: sending a message takes you to it,
+   * and it stays there while the answer arrives underneath. What is on screen
+   * is your question and its answer — not the whole conversation shoved up
+   * from below, with the composer ending the run somewhere past the fold.
+   */
+  const withTurns = (anchorId?: string, anchorOffset = 0) =>
+    render(
+      <Conversation anchorId={anchorId} anchorOffset={anchorOffset}>
+        <div id="turn-a">first</div>
+        <div id="turn-b">second</div>
+      </Conversation>
+    );
+
+  /** Turn `b` starts 900px down; the view has to travel to meet it. */
+  const place = (container: HTMLElement) => {
+    const { viewport, content } = apply(container, TALL);
+    Object.defineProperty(container.querySelector("#turn-a")!, "offsetTop", {
+      value: 100,
+      configurable: true,
+    });
+    Object.defineProperty(container.querySelector("#turn-b")!, "offsetTop", {
+      value: 900,
+      configurable: true,
+    });
+    return { viewport, content };
+  };
+
+  it("brings the anchored turn to the top", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport } = place(container);
+    grow();
+    expect(viewport.scrollTop).toBe(900);
+  });
+
+  it("leaves room for whatever is fixed over the top", () => {
+    const { container } = withTurns("turn-b", 100);
+    const { viewport } = place(container);
+    grow();
+    expect(viewport.scrollTop).toBe(800);
+  });
+
+  /**
+   * The difference from following the end, in one assertion. The answer grows
+   * underneath and the view does not move — which is the entire point, and the
+   * opposite of what `endOfContent` would do.
+   */
+  it("holds still while the answer grows underneath it", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport, content } = place(container);
+    grow();
+    expect(viewport.scrollTop).toBe(900);
+
+    Object.defineProperty(content, "offsetHeight", { value: 1600, configurable: true });
+    grow();
+    expect(viewport.scrollTop).toBe(900);
+  });
+
+  it("moves to the next turn when the anchor changes", () => {
+    const { container, rerender } = withTurns("turn-a");
+    const { viewport } = place(container);
+    grow();
+    expect(viewport.scrollTop).toBe(100);
+
+    rerender(
+      <Conversation anchorId="turn-b">
+        <div id="turn-a">first</div>
+        <div id="turn-b">second</div>
+      </Conversation>
+    );
+    place(container);
+    grow();
+    expect(viewport.scrollTop).toBe(900);
+  });
+
+  /**
+   * An element cannot be brought to the top of a container that ends just
+   * below it. That is what the padding under a conversation is for — and until
+   * there is enough of it, "as far as it goes" is the honest answer.
+   */
+  it("goes as far as the container allows and no further", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport } = place(container);
+    Object.defineProperty(viewport, "scrollHeight", { value: 1200, configurable: true });
+    grow();
+    expect(viewport.scrollTop).toBe(600); // 1200 - 600, not 900
+  });
+
+  it("falls back to the end when the anchor is not on the page", () => {
+    const { container } = withTurns("turn-missing");
+    const { viewport } = place(container);
+    grow();
+    expect(viewport.scrollTop).toBe(400); // endOfContent
+  });
+
+  /**
+   * With an anchor above you, scrolling *up* is how you get back to it — so
+   * the direction cannot be what decides. Distance can.
+   */
+  it("does not let go for a wheel that moves towards the anchor", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport, content } = place(container);
+    grow();
+
+    viewport.scrollTop = 890; // still within the threshold of 900
+    fireEvent.wheel(viewport, { deltaY: -10 });
+
+    Object.defineProperty(content, "offsetHeight", { value: 1600, configurable: true });
+    grow();
+    expect(viewport.scrollTop).toBe(900);
+  });
+
+  it("lets go once the wheel has taken the reader away from it", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport } = place(container);
+    grow();
+
+    viewport.scrollTop = 300;
+    fireEvent.wheel(viewport, { deltaY: -200 });
+    expect(container.querySelector("button")).toHaveAttribute("data-shown");
+  });
+
+  it("takes the way-back button to the anchor, not to the end", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport } = place(container);
+    grow();
+    viewport.scrollTop = 300;
+    fireEvent.wheel(viewport, { deltaY: -200 });
+
+    fireEvent.click(container.querySelector("button")!);
+    expect(viewport.scrollTop).toBe(900);
+  });
+});

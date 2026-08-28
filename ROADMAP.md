@@ -714,6 +714,14 @@ Every kit surveyed ships all six. Four down.
       scrolling cannot tell its own scrolling from the reader's.
 
       18 tests, 3 axe cases, 4 stories, 3 tokens. `0.7.0`.
+
+      **Then corrected, because following the end was the wrong anchor for
+      this kit.** A submitted message has to go to the top and stay there while
+      the answer arrives beneath it — that is what the demo's `99vh` padding
+      was always for, and following the end stacks everything downwards
+      instead, leaving the composer past the fold when the answer settles.
+      `anchorId` holds a named element at the top; without one the old
+      behaviour stands. Nine more tests. `0.7.1`.
 - [ ] **F5 · `MessageActions`.** Copy, regenerate, edit, feedback. We have a
       hover row for the *input*; answers have nothing.
 - [ ] **F6 · `Loader` / empty state / starter prompts.** What is on screen

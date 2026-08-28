@@ -6,6 +6,26 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.7.1 — 2026-08-28
+
+### Added
+
+- **`<Conversation anchorId>` and `anchorOffset`.** Hold an element at the top
+  of the view instead of following the end of the content.
+
+  0.7.0 only did the second, which is wrong for the way this kit works: a
+  submitted message has to go to the top and stay there while the answer
+  arrives underneath, so what is on screen is the question and its answer.
+  Following the end stacks everything downwards instead, and the composer that
+  appears when the answer settles ends up past the fold.
+
+  Point it at the turn that was just sent. It needs room to scroll into — an
+  element cannot be brought to the top of a container that ends just below it —
+  which is what a large bottom padding on the viewport is for.
+
+  With an anchor above the reader, scrolling *up* is how they return to it, so
+  letting go is decided by distance rather than direction.
+
 ## 0.7.0 — 2026-08-28
 
 ### Added

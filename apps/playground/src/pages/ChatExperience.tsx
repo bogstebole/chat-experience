@@ -173,6 +173,24 @@ export function ChatExperience() {
     onSend: fakeApi,
   });
 
+  /* The turn the view is held on.
+     
+     Sending a message takes you to it, and it stays there while the answer
+     arrives underneath — so what is on screen is your question and its answer,
+     rather than the whole conversation pushed up from below. Recorded on
+     submit because that is the moment it means: `useChatTurns` has no notion
+     of "the one just sent", and inferring it from state would pick up an edit
+     of an old turn as well. */
+  const [anchorTurnId, setAnchorTurnId] = useState<string | null>(null);
+
+  const handleSubmit = useCallback(
+    (id: string, value: string) => {
+      setAnchorTurnId(id);
+      submit(id, value);
+    },
+    [submit]
+  );
+
   /* What the header shows. The first question actually asked, so someone
      arriving at a conversation already in progress can see what it is about —
      falling back to the name of the thing before anyone has asked anything.
@@ -364,7 +382,15 @@ export function ChatExperience() {
               </button>
             </div>
           </ChatHeader>
-          <Conversation ref={feedRef} viewportClassName="chatFeed">
+          <Conversation
+            ref={feedRef}
+            viewportClassName="chatFeed"
+            anchorId={anchorTurnId ? `turn-${anchorTurnId}` : undefined}
+            /* Matches the viewport's own `padding-top`, so a turn brought to
+               the top lands where the first one already sits rather than
+               under the fixed header. */
+            anchorOffset={100}
+          >
             <AnimatePresence>
               {turns.map((turn, i) => (
                 <ChatTurnRow
@@ -383,7 +409,7 @@ export function ChatExperience() {
                   animationConfig={animConfig}
                   placeholder="Ask me about particle physics…"
                   onDraft={setDraft}
-                  onSubmit={submit}
+                  onSubmit={handleSubmit}
                   onStop={stop}
                   onEdit={beginEdit}
                   onCancelEdit={cancelEdit}
