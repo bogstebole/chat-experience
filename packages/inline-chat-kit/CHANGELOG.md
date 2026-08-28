@@ -6,6 +6,29 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.7.0 — 2026-08-28
+
+### Added
+
+- **`<Conversation>`.** The scroll container: it keeps up with an answer as it
+  arrives, lets go the instant the reader scrolls away, and offers a button
+  back. Three tokens for the gap and padding.
+
+  It follows the **end of the content**, not the bottom of the container.
+  Those are only the same thing when nothing is padded below, and this kit's
+  demo carries a screen-height pad so a turn can be pulled to the top —
+  scrolling to the bottom there parks the answer above the fold in front of a
+  blank screen. Measuring the content makes one behaviour right for both.
+
+  It reads intent from the **input** rather than the scroll event. A component
+  watching scrolling cannot tell its own from the reader's, and ends up either
+  dragging them back down mid-sentence or never following at all. A wheel
+  upwards, `PageUp`, `Home`, or a drag away from the end, and it stops.
+
+  `ref` is forwarded to the viewport rather than the root, because a ref here
+  is for scrolling and the root does not scroll. `viewportClassName` styles the
+  scroller; `className` styles the box you lay out.
+
 ## 0.6.0 — 2026-08-28
 
 ### Added

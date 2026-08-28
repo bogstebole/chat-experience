@@ -297,6 +297,9 @@
        other without a rule between them. */
 
     --ick-turn-gap: 48px;
+    --ick-conversation-gap: 48px;
+    --ick-conversation-pad-block: var(--ick-space-7);
+    --ick-conversation-pad-inline: var(--ick-space-7);
     --ick-answer-size: 0.75rem;
     --ick-answer-leading: 1.7;
     --ick-answer-tracking: 0.01em;

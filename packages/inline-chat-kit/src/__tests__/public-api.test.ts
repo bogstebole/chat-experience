@@ -14,6 +14,7 @@ const EXPECTED_EXPORTS = [
   "ChatInput",
   "ChatTurnRow",
   "CodeBlock",
+  "Conversation",
   "CustomCursor",
   "GlassButton",
   "HoverActionsRow",

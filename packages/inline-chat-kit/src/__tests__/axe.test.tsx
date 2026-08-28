@@ -9,6 +9,7 @@ import { ReplyThreadPopup } from "../ReplyThreadPopup/ReplyThreadPopup";
 import { ChatHeader } from "../ChatHeader/ChatHeader";
 import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
+import { Conversation } from "../Conversation/Conversation";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
@@ -241,6 +242,34 @@ describe("axe — a code block", () => {
 
   it("passes stripped of its bar", async () => {
     const { container } = render(<CodeBlock code={CODE} label={false} copyable={false} />);
+    await check(container);
+  });
+});
+
+describe("axe — the conversation", () => {
+  it("passes as a scroll container", async () => {
+    const { container } = render(
+      <Conversation>
+        <p>Particle physics studies matter.</p>
+      </Conversation>
+    );
+    await check(container);
+  });
+
+  /**
+   * The button is `aria-hidden` while it has nothing to offer, and axe is
+   * strict about a hidden element that can still take focus — which is the
+   * mistake this is here to catch.
+   */
+  it("passes with the way-back button hidden", async () => {
+    const { container } = render(<Conversation>answer</Conversation>);
+    const button = container.querySelector("button")!;
+    expect(button).toHaveAttribute("tabindex", "-1");
+    await check(container);
+  });
+
+  it("passes without a button at all", async () => {
+    const { container } = render(<Conversation scrollButton={false}>answer</Conversation>);
     await check(container);
   });
 });

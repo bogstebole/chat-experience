@@ -87,6 +87,23 @@ const SHOTS = [
     },
   },
   {
+    name: "conversation-following",
+    story: "components-conversation--with-padding-below",
+    themes: ["light"],
+  },
+  {
+    name: "conversation-let-go",
+    story: "components-conversation--with-padding-below",
+    themes: ["light", "dark"],
+    /** Scrolled away, which is the only state where the button is offered. */
+    act: async (page) => {
+      const view = page.locator("[class*='viewport']").first();
+      await view.hover();
+      await page.mouse.wheel(0, -400);
+      await page.waitForTimeout(600);
+    },
+  },
+  {
     name: "code-languages",
     story: "components-codeblock--languages",
     themes: ["light", "dark"],

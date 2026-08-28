@@ -605,7 +605,7 @@ before it acts. Those are listed below; the coding-specific ones are not.
 
 ### F · The floor — it is not a chat without these
 
-Every kit surveyed ships all six. Three down.
+Every kit surveyed ships all six. Four down.
 
 - [x] **F1 · `ChatTurnRow` — done.** It lived in the *playground*, so anyone
       installing the kit had to rewrite the one thing the kit is about; the
@@ -698,9 +698,22 @@ Every kit surveyed ships all six. Three down.
       reaches first. Geist Mono does not ligate. Ligatures are still switched
       off, because the mono font is a token and a brand may well set one that
       does.
-- [ ] **F4 · `Conversation`.** The scroll container: pinned to the bottom
-      while streaming, released the moment the reader scrolls up, plus the
-      jump-to-bottom button. The demo does this ad hoc with a ref.
+- [x] **F4 · `Conversation` — done.** Keeps up with an answer, lets go the
+      instant the reader scrolls away, offers a button back.
+
+      Measured the demo first, and it turned out not to scroll at all:
+      `scrollTop` stayed at 0 through a whole answer while `scrollHeight` grew
+      862 → 1189. Short answers hid it; a long one simply grew off the screen.
+
+      Two decisions came out of that measurement. It follows the **end of the
+      content**, not the bottom of the container — the demo's
+      `padding-bottom: 99vh` (which is what lets a turn be pulled to the top)
+      means the container's bottom is 693px of nothing, and scrolling there
+      would park the answer above the fold. And it reads intent from the
+      **input** rather than the scroll event, because a component watching
+      scrolling cannot tell its own scrolling from the reader's.
+
+      18 tests, 3 axe cases, 4 stories, 3 tokens. `0.7.0`.
 - [ ] **F5 · `MessageActions`.** Copy, regenerate, edit, feedback. We have a
       hover row for the *input*; answers have nothing.
 - [ ] **F6 · `Loader` / empty state / starter prompts.** What is on screen
@@ -751,7 +764,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → **F4/F5/F6** → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → **F5/F6** → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be
