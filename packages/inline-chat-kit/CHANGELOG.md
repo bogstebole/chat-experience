@@ -6,6 +6,51 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.5.0 — 2026-08-28
+
+### Breaking
+
+- **`TextHighlighter` renders its text as markdown.** An answer containing
+  `*`, `#`, `` ` `` or `-` at the start of a line now renders as emphasis, a
+  heading, code or a list rather than as those characters. If you were passing
+  markdown and relying on it staying literal, escape it.
+
+  Raw HTML in the input is dropped rather than rendered. Model output is
+  untrusted text, and there is no version of injecting it into the host's page
+  that is worth the surface it opens.
+
+### Added
+
+- **Markdown, inside the highlighter rather than around it.** Headings,
+  emphasis, strikethrough, links, inline and fenced code, lists, blockquotes,
+  tables, images and rules.
+
+  The design constraint was the marker. Internally the words stay a **flat
+  array of tokens addressed by index** — hit-testing reads an index off the
+  span under the pointer, the keyboard cursor walks the indices, a highlight's
+  text is a run of them joined back. Markdown only decides which element each
+  token is drawn inside, so a stroke that starts in plain text and ends inside
+  `**bold**` is one run of indices like any other.
+
+  Fenced blocks are the exception: preformatted, so not tokenised, so not
+  markable. `CodeBlock` will own them properly.
+
+- **Markdown tokens.** `--ick-md-gap`, `-item-gap`, `-heading-space`,
+  `-indent`, `-quote-indent`, `-rule` and `-code-fill`. The gaps are in `em`
+  so they scale with the answer rather than drifting away from it.
+
+### Dependencies
+
+- `unified`, `remark-parse` and `remark-gfm`, bundled rather than left to the
+  consumer. The package went from 18.9 KB to 56.6 KB gzip; that is the price
+  of markdown working on install with nothing to configure.
+
+  `react-markdown` was the obvious choice and is not used. Its feature is
+  swapping *components*, and what this needs is every **text node** split into
+  indexed spans — text nodes are strings, not components. It also parses
+  inside its own render, which hands back the tokens a render too late for the
+  keyboard cursor that needs them.
+
 ## 0.4.0 — 2026-08-27
 
 Additive.

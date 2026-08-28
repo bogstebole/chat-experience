@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo, useCallback, useId } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback, useId, createElement, type ReactNode } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Button } from "../Button/Button";
+import { parseMarkdown, type MdNode } from "../markdown/parseMarkdown";
 import styles from "./TextHighlighter.module.css";
 import { MessageCircle, Trash2 } from "lucide-react";
 
@@ -157,8 +158,20 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     return () => window.removeEventListener("pointerdown", handleGlobalPointerDown);
   }, [menuAnchor, dismissMenu]);
 
-  // Split text by words and keep spaces separate so we can render them properly
-  const tokens = useMemo(() => text.split(/(\s+)/), [text]);
+  /**
+   * Markdown, parsed into a tree of elements over a flat array of tokens.
+   *
+   * The flat array is what everything else here depends on — hit-testing reads
+   * an index off the span under the pointer, the keyboard cursor walks the
+   * indices, a highlight's text is a run of them joined back together. Keeping
+   * it flat is what lets the words live inside `<strong>` and `<li>` without a
+   * single one of those mechanisms knowing.
+   *
+   * Keyed on the text, which during streaming is a new string every frame. See
+   * the render below for what that costs.
+   */
+  const doc = useMemo(() => parseMarkdown(text), [text]);
+  const tokens = doc.tokens;
 
 
 
@@ -611,6 +624,73 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
     dismissMenu(viaKeyboard ? "restore" : "none");
   };
 
+  /**
+   * One token: a word or the whitespace beside it, addressed by index.
+   *
+   * Unchanged from before markdown, and that is the point — the attributes
+   * here are the entire contract with hit-testing, the keyboard cursor and the
+   * dimming. Where the span sits in the tree is not part of it.
+   */
+  const renderToken = (index: number): ReactNode => {
+    const token = tokens[index];
+
+    // Both freeform (path) and precise (selection) highlights dim the surrounding tokens.
+    let isPartOfActiveHighlight = false;
+    if (menuAnchor) {
+      const active =
+        menuAnchor.kind === "path"
+          ? paths.find((p) => p.id === menuAnchor.pathId)
+          : selections.find((sel) => sel.id === menuAnchor.pathId);
+      isPartOfActiveHighlight = active?.highlightedIndices?.has(index) ?? false;
+    }
+
+    let isPartOfPressed = false;
+    if (pressedPathId) {
+      const pressed =
+        paths.find((p) => p.id === pressedPathId) ??
+        selections.find((sel) => sel.id === pressedPathId);
+      isPartOfPressed = pressed?.highlightedIndices?.has(index) ?? false;
+    }
+
+    return (
+      <span
+        key={index}
+        data-index={index}
+        className={styles.token}
+        data-space={token.trim() ? undefined : true}
+        data-active={isPartOfActiveHighlight || undefined}
+        data-pressed={isPartOfPressed || undefined}
+        data-kbd-cursor={caret === index || undefined}
+        data-kbd-selected={
+          (cursorRange && index >= cursorRange.from && index <= cursorRange.to) || undefined
+        }
+      >
+        {token}
+      </span>
+    );
+  };
+
+  /** Walk the parsed tree, dropping a token span at every text position. */
+  const renderNodes = (nodes: MdNode[]): ReactNode =>
+    nodes.map((node, i) => {
+      if (node.type === "token") return renderToken(node.index);
+      if (node.type === "code") {
+        // Not tokenised, so not markable. A fenced block is preformatted —
+        // splitting it on whitespace would destroy the one thing it is for.
+        return (
+          <pre key={`c${i}`} className={styles.code} data-lang={node.lang}>
+            <code>{node.value}</code>
+          </pre>
+        );
+      }
+      return createElement(
+        node.tag,
+        { key: `e${i}`, ...node.props },
+        // Void elements take no children at all, not even an empty array.
+        node.children.length > 0 ? renderNodes(node.children) : undefined
+      );
+    });
+
   return (
     // See the note in ChatInput: the kit sets this itself rather than relying
     // on the host app to.
@@ -646,54 +726,13 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
 
       <div className={styles.hitbox} />
 
-      {/* Underlying text */}
-      <span className={styles.tokens} data-focus={!!menuAnchor || undefined}>
-        {tokens.map((token, i) => {
-          // Both freeform (path) and precise (selection) highlights dim the surrounding tokens.
-          const isHighlightActive = !!menuAnchor;
-          let isPartOfActiveHighlight = false;
+      {/* Underlying text.
 
-          if (isHighlightActive) {
-            if (menuAnchor.kind === "path") {
-              const activePath = paths.find(p => p.id === menuAnchor.pathId);
-              isPartOfActiveHighlight = activePath?.highlightedIndices?.has(i) ?? false;
-            } else if (menuAnchor.kind === "selection") {
-              const activeSel = selections.find(s => s.id === menuAnchor.pathId);
-              isPartOfActiveHighlight = activeSel?.highlightedIndices?.has(i) ?? false;
-            }
-          }
-
-          let isPartOfPressed = false;
-          if (pressedPathId) {
-            const pressedPath = paths.find(p => p.id === pressedPathId);
-            if (pressedPath) {
-              isPartOfPressed = pressedPath.highlightedIndices?.has(i) ?? false;
-            } else {
-              const pressedSel = selections.find(s => s.id === pressedPathId);
-              if (pressedSel) {
-                isPartOfPressed = pressedSel.highlightedIndices?.has(i) ?? false;
-              }
-            }
-          }
-
-          return (
-            <span
-              key={i}
-              data-index={i}
-              className={styles.token}
-              data-space={token.trim() ? undefined : true}
-              data-active={isPartOfActiveHighlight || undefined}
-              data-pressed={isPartOfPressed || undefined}
-              data-kbd-cursor={caret === i || undefined}
-              data-kbd-selected={
-                (cursorRange && i >= cursorRange.from && i <= cursorRange.to) || undefined
-              }
-            >
-              {token}
-            </span>
-          );
-        })}
-      </span>
+          A `div`, not a `span`: markdown brings paragraphs, lists and headings,
+          and a span may not contain them. The class already made it a block. */}
+      <div className={styles.tokens} data-focus={!!menuAnchor || undefined}>
+        {renderNodes(doc.nodes)}
+      </div>
 
       {/* SVG Canvas overlay */}
       <svg className={styles.canvas}>

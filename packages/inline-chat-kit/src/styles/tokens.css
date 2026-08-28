@@ -302,6 +302,18 @@
     --ick-answer-tracking: 0.01em;
     /* In characters, so it follows the font instead of fighting it. */
     --ick-answer-measure: 56ch;
+
+    /* ═══ Markdown ══════════════════════════════════════════════════════════
+       What an answer is made of once it is more than one paragraph. The gaps
+       are in `em` so they scale with whatever size the answer is set at. */
+
+    --ick-md-gap: 0.85em;
+    --ick-md-item-gap: 0.35em;
+    --ick-md-heading-space: 1.4em;
+    --ick-md-indent: 1.5em;
+    --ick-md-quote-indent: 0.9em;
+    --ick-md-rule: var(--ick-border);
+    --ick-md-code-fill: var(--ick-surface-sunken);
   }
 
 

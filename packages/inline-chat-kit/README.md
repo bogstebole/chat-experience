@@ -5,7 +5,7 @@ send, the pill you typed into morphs into the bubble that holds your text, and
 the answer streams in below it. No separate composer, no jump cut.
 
 Ships the surrounding pieces too — a turn row, a header for the conversation,
-hover actions on each bubble, freeform marker highlighting over streamed text,
+hover actions on each bubble, markdown answers you can draw on with a marker,
 and reply-in-thread popups.
 
 ## Install
@@ -229,6 +229,22 @@ stays put.
 ### `<TextHighlighter>`
 
 Wraps streamed text and lets the reader mark it up.
+
+**The text is markdown.** Headings, emphasis, links, lists, blockquotes, code,
+tables and strikethrough (GFM) all render. Raw HTML in the input is dropped
+rather than rendered — model output is untrusted, and there is no version of
+injecting it into the host's page that is worth the surface it opens.
+
+The marker does not care about any of it. Internally the words stay a **flat
+array of tokens addressed by index**, and markdown only decides which element
+each token is drawn inside — so a stroke that starts in plain text and ends
+inside `**bold**` is one run of indices like any other. Fenced code blocks are
+the exception: they are preformatted, so they are not tokenised and cannot be
+marked.
+
+Parsing costs about 0.9 ms per 1000 characters, and runs once per frame while
+an answer streams. Fine for an ordinary answer; see the roadmap for where it
+stops being fine.
 
 | Prop | Type | Notes |
 | --- | --- | --- |

@@ -21,16 +21,21 @@ import "./ChatExperience.css";
 
 type Phase = "intro" | "chat";
 
+/* Markdown, because that is what a model returns. The first and last
+   paragraphs are left as plain prose on purpose: the showcase recording draws
+   a marker from "Higgs" to "2012", and a stroke has to cross the boundary of
+   a `**bold**` run to prove that it can. */
 const AI_RESPONSE = [
   "Particle physics studies the most fundamental constituents of matter and the forces that act between them.",
-  "The Standard Model organises twelve fermions — six quarks and six leptons — plus the force-carrying bosons into a single coherent framework.",
+  "The **Standard Model** organises them into three families:",
+  "- twelve fermions — six quarks and six leptons\n- the force-carrying bosons\n- the Higgs, which gives the rest their mass",
   "The Higgs boson, found at CERN in 2012, completes the picture by giving elementary particles their mass through interaction with the Higgs field.",
 ];
 
 const HIGGS_RESPONSE = [
-  "The Higgs boson is a point particle — it has no measurable spatial extent at any scale we can currently probe.",
-  "Its mass sits at roughly 125 GeV/c², about 133 times heavier than a proton.",
-  "So 'how big is it' has only one honest answer: it has no size, only mass and quantum numbers.",
+  "The Higgs boson is a *point particle* — it has no measurable spatial extent at any scale we can currently probe.",
+  "| property | value |\n| --- | --- |\n| mass | ~125 GeV/c² |\n| charge | 0 |\n| spin | 0 |",
+  "So 'how big is it' has only one honest answer: it has no size, only `mass` and quantum numbers.",
 ];
 
 interface Highlight {
@@ -154,7 +159,9 @@ export function ChatExperience() {
   const fakeApi = useCallback(async function* (): AsyncGenerator<string> {
     const response = turnCountRef.current % 2 === 0 ? AI_RESPONSE : HIGGS_RESPONSE;
     turnCountRef.current += 1;
-    const words = response.join(" ").split(/(\s+)/);
+    // Joined as blocks, not sentences: markdown needs the blank line between
+    // a paragraph and the list that follows it.
+    const words = response.join("\n\n").split(/(\s+)/);
     for (const word of words) {
       await new Promise((r) => setTimeout(r, 24));
       yield word;

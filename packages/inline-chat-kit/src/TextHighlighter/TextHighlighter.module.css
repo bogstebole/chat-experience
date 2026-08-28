@@ -130,7 +130,148 @@
   --token-ease-press: var(--ick-ease-overshoot);
 
   position: relative;
+  display: block;
   z-index: var(--ick-z-base);
+}
+
+/* ── Markdown ───────────────────────────────────────────────────────────────
+   An answer is markdown now, so the tree under `.tokens` has real structure in
+   it. Every rule here is scoped to `.tokens` and reads a token, so a host that
+   already styles `p` or `ul` does not fight with this and a brand can move all
+   of it.
+
+   The outer margins are stripped rather than reduced. A block's margin at the
+   very top or bottom of an answer pushes the answer away from the bubble it
+   belongs to, and margin collapse makes the amount unpredictable. */
+
+.tokens > :first-child { margin-top: 0; }
+.tokens > :last-child { margin-bottom: 0; }
+
+.tokens p,
+.tokens ul,
+.tokens ol,
+.tokens blockquote,
+.tokens pre,
+.tokens table {
+  margin: 0 0 var(--ick-md-gap);
+}
+
+.tokens h1,
+.tokens h2,
+.tokens h3,
+.tokens h4,
+.tokens h5,
+.tokens h6 {
+  margin: var(--ick-md-heading-space) 0 var(--ick-md-gap);
+  font-weight: var(--ick-weight-semibold);
+  line-height: 1.3;
+}
+
+/* A heading in a chat answer is a label on a section, not a page title. The
+   scale is compressed hard for that reason: h1 at browser default would be
+   twice the size of the answer around it. */
+.tokens h1 { font-size: 1.25em; }
+.tokens h2 { font-size: 1.15em; }
+.tokens h3 { font-size: 1.05em; }
+.tokens h4,
+.tokens h5,
+.tokens h6 { font-size: 1em; }
+
+.tokens ul,
+.tokens ol {
+  padding-left: var(--ick-md-indent);
+}
+
+.tokens li {
+  margin-bottom: var(--ick-md-item-gap);
+}
+
+.tokens li:last-child {
+  margin-bottom: 0;
+}
+
+/* Nested lists close up: the outer item's own gap already separates them. */
+.tokens li > ul,
+.tokens li > ol {
+  margin-top: var(--ick-md-item-gap);
+  margin-bottom: 0;
+}
+
+.tokens blockquote {
+  padding-left: var(--ick-md-quote-indent);
+  border-left: 2px solid var(--ick-md-rule);
+  color: var(--ick-ink-soft);
+}
+
+.tokens code {
+  font-family: var(--ick-font-mono);
+  font-size: 0.92em;
+  background: var(--ick-md-code-fill);
+  border-radius: var(--ick-radius-xs);
+  /* Vertical padding only in the box, so an inline code run does not push its
+     own line taller than its neighbours. */
+  padding: 0.1em var(--ick-space-2);
+}
+
+.tokens pre {
+  overflow-x: auto;
+  padding: var(--ick-space-5);
+  border-radius: var(--ick-radius-md);
+  background: var(--ick-md-code-fill);
+}
+
+/* The block already has the fill; the run inside it should not have a second. */
+.tokens pre code {
+  display: block;
+  padding: 0;
+  background: none;
+  font-size: 0.92em;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.tokens a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--ick-md-rule);
+  transition: text-decoration-color var(--ick-duration-fast) ease;
+}
+
+.tokens a:hover {
+  text-decoration-color: currentColor;
+}
+
+.tokens hr {
+  margin: var(--ick-md-gap) 0;
+  border: 0;
+  border-top: 1px solid var(--ick-md-rule);
+}
+
+.tokens img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--ick-radius-md);
+}
+
+/* A wide table scrolls inside itself rather than widening the answer. */
+.tokens table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.tokens th,
+.tokens td {
+  padding: var(--ick-space-3) var(--ick-space-5);
+  border: 1px solid var(--ick-md-rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tokens th {
+  font-weight: var(--ick-weight-semibold);
 }
 
 .token {
