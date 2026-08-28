@@ -20,19 +20,24 @@
       transparent 100%);
 }
 
+/* The scroll container is `Conversation` now; this is only what the viewport
+   inside it needs. Gone from here: `flex`, `overflow-y`, `display` and `gap`,
+   all of which the component owns — and the gap is `--ick-conversation-gap`,
+   which already defaults to the 48px this used to say.
+
+   The padding stays. `padding-bottom: 99vh` is what lets a turn be pulled to
+   the top of the screen, and it is also the reason `Conversation` follows the
+   end of the *content* rather than the bottom of the container: scrolling to
+   the bottom here would park the answer above the fold in front of a blank
+   screen. The negative inline margins are the bleed that lets a marker stroke
+   overflow the column without being clipped. */
 .chatFeed {
-  flex: 1;
-  overflow-y: auto;
-  position: relative;
   padding-top: 100px;
   padding-bottom: 99vh;
   padding-left: 32px;
   padding-right: 32px;
   margin-left: -32px;
   margin-right: -32px;
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }

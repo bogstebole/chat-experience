@@ -1,0 +1,100 @@
+/* ─────────────────────────────────────────────
+   Conversation
+
+   Three layers: a positioning root, the thing that actually scrolls, and a
+   content wrapper whose height is what "the end" is measured against. The
+   wrapper is not decorative — scrollHeight includes the container's own
+   padding, and a chat with a screen-height pad below it would be scrolled to
+   a blank space rather than to the answer.
+   ───────────────────────────────────────────── */
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.viewport {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--ick-conversation-pad-block) var(--ick-conversation-pad-inline);
+  box-sizing: border-box;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-conversation-gap);
+}
+
+/* ── The way back ───────────────────────────────────────────────────────── */
+
+.jump {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  left: 50%;
+  bottom: var(--ick-space-6);
+  z-index: var(--ick-z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ick-radius-pill);
+  cursor: pointer;
+  color: var(--ick-ink);
+  background: var(--ick-surface-raised);
+  box-shadow: var(--ick-shadow-float);
+  outline: 0.5px solid var(--ick-border);
+  -webkit-tap-highlight-color: transparent;
+
+  /* Not `display: none`: the button has to be able to fade rather than blink,
+     and a display change cannot be transitioned. `visibility` is what takes
+     it out of hit-testing on the way out. */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(6px) scale(0.9);
+  transition:
+    opacity var(--ick-duration-fast) ease,
+    transform var(--ick-duration-fast) var(--ick-ease),
+    visibility 0s linear var(--ick-duration-fast);
+}
+
+.jump[data-shown] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0) scale(1);
+  transition-delay: 0s;
+}
+
+.jump:hover {
+  background: var(--ick-surface-raised);
+  box-shadow: var(--ick-shadow-2);
+}
+
+.jump[data-shown]:active {
+  transform: translateX(-50%) translateY(0) scale(0.92);
+  transition-duration: var(--ick-duration-press);
+}
+
+.jump:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: var(--ick-space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jump {
+    transition-property: opacity, visibility;
+    transform: translateX(-50%);
+  }
+
+  .jump[data-shown]:active,
+  .jump[data-shown] {
+    transform: translateX(-50%);
+  }
+}

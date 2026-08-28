@@ -139,6 +139,10 @@ these to move one thing without moving its neighbours:
   --ick-input-radius: 12px;         /* squarer, without touching other radii */
   --ick-input-fill: transparent;    /* an input with no fill at all */
 
+  --ick-conversation-gap: 48px;        /* between turns */
+  --ick-conversation-pad-block: 24px;  /* inside the scroll */
+  --ick-conversation-pad-inline: 24px;
+
   --ick-header-height-m: 56px;      /* a roomier header */
   --ick-header-bg: rgb(0 0 0 / 0.6);/* what sits behind the blur */
   --ick-header-blur: 20px;

@@ -51,6 +51,10 @@ export type {
 export { ChatTurnRow } from "./ChatTurnRow/ChatTurnRow";
 export type { ChatTurnRowProps } from "./ChatTurnRow/ChatTurnRow";
 
+/* The scroll container that keeps up with an answer, and lets go */
+export { Conversation } from "./Conversation/Conversation";
+export type { ConversationProps } from "./Conversation/Conversation";
+
 /* Fenced code inside an answer, and on its own */
 export { CodeBlock } from "./CodeBlock/CodeBlock";
 export type { CodeBlockProps } from "./CodeBlock/CodeBlock";

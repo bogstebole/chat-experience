@@ -6,6 +6,7 @@ import {
   Button,
   ChatHeader,
   ChatTurnRow,
+  Conversation,
   ReplyThreadPopup,
   CustomCursor,
   defaultInlineAnimConfig,
@@ -363,7 +364,7 @@ export function ChatExperience() {
               </button>
             </div>
           </ChatHeader>
-          <div className="chatFeed" ref={feedRef}>
+          <Conversation ref={feedRef} viewportClassName="chatFeed">
             <AnimatePresence>
               {turns.map((turn, i) => (
                 <ChatTurnRow
@@ -391,7 +392,7 @@ export function ChatExperience() {
                 />
               ))}
             </AnimatePresence>
-          </div>
+          </Conversation>
           <div className="bottomBlur" />
         </motion.div>
       )}
