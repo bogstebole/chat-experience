@@ -16,7 +16,8 @@
     "pack:kit": "npm run build:kit && npm pack --workspace packages/inline-chat-kit --pack-destination packages/inline-chat-kit && mv packages/inline-chat-kit/inline-chat-kit-*.tgz packages/inline-chat-kit/inline-chat-kit.tgz",
     "test": "npm run test --workspace packages/inline-chat-kit",
     "test:watch": "npm run test:watch --workspace packages/inline-chat-kit",
-    "showcase": "node tools/showcase/record.mjs"
+    "showcase": "node tools/showcase/record.mjs",
+    "shots": "node tools/shots/capture.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
