@@ -45,8 +45,12 @@
   border-bottom: 1px solid transparent;
 }
 
+/* Opaque, which is the whole difference between this and `glass`: a panel
+   with a line under it rather than a frosted pane. It was transparent, and
+   sticky content scrolled straight through the title — found the moment the
+   story was made to actually scroll rather than posing. */
 .bordered {
-  background: transparent;
+  background: var(--ick-surface);
   border-bottom: 1px solid var(--ick-header-border);
 }
 
