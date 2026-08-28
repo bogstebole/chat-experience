@@ -157,6 +157,24 @@ these to move one thing without moving its neighbours:
 }
 ```
 
+Code blocks ship monochrome — ink at four weights, because this kit is ink,
+paper and one acid yellow. Six tokens turn that into a palette:
+
+```css
+:root {
+  --ick-code-comment: #6a737d;
+  --ick-code-keyword: #d73a49;
+  --ick-code-string: #032f62;
+  --ick-code-number: #005cc5;
+  --ick-code-name: #6f42c1;
+  --ick-code-attr: #e36209;
+  --ick-code-size: 0.75rem;
+  --ick-code-leading: 1.55;
+  --ick-code-addition: rgb(0 200 80 / 0.1);   /* whole-line bands, for diffs */
+  --ick-code-deletion: rgb(220 0 40 / 0.06);
+}
+```
+
 The markdown gaps are in `em` rather than pixels, so they scale with whatever
 size the answer is set at instead of drifting away from it.
 

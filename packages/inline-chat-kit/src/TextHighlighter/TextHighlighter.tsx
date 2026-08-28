@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback, useId, createElement, type ReactNode } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Button } from "../Button/Button";
+import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { parseMarkdown, type MdNode } from "../markdown/parseMarkdown";
 import styles from "./TextHighlighter.module.css";
 import { MessageCircle, Trash2 } from "lucide-react";
@@ -677,11 +678,9 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
       if (node.type === "code") {
         // Not tokenised, so not markable. A fenced block is preformatted —
         // splitting it on whitespace would destroy the one thing it is for.
-        return (
-          <pre key={`c${i}`} className={styles.code} data-lang={node.lang}>
-            <code>{node.value}</code>
-          </pre>
-        );
+        // What it gets instead is a copy button, which is what people want
+        // from code anyway.
+        return <CodeBlock key={`c${i}`} code={node.value} lang={node.lang} />;
       }
       return createElement(
         node.tag,

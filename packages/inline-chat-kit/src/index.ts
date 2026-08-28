@@ -51,6 +51,10 @@ export type {
 export { ChatTurnRow } from "./ChatTurnRow/ChatTurnRow";
 export type { ChatTurnRowProps } from "./ChatTurnRow/ChatTurnRow";
 
+/* Fenced code inside an answer, and on its own */
+export { CodeBlock } from "./CodeBlock/CodeBlock";
+export type { CodeBlockProps } from "./CodeBlock/CodeBlock";
+
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";
 export type { ReplyThreadPopupProps, Turn } from "./ReplyThreadPopup/ReplyThreadPopup";

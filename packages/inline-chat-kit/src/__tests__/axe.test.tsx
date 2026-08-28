@@ -8,6 +8,7 @@ import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { ReplyThreadPopup } from "../ReplyThreadPopup/ReplyThreadPopup";
 import { ChatHeader } from "../ChatHeader/ChatHeader";
 import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
+import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
@@ -220,6 +221,26 @@ describe("axe — a turn", () => {
     const { container } = render(
       <ChatTurnRow turn={{ ...turn, state: "resting", ai: "Matter, and the forces." }} />
     );
+    await check(container);
+  });
+});
+
+describe("axe — a code block", () => {
+  const CODE = "const higgs: number = 125.25; // GeV";
+
+  it("passes with a language and a copy button", async () => {
+    const { container } = render(<CodeBlock code={CODE} lang="ts" />);
+    await check(container);
+  });
+
+  it("passes once copied, when the button's name changes under it", async () => {
+    const { container } = render(<CodeBlock code={CODE} lang="ts" onCopy={vi.fn()} />);
+    fireEvent.click(container.querySelector("button")!);
+    await check(container);
+  });
+
+  it("passes stripped of its bar", async () => {
+    const { container } = render(<CodeBlock code={CODE} label={false} copyable={false} />);
     await check(container);
   });
 });

@@ -87,6 +87,31 @@ const SHOTS = [
     },
   },
   {
+    name: "code-languages",
+    story: "components-codeblock--languages",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "code-bar",
+    story: "components-codeblock--the-bar",
+    themes: ["light"],
+  },
+  {
+    name: "code-copied",
+    story: "components-codeblock--languages",
+    themes: ["light"],
+    /** The confirmed state, which is the half of the button nobody sees. */
+    act: async (page) => {
+      await page.getByRole("button", { name: "Copy code" }).first().click();
+      await page.waitForTimeout(300);
+    },
+  },
+  {
+    name: "code-in-an-answer",
+    story: "components-codeblock--in-an-answer",
+    themes: ["light", "dark"],
+  },
+  {
     name: "turn-row-states",
     story: "components-chatturnrow--states",
     themes: ["light", "dark"],
