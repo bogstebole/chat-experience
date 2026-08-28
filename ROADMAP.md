@@ -605,7 +605,7 @@ before it acts. Those are listed below; the coding-specific ones are not.
 
 ### F · The floor — it is not a chat without these
 
-Every kit surveyed ships all six. One down.
+Every kit surveyed ships all six. Two down.
 
 - [x] **F1 · `ChatTurnRow` — done.** It lived in the *playground*, so anyone
       installing the kit had to rewrite the one thing the kit is about; the
@@ -625,11 +625,52 @@ Every kit surveyed ships all six. One down.
       reports zero mutations forever, which is the worst way for a measuring
       instrument to fail. It reads `[data-cursor-active]` now — part of the
       kit's own DOM contract, which `CustomCursor` already depends on.
-- [ ] **F2 · `Response` — streaming markdown.** Answers are plain text today.
-      Bold, lists, headings, links, tables. Has to be memoised per block or
-      every token re-renders the whole answer. Interacts with
-      `TextHighlighter`: highlighting has to survive rich text, not just a
-      flat string. That is the hard part and it is ours specifically.
+- [x] **F2 · Markdown — done.** Headings, emphasis, strikethrough, links,
+      inline and fenced code, lists, blockquotes, tables, images, rules.
+
+      The collision with `TextHighlighter` turned out to be avoidable rather
+      than expensive. Its whole model is a **flat array of tokens addressed by
+      index** — hit-testing reads an index off the span under the pointer, the
+      keyboard cursor walks the indices, a highlight's text is a run of them
+      joined back. So markdown does not replace that; it only decides which
+      element each token is drawn inside. A stroke from plain text into
+      `**bold**` is one run of indices like any other, and all 232 existing
+      tests passed untouched.
+
+      Fenced blocks are deliberately not tokenised — preformatted text split on
+      whitespace stops being preformatted. They are not markable; F3 owns them.
+
+      Raw HTML is dropped rather than rendered. Model output is untrusted text.
+
+      `react-markdown` was the obvious choice and is not used: its feature is
+      swapping *components*, and text nodes are strings, not components. It
+      also parses inside its own render, handing the tokens back a render too
+      late for the keyboard cursor that needs them. `remark-parse` plus a
+      120-line walker does the job with the tree under our control.
+
+      19 new tests, 4 stories, 7 tokens. `0.5.0`. 18.9 KB → 56.6 KB gzip.
+
+- [ ] **F2b · Parsing cost on long answers.** Measured, `unified` + `remark`,
+      warm:
+
+      | answer | per parse | of a 16.7 ms frame |
+      |---|---|---|
+      | 400 chars | 0.4 ms | 2% |
+      | 1 600 | 1.4 ms | 8% |
+      | 4 000 | 3.5 ms | 21% |
+      | 10 000 | 8.9 ms | 53% |
+
+      Linear, about **0.9 ms per 1000 characters**, and it runs once per frame
+      while an answer streams. Fine for an ordinary answer, not fine for a long
+      one — and a long one is exactly the case that streams for a minute.
+
+      The obvious fix is to parse only the block that changed, since during
+      streaming that is always the last one. It was tried and backed out: the
+      split has to happen on blank lines, and `- one\n\n- two` is **one**
+      loose list in markdown while the two halves parsed separately are two
+      tight ones. Quietly changing what a list is, to save 3 ms, is the worse
+      trade. A correct version needs a block splitter that understands loose
+      lists and fences, which is its own piece of work.
 - [ ] **F3 · `CodeBlock`.** Syntax highlighting, copy button, language label.
       Nobody accepts an AI chat without it.
 - [ ] **F4 · `Conversation`.** The scroll container: pinned to the bottom
@@ -685,7 +726,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → **F2** → F3 → F4/F5/F6 → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → **F3** → F4/F5/F6 → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

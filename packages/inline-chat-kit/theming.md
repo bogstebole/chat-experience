@@ -146,8 +146,19 @@ these to move one thing without moving its neighbours:
   --ick-header-subtitle: var(--ick-ink-faint);
   --ick-header-badge-bg: var(--ick-marker);   /* the count on an action */
   --ick-header-badge-ink: var(--ick-marker-ink);
+
+  --ick-md-gap: 0.85em;             /* between blocks in an answer */
+  --ick-md-item-gap: 0.35em;        /* between list items */
+  --ick-md-heading-space: 1.4em;    /* above a heading */
+  --ick-md-indent: 1.5em;           /* list indent */
+  --ick-md-quote-indent: 0.9em;
+  --ick-md-rule: var(--ick-border); /* quote bar, table borders, hr, links */
+  --ick-md-code-fill: var(--ick-surface-sunken);
 }
 ```
+
+The markdown gaps are in `em` rather than pixels, so they scale with whatever
+size the answer is set at instead of drifting away from it.
 
 ## Motion
 
