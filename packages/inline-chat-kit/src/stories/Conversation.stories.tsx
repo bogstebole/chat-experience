@@ -116,6 +116,69 @@ export const WithPaddingBelow: Story = {
   ),
 };
 
+/**
+ * The other anchor, and the one this kit is built around: a turn held at the
+ * top while its answer grows underneath.
+ *
+ * Press the button to "send" a message. The view goes to it and stays there —
+ * what is on screen is the question and its answer, rather than the whole
+ * conversation shoved up from below with the composer ending past the fold.
+ */
+function Anchored(args: React.ComponentProps<typeof Conversation>) {
+  const [turns, setTurns] = useState([{ id: 1, lines: 3 }]);
+  const anchor = turns[turns.length - 1].id;
+
+  const send = () => {
+    const id = anchor + 1;
+    setTurns((t) => [...t, { id, lines: 0 }]);
+    let n = 0;
+    const grow = setInterval(() => {
+      n += 1;
+      setTurns((t) => t.map((turn) => (turn.id === id ? { ...turn, lines: n } : turn)));
+      if (n >= 5) clearInterval(grow);
+    }, 500);
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={send}
+        style={{
+          marginBottom: 12,
+          padding: "6px 12px",
+          borderRadius: 999,
+          border: "1px solid var(--ick-border)",
+          background: "var(--ick-surface)",
+          color: "var(--ick-ink)",
+          font: "inherit",
+          fontSize: 12,
+          cursor: "pointer",
+        }}
+      >
+        send a message
+      </button>
+      <Box label="the newest turn is held at the top; the answer grows below it">
+        <Conversation {...args} anchorId={`turn-${anchor}`} viewportClassName="sb-roomy">
+          <style>{`.sb-roomy { padding-bottom: 90%; }`}</style>
+          {turns.map((turn) => (
+            <div key={turn.id} id={`turn-${turn.id}`} style={{ display: "grid", gap: 16 }}>
+              <div style={{ justifySelf: "end", padding: "8px 16px", borderRadius: 999, background: "var(--ick-surface-sunken)", fontSize: 13 }}>
+                Question {turn.id}
+              </div>
+              {Array.from({ length: turn.lines }, (_, i) => (
+                <Line key={i} i={i + 1} />
+              ))}
+            </div>
+          ))}
+        </Conversation>
+      </Box>
+    </div>
+  );
+}
+
+export const AnchoredToATurn: Story = { render: (args) => <Anchored {...args} /> };
+
 /** Switched off, it is a plain scroll container and nothing moves by itself. */
 export const NotFollowing: Story = {
   render: (args) => (

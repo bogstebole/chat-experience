@@ -189,7 +189,9 @@ instant the reader scrolls away, with a button offering the way back.
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `threshold` | `number` | `64` | How close to the end still counts as following |
+| `anchorId` | `string` | | Hold this element at the top instead of following the end |
+| `anchorOffset` | `number` | `0` | How far below the top edge it sits — leave room for a fixed header |
+| `threshold` | `number` | `64` | How close still counts as following |
 | `scrollButton` | `boolean` | `true` | The way back |
 | `scrollButtonLabel` | `string` | `"Jump to the latest"` | |
 | `follow` | `boolean` | `true` | `false` makes it a plain scroll container |
@@ -199,12 +201,30 @@ instant the reader scrolls away, with a button offering the way back.
 `ref` is forwarded to the **viewport**, not the root: anyone reaching for a ref
 here wants to scroll something, and the root does not scroll.
 
-Two things worth knowing.
+Three things worth knowing.
 
-It follows the **end of the content**, not the bottom of the container, and
-those are only the same when nothing is padded below. A chat with a
-screen-height pad beneath it — so a turn can be pulled to the top — would
-otherwise scroll the answer off the screen to sit in front of a blank space.
+**`anchorId` is the one that changes the feel.** Without it the view follows
+the end of the content, which is what a chat that stacks downwards wants. With
+it, the named element is brought to the top and *held* there while the answer
+grows underneath — so a reader sees their question and its answer, and not the
+whole conversation pushed up from below with the composer ending past the fold.
+Point it at the turn that was just submitted:
+
+```tsx
+const [anchor, setAnchor] = useState<string | null>(null);
+const send = (id: string, value: string) => { setAnchor(id); submit(id, value); };
+
+<Conversation anchorId={anchor ? `turn-${anchor}` : undefined} anchorOffset={100}>
+```
+
+This needs room to scroll into — an element cannot be brought to the top of a
+container that ends just below it. A large `padding-bottom` on the viewport is
+what provides it.
+
+Without an anchor it follows the **end of the content**, not the bottom of the
+container, and those are only the same when nothing is padded below. A chat
+with a screen-height pad beneath it would otherwise scroll the answer off the
+screen to sit in front of a blank space.
 
 And it reads the reader's intent from the **input**, not from the scroll event.
 A component that watches scrolling cannot tell its own from theirs, and ends up
