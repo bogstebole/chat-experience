@@ -6,7 +6,7 @@ the answer streams in below it. No separate composer, no jump cut.
 
 Ships the surrounding pieces too — a turn row, a header for the conversation,
 hover actions on each bubble, markdown answers you can draw on with a marker,
-and reply-in-thread popups.
+syntax-highlighted code blocks, and reply-in-thread popups.
 
 ## Install
 
@@ -174,6 +174,38 @@ input that morphs into its own bubble rather than a record of what was typed.
 Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
+
+### `<CodeBlock>`
+
+A fenced block: the language, a copy button, and code that scrolls sideways
+rather than widening the answer. The markdown renderer uses it for every
+fence, and it is exported for use on its own.
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `code` | `string` | | Required |
+| `lang` | `string` | | The fence's language. Unknown ones render unhighlighted |
+| `label` | `string \| false` | the language | `false` drops the caption |
+| `copyable` | `boolean` | `true` | `false` with `label={false}` removes the bar entirely |
+| `onCopy` | `(code: string) => void` | writes to the clipboard | |
+| `copiedFor` | `number` | `1600` | How long the button stays confirmed, in ms |
+
+**Ten languages** are registered: TypeScript, JavaScript, HTML/XML, CSS, JSON,
+YAML, Bash, Python, SQL, Markdown and diff — plus the aliases people actually
+type (`ts`, `tsx`, `js`, `sh`, `py`, `yml`, …). `lowlight/common` is 37
+languages and 51.6 KB gzipped; these cost a quarter of that and cover what a
+chat actually shows. A language outside the list renders unhighlighted rather
+than throwing.
+
+The scheme is ink at four weights rather than a syntax palette — this kit is
+ink, paper and one acid yellow, and twelve colours dropped into it read as
+somebody else's component. Six tokens (`--ick-code-keyword`, `-string`,
+`-comment`, `-name`, `-number`, `-attr`) turn it into whatever palette you
+already own.
+
+A block is **not markable**. Preformatted text split into word tokens stops
+being preformatted, so the highlighter skips it; copy is what people want from
+code anyway.
 
 ### `<ChatHeader>`
 

@@ -605,7 +605,7 @@ before it acts. Those are listed below; the coding-specific ones are not.
 
 ### F · The floor — it is not a chat without these
 
-Every kit surveyed ships all six. Two down.
+Every kit surveyed ships all six. Three down.
 
 - [x] **F1 · `ChatTurnRow` — done.** It lived in the *playground*, so anyone
       installing the kit had to rewrite the one thing the kit is about; the
@@ -671,8 +671,33 @@ Every kit surveyed ships all six. Two down.
       tight ones. Quietly changing what a list is, to save 3 ms, is the worse
       trade. A correct version needs a block splitter that understands loose
       lists and fences, which is its own piece of work.
-- [ ] **F3 · `CodeBlock`.** Syntax highlighting, copy button, language label.
-      Nobody accepts an AI chat without it.
+- [x] **F3 · `CodeBlock` — done.** Language label, a copy button that confirms
+      and announces itself, and code that scrolls sideways rather than
+      widening the answer. It takes over every fence in the markdown renderer.
+
+      Ten languages, chosen by measurement rather than taken wholesale:
+      `lowlight/common` is 37 grammars at 51.6 KB gzipped — nearly the size of
+      everything else in the package — for languages a chat will almost never
+      show. These cost 25 KB. An unregistered language renders unhighlighted
+      rather than throwing.
+
+      Monochrome: ink at four weights, not a syntax palette. This kit is ink,
+      paper and one acid yellow, and twelve colours dropped into it read as
+      somebody else's component. Six tokens make it a palette for anyone who
+      wants one.
+
+      19 tests, 3 axe cases, 5 stories, 10 tokens. `0.6.0`. 56.6 → 81.6 KB gzip.
+
+      One fix and one false alarm, both about fonts. The fix: `pre` and `code`
+      are elements a host styles without thinking, and an inherited family
+      loses to any direct declaration — so the family is stated on the elements
+      themselves, proven by putting `pre { font-family: … }` on the page and
+      watching the block keep its own. The false alarm: `npm run dev -- --port`
+      looked ligated in a screenshot, and the "Fira Code" I measured was
+      Storybook's *hidden error-display* `<pre>`, which `querySelector('pre')`
+      reaches first. Geist Mono does not ligate. Ligatures are still switched
+      off, because the mono font is a token and a brand may well set one that
+      does.
 - [ ] **F4 · `Conversation`.** The scroll container: pinned to the bottom
       while streaming, released the moment the reader scrolls up, plus the
       jump-to-bottom button. The demo does this ad hoc with a ref.
@@ -726,7 +751,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → **F3** → F4/F5/F6 → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → **F4/F5/F6** → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

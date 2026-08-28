@@ -6,6 +6,39 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.6.0 — 2026-08-28
+
+### Added
+
+- **`<CodeBlock>`.** The language, a copy button that confirms and announces
+  itself, and code that scrolls sideways rather than widening the answer. The
+  markdown renderer uses it for every fence; it is exported for use on its own.
+
+  Ten languages, chosen and measured: `lowlight/common` is 37 grammars and
+  51.6 KB gzipped — nearly the size of everything else here — for languages a
+  chat will almost never show. These cost a quarter of that. A language outside
+  the list renders unhighlighted rather than throwing.
+
+  The scheme is ink at four weights rather than a syntax palette, because this
+  kit is ink, paper and one acid yellow. Six tokens make it a palette for
+  anyone who wants one.
+
+- **Code tokens.** `--ick-code-size`, `-leading`, `-comment`, `-keyword`,
+  `-string`, `-number`, `-name`, `-attr`, `-addition`, `-deletion`.
+
+### Fixed
+
+- **A code block keeps its own font.** `pre` and `code` are two of the elements
+  a host app or docs tool styles without thinking about it, and an inherited
+  family loses to any direct declaration — so the family is stated on the
+  elements themselves. Ligatures are off with it: `--ick-font-mono` is a token,
+  and a brand setting Fira Code would otherwise get `npm run dev -- --port`
+  drawn as `dev —— ——port` while the clipboard hands over the real characters.
+
+### Dependencies
+
+- `lowlight` and ten `highlight.js` grammars. 56.6 KB → 81.6 KB gzip.
+
 ## 0.5.1 — 2026-08-28
 
 ### Fixed

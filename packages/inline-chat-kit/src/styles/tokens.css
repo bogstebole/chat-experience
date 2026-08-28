@@ -314,6 +314,30 @@
     --ick-md-quote-indent: 0.9em;
     --ick-md-rule: var(--ick-border);
     --ick-md-code-fill: var(--ick-surface-sunken);
+
+    /* ═══ Code ══════════════════════════════════════════════════════════════
+       Ink at four weights rather than a syntax palette. This kit is ink,
+       paper and one acid yellow; a twelve-colour scheme dropped into it reads
+       as somebody else's component.
+
+       They are still six separate tokens, which is the point — a brand that
+       wants colour sets these and gets it, without touching a stylesheet. */
+
+    --ick-code-size: 0.75rem;
+    --ick-code-leading: 1.55;
+    --ick-code-comment: var(--ick-ink-faint);
+    --ick-code-keyword: var(--ick-ink);
+    --ick-code-string: var(--ick-ink-soft);
+    --ick-code-number: var(--ick-ink-soft);
+    --ick-code-name: var(--ick-ink);
+    --ick-code-attr: var(--ick-ink-soft);
+    /* A diff marks whole lines, so it is a band and not a text colour — the
+       `+` and `-` keep reading as the characters they are. Far apart on
+       purpose: at 0.06 and 0.03 the two bands were the same grey, and a diff
+       whose halves look alike is not a diff. The added line is the one being
+       proposed, so it carries the weight; the removed one fades. */
+    --ick-code-addition: rgb(var(--ick-ink-rgb) / 0.1);
+    --ick-code-deletion: rgb(var(--ick-ink-rgb) / 0.03);
   }
 
 
