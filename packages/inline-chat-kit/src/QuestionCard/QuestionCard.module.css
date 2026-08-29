@@ -235,8 +235,14 @@
   background: var(--ick-question-row-selected);
 }
 
+/* `:focus-within` only on the row that has something inside it to focus.
+   Unqualified it caught the option button as well, and a button *is* focused
+   by a mouse click — so picking one drew a focus ring around it, which is the
+   exact thing `:focus-visible` exists to avoid. The "something else" row is a
+   label around an input: the label never takes focus itself, so it has no
+   `:focus-visible` of its own to use. */
 .option:focus-visible,
-.option:focus-within {
+.option[data-other]:focus-within {
   outline: 2px solid var(--ick-focus-ring);
   outline-offset: -2px;
 }

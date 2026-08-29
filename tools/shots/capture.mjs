@@ -97,6 +97,16 @@ const SHOTS = [
     themes: ["light"],
   },
   {
+    name: "question-picked",
+    story: "components-questioncard--types",
+    themes: ["light", "dark"],
+    /** Picked with a real click, which is what put a focus ring here. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /They live alone/ }).click();
+      await page.waitForTimeout(400);
+    },
+  },
+  {
     name: "question-summaries",
     story: "components-questioncard--summaries",
     themes: ["light"],
