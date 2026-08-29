@@ -7,6 +7,7 @@ import {
   ChatHeader,
   ChatTurnRow,
   Conversation,
+  EmptyState,
   ReplyThreadPopup,
   CustomCursor,
   defaultInlineAnimConfig,
@@ -200,6 +201,9 @@ export function ChatExperience() {
     },
     [submit]
   );
+
+  /* Nothing asked yet: one turn, and it is still blank. */
+  const isEmpty = turns.length === 1 && !turns[0].user && !turns[0].ai;
 
   /* Kept per turn rather than as one value, or rating a second answer would
      silently un-rate the first. */
@@ -408,6 +412,21 @@ export function ChatExperience() {
                under the fixed header. */
             anchorOffset={100}
           >
+            {isEmpty && (
+              <EmptyState
+                title="Ask me about particle physics"
+                description="The Standard Model, the Higgs, and what a boson actually is."
+                suggestions={[
+                  "What does particle physics actually study?",
+                  "How big is the Higgs boson?",
+                ]}
+                /* Sent rather than typed into the box. An opener that only
+                   fills the input asks somebody to press send on a sentence
+                   they did not write. */
+                onSuggestion={(text) => handleSubmit(turns[0].id, text)}
+              />
+            )}
+
             <AnimatePresence>
               {turns.map((turn, i) => (
                 <ChatTurnRow

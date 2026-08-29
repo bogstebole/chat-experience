@@ -605,7 +605,7 @@ before it acts. Those are listed below; the coding-specific ones are not.
 
 ### F · The floor — it is not a chat without these
 
-Every kit surveyed ships all six. Five down.
+Every kit surveyed ships all six. **All six down.**
 
 - [x] **F1 · `ChatTurnRow` — done.** It lived in the *playground*, so anyone
       installing the kit had to rewrite the one thing the kit is about; the
@@ -739,8 +739,18 @@ Every kit surveyed ships all six. Five down.
       returns it to anyone on a keyboard.
 
       19 tests, 4 axe cases, 5 stories. `0.8.0`.
-- [ ] **F6 · `Loader` / empty state / starter prompts.** What is on screen
-      before the first question, and between sending and the first token.
+- [x] **F6 · `EmptyState` and `Loader` — done.** The demo had neither: it
+      opened on a bare input, and a sent question sat over a blank space until
+      the first word arrived. `.chatEmpty` was in the stylesheet, unused.
+
+      The loader is silent by default. `useChatTurns` already announces that a
+      response is coming, and a second live region means hearing it twice.
+
+      Openers are `primary` buttons, not `secondary`: the secondary button is
+      transparent until hovered, which made them read as bold text rather than
+      as something to press. Caught in the first screenshot.
+
+      12 tests, 3 axe cases, 5 stories, 2 tokens. `0.9.0`.
 
 ### G · The agent tier — what makes it an AI chat rather than a chat
 
@@ -787,7 +797,9 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → **F6** → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → **G3** → G1 → G4 → G2 → G5 → G6 → G7 → H.
+
+The floor is finished. What is left is the agent tier.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

@@ -11,6 +11,8 @@ import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { Conversation } from "../Conversation/Conversation";
 import { AnswerActions } from "../AnswerActions/AnswerActions";
+import { EmptyState } from "../EmptyState/EmptyState";
+import { Loader } from "../Loader/Loader";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
@@ -301,6 +303,30 @@ describe("axe — the answer's actions", () => {
 
   it("passes while regenerating", async () => {
     const { container } = render(<AnswerActions text={TEXT} onRegenerate={vi.fn()} busy />);
+    await check(container);
+  });
+});
+
+describe("axe — the empty state and the loader", () => {
+  it("passes with everything the empty state can show", async () => {
+    const { container } = render(
+      <EmptyState
+        title="Ask me anything"
+        description="About particle physics."
+        suggestions={["What is a boson?", "Explain spin"]}
+        onSuggestion={vi.fn()}
+      />
+    );
+    await check(container);
+  });
+
+  it("passes as a decorative loader", async () => {
+    const { container } = render(<Loader />);
+    await check(container);
+  });
+
+  it("passes as a loader that speaks", async () => {
+    const { container } = render(<Loader label="Thinking" />);
     await check(container);
   });
 });

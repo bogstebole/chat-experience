@@ -6,6 +6,30 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.9.0 — 2026-08-29
+
+### Added
+
+- **`<EmptyState>`.** What is on screen before anybody has asked: an icon, a
+  title, a description and a row of openers, each optional and none drawn in
+  place of what is left out. Openers need an `onSuggestion` — a chip that
+  reports nowhere is a button that does nothing.
+
+  `title` renders as text rather than a heading. It sits inside a conversation
+  the host already owns, and claiming a level in their document is not ours.
+
+- **`<Loader>`.** `dots` for the gap between sending and the first word,
+  `shimmer` for words standing in for something.
+
+  Silent by default: `useChatTurns` already announces that a response is
+  coming, and a second live region means hearing it twice. `label` opts in.
+
+- **`ChatTurnRow` shows the loader** between the question being sent and the
+  first word landing. A sent question with a blank space under it reads as
+  nothing having happened.
+
+- **Two tokens**, `--ick-loader-dot` and `--ick-empty-pad`.
+
 ## 0.8.0 — 2026-08-29
 
 ### Added

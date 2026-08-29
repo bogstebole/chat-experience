@@ -46,14 +46,6 @@
   display: none;
 }
 
-.chatEmpty {
-  margin-top: 64px;
-  text-align: center;
-  font-size: 11px;
-  color: var(--ick-ink-faint);
-  letter-spacing: 0.02em;
-}
-
 .bottomBlur {
   position: absolute;
   bottom: 0;

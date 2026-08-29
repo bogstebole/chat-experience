@@ -87,6 +87,16 @@ const SHOTS = [
     },
   },
   {
+    name: "empty-state",
+    story: "components-emptystate--everything",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "loader",
+    story: "components-emptystate--the-loader",
+    themes: ["light"],
+  },
+  {
     name: "answer-actions",
     story: "components-answeractions--what-is-drawn",
     themes: ["light", "dark"],

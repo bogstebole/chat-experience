@@ -140,6 +140,8 @@ these to move one thing without moving its neighbours:
   --ick-input-fill: transparent;    /* an input with no fill at all */
 
   --ick-conversation-gap: 48px;        /* between turns */
+  --ick-loader-dot: 5px;
+  --ick-empty-pad: 40px;               /* around the empty state */
   --ick-conversation-pad-block: 24px;  /* inside the scroll */
   --ick-conversation-pad-inline: 24px;
 

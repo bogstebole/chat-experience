@@ -1,0 +1,89 @@
+/* ─────────────────────────────────────────────
+   Loader
+   ───────────────────────────────────────────── */
+
+.loader {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ick-space-2);
+}
+
+/* ── Dots ───────────────────────────────────────────────────────────────── */
+
+.dot {
+  width: var(--ick-loader-dot);
+  height: var(--ick-loader-dot);
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-ink-faint);
+  animation: blink 1.2s var(--ick-ease) infinite;
+}
+
+.dot:nth-child(2) { animation-delay: 0.15s; }
+.dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* `.srOnly` is the first child when there is a label, which would push the
+   delays onto the wrong dots. Keyed off the dots themselves instead. */
+.dot + .dot { animation-delay: 0.15s; }
+.dot + .dot + .dot { animation-delay: 0.3s; }
+
+@keyframes blink {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+/* ── Shimmer ────────────────────────────────────────────────────────────────
+   A gradient the width of the text, slid across it and clipped to the glyphs.
+   It reads as "these words are provisional" without anything moving. */
+
+.text {
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink-faint);
+  background: linear-gradient(
+    90deg,
+    var(--ick-ink-faint) 0%,
+    var(--ick-ink-faint) 40%,
+    var(--ick-ink) 50%,
+    var(--ick-ink-faint) 60%,
+    var(--ick-ink-faint) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sweep 2.4s linear infinite;
+}
+
+@keyframes sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   Both stop, and both stay legible standing still. A loader that vanishes
+   when the animation does has been carrying its meaning in the movement. */
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .text {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--ick-ink-faint);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
