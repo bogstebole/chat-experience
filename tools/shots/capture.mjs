@@ -87,6 +87,26 @@ const SHOTS = [
     },
   },
   {
+    name: "answer-actions",
+    story: "components-answeractions--what-is-drawn",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "answer-actions-verdict",
+    story: "components-answeractions--the-verdict",
+    themes: ["light"],
+    /** The lit state, which is the half nobody sees in a still. */
+    act: async (page) => {
+      await page.getByRole("button", { name: "Good answer" }).click();
+      await page.waitForTimeout(300);
+    },
+  },
+  {
+    name: "answer-actions-in-a-turn",
+    story: "components-answeractions--in-a-turn",
+    themes: ["light"],
+  },
+  {
     name: "conversation-anchored",
     story: "components-conversation--anchored-to-a-turn",
     themes: ["light"],

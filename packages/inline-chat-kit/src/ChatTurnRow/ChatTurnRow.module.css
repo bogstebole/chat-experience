@@ -32,6 +32,11 @@
   max-width: var(--ick-answer-measure);
 }
 
+/* Close under the last line, and clear of the next turn. */
+.actions {
+  margin-top: var(--ick-space-4);
+}
+
 /* Dragging across the answer with the OS selection still reads as marking it,
    so it is marked in the marker's colour. */
 .answer ::selection {

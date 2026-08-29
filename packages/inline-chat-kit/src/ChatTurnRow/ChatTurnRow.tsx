@@ -2,6 +2,7 @@
 
 import { memo, type Ref } from "react";
 import { motion } from "motion/react";
+import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
@@ -36,6 +37,22 @@ export interface ChatTurnRowProps {
   onCopy?: (value: string) => void;
   onHighlight?: (turnId: string, text: string) => void;
   onReplyInThread?: (text: string, rect: DOMRect) => void;
+
+  /**
+   * The row of actions under a settled answer.
+   *
+   * Copy is always offered once there is something to copy. Regenerate and the
+   * thumbs are drawn only when there is somewhere for them to report to, so a
+   * host that has no use for them is not showing a button that does nothing.
+   *
+   * They appear when the answer *settles*, not while it arrives: offering to
+   * copy a half-written answer, or to rate one, is offering the wrong thing.
+   */
+  onRegenerate?: (id: string) => void;
+  onFeedback?: (id: string, verdict: Verdict | null) => void;
+  feedback?: Verdict | null;
+  /** Leave the row out entirely. */
+  answerActions?: boolean;
 
   className?: string;
 }
@@ -78,6 +95,10 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onCopy = copyToClipboard,
   onHighlight,
   onReplyInThread,
+  onRegenerate,
+  onFeedback,
+  feedback = null,
+  answerActions = true,
   className,
 }: ChatTurnRowProps) {
   // A row arriving is travel, and this reader has asked for less of it. The
@@ -125,6 +146,17 @@ export const ChatTurnRow = memo(function ChatTurnRow({
             onHighlightComplete={(text) => onHighlight?.(turn.id, text)}
             onReplyInThread={onReplyInThread}
           />
+
+          {answerActions && turn.state === "resting" && (
+            <AnswerActions
+              className={styles.actions}
+              text={turn.ai}
+              onCopy={onCopy}
+              onRegenerate={onRegenerate ? () => onRegenerate(turn.id) : undefined}
+              onFeedback={onFeedback ? (verdict) => onFeedback(turn.id, verdict) : undefined}
+              feedback={feedback}
+            />
+          )}
         </div>
       )}
     </motion.article>

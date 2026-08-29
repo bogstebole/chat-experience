@@ -605,7 +605,7 @@ before it acts. Those are listed below; the coding-specific ones are not.
 
 ### F · The floor — it is not a chat without these
 
-Every kit surveyed ships all six. Four down.
+Every kit surveyed ships all six. Five down.
 
 - [x] **F1 · `ChatTurnRow` — done.** It lived in the *playground*, so anyone
       installing the kit had to rewrite the one thing the kit is about; the
@@ -722,8 +722,23 @@ Every kit surveyed ships all six. Four down.
       instead, leaving the composer past the fold when the answer settles.
       `anchorId` holds a named element at the top; without one the old
       behaviour stands. Nine more tests. `0.7.1`.
-- [ ] **F5 · `MessageActions`.** Copy, regenerate, edit, feedback. We have a
-      hover row for the *input*; answers have nothing.
+- [x] **F5 · `AnswerActions` — done.** Copy, regenerate and a verdict, under a
+      settled answer. The input had a hover row from the beginning and the
+      answer had nothing, which is backwards — the answer is the part worth
+      keeping.
+
+      Only what has somewhere to report is drawn: no `onRegenerate`, no
+      button. A control that calls nothing looks like a feature and behaves
+      like a dead end. Pressing the verdict already given reports `null`.
+
+      They appear when the answer *settles*. Offering to copy a half-written
+      answer, or to rate one, is offering the wrong thing.
+
+      `reveal` hides the row until hover or focus — invisible rather than
+      absent, so nothing shifts, it still hit-tests, and `:focus-within`
+      returns it to anyone on a keyboard.
+
+      19 tests, 4 axe cases, 5 stories. `0.8.0`.
 - [ ] **F6 · `Loader` / empty state / starter prompts.** What is on screen
       before the first question, and between sending and the first token.
 
@@ -772,7 +787,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → **F5/F6** → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → **F6** → G3 → G1 → G4 → G2 → G5 → G6 → G7 → H.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

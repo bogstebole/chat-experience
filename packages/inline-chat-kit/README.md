@@ -5,7 +5,8 @@ send, the pill you typed into morphs into the bubble that holds your text, and
 the answer streams in below it. No separate composer, no jump cut.
 
 Ships the surrounding pieces too — a turn row, a header for the conversation,
-hover actions on each bubble, markdown answers you can draw on with a marker,
+hover actions on each bubble, copy and feedback under every answer, markdown
+answers you can draw on with a marker,
 syntax-highlighted code blocks, a scroll container that keeps up with an
 answer, and reply-in-thread popups.
 
@@ -171,10 +172,41 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `onCopy` | `(value) => void` | writes to the clipboard | |
 | `onHighlight` | `(turnId, text) => void` | | A passage was marked |
 | `onReplyInThread` | `(text, rect) => void` | | Open a thread on the marked passage |
+| `onRegenerate` | `(id) => void` | | Draws the regenerate button |
+| `onFeedback` | `(id, verdict) => void` | | Draws the thumbs |
+| `feedback` | `"up" \| "down" \| null` | `null` | Which one is lit |
+| `answerActions` | `boolean` | `true` | Leave the row out |
 
 Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
+
+### `<AnswerActions>`
+
+Copy, regenerate and a verdict, under a settled answer. `ChatTurnRow` renders
+it for you; it is exported for anyone composing their own row.
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `text` | `string` | | Required. What copy takes |
+| `onCopy` | `(text: string) => void` | writes to the clipboard | |
+| `onRegenerate` | `() => void` | | Omit and the button is not drawn |
+| `onFeedback` | `(verdict: "up" \| "down" \| null) => void` | | Omit and the thumbs are not drawn |
+| `feedback` | `"up" \| "down" \| null` | `null` | Controlled |
+| `busy` | `boolean` | `false` | While regenerating |
+| `reveal` | `boolean` | `false` | Invisible until hovered or focused |
+| `labels` | `Partial<Record<…, string>>` | | |
+| `children` | `ReactNode` | | Your own controls, after the built-in ones |
+
+Only what has somewhere to report is drawn: no `onRegenerate`, no regenerate
+button. A control that calls nothing looks like a feature and behaves like a
+dead end.
+
+Pressing the verdict already given reports `null` — that is how somebody takes
+it back.
+
+Inside a turn they appear when the answer **settles**. Offering to copy a
+half-written answer, or to rate one, is offering the wrong thing.
 
 ### `<Conversation>`
 

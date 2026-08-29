@@ -191,6 +191,23 @@ export function ChatExperience() {
     [submit]
   );
 
+  /* Regenerating is the same submit: `useChatTurns` rewrites a turn that
+     already has an answer in place rather than starting a new one. */
+  const handleRegenerate = useCallback(
+    (id: string) => {
+      setAnchorTurnId(id);
+      submit(id);
+    },
+    [submit]
+  );
+
+  /* Kept per turn rather than as one value, or rating a second answer would
+     silently un-rate the first. */
+  const [verdicts, setVerdicts] = useState<Record<string, "up" | "down" | null>>({});
+  const handleFeedback = useCallback((id: string, verdict: "up" | "down" | null) => {
+    setVerdicts((all) => ({ ...all, [id]: verdict }));
+  }, []);
+
   /* What the header shows. The first question actually asked, so someone
      arriving at a conversation already in progress can see what it is about —
      falling back to the name of the thing before anyone has asked anything.
@@ -410,6 +427,9 @@ export function ChatExperience() {
                   placeholder="Ask me about particle physics…"
                   onDraft={setDraft}
                   onSubmit={handleSubmit}
+                  onRegenerate={handleRegenerate}
+                  onFeedback={handleFeedback}
+                  feedback={verdicts[turn.id] ?? null}
                   onStop={stop}
                   onEdit={beginEdit}
                   onCancelEdit={cancelEdit}

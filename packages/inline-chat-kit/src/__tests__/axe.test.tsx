@@ -10,6 +10,7 @@ import { ChatHeader } from "../ChatHeader/ChatHeader";
 import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { Conversation } from "../Conversation/Conversation";
+import { AnswerActions } from "../AnswerActions/AnswerActions";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
@@ -270,6 +271,36 @@ describe("axe — the conversation", () => {
 
   it("passes without a button at all", async () => {
     const { container } = render(<Conversation scrollButton={false}>answer</Conversation>);
+    await check(container);
+  });
+});
+
+describe("axe — the answer's actions", () => {
+  const TEXT = "Particle physics studies matter.";
+
+  it("passes with everything drawn", async () => {
+    const { container } = render(
+      <AnswerActions text={TEXT} onRegenerate={vi.fn()} onFeedback={vi.fn()} />
+    );
+    await check(container);
+  });
+
+  /** A toggle pair: the state is `aria-pressed`, and only one is true. */
+  it("passes with a verdict given", async () => {
+    const { container } = render(
+      <AnswerActions text={TEXT} feedback="up" onFeedback={vi.fn()} />
+    );
+    await check(container);
+  });
+
+  it("passes once copied, when the button's name changes under it", async () => {
+    const { container } = render(<AnswerActions text={TEXT} onCopy={vi.fn()} />);
+    fireEvent.click(container.querySelector("button")!);
+    await check(container);
+  });
+
+  it("passes while regenerating", async () => {
+    const { container } = render(<AnswerActions text={TEXT} onRegenerate={vi.fn()} busy />);
     await check(container);
   });
 });
