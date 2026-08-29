@@ -6,6 +6,27 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.10.1 — 2026-08-29
+
+### Fixed
+
+- **A question card was clipping its own contents.** `.active` had padding and
+  a 100% width but no `box-sizing`, so the padding was added *outside* the
+  width and every option row and the Next button lost 16px to the card's
+  `overflow: hidden`. Measured: rows 488px wide inside a 488px card, starting
+  8px in.
+
+  This package has no global `box-sizing` reset — one written inside a CSS
+  module leaks into the host's page — so every box with padding has to say it
+  itself. A test now reads the rules and fails if one stops.
+
+- **The card is white.** `--ick-question-card` was `--ick-surface-raised`, a 5%
+  mix, which put it within three percent of the ground it sits on: the same
+  surface in a slightly different shade rather than a card. It is `--ick-surface`
+  now, with the ground moved down to meet it. Dark keeps a raised value, since
+  `--ick-surface` there is the page itself and a card painted with it would
+  sink into the ground instead of sitting on it.
+
 ## 0.10.0 — 2026-08-29
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "inline-chat-kit",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "A drop-in inline AI chat experience \u2014 morphing input, hover actions, text highlighting and reply threads.",
   "license": "MIT",
   "type": "module",

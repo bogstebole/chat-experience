@@ -3,6 +3,7 @@
    ───────────────────────────────────────────── */
 
 .group {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-5);
@@ -16,6 +17,7 @@
 /* The negative margin and matching padding keep the cards' shadows out of the
    clip that the layout animation puts on this box. */
 .list {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-5);
