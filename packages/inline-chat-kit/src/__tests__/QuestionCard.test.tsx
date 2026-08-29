@@ -296,4 +296,62 @@ describe("the rules that only matter when painted", () => {
       expect(rule, selector).toContain("box-sizing: border-box");
     }
   });
+
+  /**
+   * Every badge in a group sits on one vertical line — the number over a
+   * question, the a/b/c beside its rows, the number on a row already answered
+   * and on one still to come.
+   *
+   * It is arithmetic across four rules, which is why it drifted: the header
+   * was 12 from the card's edge and the rows 16, and the field rows were a
+   * further pixel over because their focus edge was a border and a border is
+   * part of the box. jsdom lays nothing out, so this does the same sum the
+   * browser does.
+   */
+  it("puts every badge on the same vertical line", async () => {
+    const css = await sheet();
+    const tokens = ((await import("../styles/tokens.css?raw")).default as string).replace(
+      /\/\*[\s\S]*?\*\//g,
+      ""
+    );
+
+    /** `var(--ick-space-4)` and `0`, in px. Anything else is a new idea. */
+    const px = (value: string): number => {
+      if (value === "0") return 0;
+      const token = value.match(/^var\((--[\w-]+)\)$/)?.[1];
+      expect(token, `not a token: ${value}`).toBeTruthy();
+      const declared = tokens.match(new RegExp(`${token}:\\s*(\\d+)px`))?.[1];
+      expect(declared, `${token} is not a px token`).toBeTruthy();
+      return Number(declared);
+    };
+
+    const rule = (selector: string) => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+      return css.slice(at, css.indexOf("}", at));
+    };
+
+    /** The left of the `padding` shorthand, in px. */
+    const padLeft = (selector: string) => {
+      const value = rule(selector).match(/padding:\s*([^;]+);/)?.[1]?.trim();
+      expect(value, `${selector} has no padding`).toBeTruthy();
+      const parts = (value as string).split(/\s+/);
+      return px(parts.length === 1 ? parts[0] : parts.length === 4 ? parts[3] : parts[1]);
+    };
+
+    /** A border is part of the box and moves what is inside it over. */
+    const borderLeft = (selector: string) =>
+      Number(rule(selector).match(/border:\s*(\d+)px/)?.[1] ?? 0);
+
+    const card = padLeft(".active");
+    const lines = {
+      header: card + padLeft(".header"),
+      option: card + padLeft(".option") + borderLeft(".option"),
+      field: card + padLeft(".field") + borderLeft(".field"),
+      collapsed: padLeft(".collapsed") + borderLeft(".collapsed"),
+      upcoming: padLeft(".upcoming") + borderLeft(".upcoming"),
+    };
+
+    expect(new Set(Object.values(lines)).size, JSON.stringify(lines)).toBe(1);
+  });
 });

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Asterisk, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "../Button/Button";
 import { Chip } from "../Chip/Chip";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
@@ -314,7 +314,12 @@ export function QuestionCard({
   } else {
     body = (
       <div className={styles.upcoming}>
-        <Asterisk className={styles.star} size={14} aria-hidden />
+        {/* The number, not a mark meaning "one of these" — the row is question
+            three whether or not it has been reached yet, and saying so is what
+            makes a list of them read as a list. White, because an upcoming
+            card has no card under it: the badge is what stands off the
+            group's own surface. */}
+        <QuestionBadge>{number}</QuestionBadge>
         <span className={styles.upcomingLabel}>{question.shortTitle}</span>
       </div>
     );
