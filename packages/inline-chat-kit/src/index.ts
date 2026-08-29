@@ -55,6 +55,10 @@ export type { ChatTurnRowProps } from "./ChatTurnRow/ChatTurnRow";
 export { AnswerActions } from "./AnswerActions/AnswerActions";
 export type { AnswerActionsProps, Verdict } from "./AnswerActions/AnswerActions";
 
+/* What the agent did on the way to the answer */
+export { Tool } from "./Tool/Tool";
+export type { ToolProps, ToolState } from "./Tool/Tool";
+
 /* Structured questions inside a conversation */
 export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";
 export type { QuestionCardProps } from "./QuestionCard/QuestionCard";

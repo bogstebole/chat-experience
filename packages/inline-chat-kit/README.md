@@ -181,6 +181,47 @@ Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
 
+### `<Tool>`
+
+One tool call on the way to an answer: what was run, what with, what came
+back.
+
+```tsx
+<Tool
+  name="search_web"
+  state="done"
+  summary="3 results"
+  duration={412}
+  input={{ query: "weather in Belgrade", limit: 3 }}
+  output={results}
+/>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `name` | `string` | Set in mono: it is an identifier, not prose |
+| `state` | `"pending" \| "running" \| "done" \| "error"` | Default `"done"` |
+| `summary` | `ReactNode` | A sentence for what it did |
+| `input` / `output` | `unknown` | See below |
+| `error` | `ReactNode` | Drawn instead of the output |
+| `duration` | `number` | In ms. Shown once it has finished |
+| `open` / `defaultOpen` / `onOpenChange` | | Controlled or not |
+| `labels` | `Partial<Record<…, string>>` | `input`, `output`, `error`, and a word per state |
+
+**Shut by default**, because most of the time nobody cares — and **open when it
+failed**, because an error nobody can see has not been reported. That is
+derived from the state rather than forced by an effect, so a call that fails
+later opens itself, while one somebody deliberately shut stays shut.
+
+**What you give it decides how it is drawn.** A string is text — wrapping
+`"Belgrade, 24°C"` in a fence puts it in quotes with its newlines spelled out,
+which is worse than reading it. An object is JSON, in a `CodeBlock` with its
+copy button. An element is left alone, so anything you want drawn some other
+way you draw yourself.
+
+The state is never carried by colour alone: the glyph changes shape, and the
+row says which state it is in in words only a screen reader hears.
+
 ### `<QuestionCard>` and `<QuestionGroup>`
 
 A structured question inside a conversation: the assistant asks something with
