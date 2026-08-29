@@ -354,4 +354,20 @@ describe("the rules that only matter when painted", () => {
 
     expect(new Set(Object.values(lines)).size, JSON.stringify(lines)).toBe(1);
   });
+
+  /**
+   * A mouse click focuses a button. So `:focus-within` on the option row —
+   * added for the "something else" row, which is a label around an input and
+   * has no `:focus-visible` of its own — meant that picking an option drew a
+   * focus ring around it, which is the exact thing `:focus-visible` exists to
+   * avoid. jsdom has no `:focus-visible`, so the rule is read instead.
+   */
+  it("rings the option row for a keyboard, and for an input inside it, and not for a click", async () => {
+    const css = await sheet();
+    expect(css, "`:focus-within` unqualified catches the option button too").not.toMatch(
+      /\.option:focus-within/
+    );
+    expect(css).toMatch(/\.option\[data-other\]:focus-within/);
+    expect(css).toMatch(/\.option:focus-visible/);
+  });
 });

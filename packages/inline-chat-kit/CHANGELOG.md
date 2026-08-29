@@ -6,6 +6,21 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.12.1 — 2026-08-29
+
+### Fixed
+
+- **Picking an option no longer draws a focus ring around it.** The option row
+  rang on `:focus-within`, and a mouse click focuses a button — so choosing one
+  outlined it, which is the exact thing `:focus-visible` exists to avoid.
+  Measured: after a real click, `:focus-visible` was `false` and
+  `:focus-within` `true`, with a 2px outline computed.
+
+  `:focus-within` was there for the "something else" row, which is a label
+  around an input and so has no `:focus-visible` of its own. It is scoped to
+  that row now. A keyboard still rings every row, and the row still lights up
+  when its input is focused.
+
 ## 0.12.0 — 2026-08-29
 
 ### Added
