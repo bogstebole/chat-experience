@@ -11,7 +11,7 @@ import "@fontsource/geist-mono/600.css";
 import "dialkit/styles.css";
 import "./index.css";
 import App from "./App";
-import { isShowcase } from "./demo/showcase";
+import { showDevTools } from "./demo/showcase";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -21,7 +21,7 @@ createRoot(document.getElementById("root")!).render(
         left with the full morph. */}
     <MotionConfig reducedMotion="user">
       <App />
-      {!isShowcase() && <DialRoot />}
+      {showDevTools() && <DialRoot />}
     </MotionConfig>
   </StrictMode>
 );

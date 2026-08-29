@@ -13,6 +13,18 @@ const params = () =>
 export const isShowcase = () => params().has("showcase");
 
 /**
+ * The development chrome — the perf HUD and the animation dial — which is
+ * **off unless `?dev` asks for it**.
+ *
+ * It used to be the other way round, with `?showcase` stripping it. That is
+ * the wrong default for a page whose whole point is the thing in the middle:
+ * opening the demo put two panels of tooling on screen and the component
+ * third. `?showcase` still means "no chrome" whatever else is in the URL, so
+ * the recordings and the screenshots are unaffected.
+ */
+export const showDevTools = () => params().has("dev") && !isShowcase();
+
+/**
  * The theme asked for in the URL, or `null` for "whatever the system says".
  *
  * `null` matters: setting `data-theme` unconditionally would pin the page to
