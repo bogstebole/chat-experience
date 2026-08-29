@@ -6,6 +6,42 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.12.0 — 2026-08-29
+
+### Added
+
+- **`<Tool>`.** One tool call: what was run, what with, what came back, and
+  which of four states it is in — queued, running, done, failed. Shut by
+  default, because most of the time nobody cares.
+
+  **It opens itself when it failed**, since an error nobody can see has not
+  been reported. Derived from the state rather than forced by an effect, so a
+  call that fails later opens while one somebody deliberately shut stays shut —
+  reopening a row under a reader's hands to show them something they dismissed
+  is not help.
+
+  What it was given decides how it is drawn. A string is text: wrapping
+  `"Belgrade, 24°C"` in a fence puts it in quotes with its newlines spelled
+  out, which is worse than reading it. An object is JSON, in a `CodeBlock` with
+  its copy button, which is most of why anybody opens the row. An element is
+  somebody having decided for themselves, so it is left alone. A value JSON
+  cannot hold prints something unhelpful rather than throwing.
+
+  The state is not carried by colour: the glyph changes shape, and the row says
+  which state it is in in words that only a screen reader hears.
+
+- **`--ick-danger`.** The first hue past ink, paper and the marker. The marker
+  already means "this one", so a failed call wearing the accent for choice
+  would say the wrong thing. A channel triplet like the rest, lifted in the
+  dark, where the light red was nearly black on a near-black page.
+
+### Changed
+
+- **`--ick-tool-code-fill`** points a fenced value inside a tool row at paper
+  rather than at the sunken surface the row itself uses — otherwise the two are
+  one grey with a hairline through them. Lighter than the row in the light,
+  darker in the dark; different in both, which is the requirement.
+
 ## 0.11.1 — 2026-08-29
 
 ### Fixed

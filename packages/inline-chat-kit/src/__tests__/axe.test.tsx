@@ -13,6 +13,7 @@ import { Conversation } from "../Conversation/Conversation";
 import { AnswerActions } from "../AnswerActions/AnswerActions";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Loader } from "../Loader/Loader";
+import { Tool } from "../Tool/Tool";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import {
@@ -336,6 +337,46 @@ describe("axe — the empty state and the loader", () => {
 
   it("passes as a loader that speaks", async () => {
     const { container } = render(<Loader label="Thinking" />);
+    await check(container);
+  });
+});
+
+describe("axe — a tool call", () => {
+  const INPUT = { query: "weather in Belgrade", limit: 3 };
+
+  it("passes shut", async () => {
+    const { container } = render(
+      <Tool name="search_web" summary="3 results" duration={412} input={INPUT} output={{ ok: true }} />
+    );
+    await check(container);
+  });
+
+  it("passes open, where the copy button is a second control in the row", async () => {
+    const { container } = render(
+      <Tool name="search_web" input={INPUT} output={{ ok: true }} defaultOpen />
+    );
+    await check(container);
+  });
+
+  /* `aria-controls` has to point at something that exists whether the row is
+     open or shut, which is the thing this catches if the body ever stops
+     being rendered while collapsed. */
+  it("passes while it is running", async () => {
+    const { container } = render(
+      <Tool name="search_web" state="running" summary="Searching" input={INPUT} defaultOpen />
+    );
+    await check(container);
+  });
+
+  it("passes having failed, where it opens itself", async () => {
+    const { container } = render(
+      <Tool name="run_sql" state="error" summary="Query rejected" duration={1173} input={INPUT} error="null value in column id" />
+    );
+    await check(container);
+  });
+
+  it("passes with nothing to open, where the row is not a control", async () => {
+    const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
     await check(container);
   });
 });

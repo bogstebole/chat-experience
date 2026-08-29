@@ -142,6 +142,31 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "tool-states",
+    story: "components-tool--states",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "tool-open",
+    story: "components-tool--open",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "tool-failed",
+    story: "components-tool--failed",
+    themes: ["light"],
+  },
+  {
+    name: "tool-text-output",
+    story: "components-tool--text-output",
+    themes: ["light"],
+  },
+  {
+    name: "tool-sequence",
+    story: "components-tool--a-sequence",
+    themes: ["dark"],
+  },
+  {
     name: "empty-state",
     story: "components-emptystate--everything",
     themes: ["light", "dark"],

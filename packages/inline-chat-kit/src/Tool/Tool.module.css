@@ -1,0 +1,240 @@
+/* ─────────────────────────────────────────────
+   Tool
+
+   One tool call, folded shut. Inset into the answer rather than raised off it:
+   this belongs to the answer above it, and a card would set it apart from the
+   thing it is explaining.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.tool {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: var(--ick-radius-md);
+  background: var(--ick-tool-surface);
+  font-family: var(--ick-font-sans);
+  /* Clips the body to the box while it is opening, so growing reads as a
+     reveal rather than as content arriving before its container has. */
+  overflow: hidden;
+}
+
+/* ── The row you click ──────────────────────────────────────────────────── */
+
+.header {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-4) var(--ick-space-5);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+.header:hover {
+  background: var(--ick-tool-surface-hover);
+}
+
+.header:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Nothing to open — no input, no output, nothing to say yet. It is still a
+   row worth reading, so it stays put and stops being a control. */
+.header:disabled {
+  cursor: default;
+}
+
+.header:disabled:hover {
+  background: none;
+}
+
+.glyph {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ick-tool-glyph-size);
+  height: var(--ick-tool-glyph-size);
+  color: var(--ick-tool-glyph);
+}
+
+.tool[data-state="done"] .glyph {
+  color: var(--ick-tool-glyph-done);
+}
+
+.tool[data-state="error"] .glyph {
+  color: var(--ick-tool-glyph-error);
+}
+
+/* Queued: an outline, because nothing has happened to fill it in yet. */
+.queued {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid currentColor;
+  border-radius: var(--ick-radius-pill);
+}
+
+/* Running: a ring with one quarter in ink, turning. */
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--ick-tool-spinner-track);
+  border-top-color: var(--ick-tool-spinner);
+  border-radius: var(--ick-radius-pill);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Standing still it is still a ring that is not a tick and not a triangle,
+   which is the whole job. A spinner that vanishes with its animation was
+   carrying its meaning in the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+/* An identifier, not prose — so it is set as one. */
+.name {
+  flex-shrink: 0;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-sm);
+  color: var(--ick-tool-name);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ick-text-sm);
+  color: var(--ick-tool-meta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  /* Pushed right when there is no summary to do it. */
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-tool-meta);
+}
+
+/* The summary already took the space, so the time must not take it again. */
+.summary ~ .time {
+  margin-left: 0;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--ick-tool-meta);
+  transition: transform var(--ick-duration-fast) var(--ick-ease);
+}
+
+.header[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* ── What is inside ─────────────────────────────────────────────────────── */
+
+/* Always present, so `aria-controls` always points at something. Empty and
+   flat when the row is shut. */
+.bodyOuter {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.body {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+.bodyInner {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-5);
+  width: 100%;
+  padding: var(--ick-space-2) var(--ick-space-5) var(--ick-space-5);
+  border-top: 1px solid var(--ick-tool-border);
+  /* The rule belongs to the body, and the body's top padding sits under it. */
+  margin-top: var(--ick-space-2);
+  /* Repointed rather than restyled: the code block reads its own token, so
+     this moves it without knowing anything about how a code block is built. */
+  --ick-md-code-fill: var(--ick-tool-code-fill);
+}
+
+.section {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-3);
+  width: 100%;
+  min-width: 0;
+}
+
+.sectionLabel {
+  font-size: var(--ick-text-xs);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--ick-tool-meta);
+}
+
+.text {
+  margin: 0;
+  font-size: var(--ick-text-md);
+  line-height: 1.55;
+  color: var(--ick-ink);
+  /* What came back keeps its own line breaks; it is a value, not a paragraph
+     somebody wrote. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── When it failed ─────────────────────────────────────────────────────── */
+
+.error {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--ick-space-4) var(--ick-space-5);
+  border-radius: var(--ick-radius-sm);
+  background: var(--ick-tool-error-surface);
+  color: var(--ick-danger);
+}
+
+.error .text {
+  color: inherit;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

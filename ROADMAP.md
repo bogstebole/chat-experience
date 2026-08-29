@@ -762,9 +762,35 @@ This is the "thinking, reasoning" the brief asks for.
       auto-collapse is the detail they all converged on.
 - [ ] **G2 · `ChainOfThought` / `Steps`.** A sequence with per-step status.
       Distinct from G1: reasoning is prose, steps are structure.
-- [ ] **G3 · `Tool`.** Name, input, output, and state — pending, running,
-      done, error. Collapsed by default, because most of the time nobody
-      cares. This is the component that makes an agent legible.
+- [x] **G3 · `Tool` — done.** Name, input, output, and state — pending,
+      running, done, error. Shut by default, because most of the time nobody
+      cares.
+
+      **Open when it failed**, because an error nobody can see has not been
+      reported — and derived from the state rather than forced by an effect,
+      so a call that fails later opens itself while one somebody deliberately
+      shut stays shut. Overriding a reader's own decision to show them
+      something they dismissed is not help.
+
+      A string output is text and an object is JSON. Wrapping `"Belgrade,
+      24°C"` in a fence puts it in quotes with its newlines spelled out, which
+      is worse than reading it. An element is left alone.
+
+      Two things the first screenshot caught. The section heading sat above a
+      `CodeBlock` bar holding nothing but a copy button — two rows doing one
+      row's work, and the empty strip between them was the first thing you saw;
+      the heading went into the bar. And the fenced value was
+      `--ick-surface-sunken` inside a row that was also
+      `--ick-surface-sunken`, so the two were one grey with a hairline through
+      them; the block is repointed at paper, which is lighter than the row in
+      the light and darker in the dark.
+
+      Brings the first hue past ink, paper and the marker: `--ick-danger`. The
+      marker already means "this one", so a failed call wearing the accent for
+      choice would say the wrong thing. Nothing depends on seeing it — the
+      glyph changes shape and the row says its state in words.
+
+      28 tests, 5 axe cases, 7 stories, 13 tokens. `0.12.0`.
 - [ ] **G4 · `TaskList`.** Claude Code's todo list: what it plans to do, what
       it is doing now, what is finished.
 - [ ] **G5 · `Sources` + `InlineCitation`.** A numbered marker in the text
@@ -797,9 +823,11 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → **G3** → G1 → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → **G1** → G4 → G2 → G5 → G6 → G7 → H.
 
-The floor is finished. What is left is the agent tier.
+The floor is finished, and the hardest shape in the agent tier with it.
+`Reasoning` is next, and it is close to a special case of the tool row: a
+disclosure that opens on one state and keeps a duration.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

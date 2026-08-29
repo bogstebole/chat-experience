@@ -41,6 +41,7 @@
     --ick-ink-rgb: 17 17 17;
     --ick-paper-rgb: 255 255 255;
     --ick-marker-rgb: 204 255 0;
+    --ick-danger-rgb: 200 32 32;
 
     /* ═══ Semantic ═════════════════════════════════════════════════════════
        What a value means, which is what dark mode swaps. */
@@ -86,6 +87,16 @@
        still a legible grey, while 15% of near-white on black is very nearly
        nothing. */
     --ick-recede: 0.15;
+
+    /* Failure. The first hue here beyond ink, paper and the marker, and it
+       earns the place: the marker already means "this one", so a tool call
+       that failed wearing the accent for choice would say the wrong thing.
+
+       Nothing depends on seeing it — the glyph changes shape too, and the row
+       says which state it is in in words. It is a channel triplet like the
+       rest, so a host moves it without touching anything built on it. */
+    --ick-danger: rgb(var(--ick-danger-rgb));
+    --ick-danger-tint: rgb(var(--ick-danger-rgb) / 0.08);
 
     /* ═══ Typography ═══════════════════════════════════════════════════════
        Stated outright rather than chained to the host's own font variables.
@@ -324,6 +335,32 @@
     --ick-chip-height: 22px;
     --ick-chip-fill: var(--ick-surface-active);
     --ick-chip-max: 180px;
+
+    /* ═══ Tool ══════════════════════════════════════════════════════════════
+       One tool call, folded shut. It sits inside an answer rather than beside
+       it, so it is inset into the page rather than raised off it — a card
+       here would compete with the answer it belongs to. */
+
+    --ick-tool-surface: var(--ick-surface-sunken);
+    --ick-tool-surface-hover: var(--ick-surface-active);
+    --ick-tool-border: var(--ick-border);
+    --ick-tool-name: var(--ick-ink);
+    --ick-tool-meta: var(--ick-ink-faint);
+    --ick-tool-glyph: var(--ick-ink-faint);
+    --ick-tool-glyph-done: var(--ick-ink-soft);
+    --ick-tool-glyph-error: var(--ick-danger);
+    --ick-tool-error-surface: var(--ick-danger-tint);
+    /* The turning arc and the ring it turns in. Neutral rather than the
+       marker: a pale yellow reads as a fill behind dark text and all but
+       disappears as a 2px stroke. */
+    --ick-tool-spinner: var(--ick-ink-soft);
+    --ick-tool-spinner-track: var(--ick-border);
+    --ick-tool-glyph-size: 16px;
+    /* A fenced value inside the row needs to be a different surface to the row
+       itself, or the two are one grey with a hairline through it. Paper, which
+       is lighter than the row in the light and darker than it in the dark —
+       different in both, which is the whole requirement. */
+    --ick-tool-code-fill: var(--ick-surface);
     --ick-empty-pad: var(--ick-space-8);
     --ick-conversation-pad-block: var(--ick-space-7);
     --ick-conversation-pad-inline: var(--ick-space-7);
@@ -394,6 +431,9 @@
        card painted with it would sink into the ground rather than sit on it.
        Raised means lighter. */
     --ick-dark-question-card: rgb(var(--ick-ink-rgb) / 0.09);
+    /* The light red is nearly black on a near-black page. Lifted until it
+       reads as red rather than as a dark patch. */
+    --ick-dark-danger-rgb: 248 113 113;
     --ick-dark-ink-glass: rgb(var(--ick-ink-rgb) / 0.9);
     --ick-dark-ink-glass-strong: rgb(var(--ick-ink-rgb));
     --ick-dark-glass-fill: rgb(var(--ick-ink-rgb) / 0.08);
@@ -492,6 +532,7 @@
       --ick-paper-rgb: var(--ick-dark-paper-rgb);
       --ick-header-bg: var(--ick-dark-header-bg);
       --ick-question-card: var(--ick-dark-question-card);
+      --ick-danger-rgb: var(--ick-dark-danger-rgb);
       --ick-ink-glass: var(--ick-dark-ink-glass);
       --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
       --ick-glass-fill: var(--ick-dark-glass-fill);
@@ -522,6 +563,7 @@
     --ick-paper-rgb: var(--ick-dark-paper-rgb);
     --ick-header-bg: var(--ick-dark-header-bg);
     --ick-question-card: var(--ick-dark-question-card);
+    --ick-danger-rgb: var(--ick-dark-danger-rgb);
     --ick-ink-glass: var(--ick-dark-ink-glass);
     --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
     --ick-glass-fill: var(--ick-dark-glass-fill);
