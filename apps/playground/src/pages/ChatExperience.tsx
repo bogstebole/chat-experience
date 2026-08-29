@@ -414,6 +414,9 @@ export function ChatExperience() {
           >
             {isEmpty && (
               <EmptyState
+                /* The opening block and the composer under it share one
+                   column, so they read as one thing. See `.opening`. */
+                className="opening"
                 title="Ask me about particle physics"
                 description="The Standard Model, the Higgs, and what a boson actually is."
                 suggestions={[
@@ -432,6 +435,11 @@ export function ChatExperience() {
                 <ChatTurnRow
                   key={turn.id}
                   turn={turn}
+                  /* Nothing has been asked yet, so this is not a message on
+                     its way — it is the box under the openers, and it lines up
+                     with them. */
+                  questionAlign={isEmpty && i === 0 ? "stretch" : "end"}
+                  className={isEmpty && i === 0 ? "opening" : undefined}
                   isActiveInput={
                     i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing")
                   }

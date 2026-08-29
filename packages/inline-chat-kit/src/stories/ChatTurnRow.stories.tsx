@@ -74,6 +74,27 @@ export const States: Story = {
   ),
 };
 
+/**
+ * Where the composer sits.
+ *
+ * `end` by default, because it is about to become the reader's own bubble.
+ * `stretch` is for the opening composer — on an empty conversation it is not a
+ * message on its way, it is the box under the openers, and it lines up with
+ * them instead of floating at the right edge of the column.
+ */
+export const OpeningComposer: Story = {
+  render: (args) => (
+    <div style={{ maxWidth: 560 }}>
+      <Frame label='questionAlign="end" — the default, on its way to being a bubble'>
+        <ChatTurnRow {...args} turn={turn({ user: "" })} isActiveInput />
+      </Frame>
+      <Frame label='questionAlign="stretch" — the opening, lined up with what is above it'>
+        <ChatTurnRow {...args} turn={turn({ user: "" })} isActiveInput questionAlign="stretch" />
+      </Frame>
+    </div>
+  ),
+};
+
 /** Precise selection instead of the freeform marker. */
 export const PreciseSelection: Story = {
   render: (args) => (

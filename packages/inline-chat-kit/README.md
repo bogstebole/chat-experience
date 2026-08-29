@@ -164,6 +164,7 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `animationConfig` | `InlineAnimConfig` | | Passed to the input |
 | `entranceDelay` | `number` | `0` | Stagger, in seconds |
 | `selectionMode` | `"marker" \| "precise"` | `"marker"` | Passed to the highlighter |
+| `questionAlign` | `"end" \| "stretch"` | `"end"` | Where the composer sits — see below |
 | `onDraft` | `(id, value) => void` | | |
 | `onSubmit` | `(id, value) => void` | | |
 | `onStop` | `() => void` | | |
@@ -176,6 +177,12 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `onFeedback` | `(id, verdict) => void` | | Draws the thumbs |
 | `feedback` | `"up" \| "down" \| null` | `null` | Which one is lit |
 | `answerActions` | `boolean` | `true` | Leave the row out |
+
+`questionAlign` is `end` by default, because the composer is about to become
+the reader's own bubble and those sit right. `stretch` fills the row instead,
+which is what an *opening* composer wants: on an empty conversation it is not a
+message on its way, it is the box under the openers — and a pill floating at
+the right edge of a centred block reads as unrelated to the block.
 
 Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`

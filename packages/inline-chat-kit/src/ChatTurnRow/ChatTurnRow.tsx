@@ -23,6 +23,17 @@ export interface ChatTurnRowProps {
   selectionMode?: "marker" | "precise";
 
   /**
+   * Where the composer sits in the row.
+   *
+   * `end` by default, because it is about to become the reader's own bubble
+   * and those sit right. `stretch` fills the row instead, which is what an
+   * *opening* composer wants: on an empty conversation it is not a message
+   * yet, it is the thing under the openers — and a pill floating at the right
+   * edge of a centred block reads as unrelated to the block.
+   */
+  questionAlign?: "end" | "stretch";
+
+  /**
    * Every callback takes the turn's id rather than being closed over per row.
    *
    * Not a style choice. An inline arrow is a new function on every render, and
@@ -88,6 +99,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   animationConfig,
   entranceDelay = 0,
   selectionMode = "marker",
+  questionAlign = "end",
   onDraft,
   onSubmit,
   onStop,
@@ -120,9 +132,12 @@ export const ChatTurnRow = memo(function ChatTurnRow({
       exit={{ opacity: 0, y: offset }}
       transition={{ duration: still ? 0.15 : 0.4, ease: [0.22, 1, 0.36, 1], delay: entranceDelay }}
     >
-      <div className={styles.question}>
+      <div className={styles.question} data-align={questionAlign}>
         <ChatInput
           ref={inputRef}
+          /* A flex child sizes to its content, and the composer has a width of
+             its own — so stretching the row is not enough on its own. */
+          style={questionAlign === "stretch" ? { width: "100%" } : undefined}
           state={turn.state}
           value={turn.user}
           onChange={(v) => onDraft?.(turn.id, v)}

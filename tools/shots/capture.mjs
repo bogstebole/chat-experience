@@ -296,6 +296,19 @@ const SHOTS = [
 /** The playground, driven far enough to show a real answer. */
 const APP_SHOTS = [
   {
+    name: "demo-opening",
+    themes: ["light", "dark"],
+    clip: null,
+    /** The opening: the block and the composer under it, one column. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      // Wait for the composer itself rather than guessing: it enters after the
+      // block above it, and at 1.2s the shot came back without it.
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.waitForTimeout(800);
+    },
+  },
+  {
     name: "demo-markdown-answer",
     themes: ["light", "dark"],
     clip: null,

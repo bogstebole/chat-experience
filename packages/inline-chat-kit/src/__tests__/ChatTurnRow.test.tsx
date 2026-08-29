@@ -11,6 +11,32 @@ const turn = (over: Partial<ChatTurn> = {}): ChatTurn => ({
   ...over,
 });
 
+describe("where the composer sits", () => {
+  /* It is about to become the reader's own bubble, and those sit right. */
+  it("sits at the right edge by default", () => {
+    const { container } = render(<ChatTurnRow turn={turn()} isActiveInput />);
+    expect(container.querySelector("[data-align]")).toHaveAttribute("data-align", "end");
+  });
+
+  /* On an empty conversation it is not a message on its way — it is the box
+     under the openers, and a pill adrift at the right of a centred block reads
+     as unrelated to it. */
+  const composer = (container: HTMLElement) =>
+    container.querySelector("[data-align] > *") as HTMLElement;
+
+  it("fills the row when it is the opening composer", () => {
+    const { container } = render(<ChatTurnRow turn={turn()} isActiveInput questionAlign="stretch" />);
+    expect(container.querySelector("[data-align='stretch']")).not.toBeNull();
+    // A flex child sizes to its content, so the input has to be told as well.
+    expect(composer(container).style.width).toBe("100%");
+  });
+
+  it("leaves the input to its own width otherwise", () => {
+    const { container } = render(<ChatTurnRow turn={turn()} isActiveInput />);
+    expect(composer(container).style.width).toBe("");
+  });
+});
+
 describe("what the row renders", () => {
   it("shows a composer for the question, and passes the placeholder through", () => {
     render(<ChatTurnRow turn={turn()} isActiveInput placeholder="Ask me anything" />);
