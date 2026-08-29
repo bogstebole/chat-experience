@@ -6,6 +6,45 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.11.0 — 2026-08-29
+
+### Added
+
+- **The parts a question is built from are public.** `QuestionShell`,
+  `QuestionOptionRow`, `QuestionFieldRow`, `QuestionOtherRow` and
+  `QuestionBadge`.
+
+  The kit ships three question shapes, and three is not all of them. A fourth —
+  pick one *and* say something, say — is now a composition rather than a fork,
+  and it arrives already wearing the same tokens, focus behaviour and ARIA as
+  the three that ship. Exporting the rows without the shell would have been
+  half of it: the box, the header and the footer would still have been
+  hand-rolled out of numbers that were tokens ten minutes earlier.
+
+  Being public API changed them. Each takes a `className` that is added to its
+  own rather than replacing it, spreads the rest of its props onto the element
+  it ends in, and forwards its ref to the thing worth having one for — the
+  input, in the two rows that have one. `letter` is optional everywhere. And
+  they are named for what they are from outside rather than for where they sat
+  inside the card.
+
+  `QuestionShell` paints the card by default, since a shell standing on its own
+  is the reason it is exported. `QuestionCard` passes `card={false}` — the box
+  that morphs between the three states is its own, and two would nest. The card
+  is now built out of the shell rather than repeating it, so the shipped
+  component is the proof the exported one works.
+
+### Fixed
+
+- **Two field rows with the same label no longer share an id.** The input's id
+  was built out of the letter and the label, which is unique inside one card
+  and not across two — and two inputs holding one id means the second row's
+  label focuses the first row's input. It is `useId()` now, and an `id` of your
+  own still wins.
+
+- **The option row's tap no longer scales under reduced motion.** A 1% squash,
+  but it was the one animation in the question rows that was not asking.
+
 ## 0.10.1 — 2026-08-29
 
 ### Fixed

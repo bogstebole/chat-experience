@@ -330,3 +330,11 @@
 .fieldInput::placeholder {
   color: var(--ick-ink-faint);
 }
+
+/* The card box, for a shell standing on its own rather than inside a
+   QuestionCard — which brings its own, and would otherwise nest two. */
+.shellCard {
+  border-radius: var(--ick-radius-lg);
+  background: var(--ick-question-card);
+  box-shadow: var(--ick-shadow-float);
+}

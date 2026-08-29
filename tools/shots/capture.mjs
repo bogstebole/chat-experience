@@ -116,6 +116,32 @@ const SHOTS = [
     },
   },
   {
+    name: "question-parts-composed",
+    story: "components-question-parts--a-composed-question",
+    themes: ["light", "dark"],
+    /** Picked, so the row, the badge and the enabled button are all real. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /Within a month/ }).click();
+      await page.getByRole("textbox").fill("She has a cat");
+      await page.waitForTimeout(300);
+    },
+  },
+  {
+    name: "question-parts-options",
+    story: "components-question-parts--options",
+    themes: ["light"],
+  },
+  {
+    name: "question-parts-fields",
+    story: "components-question-parts--fields",
+    themes: ["light"],
+  },
+  {
+    name: "question-parts-other",
+    story: "components-question-parts--something-else",
+    themes: ["dark"],
+  },
+  {
     name: "empty-state",
     story: "components-emptystate--everything",
     themes: ["light", "dark"],
