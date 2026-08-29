@@ -6,6 +6,30 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.11.1 — 2026-08-29
+
+### Fixed
+
+- **Every badge in a question sits on one vertical line.** The number over a
+  question was 12px from the card's edge and the a/b/c beside its rows were
+  16, so the two did not line up. The rows already answered and the ones still
+  to come were at 12 as well. All four are at 16 now.
+
+- **A field row's focus edge stopped taking up room.** It was a 1px border,
+  and a border is part of the box — which put every field row's badge a pixel
+  to the right of every option row's. It is an inset shadow now: the same
+  edge, drawn in no space.
+
+  A test does the sum the browser does — jsdom lays nothing out — and fails if
+  any of the four rules drifts again.
+
+### Changed
+
+- **A question still to come shows its number rather than an asterisk.** It is
+  question three whether or not anybody has reached it, and saying so is what
+  makes the list read as a list. White, since an upcoming row has no card
+  under it: the badge is what stands off the group's own surface.
+
 ## 0.11.0 — 2026-08-29
 
 ### Added

@@ -38,16 +38,15 @@
   display: flex;
   align-items: center;
   gap: var(--ick-space-4);
-  padding: var(--ick-space-3) var(--ick-space-4) var(--ick-space-3) var(--ick-space-5);
+  /* 16, because these rows are the card itself rather than rows inside one:
+     the badge has to reach the line the active card's rows sit on, and there
+     is no inner padding to make up the difference. */
+  padding: var(--ick-space-3) var(--ick-space-4) var(--ick-space-3) var(--ick-space-6);
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
 }
 
-.star {
-  flex-shrink: 0;
-  color: var(--ick-ink-faint);
-}
 
 .upcomingLabel {
   font-size: var(--ick-text-md);
@@ -66,7 +65,7 @@
   row-gap: var(--ick-space-4);
   gap: var(--ick-space-4);
   width: 100%;
-  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-5);
+  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
   font-family: var(--ick-font-sans);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -138,7 +137,9 @@
   display: flex;
   align-items: flex-start;
   gap: var(--ick-space-4);
-  padding: var(--ick-space-2) 0 0 var(--ick-space-2);
+  /* 8 here plus the card's own 8 puts this badge on the same vertical line
+     as the badges in the rows below it. See the note over `.upcoming`. */
+  padding: var(--ick-space-2) 0 0 var(--ick-space-4);
 }
 
 .headerText {
@@ -289,15 +290,18 @@
   padding: var(--ick-space-4);
   border-radius: var(--ick-radius-md);
   background: var(--ick-question-row);
-  border: 1px solid transparent;
   cursor: text;
-  transition: border-color var(--ick-duration-fast) ease;
+  transition: box-shadow var(--ick-duration-fast) ease;
 }
 
 /* The row lights up rather than the input, because the row is what somebody
-   is looking at — the field inside it has no border of its own to notice. */
+   is looking at — the field inside it has no border of its own to notice.
+
+   An inset shadow rather than a border: a border is part of the box, and a
+   1px one on the field rows and none on the option rows put the two kinds of
+   badge a pixel apart. This paints the same edge and takes up no room. */
 .field[data-focused] {
-  border-color: var(--ick-question-row-focus);
+  box-shadow: inset 0 0 0 1px var(--ick-question-row-focus);
 }
 
 .fieldBody {
