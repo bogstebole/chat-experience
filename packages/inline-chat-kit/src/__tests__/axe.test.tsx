@@ -13,6 +13,9 @@ import { Conversation } from "../Conversation/Conversation";
 import { AnswerActions } from "../AnswerActions/AnswerActions";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Loader } from "../Loader/Loader";
+import { QuestionCard } from "../QuestionCard/QuestionCard";
+import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
+import type { Question } from "../QuestionCard/types";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
 /**
@@ -327,6 +330,82 @@ describe("axe — the empty state and the loader", () => {
 
   it("passes as a loader that speaks", async () => {
     const { container } = render(<Loader label="Thinking" />);
+    await check(container);
+  });
+});
+
+describe("axe — a structured question", () => {
+  const INPUTS: Question = {
+    id: "who",
+    type: "inputs",
+    title: "Who are we caring for?",
+    subtitle: "Just the basics",
+    shortTitle: "About them",
+    fields: [{ id: "name", label: "Their name", placeholder: "Milica" }],
+  };
+
+  const MULTI: Question = {
+    id: "help",
+    type: "multi",
+    title: "What do they need help with?",
+    shortTitle: "Support",
+    allowOther: true,
+    allowEmpty: true,
+    options: [{ id: "meals", title: "Meals", description: "Cooking and shopping" }],
+  };
+
+  it("passes while being answered with fields", async () => {
+    const { container } = render(<QuestionCard question={INPUTS} number={1} state="active" />);
+    await check(container);
+  });
+
+  it("passes while being answered with options", async () => {
+    const { container } = render(<QuestionCard question={MULTI} number={1} state="active" />);
+    await check(container);
+  });
+
+  /** One control for the row, named by what pressing it does. */
+  it("passes once answered and folded", async () => {
+    const { container } = render(
+      <QuestionCard
+        question={INPUTS}
+        number={1}
+        state="collapsed"
+        answer={{ values: { name: "Milica" } }}
+        onEdit={vi.fn()}
+      />
+    );
+    await check(container);
+  });
+
+  it("passes read-only, where it is not a control at all", async () => {
+    const { container } = render(
+      <QuestionCard
+        question={INPUTS}
+        number={1}
+        state="collapsed"
+        readOnly
+        answer={{ values: { name: "Milica" } }}
+      />
+    );
+    await check(container);
+  });
+
+  it("passes as a whole step, and folded", async () => {
+    const questions = [INPUTS, MULTI];
+    const { container, rerender } = render(
+      <QuestionGroup id="s" questions={questions} answers={{}} activeIndex={0} />
+    );
+    await check(container);
+
+    rerender(
+      <QuestionGroup
+        id="s"
+        questions={questions}
+        answers={{ who: { values: { name: "Milica" } }, help: { optionIds: [] } }}
+        collapsible
+      />
+    );
     await check(container);
   });
 });

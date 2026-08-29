@@ -807,6 +807,31 @@ expensive — the marker has to survive rich text, which means markdown has to
 render *inside* the highlighter rather than around it. G3 before G1 because a
 tool call is the harder shape and reasoning is close to a special case of it.
 
+### E4 · Structured questions, from NANA — done
+
+The assistant asks something with a shape to it and the answer is picked or
+typed rather than written out. Ported from `NANA Prime`
+(`src/components/QuestionItem.jsx` + `QuestionSection.jsx`) and rebuilt on this
+kit's tokens, type and buttons — the accent doing the work is the marker
+yellow, on the badge of whatever is chosen and the border of the field being
+typed into.
+
+- [x] Three shapes: `inputs`, `single`, `multi` with an optional free-text row
+- [x] Three states that morph rather than swap — FLIP on the box,
+      `layout="position"` on the content so text keeps its real size, and
+      `overflow: hidden` so growing reads as a reveal
+- [x] A group that folds to one summary row once it is answered
+- [x] Kept: the beat before a single-select commits, and the "something else"
+      row being a `<label>` — an input inside a button is not reliably
+      focusable
+- [x] **Changed:** the collapsed row is one `<button>` naming what it does. The
+      original was a click handler on a `<div>` with another button inside it —
+      clickable but not reachable by keyboard, and two tab stops for one action.
+- [x] **Changed:** letter badges are `aria-hidden`. The letter is a visual
+      index; in the tree it turned a field called "Their name" into one called
+      "a Their name". Found because a test could not query it by label.
+- [x] 23 tests, 5 axe cases, 6 stories, 10 tokens. `0.10.0`.
+
 ## Later
 
 - [x] **Touch — done.** `touch-action: none` on every answer meant a finger

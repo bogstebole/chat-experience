@@ -141,6 +141,13 @@ these to move one thing without moving its neighbours:
 
   --ick-conversation-gap: 48px;        /* between turns */
   --ick-loader-dot: 5px;
+  --ick-question-surface: var(--ick-surface-sunken);   /* the step's own ground */
+  --ick-question-card: var(--ick-surface-raised);      /* a question on it */
+  --ick-question-row: var(--ick-surface-hover);        /* an option in the card */
+  --ick-question-row-selected: var(--ick-marker-tint);
+  --ick-question-row-focus: var(--ick-marker);
+  --ick-badge-size: 24px;
+  --ick-chip-fill: var(--ick-surface-active);
   --ick-empty-pad: 40px;               /* around the empty state */
   --ick-conversation-pad-block: 24px;  /* inside the scroll */
   --ick-conversation-pad-inline: 24px;

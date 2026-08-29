@@ -87,6 +87,35 @@ const SHOTS = [
     },
   },
   {
+    name: "question-states",
+    story: "components-questioncard--states",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "question-types",
+    story: "components-questioncard--types",
+    themes: ["light"],
+  },
+  {
+    name: "question-summaries",
+    story: "components-questioncard--summaries",
+    themes: ["light"],
+  },
+  {
+    name: "question-step",
+    story: "components-questioncard--a-whole-step",
+    themes: ["light"],
+    /** Answer the first one, so the fold and the summary row are both real. */
+    act: async (page) => {
+      const boxes = page.getByRole("textbox");
+      await boxes.nth(0).fill("Milica Stevanović");
+      await boxes.nth(1).fill("84");
+      await boxes.nth(2).fill("Vračar, Beograd");
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.waitForTimeout(900);
+    },
+  },
+  {
     name: "empty-state",
     story: "components-emptystate--everything",
     themes: ["light", "dark"],

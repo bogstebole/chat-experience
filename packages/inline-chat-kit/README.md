@@ -181,6 +181,50 @@ Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
 
+### `<QuestionCard>` and `<QuestionGroup>`
+
+A structured question inside a conversation: the assistant asks something with
+a shape to it, and the answer is picked or typed rather than written out.
+
+```tsx
+<QuestionGroup
+  id="about-them"
+  questions={questions}
+  answers={answers}
+  activeIndex={activeIndex}
+  collapsible={done && questions.length >= FOLDABLE_FROM}
+  onCommit={(id, answer) => setAnswers((all) => ({ ...all, [id]: answer }))}
+  onEdit={setEditing}
+/>
+```
+
+A `Question` is one of three shapes — `inputs` (type something), `single` (pick
+one), `multi` (pick several, optionally with a "something else" field). Each
+carries a `shortTitle`, which is what it is called once it folds into a row.
+
+A card is in one of three states, and morphs between them:
+
+| state | what it is |
+| --- | --- |
+| `upcoming` | one dim row, waiting its turn |
+| `active` | the question, open, being answered |
+| `collapsed` | one row: the short title, the answer as chips, and a way back in |
+
+`QuestionGroup` holds a step's worth and folds the whole thing to a single
+summary row once the conversation has moved past it — not a peek at the list,
+because a peek costs more height than the answers it shows.
+
+Two decisions carried over from the original, both worth keeping: `single`
+waits a beat after a choice before committing, or the card is gone before
+anyone sees what they picked; and the "something else" row is a `<label>`, not
+a button, because an input inside a button is not reliably focusable.
+
+Two changed. The collapsed row is a single `<button>` naming what it does
+(`"Edit answer: Household"`) rather than a click handler on a `<div>` with
+another button inside it — that could be clicked but not tabbed to. And the
+letter badges are `aria-hidden`: the letter is a visual index, and left in the
+tree it turns a field called "Their name" into one called "a Their name".
+
 ### `<EmptyState>` and `<Loader>`
 
 The two ends of a conversation that has not happened yet: what is on screen

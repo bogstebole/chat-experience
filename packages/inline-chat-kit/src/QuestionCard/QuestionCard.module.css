@@ -1,0 +1,314 @@
+/* ─────────────────────────────────────────────
+   QuestionCard
+
+   One question in three states, and the card morphs between them. Everything
+   here is a token — the original was built on another product's palette, and
+   the point of bringing it across was that it stops being that product's.
+   ───────────────────────────────────────────── */
+
+.item {
+  position: relative;
+  width: 100%;
+  border-radius: var(--ick-radius-lg);
+  /* Never shrink. The list around it is a flex column, and without this every
+     card is squashed the moment one of them is tall. */
+  flex-shrink: 0;
+  /* Clips the counter-scaled content to the morphing box, so growing reads as
+     a reveal rather than as content spilling out of a box that has not caught
+     up with it. */
+  overflow: hidden;
+}
+
+.item[data-card] {
+  background: var(--ick-question-card);
+  box-shadow: var(--ick-shadow-float);
+}
+
+/* ── Upcoming ───────────────────────────────────────────────────────────── */
+
+.upcoming {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+  padding: var(--ick-space-3) var(--ick-space-4) var(--ick-space-3) var(--ick-space-5);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.star {
+  flex-shrink: 0;
+  color: var(--ick-ink-faint);
+}
+
+.upcomingLabel {
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink-soft);
+}
+
+/* ── Collapsed ──────────────────────────────────────────────────────────── */
+
+.collapsed {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: var(--ick-space-4);
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-5);
+  font-family: var(--ick-font-sans);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+.collapsed:hover {
+  background: var(--ick-surface-hover);
+}
+
+.collapsed:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+.static {
+  cursor: default;
+}
+
+.collapsedLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+  min-width: 0;
+}
+
+.collapsedTitle {
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsedAnswer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ick-space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.pencil {
+  flex-shrink: 0;
+  margin-left: var(--ick-space-2);
+  color: var(--ick-ink-faint);
+}
+
+.collapsed:hover .pencil {
+  color: var(--ick-ink);
+}
+
+/* ── Active ─────────────────────────────────────────────────────────────── */
+
+.active {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-5);
+  width: 100%;
+  padding: var(--ick-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  padding: var(--ick-space-2) 0 0 var(--ick-space-2);
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ick-text-md);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+.subtitle {
+  margin: var(--ick-space-1) 0 0;
+  font-size: var(--ick-text-sm);
+  line-height: 1.45;
+  color: var(--ick-ink-soft);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-3);
+  width: 100%;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: var(--ick-space-2);
+}
+
+/* ── The badge ──────────────────────────────────────────────────────────── */
+
+.badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ick-badge-size);
+  height: var(--ick-badge-size);
+  border-radius: var(--ick-radius-md);
+  background: var(--ick-badge-fill);
+  color: var(--ick-ink);
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-sm);
+  line-height: 1;
+  transition:
+    background var(--ick-duration-fast) ease,
+    color var(--ick-duration-fast) ease;
+}
+
+.badge[data-on-card] {
+  background: var(--ick-badge-fill-on-card);
+}
+
+/* The signature colour, doing the one job an accent is for: saying which one. */
+.badge[data-selected] {
+  background: var(--ick-marker);
+  color: var(--ick-marker-ink);
+}
+
+/* ── Option and field rows ──────────────────────────────────────────────── */
+
+.option {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-4);
+  border-radius: var(--ick-radius-md);
+  background: var(--ick-question-row);
+  font-family: var(--ick-font-sans);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+.option:hover {
+  background: var(--ick-question-row-hover);
+}
+
+.option[data-selected],
+.option[data-selected]:hover {
+  background: var(--ick-question-row-selected);
+}
+
+.option:focus-visible,
+.option:focus-within {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+.option[data-other] {
+  cursor: text;
+}
+
+.optionBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--ick-space-1) 0;
+}
+
+.optionTitle {
+  font-size: var(--ick-text-md);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+.optionDescription {
+  margin-top: var(--ick-space-1);
+  font-size: var(--ick-text-sm);
+  line-height: 1.45;
+  color: var(--ick-ink-soft);
+}
+
+.otherInput {
+  all: unset;
+  width: 100%;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink);
+  caret-color: var(--ick-ink);
+}
+
+.otherInput::placeholder {
+  color: var(--ick-ink-faint);
+}
+
+.field {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-4);
+  border-radius: var(--ick-radius-md);
+  background: var(--ick-question-row);
+  border: 1px solid transparent;
+  cursor: text;
+  transition: border-color var(--ick-duration-fast) ease;
+}
+
+/* The row lights up rather than the input, because the row is what somebody
+   is looking at — the field inside it has no border of its own to notice. */
+.field[data-focused] {
+  border-color: var(--ick-question-row-focus);
+}
+
+.fieldBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fieldLabel {
+  display: flex;
+  align-items: center;
+  height: var(--ick-badge-size);
+  font-size: var(--ick-text-sm);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+.fieldInput {
+  all: unset;
+  width: 100%;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink);
+  caret-color: var(--ick-ink);
+}
+
+.fieldInput::placeholder {
+  color: var(--ick-ink-faint);
+}

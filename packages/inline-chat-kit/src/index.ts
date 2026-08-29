@@ -55,6 +55,21 @@ export type { ChatTurnRowProps } from "./ChatTurnRow/ChatTurnRow";
 export { AnswerActions } from "./AnswerActions/AnswerActions";
 export type { AnswerActionsProps, Verdict } from "./AnswerActions/AnswerActions";
 
+/* Structured questions inside a conversation */
+export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";
+export type { QuestionCardProps } from "./QuestionCard/QuestionCard";
+export type {
+  Answer,
+  Question,
+  QuestionField,
+  QuestionOption,
+  QuestionState,
+} from "./QuestionCard/types";
+export { QuestionGroup, FOLDABLE_FROM } from "./QuestionGroup/QuestionGroup";
+export type { QuestionGroupProps } from "./QuestionGroup/QuestionGroup";
+export { Chip } from "./Chip/Chip";
+export type { ChipProps } from "./Chip/Chip";
+
 /* Before anybody has asked, and while the first word is on its way */
 export { EmptyState } from "./EmptyState/EmptyState";
 export type { EmptyStateProps } from "./EmptyState/EmptyState";
