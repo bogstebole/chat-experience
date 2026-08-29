@@ -6,6 +6,34 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.10.0 — 2026-08-29
+
+### Added
+
+- **`<QuestionCard>`, `<QuestionGroup>` and `<Chip>`.** A structured question
+  inside a conversation — the assistant asks something with a shape to it, and
+  the answer is picked or typed rather than written out. Three question shapes
+  (`inputs`, `single`, `multi`), three card states that morph between each
+  other, and a group that folds to one summary row once it is done with.
+
+  Brought across from another project and rebuilt on this kit's tokens, type
+  and buttons. The accent doing the work is the marker yellow, on the badge of
+  whatever is chosen and on the border of the field being typed into.
+
+  Two behaviours kept because they were right: a single-select waits a beat
+  before committing, or the card is gone before anyone sees what they picked;
+  and the "something else" row is a `<label>`, not a button, because an input
+  inside a button is not reliably focusable.
+
+  Two changed. The collapsed row is one `<button>` naming what it does rather
+  than a click handler on a `<div>` with another button inside it — clickable
+  but not reachable by keyboard, and two tab stops for one action. And the
+  letter badges are `aria-hidden`: the letter is a visual index, and in the
+  tree it turns a field called "Their name" into "a Their name".
+
+- **Question and chip tokens.** `--ick-question-*` for the three stacked
+  surfaces, `--ick-badge-*`, `--ick-chip-*`.
+
 ## 0.9.0 — 2026-08-29
 
 ### Added

@@ -299,6 +299,26 @@
     --ick-turn-gap: 48px;
     --ick-conversation-gap: 48px;
     --ick-loader-dot: 5px;
+
+    /* ═══ Questions ═════════════════════════════════════════════════════════
+       A structured question inside a conversation. Three surfaces stacked:
+       the group's own, a card raised off it, and rows inset into the card.
+       The signature yellow does the one job an accent is for — saying which
+       one is chosen. */
+
+    --ick-question-surface: var(--ick-surface-sunken);
+    --ick-question-card: var(--ick-surface-raised);
+    --ick-question-row: var(--ick-surface-hover);
+    --ick-question-row-hover: var(--ick-surface-active);
+    --ick-question-row-selected: var(--ick-marker-tint);
+    --ick-question-row-focus: var(--ick-marker);
+    --ick-badge-size: 24px;
+    --ick-badge-fill: var(--ick-surface);
+    --ick-badge-fill-on-card: var(--ick-surface-active);
+
+    --ick-chip-height: 22px;
+    --ick-chip-fill: var(--ick-surface-active);
+    --ick-chip-max: 180px;
     --ick-empty-pad: var(--ick-space-8);
     --ick-conversation-pad-block: var(--ick-space-7);
     --ick-conversation-pad-inline: var(--ick-space-7);

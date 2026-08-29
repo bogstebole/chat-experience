@@ -22,6 +22,8 @@ const NOT_COMPONENTS: Record<string, string> = {
   announce: "a function that writes to a live region; there is nothing to see",
   defaultInlineAnimConfig: "a configuration object",
   GlassButton: "deprecated wrapper around Button, which has the stories",
+  FOLDABLE_FROM: "a number: the length above which a group offers to fold",
+  answerChips: "a function that shortens an answer for its summary row",
 };
 
 const valueExports = (): string[] => {

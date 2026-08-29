@@ -13,12 +13,17 @@ const EXPECTED_EXPORTS = [
   "Button",
   "ChatHeader",
   "ChatInput",
+  "Chip",
   "ChatTurnRow",
   "CodeBlock",
   "Conversation",
   "CustomCursor",
   "EmptyState",
+  "FOLDABLE_FROM",
   "Loader",
+  "QuestionCard",
+  "QuestionGroup",
+  "answerChips",
   "GlassButton",
   "HoverActionsRow",
   "MorphGlyph",
@@ -43,8 +48,11 @@ describe("public API", () => {
   });
 
   it("ships components as functions, not accidental objects", () => {
+    // Values, not components. Each is exported because a consumer needs the
+    // number or the function, not because there is something to render.
+    const NOT_RENDERABLE = new Set(["defaultInlineAnimConfig", "FOLDABLE_FROM"]);
     for (const name of EXPECTED_EXPORTS) {
-      if (name === "defaultInlineAnimConfig") continue;
+      if (NOT_RENDERABLE.has(name)) continue;
       const value = kit[name as keyof typeof kit];
       const isRenderable =
         typeof value === "function" || (typeof value === "object" && value !== null);
