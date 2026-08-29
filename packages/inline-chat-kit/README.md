@@ -225,6 +225,61 @@ another button inside it — that could be clicked but not tabbed to. And the
 letter badges are `aria-hidden`: the letter is a visual index, and left in the
 tree it turns a field called "Their name" into one called "a Their name".
 
+#### Composing a fourth kind of question
+
+Three shapes are not the only three. The parts a card is built from are
+exported, so a shape the kit does not ship is a composition rather than a fork
+— and it arrives already wearing the same tokens, focus behaviour and ARIA as
+the ones that do.
+
+```tsx
+<QuestionShell
+  number={3}
+  title="How soon do they need this?"
+  subtitle="Roughly is fine"
+  footer={<Button variant="secondary" size="m" onClick={commit}>Next</Button>}
+>
+  {levels.map((level, i) => (
+    <QuestionOptionRow
+      key={level.id}
+      letter={"abc"[i]}
+      title={level.title}
+      description={level.description}
+      selected={picked === level.id}
+      onClick={() => setPicked(level.id)}
+    />
+  ))}
+  <QuestionFieldRow
+    letter="d"
+    label="Anything we should know"
+    value={note}
+    onChange={setNote}
+  />
+</QuestionShell>
+```
+
+| Part | What it is |
+| --- | --- |
+| `QuestionShell` | The card: header, the column the rows sit in, a right-aligned footer |
+| `QuestionOptionRow` | A row that picks. A `<button>` with `aria-pressed` |
+| `QuestionFieldRow` | A row that is typed into. A `<label>`, so the whole row focuses the input |
+| `QuestionOtherRow` | The "something else" row: reads as an option, is a text field |
+| `QuestionBadge` | The 24px square with the letter or the number |
+
+Each takes a `className` that is **added** to its own rather than replacing it,
+spreads the rest of its props onto the element it ends in, and forwards its ref
+to the thing worth having one for — the input, in the two rows that have one.
+On the two rows that take one, `className` styles the row and everything else
+goes to the input.
+
+`QuestionShell` paints the card — background, radius, shadow — unless you pass
+`card={false}`, which is what `QuestionCard` does: the box that morphs between
+the three states is its own, and two would nest.
+
+`letter` is optional on all three rows. Left out, the row starts at its title.
+`onEnter` fires on Enter unless your own `onKeyDown` called `preventDefault`
+first, which is how a handler says it has dealt with the key.
+
 ### `<EmptyState>` and `<Loader>`
 
 The two ends of a conversation that has not happened yet: what is on screen

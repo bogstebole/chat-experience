@@ -15,6 +15,12 @@ import { EmptyState } from "../EmptyState/EmptyState";
 import { Loader } from "../Loader/Loader";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
+import {
+  QuestionFieldRow,
+  QuestionOptionRow,
+  QuestionOtherRow,
+  QuestionShell,
+} from "../QuestionCard/parts";
 import type { Question } from "../QuestionCard/types";
 import { MessageCircle, Bookmark, Share2, Settings } from "lucide-react";
 
@@ -374,6 +380,28 @@ describe("axe — a structured question", () => {
         answer={{ values: { name: "Milica" } }}
         onEdit={vi.fn()}
       />
+    );
+    await check(container);
+  });
+
+  /* Composed out of the exported parts — an arrangement nothing in the kit
+     renders, and the one somebody else will. */
+  it("passes as a question built out of the parts rather than out of a shape", async () => {
+    const { container } = render(
+      <QuestionShell
+        number={1}
+        title="How soon do they need this?"
+        subtitle="Roughly is fine"
+        footer={
+          <Button variant="secondary" size="m">
+            Next
+          </Button>
+        }
+      >
+        <QuestionOptionRow letter="a" title="In the next few days" />
+        <QuestionFieldRow letter="b" label="Anything we should know" value="" onChange={() => {}} />
+        <QuestionOtherRow letter="c" value="" placeholder="Something else" onChange={() => {}} />
+      </QuestionShell>
     );
     await check(container);
   });

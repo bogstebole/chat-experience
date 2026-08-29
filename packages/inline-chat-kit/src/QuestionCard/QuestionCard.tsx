@@ -6,7 +6,13 @@ import { Asterisk, Pencil } from "lucide-react";
 import { Button } from "../Button/Button";
 import { Chip } from "../Chip/Chip";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
-import { Badge, FieldRow, OptionCard, OtherRow } from "./parts";
+import {
+  QuestionBadge,
+  QuestionFieldRow,
+  QuestionOptionRow,
+  QuestionOtherRow,
+  QuestionShell,
+} from "./parts";
 import type { Answer, Question, QuestionState } from "./types";
 import styles from "./QuestionCard.module.css";
 
@@ -75,11 +81,13 @@ export function answerChips(question: Question, answer?: Answer): string[] {
 /** The body of a question being answered. */
 function ActiveBody({
   question,
+  number,
   answer,
   onCommit,
   labels,
 }: {
   question: Question;
+  number: number;
   answer?: Answer;
   onCommit?: (answer: Answer) => void;
   labels: Labels;
@@ -122,44 +130,55 @@ function ActiveBody({
     [question, values]
   );
 
+  /* The same in all three branches. An object rather than a local component —
+     a component declared inside a render is a new type every render, and the
+     rows would remount on every keystroke, taking the focus with them. The
+     card around this one is the one that morphs, so this shell draws no box. */
+  const shell = {
+    number,
+    title: question.title,
+    subtitle: question.subtitle,
+    card: false,
+  } as const;
+
   if (question.type === "inputs") {
     const commit = () => complete && onCommit?.({ values });
     return (
-      <>
-        <div className={styles.rows}>
-          {question.fields.map((field, i) => (
-            <FieldRow
-              key={field.id}
-              letter={letterFor(i)}
-              label={field.label}
-              placeholder={field.placeholder}
-              value={values[field.id] ?? ""}
-              onChange={(v) => setValues((all) => ({ ...all, [field.id]: v }))}
-              inputRef={i === 0 ? firstField : fields[i]}
-              /* Enter moves on rather than submitting the lot: the next field
-                 is nearly always what somebody means by it. */
-              onEnter={() => {
-                const next = i === 0 ? fields[1]?.current : fields[i + 1]?.current;
-                if (next) next.focus();
-                else commit();
-              }}
-            />
-          ))}
-        </div>
-        <div className={styles.footer}>
+      <QuestionShell
+        {...shell}
+        footer={
           <Button variant="secondary" size="m" disabled={!complete} onClick={commit}>
             {labels.next}
           </Button>
-        </div>
-      </>
+        }
+      >
+        {question.fields.map((field, i) => (
+          <QuestionFieldRow
+            key={field.id}
+            letter={letterFor(i)}
+            label={field.label}
+            placeholder={field.placeholder}
+            value={values[field.id] ?? ""}
+            onChange={(v) => setValues((all) => ({ ...all, [field.id]: v }))}
+            ref={i === 0 ? firstField : fields[i]}
+            /* Enter moves on rather than submitting the lot: the next field
+               is nearly always what somebody means by it. */
+            onEnter={() => {
+              const next = i === 0 ? fields[1]?.current : fields[i + 1]?.current;
+              if (next) next.focus();
+              else commit();
+            }}
+          />
+        ))}
+      </QuestionShell>
     );
   }
 
   if (question.type === "single") {
     return (
-      <div className={styles.rows}>
+      <QuestionShell {...shell}>
         {question.options.map((option, i) => (
-          <OptionCard
+          <QuestionOptionRow
             key={option.id}
             letter={letterFor(i)}
             title={option.title}
@@ -173,7 +192,7 @@ function ActiveBody({
             }}
           />
         ))}
-      </div>
+      </QuestionShell>
     );
   }
 
@@ -185,33 +204,9 @@ function ActiveBody({
   };
 
   return (
-    <>
-      <div className={styles.rows}>
-        {question.options.map((option, i) => (
-          <OptionCard
-            key={option.id}
-            letter={letterFor(i)}
-            title={option.title}
-            description={option.description}
-            selected={ids.includes(option.id)}
-            onClick={() =>
-              setIds((all) =>
-                all.includes(option.id) ? all.filter((x) => x !== option.id) : [...all, option.id]
-              )
-            }
-          />
-        ))}
-        {question.allowOther && (
-          <OtherRow
-            letter={letterFor(question.options.length)}
-            value={other}
-            placeholder={question.otherPlaceholder ?? "Something else"}
-            onChange={setOther}
-            onEnter={commitMulti}
-          />
-        )}
-      </div>
-      <div className={styles.footer}>
+    <QuestionShell
+      {...shell}
+      footer={
         <Button
           variant="secondary"
           size="m"
@@ -220,8 +215,32 @@ function ActiveBody({
         >
           {question.allowEmpty && empty ? labels.none : labels.next}
         </Button>
-      </div>
-    </>
+      }
+    >
+      {question.options.map((option, i) => (
+        <QuestionOptionRow
+          key={option.id}
+          letter={letterFor(i)}
+          title={option.title}
+          description={option.description}
+          selected={ids.includes(option.id)}
+          onClick={() =>
+            setIds((all) =>
+              all.includes(option.id) ? all.filter((x) => x !== option.id) : [...all, option.id]
+            )
+          }
+        />
+      ))}
+      {question.allowOther && (
+        <QuestionOtherRow
+          letter={letterFor(question.options.length)}
+          value={other}
+          placeholder={question.otherPlaceholder ?? "Something else"}
+          onChange={setOther}
+          onEnter={commitMulti}
+        />
+      )}
+    </QuestionShell>
   );
 }
 
@@ -251,23 +270,20 @@ export function QuestionCard({
   let body: ReactNode;
   if (state === "active") {
     body = (
-      <div className={styles.active}>
-        <div className={styles.header}>
-          <Badge selected>{number}</Badge>
-          <div className={styles.headerText}>
-            <p className={styles.title}>{question.title}</p>
-            {question.subtitle && <p className={styles.subtitle}>{question.subtitle}</p>}
-          </div>
-        </div>
-        <ActiveBody question={question} answer={answer} onCommit={onCommit} labels={label} />
-      </div>
+      <ActiveBody
+        question={question}
+        number={number}
+        answer={answer}
+        onCommit={onCommit}
+        labels={label}
+      />
     );
   } else if (state === "collapsed") {
     const chips = answerChips(question, answer);
     const summary = (
       <>
         <span className={styles.collapsedLabel}>
-          <Badge onCard>{number}</Badge>
+          <QuestionBadge onCard>{number}</QuestionBadge>
           <span className={styles.collapsedTitle}>{question.shortTitle}</span>
         </span>
         <span className={styles.collapsedAnswer}>
