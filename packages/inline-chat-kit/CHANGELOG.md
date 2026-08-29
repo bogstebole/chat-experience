@@ -6,6 +6,30 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.8.0 — 2026-08-29
+
+### Added
+
+- **`<AnswerActions>`.** Copy, regenerate and a verdict, under a settled
+  answer. The input has had a hover row since the beginning and the answer had
+  nothing, which is backwards — the answer is the part worth keeping.
+
+  Only what has somewhere to report is drawn. A control that calls nothing
+  looks like a feature and behaves like a dead end. Pressing the verdict
+  already given reports `null`, which is how somebody takes it back.
+
+  Copy confirms and announces itself, for the same reason the code block's
+  does: a tick is a picture, and a reader who cannot see it is told nothing
+  happened.
+
+  `reveal` makes the row invisible until hovered or focused — invisible, not
+  absent: it keeps its space so nothing shifts, still hit-tests at zero
+  opacity, and `:focus-within` brings it back for anyone arriving by keyboard.
+
+- **`ChatTurnRow` renders it**, with `onRegenerate`, `onFeedback`, `feedback`
+  and `answerActions`. They appear when the answer settles rather than while it
+  arrives.
+
 ## 0.7.1 — 2026-08-28
 
 ### Added

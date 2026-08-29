@@ -1,0 +1,33 @@
+/* ─────────────────────────────────────────────
+   AnswerActions
+   ───────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-1);
+  /* Pulled left by the button's own padding, so the first glyph lines up with
+     the text above it rather than sitting a few pixels in. */
+  margin-left: calc(var(--ick-space-2) * -1);
+}
+
+/* Invisible, not absent. It keeps its space so nothing shifts when it appears,
+   and it still hit-tests at zero opacity — which is what makes hovering it
+   work at all. `:focus-within` is what saves anyone arriving by keyboard from
+   tabbing into something they cannot see. */
+.reveal {
+  opacity: 0;
+  transition: opacity var(--ick-duration-fast) ease;
+}
+
+.reveal:hover,
+.reveal:focus-within {
+  opacity: 1;
+}
+
+/* The verdict that was given stays lit. `aria-pressed` is already the state;
+   this is the same fact, drawn. */
+.row :global(button[aria-pressed="true"]) {
+  color: var(--ick-ink);
+  background: var(--ick-surface-active);
+}
