@@ -272,3 +272,28 @@ describe("a whole step", () => {
     expect(onCommit).not.toHaveBeenCalledWith("who", expect.anything());
   });
 });
+
+describe("the rules that only matter when painted", () => {
+  const sheet = async () =>
+    ((await import("../QuestionCard/QuestionCard.module.css?raw")).default as string).replace(
+      /\/\*[\s\S]*?\*\//g,
+      ""
+    );
+
+  /**
+   * This package has no global `box-sizing` reset — one inside a CSS module
+   * leaks into the host's page — so every box with padding has to say it
+   * itself. `.active` did not, and its 8px of padding was added outside a 100%
+   * width: the card clipped 16px off every option row and the Next button
+   * with them. jsdom does not lay anything out, so this reads the rule.
+   */
+  it("states box-sizing on every box that has padding and a width", async () => {
+    const css = await sheet();
+    for (const selector of [".item", ".active", ".rows", ".field", ".upcoming", ".footer"]) {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+      const rule = css.slice(at, css.indexOf("}", at));
+      expect(rule, selector).toContain("box-sizing: border-box");
+    }
+  });
+});

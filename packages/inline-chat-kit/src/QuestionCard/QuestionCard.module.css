@@ -6,7 +6,14 @@
    the point of bringing it across was that it stops being that product's.
    ───────────────────────────────────────────── */
 
+/* `box-sizing` is stated on every box here that has padding and a width.
+   This package has no global reset — a reset in a CSS module leaks into the
+   host's page — so each rule has to say it. Left off `.active`, its 8px of
+   padding was added *outside* a 100% width and the card clipped 16px of every
+   row and the Next button with it. */
+
 .item {
+  box-sizing: border-box;
   position: relative;
   width: 100%;
   border-radius: var(--ick-radius-lg);
@@ -27,6 +34,7 @@
 /* ── Upcoming ───────────────────────────────────────────────────────────── */
 
 .upcoming {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: var(--ick-space-4);
@@ -79,6 +87,7 @@
 }
 
 .collapsedLabel {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: var(--ick-space-4);
@@ -94,6 +103,7 @@
 }
 
 .collapsedAnswer {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -115,6 +125,7 @@
 /* ── Active ─────────────────────────────────────────────────────────────── */
 
 .active {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-5);
@@ -123,6 +134,7 @@
 }
 
 .header {
+  box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   gap: var(--ick-space-4);
@@ -130,6 +142,7 @@
 }
 
 .headerText {
+  box-sizing: border-box;
   flex: 1;
   min-width: 0;
 }
@@ -149,6 +162,7 @@
 }
 
 .rows {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-3);
@@ -156,6 +170,7 @@
 }
 
 .footer {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -230,6 +245,7 @@
 }
 
 .optionBody {
+  box-sizing: border-box;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -265,6 +281,7 @@
 }
 
 .field {
+  box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   gap: var(--ick-space-4);
@@ -284,6 +301,7 @@
 }
 
 .fieldBody {
+  box-sizing: border-box;
   flex: 1;
   min-width: 0;
   display: flex;
