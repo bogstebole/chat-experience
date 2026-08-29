@@ -164,3 +164,21 @@
   }
 }
 
+
+/* ── The opening ────────────────────────────────────────────────────────────
+   The block and the composer under it are one centred column of one width.
+   Before this the openers sat centred at the top and the composer floated at
+   the bottom right, and the two read as unrelated to each other.
+
+   The block's own 40px of bottom padding came on top of the conversation's
+   48px gap, which put 88px between the last opener and the box you type in. */
+
+.opening {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+div.opening {
+  padding-bottom: 0;
+}

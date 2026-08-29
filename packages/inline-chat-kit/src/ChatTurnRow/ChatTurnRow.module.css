@@ -20,6 +20,11 @@
   justify-content: flex-end;
 }
 
+/* The opening composer, which is not a message yet. See `questionAlign`. */
+.question[data-align="stretch"] {
+  justify-content: stretch;
+}
+
 .answer {
   margin: 0;
   font-family: var(--ick-font-sans);

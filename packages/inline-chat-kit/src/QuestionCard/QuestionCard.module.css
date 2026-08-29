@@ -208,6 +208,16 @@
   color: var(--ick-marker-ink);
 }
 
+/* Except on a row already wearing it, where the accent at full strength is a
+   shade off the tint under it — two yellows that close are not a badge on a
+   row, they are one yellow with a rounded hole in it. Paper was the first
+   answer and it was no better: pale on pale. This is the marker taken down
+   towards ink, so the badge is still the accent and still separates. */
+.option[data-selected] .badge[data-selected] {
+  background: var(--ick-marker-deep);
+  color: var(--ick-marker-deep-ink);
+}
+
 /* ── Option and field rows ──────────────────────────────────────────────── */
 
 .option {

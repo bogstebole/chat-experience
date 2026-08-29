@@ -82,6 +82,22 @@
        being readable. */
     --ick-marker-ink: rgb(var(--ick-glass-shade-rgb));
     --ick-marker-sheen: rgb(var(--ick-glass-rim-rgb));
+    /* The marker taken towards ink, for something that has to separate from a
+       surface already wearing the marker — a badge on a chosen row, where the
+       accent at full strength is a shade off the tint under it and paper is
+       too pale against it.
+
+       Mixed rather than stated per theme, and that is the point: ink is
+       near-black in the light and near-white in the dark, so this comes out
+       darker than the row in one and lighter in the other. One requirement —
+       separate from the row — answered correctly twice. Its text is paper for
+       the same reason in reverse.
+
+       55% marker was the first guess and the letter on it came out at 3.5:1.
+       Measured down: 45 is the first that clears 4.5, 40 leaves room — the
+       letter reads 5.6:1 and the badge 5.1:1 against the row it sits on. */
+    --ick-marker-deep: color-mix(in srgb, rgb(var(--ick-marker-rgb)) 40%, rgb(var(--ick-ink-rgb)));
+    --ick-marker-deep-ink: rgb(var(--ick-paper-rgb));
     /* How far the rest of a paragraph recedes while one highlight has the
        floor. Not symmetric between the themes: 15% of near-black on white is
        still a legible grey, while 15% of near-white on black is very nearly

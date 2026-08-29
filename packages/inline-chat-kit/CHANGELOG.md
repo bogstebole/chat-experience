@@ -6,6 +6,37 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.13.0 — 2026-08-29
+
+### Added
+
+- **`questionAlign` on `<ChatTurnRow>`.** `end` by default — the composer is
+  about to become the reader's own bubble, and those sit right. `stretch` fills
+  the row instead, which is what an *opening* composer wants: on an empty
+  conversation it is not a message on its way, it is the box under the openers,
+  and a pill floating at the right edge of a centred block reads as unrelated
+  to the block.
+
+  A flex child sizes to its content, so the input is told to fill as well —
+  stretching the row on its own does nothing.
+
+### Changed
+
+- **The badge on a chosen option is the accent taken down towards ink.** At
+  full strength it was a shade off the tint under it: two yellows that close
+  are not a badge on a row, they are one yellow with a rounded hole in it.
+  Paper was tried first and was no better — pale on pale.
+
+  `--ick-marker-deep` mixes the marker with ink rather than stating a colour
+  per theme, which is the point: ink is near-black in the light and near-white
+  in the dark, so it comes out darker than the row in one and lighter in the
+  other. One requirement — separate from the row — answered correctly twice.
+
+  Measured rather than eyeballed. 55% marker put the letter at 3.5:1; 45% is
+  the first that clears 4.5. It ships at 40%: the letter reads 5.6:1 in the
+  light and 16.3:1 in the dark, and the badge 5.1:1 and 4.0:1 against the row
+  it sits on.
+
 ## 0.12.1 — 2026-08-29
 
 ### Fixed
