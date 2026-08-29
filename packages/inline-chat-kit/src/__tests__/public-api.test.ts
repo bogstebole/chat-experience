@@ -17,6 +17,8 @@ const EXPECTED_EXPORTS = [
   "CodeBlock",
   "Conversation",
   "CustomCursor",
+  "EmptyState",
+  "Loader",
   "GlassButton",
   "HoverActionsRow",
   "MorphGlyph",

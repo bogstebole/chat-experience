@@ -181,6 +181,35 @@ Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
 
+### `<EmptyState>` and `<Loader>`
+
+The two ends of a conversation that has not happened yet: what is on screen
+before anybody asks, and the gap between sending and the first word.
+
+| `EmptyState` | Type | Notes |
+| --- | --- | --- |
+| `icon` / `title` / `description` | `ReactNode` | Each optional; nothing is drawn in place of what you leave out |
+| `suggestions` | `string[]` | Openers |
+| `onSuggestion` | `(text: string) => void` | Without it, no openers are drawn |
+| `suggestionsLabel` | `string` | Names the group. Default `"Suggestions"` |
+
+`title` renders as text, not a heading. This sits inside a conversation the
+host already owns, and claiming a level in their document is not ours to do —
+pass `<h2>…</h2>` if it should be one.
+
+| `Loader` | Type | Notes |
+| --- | --- | --- |
+| `variant` | `"dots" \| "shimmer"` | Default `"dots"` |
+| `children` | `ReactNode` | The words the shimmer runs through |
+| `label` | `string \| null` | Default `null` — see below |
+
+The loader is **silent by default**. `useChatTurns` already announces that a
+response is coming, and a second live region saying the same thing means
+hearing it twice. Pass `label` only when nothing else is speaking for you.
+
+`ChatTurnRow` shows it between the question being sent and the first word
+landing, so a sent question is never a blank space.
+
 ### `<AnswerActions>`
 
 Copy, regenerate and a verdict, under a settled answer. `ChatTurnRow` renders

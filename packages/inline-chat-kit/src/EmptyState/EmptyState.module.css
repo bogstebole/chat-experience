@@ -1,0 +1,44 @@
+/* ─────────────────────────────────────────────
+   EmptyState
+   ───────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ick-space-5);
+  padding: var(--ick-empty-pad) var(--ick-space-6);
+  text-align: center;
+  font-family: var(--ick-font-sans);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ick-ink-faint);
+}
+
+.title {
+  font-size: var(--ick-text-lg);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+.description {
+  margin: 0;
+  max-width: 42ch;
+  font-size: var(--ick-text-md);
+  line-height: 1.6;
+  color: var(--ick-ink-soft);
+}
+
+/* Wrapping rather than scrolling: an opener that runs off the edge is one
+   nobody reads, and there are never enough of them to need a rail. */
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ick-space-3);
+  margin-top: var(--ick-space-2);
+}

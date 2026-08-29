@@ -4,6 +4,7 @@ import { memo, type Ref } from "react";
 import { motion } from "motion/react";
 import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
+import { Loader } from "../Loader/Loader";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { ChatTurn } from "../useChatTurns/useChatTurns";
@@ -137,6 +138,16 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           placeholder={placeholder}
         />
       </div>
+
+      {/* Sent, and nothing back yet. Without this the turn is a question with
+          a blank space under it, which reads as nothing having happened.
+          Silent on purpose: `useChatTurns` has already announced that a
+          response is coming, and a second live region says it twice. */}
+      {turn.state === "responding" && !turn.ai && (
+        <div className={styles.answer}>
+          <Loader />
+        </div>
+      )}
 
       {turn.ai && (
         <div className={styles.answer}>
