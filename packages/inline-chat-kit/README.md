@@ -221,12 +221,18 @@ A rule down the **side** is a different device and stays: `<Reasoning>` uses one
 to mark an aside, and `<ChainOfThought>`'s says each step follows from the one
 above it.
 
-**Corners are concentric.** A box's corner is the corner of the thing inside it
-plus the gap between them:
+**Corners are concentric, on one chain.** A box's corner is the corner of the
+thing inside it plus the gap between them, and there are four steps for the
+whole kit:
 
 ```
-badge 8  →  option row 16  →  card 24  →  group 40      gaps 8, 8, 16
-code 6   →  tool 14        →  approval 26               gaps 8, 12
+--ick-nest-inner   8    a badge, a chip, a fenced value
+--ick-nest-row    16    an inset panel: an option, a field, a block of output
+--ick-nest-card   24    paper, lifted off the ground
+--ick-nest-ground 40    what the paper stands on
+
+gaps: --ick-nest-pad 8 inside a card and a row, --ick-nest-ground-pad 16 around
+      a card on its ground
 ```
 
 Get it wrong and the two curves sit at different insets with the same radius,
@@ -235,8 +241,20 @@ without anybody being able to name it. It is written as `calc()` off a seed
 rather than as a list of numbers, so changing a padding moves the corners with
 it, and a test does the same sum for every nesting in the kit.
 
-A `<CodeBlock>` reads `--ick-code-radius`, so a box that nests one hands it a
-smaller corner — the way `<Tool>` does.
+A component **picks a step** rather than deriving its own. Each used to derive:
+a tool call was a 6px block in a 14px card on a 22px ground, beside a question's
+8 / 16 / 24 / 40. Both were internally concentric, and the two were nothing like
+each other — the same three surfaces at two scales, which reads as two systems
+rather than as one object holding different things. So a tool call and a
+question folded shut are now the same row, to the pixel: 40 tall, 16 in from the
+left, the glyph riding in the box a badge sits in. There is a story that stacks
+the two on one ground, and a test that compares every step of the two chains.
+
+A short box takes the corner it can. A row folded shut is 40px tall and a 24px
+corner on it clamps to a pill — both of them, equally, which is the point.
+
+A `<CodeBlock>` reads `--ick-code-radius`, so a box that nests one repoints it
+at the step its own corner implies — the way `<Tool>` hands it the row's.
 
 ### `<Tool>`
 

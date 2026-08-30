@@ -6,6 +6,64 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.25.0 — 2026-08-30
+
+### Changed
+
+- **One nesting chain for the whole kit.** A tool call and a question card are
+  the same object holding different things, and now they are built out of the
+  same four numbers.
+
+  ```
+  --ick-nest-inner   8    a badge, a chip, a fenced value
+  --ick-nest-row    16    an inset panel: an option, a field, a block of output
+  --ick-nest-card   24    paper, lifted off the ground
+  --ick-nest-ground 40    what the paper stands on
+  ```
+
+  with `--ick-nest-pad` (8) inside a card and a row, and
+  `--ick-nest-ground-pad` (16) around a card on its ground.
+
+  Each component used to derive its own. A tool call was a 6px block in a 14px
+  card on a 22px ground, beside a question's 8 / 16 / 24 / 40 — both internally
+  concentric and the two nothing like each other. The same three surfaces at
+  two scales reads as two systems, not as one object holding different things.
+
+  The reason the tool seeded a tighter chain was that a row folded shut is only
+  40px tall, and a 24px corner on it clamps to a pill. It does. So does a
+  question folded shut, which is 40px tall and carries the same 24. Both come
+  out the same shape, which was the point.
+
+- **A folded tool call is a folded question, to the pixel.** 40 tall, 16 in
+  from the left, 8 from the right, and the state glyph rides in the 24px box a
+  question's badge sits in — so the name and the title start on one line when
+  the two are stacked. There is a story for it: **Side by side → The same row,
+  twice**.
+
+- **A tool call's ground is padded like a question group's** — 16 rather than
+  8, so more of it shows around the card. Its output panels take the row corner
+  (16) rather than a 6, which is what the card's 24 and its 8 of padding imply.
+
+- **An `<Approval>` is padded like a ground**, because it is one: 16 rather than
+  12, and its corner follows to 40 — the same box a question group is.
+
+### Fixed
+
+- **The ground in the question stories was cornered by hand** — `padding: 16,
+  borderRadius: 24`, a ground padded like a ground and cornered like the card
+  standing on it. It is `card + padding`, or 40. A test now walks every story
+  for a hand-built ground, since a style object is not a stylesheet and the
+  chain cannot reach into one.
+
+### Breaking
+
+- `--ick-tool-radius` is **24** (was 14), `--ick-tool-inner-radius` **16**
+  (was 6), `--ick-tool-ground-pad` **16** (was 8), `--ick-approval-pad` **16**
+  (was 12). Every one still resolves through the same token name, so an
+  override you had set still works — but if you set one to match the old
+  numbers, it is now out of step with the chain around it. Point it at
+  `--ick-nest-*` instead, or move the seed and let all of it follow.
+
 ## 0.24.1 — 2026-08-30
 
 ### Changed

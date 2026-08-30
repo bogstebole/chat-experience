@@ -34,6 +34,11 @@
 
 /* ── The row you click ──────────────────────────────────────────────────── */
 
+/* The same row a question is when it is folded shut, down to the numbers:
+   16 in from the left, 8 from the right, and a 24px slot at the front. Which
+   makes it 8 + 24 + 8 = 40 tall — the height of a collapsed question — so the
+   two line up when they are stacked, and the glyph sits on the line the
+   badges sit on. */
 .header {
   all: unset;
   box-sizing: border-box;
@@ -41,10 +46,22 @@
   align-items: center;
   gap: var(--ick-space-4);
   width: 100%;
-  padding: var(--ick-space-4) var(--ick-space-5);
+  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background var(--ick-duration-fast) ease;
+}
+
+/* The badge's slot, holding a glyph instead of a letter. The glyph is 16 and
+   a badge is 24; centred in the badge's box, the name after it starts on the
+   same left edge a question's title does. */
+.glyph {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ick-badge-size);
+  height: var(--ick-badge-size);
 }
 
 .header:hover {
@@ -101,10 +118,21 @@
   margin-left: 0;
 }
 
+/* Hard against the right edge, the way a collapsed question keeps its pencil
+   there — whatever else the row happens to be carrying. With a summary the
+   summary does the pushing; with only a duration, the duration does; with
+   neither, this does. Left to hug the name, a `bash` with nothing to say came
+   out with its chevron halfway across an otherwise empty row. */
 .chevron {
   flex-shrink: 0;
+  margin-left: auto;
   color: var(--ick-tool-meta);
   transition: transform var(--ick-duration-fast) var(--ick-ease);
+}
+
+.summary ~ .chevron,
+.time ~ .chevron {
+  margin-left: 0;
 }
 
 .header[aria-expanded="true"] .chevron {
@@ -188,7 +216,8 @@
   box-sizing: border-box;
   width: 100%;
   padding: var(--ick-space-4) var(--ick-space-5);
-  border-radius: var(--ick-radius-sm);
+  /* An inset panel in the card, like any other — so, the row corner. */
+  border-radius: var(--ick-tool-inner-radius);
   background: var(--ick-tool-error-surface);
   color: var(--ick-danger);
 }

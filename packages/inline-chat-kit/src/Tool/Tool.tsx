@@ -167,57 +167,59 @@ export function Tool({
           A card needs something to be a card *on*; on the page alone it was
           only paper with a shadow. */}
       <div className={styles.card}>
-      <button
-        type="button"
-        className={styles.header}
-        onClick={toggle}
-        /* Inside an answer this sits on the highlighter's surface, where a
-           pointerdown starts drawing a marker. The click is for the row. */
-        onPointerDown={(event) => event.stopPropagation()}
-        aria-expanded={isOpen}
-        aria-controls={bodyId}
-        disabled={!hasBody}
-      >
-        <StateGlyph state={state} />
+        <button
+          type="button"
+          className={styles.header}
+          onClick={toggle}
+          /* Inside an answer this sits on the highlighter's surface, where a
+             pointerdown starts drawing a marker. The click is for the row. */
+          onPointerDown={(event) => event.stopPropagation()}
+          aria-expanded={isOpen}
+          aria-controls={bodyId}
+          disabled={!hasBody}
+        >
+          <span className={styles.glyph}>
+            <StateGlyph state={state} />
+          </span>
 
-        <span className={styles.name}>{name}</span>
-        {/* The glyph is a picture. This is the same thing in words, for
-            anybody the picture is not reaching. */}
-        <span className={styles.srOnly}>{label[state]}</span>
+          <span className={styles.name}>{name}</span>
+          {/* The glyph is a picture. This is the same thing in words, for
+              anybody the picture is not reaching. */}
+          <span className={styles.srOnly}>{label[state]}</span>
 
-        {summary && <span className={styles.summary}>{summary}</span>}
-        {time && <span className={styles.time}>{time}</span>}
+          {summary && <span className={styles.summary}>{summary}</span>}
+          {time && <span className={styles.time}>{time}</span>}
 
-        {hasBody && <ChevronDown className={styles.chevron} size={14} aria-hidden />}
-      </button>
+          {hasBody && <ChevronDown className={styles.chevron} size={14} aria-hidden />}
+        </button>
 
-      {/* Always rendered, so `aria-controls` always points at something. */}
-      <div id={bodyId} className={styles.bodyOuter}>
-        <AnimatePresence initial={false}>
-          {isOpen && hasBody && (
-            <motion.div
-              key="body"
-              className={styles.body}
-              initial={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              animate={still ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-              exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={{ duration: still ? 0.12 : 0.22, ease: [0.32, 0.72, 0, 1] }}
-            >
-              <div className={styles.bodyInner}>
-                <Section label={label.input} value={shownInput} />
-                {state === "running" && !shownOutput && (
-                  <div className={styles.section}>
-                    <span className={styles.sectionLabel}>{label.output}</span>
-                    <Loader />
-                  </div>
-                )}
-                <Section label={label.output} value={shownOutput} />
-                <Section label={label.error} value={shownError} tone="error" />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        {/* Always rendered, so `aria-controls` always points at something. */}
+        <div id={bodyId} className={styles.bodyOuter}>
+          <AnimatePresence initial={false}>
+            {isOpen && hasBody && (
+              <motion.div
+                key="body"
+                className={styles.body}
+                initial={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                animate={still ? { opacity: 1 } : { height: "auto", opacity: 1 }}
+                exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                transition={{ duration: still ? 0.12 : 0.22, ease: [0.32, 0.72, 0, 1] }}
+              >
+                <div className={styles.bodyInner}>
+                  <Section label={label.input} value={shownInput} />
+                  {state === "running" && !shownOutput && (
+                    <div className={styles.section}>
+                      <span className={styles.sectionLabel}>{label.output}</span>
+                      <Loader />
+                    </div>
+                  )}
+                  <Section label={label.output} value={shownOutput} />
+                  <Section label={label.error} value={shownError} tone="error" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

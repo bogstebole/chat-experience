@@ -36,13 +36,17 @@ const Ground = ({ label, children }: { label: string; children: React.ReactNode 
       {label}
     </div>
     <div
+      /* The ground, off the kit's tokens rather than out of two numbers.
+         Hand-rolled, it read 16 and 24 — a ground padded like a ground and
+         cornered like the card standing on it, which is the crescent the
+         concentric rule exists to close. It is `card + padding`, or 40. */
       style={{
-        padding: 16,
-        borderRadius: 24,
+        padding: "var(--ick-space-6)",
+        borderRadius: "var(--ick-question-radius-group)",
         background: "var(--ick-question-surface)",
         display: "flex",
         flexDirection: "column",
-        gap: 12,
+        gap: "var(--ick-space-5)",
       }}
     >
       {children}
