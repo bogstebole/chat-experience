@@ -650,27 +650,41 @@ Every kit surveyed ships all six. **All six down.**
 
       19 new tests, 4 stories, 7 tokens. `0.5.0`. 18.9 KB → 56.6 KB gzip.
 
-- [ ] **F2b · Parsing cost on long answers.** Measured, `unified` + `remark`,
-      warm:
+- [x] **F2b · Parsing cost on long answers — done, by removing `remark`.**
 
-      | answer | per parse | of a 16.7 ms frame |
-      |---|---|---|
-      | 400 chars | 0.4 ms | 2% |
-      | 1 600 | 1.4 ms | 8% |
-      | 4 000 | 3.5 ms | 21% |
-      | 10 000 | 8.9 ms | 53% |
+      The measurement that opened this: `unified` + `remark`, warm, about
+      **0.9 ms per 1000 characters**, once per frame while an answer streams —
+      8.9 ms at ten thousand characters, over half a frame.
 
-      Linear, about **0.9 ms per 1000 characters**, and it runs once per frame
-      while an answer streams. Fine for an ordinary answer, not fine for a long
-      one — and a long one is exactly the case that streams for a minute.
+      The first idea was to parse only the block that changed. It was tried and
+      backed out: the split has to happen on blank lines, and `- one\n\n- two`
+      is **one** loose list in markdown while the two halves parsed separately
+      are two tight ones. Quietly changing what a list is, to save 3 ms, is the
+      worse trade.
 
-      The obvious fix is to parse only the block that changed, since during
-      streaming that is always the last one. It was tried and backed out: the
-      split has to happen on blank lines, and `- one\n\n- two` is **one**
-      loose list in markdown while the two halves parsed separately are two
-      tight ones. Quietly changing what a list is, to save 3 ms, is the worse
-      trade. A correct version needs a block splitter that understands loose
-      lists and fences, which is its own piece of work.
+      The right answer turned out to be smaller rather than cleverer. The kit
+      uses a thin slice of `remark` — nine block types and nine inline ones,
+      walked straight into a flat token list — so it now parses that slice
+      itself, in about three hundred lines:
+
+      | chars | `remark` | ours | |
+      |---|---|---|---|
+      | 429 | 0.55 ms | 0.024 ms | 22× |
+      | 1 722 | 1.95 ms | 0.049 ms | 40× |
+      | 5 170 | 5.84 ms | 0.110 ms | 53× |
+
+      And it took a third of the package with it: **90.8 → 58.2 KB gzip**.
+
+      It is not a CommonMark implementation and does not claim to be. What
+      makes that safe is that `remark` stays a **dev** dependency: a test
+      parses a corpus of real answers through both and compares the finished
+      documents, including **every prefix** of one — which is what streaming
+      actually parses, and where the two first disagreed. Three real
+      differences came out of it: trailing whitespace at the end of a
+      paragraph, a delimiter row that has to match the header's cell count
+      before a half-typed table becomes a table, and short table rows, where
+      this pads and `remark` leaves it to the renderer.
+
 - [x] **F3 · `CodeBlock` — done.** Language label, a copy button that confirms
       and announces itself, and code that scrolls sideways rather than
       widening the answer. It takes over every fence in the markdown renderer.
