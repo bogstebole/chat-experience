@@ -152,6 +152,16 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "reasoning-states",
+    story: "components-reasoning--states",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "reasoning-in-place",
+    story: "components-reasoning--above-an-answer",
+    themes: ["light"],
+  },
+  {
     name: "tool-states",
     story: "components-tool--states",
     themes: ["light", "dark"],

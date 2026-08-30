@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import { Tool, formatDuration } from "../Tool/Tool";
+import { Tool } from "../Tool/Tool";
+import { formatDuration } from "../duration/formatDuration";
 
 const INPUT = { query: "weather in Belgrade", limit: 3 };
 

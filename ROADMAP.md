@@ -756,10 +756,36 @@ Every kit surveyed ships all six. **All six down.**
 
 This is the "thinking, reasoning" the brief asks for.
 
-- [ ] **G1 · `Reasoning`.** Collapsible, streams while it thinks, collapses
-      itself when the answer starts, and keeps the duration — "Thought for
-      12s". Present in prompt-kit, AI Elements and assistant-ui alike; the
-      auto-collapse is the detail they all converged on.
+- [x] **G1 · `Reasoning` — done.** Collapsible, open while it thinks, folded
+      away when the answer starts, and it keeps the duration.
+
+      The auto-collapse is what every kit shipping this converged on, and it is
+      right: thinking is worth watching while it happens and worth almost
+      nothing afterwards — but it has to stay reachable, because the times it
+      matters are exactly the times the answer looks wrong.
+
+      Folding is the block's **preference**, not something done to the reader.
+      That distinction is the whole of `useDisclosure`, now shared with `Tool`:
+      the host if it is controlling the row, then whoever clicked it, then the
+      row's own idea. Derived rather than an effect, which is what lets a
+      reader's decision outlive every state change after it.
+
+      It times itself, adjusted during render on a change of state — an effect
+      would mean a second pass every time the thinking stopped, and the lint
+      rule that forbids it was right to.
+
+      Prose, not a panel, which is the difference from `Tool`: a tool call is a
+      record of something that ran and gets a box; this is the model talking to
+      itself, and a box would give it a weight it has not earned next to the
+      answer it is only explaining.
+
+      Two things the tests caught before a screenshot could. The shimmering
+      word was a `<Loader variant="shimmer">`, which is decorative and marks
+      itself `aria-hidden` — the button had no accessible name at all. And the
+      body was `--ick-text-md`, 13px against the answer's 12, which put the
+      footnote above the text it was explaining.
+
+      17 tests, 3 axe cases, 4 stories, 7 tokens. `0.14.0`.
 - [ ] **G2 · `ChainOfThought` / `Steps`.** A sequence with per-step status.
       Distinct from G1: reasoning is prose, steps are structure.
 - [x] **G3 · `Tool` — done.** Name, input, output, and state — pending,
@@ -823,11 +849,15 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → **G1** → G4 → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → **G4** → G2 → G5 → G6 → G7 → H.
 
-The floor is finished, and the hardest shape in the agent tier with it.
-`Reasoning` is next, and it is close to a special case of the tool row: a
-disclosure that opens on one state and keeps a duration.
+The floor is finished, and the two disclosures in the agent tier with it —
+`Reasoning` did turn out to be a special case of the tool row, and the part
+they share is now `useDisclosure` rather than the same twenty lines twice.
+
+`TaskList` is next: the first one in this tier that is a list rather than a
+box, and the first where the interesting question is what happens as items
+change state under the reader.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be
