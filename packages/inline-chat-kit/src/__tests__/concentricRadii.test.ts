@@ -174,16 +174,20 @@ describe("corners nest", () => {
       const pad = css.slice(at, css.indexOf("}", at)).match(/padding:\s*([^;]+);/)?.[1];
       return pad?.trim().split(/\s+/);
     };
-    const tool = await load("../Tool/Tool.module.css?raw");
+    /* The header is shared now, and a tool call's is the `filled` one — the
+       variant whose row *is* a card's top edge. */
+    const head = await load("../disclosure/DisclosureHeader.module.css?raw");
     const question = await load("../QuestionCard/QuestionCard.module.css?raw");
-    expect(height(tool, ".header")).toEqual(height(question, ".collapsed"));
+    expect(height(head, '.header[data-filled]')).toEqual(height(question, ".collapsed"));
 
     /* And the glyph rides in the badge's box rather than at its own size. */
-    expect(tool).toMatch(/\.glyph\s*\{[^}]*width:\s*var\(--ick-badge-size\)/);
+    expect(head).toMatch(
+      /\.header\[data-filled\] \.glyph\s*\{[^}]*width:\s*var\(--ick-badge-size\)/
+    );
 
     /* Trailing element hard right, the way a collapsed question keeps its
        pencil there — even on a row carrying neither summary nor duration. */
-    expect(tool).toMatch(/\.chevron\s*\{[^}]*margin-left:\s*auto/);
+    expect(head).toMatch(/\.chevron\s*\{[^}]*margin-left:\s*auto/);
   });
 
   /**

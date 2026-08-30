@@ -14,79 +14,14 @@
   box-sizing: border-box;
   width: 100%;
   font-family: var(--ick-font-sans);
-}
 
-.header {
-  all: unset;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: var(--ick-space-4);
-  width: 100%;
-  padding: var(--ick-space-2) var(--ick-space-3);
-  margin-left: calc(var(--ick-space-3) * -1);
-  border-radius: var(--ick-radius-sm);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background var(--ick-duration-fast) ease;
-}
-
-.header:hover {
-  background: var(--ick-surface-hover);
-}
-
-.header:focus-visible {
-  outline: 2px solid var(--ick-focus-ring);
-  outline-offset: -2px;
-}
-
-/* Nothing to fold: a heading, not a control. */
-.static,
-.static:hover {
-  cursor: default;
-  background: none;
-}
-
-.title {
-  font-size: var(--ick-cite-size);
-  font-weight: var(--ick-weight-medium);
-  color: var(--ick-ink);
-}
-
-.count {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-family: var(--ick-font-mono);
-  font-size: var(--ick-text-xs);
-  color: var(--ick-ink-faint);
-}
-
-.chevron {
-  flex-shrink: 0;
-  color: var(--ick-ink-faint);
-  transition: transform var(--ick-duration-fast) var(--ick-ease);
-}
-
-.header[aria-expanded="true"] .chevron {
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
-
-/* Always present, so `aria-controls` always points at something. */
-.listOuter {
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.listWrap {
-  box-sizing: border-box;
-  width: 100%;
-  overflow: hidden;
+  /* A title, not a label: this heads a list rather than describing an aside,
+     so it is ink at medium against `Reasoning`'s soft regular. Repointed from
+     here rather than overridden with a class passed into the header — two
+     `.label` rules from two stylesheets have equal specificity, and which one
+     wins is import order. */
+  --ick-disclosure-label: var(--ick-ink);
+  --ick-disclosure-weight: var(--ick-weight-medium);
 }
 
 .list {

@@ -180,9 +180,16 @@ export const OneRow: StoryObj = {
 /**
  * The five with a foldable row on top.
  *
- * What to look at: the header. Glyph, label, something at the right end, a
- * chevron — five times, and the CSS behind it is written out five times too.
- * Lined up like this, the places they do not quite agree are the point.
+ * They are one component now — `DisclosureHeader`, in two fits. `Tool`,
+ * `TaskList` and `Sources` are **bands**: full-width rows with a right edge,
+ * so the meta and the chevron are pushed to it. `Reasoning` and
+ * `ChainOfThought` are **inline**: labels that hug their own words, because
+ * they sit in the flow of an answer as asides and a chevron pushed to a right
+ * edge 500px away floats alone in white space.
+ *
+ * What to look at is that nothing here moved when the five became one. This
+ * view is what found the disagreements in the first place; it is what keeps
+ * them found.
  */
 export const Disclosures: StoryObj = {
   render: () => (

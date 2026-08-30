@@ -2,9 +2,10 @@
 
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown } from "lucide-react";
 import { StateGlyph, type WorkState } from "../stateGlyph/StateGlyph";
 import { useDisclosure } from "../disclosure/useDisclosure";
+import { DisclosureHeader } from "../disclosure/DisclosureHeader";
+import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./TaskList.module.css";
 
@@ -89,85 +90,58 @@ export function TaskList({
     .replace("{done}", String(done))
     .replace("{total}", String(tasks.length));
 
-  const header = title ? (
-    <>
-      <span className={styles.title}>{title}</span>
-      <span className={styles.progress}>{progress}</span>
-      {collapsible && <ChevronDown className={styles.chevron} size={14} aria-hidden />}
-    </>
-  ) : null;
 
   return (
     <section
       className={[styles.tasks, className ?? ""].filter(Boolean).join(" ")}
       {...rest}
     >
-      {header &&
-        (collapsible ? (
-          <button
-            type="button"
-            className={styles.header}
-            onClick={disclosure.toggle}
-            /* Inside an answer this sits on the highlighter's surface, where a
-               pointerdown starts drawing a marker. The click is for the row. */
-            onPointerDown={(event) => event.stopPropagation()}
-            aria-expanded={isOpen}
-            aria-controls={listId}
-          >
-            {header}
-          </button>
-        ) : (
-          <div className={`${styles.header} ${styles.static}`}>{header}</div>
-        ))}
+      {title && (
+        <DisclosureHeader
+          open={isOpen}
+          /* No handler when it cannot fold, which is what makes it a heading
+             rather than a control that does nothing. */
+          onToggle={collapsible ? disclosure.toggle : undefined}
+          controls={listId}
+          label={title}
+          meta={progress}
+        />
+      )}
 
-      {/* Always rendered, so `aria-controls` always points at something. */}
-      <div id={listId} className={styles.listOuter}>
-        <AnimatePresence initial={false}>
-          {isOpen && (
-            <motion.div
-              key="list"
-              className={styles.listWrap}
-              initial={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              animate={still ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-              exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={{ duration: still ? 0.12 : 0.22, ease: [0.32, 0.72, 0, 1] }}
-            >
-              <ol className={styles.list}>
-                <AnimatePresence initial={false}>
-                  {tasks.map((task) => {
-                    const state = task.state ?? "pending";
-                    return (
-                      <motion.li
-                        key={task.id}
-                        className={styles.item}
-                        data-state={state}
-                        /* The one being worked on, said in a way a screen
-                           reader can jump to. `step` rather than `true`: this
-                           is a sequence, and which step it is on is the
-                           question somebody is asking. */
-                        aria-current={state === "running" ? "step" : undefined}
-                        initial={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                        transition={{ duration: still ? 0.12 : 0.2 }}
-                      >
-                        <StateGlyph state={state} />
-                        <span className={styles.body}>
-                          <span className={styles.label}>{task.label}</span>
-                          {/* The glyph is a picture. This is the same thing in
-                              words, for anybody it is not reaching. */}
-                          <span className={styles.srOnly}>{label[state]}</span>
-                          {task.detail && <span className={styles.detail}>{task.detail}</span>}
-                        </span>
-                      </motion.li>
-                    );
-                  })}
-                </AnimatePresence>
-              </ol>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <DisclosureBody id={listId} open={isOpen}>
+        <ol className={styles.list}>
+          <AnimatePresence initial={false}>
+            {tasks.map((task) => {
+              const state = task.state ?? "pending";
+              return (
+                <motion.li
+                  key={task.id}
+                  className={styles.item}
+                  data-state={state}
+                  /* The one being worked on, said in a way a screen
+                     reader can jump to. `step` rather than `true`: this
+                     is a sequence, and which step it is on is the
+                     question somebody is asking. */
+                  aria-current={state === "running" ? "step" : undefined}
+                  initial={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  transition={{ duration: still ? 0.12 : 0.2 }}
+                >
+                  <StateGlyph state={state} />
+                  <span className={styles.body}>
+                    <span className={styles.label}>{task.label}</span>
+                    {/* The glyph is a picture. This is the same thing in
+                        words, for anybody it is not reaching. */}
+                    <span className={styles.srOnly}>{label[state]}</span>
+                    {task.detail && <span className={styles.detail}>{task.detail}</span>}
+                  </span>
+                </motion.li>
+              );
+            })}
+          </AnimatePresence>
+        </ol>
+      </DisclosureBody>
     </section>
   );
 }

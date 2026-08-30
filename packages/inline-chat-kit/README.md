@@ -375,6 +375,34 @@ answer; the parts are yours.
 Parts are cleared when a turn is answered again: the tool calls that produced
 the old answer are not evidence for the new one.
 
+### One header for everything that folds
+
+`<Tool>`, `<Reasoning>`, `<ChainOfThought>`, `<TaskList>` and `<Sources>` all
+open the same way, so they share **`DisclosureHeader`** and **`DisclosureBody`**
+— internals, not exports. The header owns the button-or-heading switch, the
+`aria-expanded` / `aria-controls` wiring, the chevron, the shimmer under a
+pending label, and the guard that stops a click on the row from starting a
+marker on the highlighter underneath. The body owns the always-present
+container and the height reveal.
+
+Two **fits**, and the difference is real rather than decorative:
+
+| | Fit | Why |
+| --- | --- | --- |
+| `Tool`, `TaskList`, `Sources` | `band` | A full-width row. It has a right edge, so the meta and the chevron are pushed to it. |
+| `Reasoning`, `ChainOfThought` | `inline` | A label that hugs its own words. These sit in the flow of an answer as asides; a chevron pushed to a right edge 500px away floats alone in white space. |
+
+A component that means something different by its label **repoints a token**
+from its own root rather than passing a class in — two `.label` rules from two
+stylesheets have equal specificity, and which one wins is import order.
+`--ick-disclosure-label`, `-font`, `-weight`, `-size`, `-glyph`, `-meta`.
+
+`<QuestionGroup>` folds too and does not use this, for a reason worth stating:
+its shut state is a *card*, and opening it is a FLIP morph between two layouts
+rather than a box growing from zero height under a row. A test holds that
+exemption, and the exemption stays honest — the day it stops being a morph, it
+owes an answer.
+
 ### `<Reasoning>`
 
 What the model worked through before it answered.
