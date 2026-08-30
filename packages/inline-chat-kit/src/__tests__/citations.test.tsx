@@ -102,3 +102,41 @@ describe("a citation in the text", () => {
     expect(screen.getByText("1")).toBeInTheDocument();
   });
 });
+
+/**
+ * The same number in two places, sized for the two places.
+ *
+ * In the source list the numbers sit in a column and have to line up, so that
+ * one is a square. In a sentence it is not: a single digit is about five
+ * pixels wide inside a sixteen-pixel square, so five and a half pixels of empty
+ * badge sat either side of it and the comma after it read as detached from the
+ * number it belongs to.
+ */
+describe("the marker's fit", () => {
+  const sheet = async (path: string) =>
+    ((await import(/* @vite-ignore */ path)).default as string).replace(/\/\*[\s\S]*?\*\//g, "");
+
+  const rule = (css: string, selector: string) => {
+    const at = css.indexOf(`${selector} {`);
+    expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+    return css.slice(at, css.indexOf("}", at));
+  };
+
+  it("lets the one in a sentence take the width of its number", async () => {
+    const css = await sheet("../InlineCitation/InlineCitation.module.css?raw");
+    const marker = rule(css, ".marker");
+    expect(marker, "the inline marker is back to a fixed square").not.toMatch(/min-width:/);
+    /* Padding that tracks the number rather than a fixed square. */
+    expect(marker).toMatch(/padding:\s*0\s+[\d.]+em/);
+    /* Still a badge: a fill, a corner, and the row's height. */
+    expect(marker).toMatch(/height:\s*var\(--ick-cite-size-marker\)/);
+    expect(marker).toMatch(/background:\s*var\(--ick-cite-fill\)/);
+  });
+
+  it("keeps the one in the list a square, because a column has to line up", async () => {
+    const css = await sheet("../Sources/Sources.module.css?raw");
+    const number = rule(css, ".number");
+    expect(number).toMatch(/min-width:\s*var\(--ick-cite-size-marker\)/);
+    expect(number).toMatch(/height:\s*var\(--ick-cite-size-marker\)/);
+  });
+});
