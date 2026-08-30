@@ -126,6 +126,11 @@ export type { ConversationProps } from "./Conversation/Conversation";
 /* Fenced code inside an answer, and on its own */
 export { CodeBlock } from "./CodeBlock/CodeBlock";
 export type { CodeBlockProps } from "./CodeBlock/CodeBlock";
+/* The syntax grammars are a chunk behind a dynamic import, fetched by the
+   first code block that needs them. Call this at start-up instead if every
+   answer in your app is code and the one plain first paint is not worth
+   25 kB off the entry. Idempotent; concurrent callers share the one fetch. */
+export { loadHighlighter, canHighlight } from "./CodeBlock/highlight";
 
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";

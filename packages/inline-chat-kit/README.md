@@ -825,12 +825,26 @@ fence, and it is exported for use on its own.
 | `onCopy` | `(code: string) => void` | writes to the clipboard | |
 | `copiedFor` | `number` | `1600` | How long the button stays confirmed, in ms |
 
-**Ten languages** are registered: TypeScript, JavaScript, HTML/XML, CSS, JSON,
-YAML, Bash, Python, SQL, Markdown and diff — plus the aliases people actually
-type (`ts`, `tsx`, `js`, `sh`, `py`, `yml`, …). `lowlight/common` is 37
-languages and 51.6 KB gzipped; these cost a quarter of that and cover what a
-chat actually shows. A language outside the list renders unhighlighted rather
-than throwing.
+**Eleven languages** are registered: TypeScript, JavaScript, HTML/XML, CSS,
+JSON, YAML, Bash, Python, SQL, Markdown and diff — plus the aliases people
+actually type (`ts`, `tsx`, `js`, `sh`, `py`, `yml`, …). `lowlight/common` is
+37 languages and 51.6 KB gzipped; these cost half of that and cover what a chat
+actually shows. A language outside the list renders unhighlighted rather than
+throwing.
+
+**And they are not in your bundle until something needs them.** The grammars
+are a **25 kB gzip chunk behind a dynamic `import()`** — most conversations
+never show a fence, and 25 kB is 42% of what the package used to weigh. The
+first block on a page paints its code plain and colours in when the chunk
+lands; every block after that is coloured on its first paint, because the
+loaded highlighter is kept. There is no layout shift either way: the text is
+the same, only the colour arrives late.
+
+If that trade is wrong for you — a docs tool where every answer is code —
+`import { loadHighlighter } from "inline-chat-kit"` and call it once at
+start-up. It is idempotent and concurrent callers share the one fetch.
+`canHighlight(lang)` answers whether a language is one of the eleven **without
+loading anything**, for a caller deciding what to draw.
 
 The scheme is ink at four weights rather than a syntax palette — this kit is
 ink, paper and one acid yellow, and twelve colours dropped into it read as
