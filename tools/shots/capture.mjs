@@ -152,6 +152,26 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "sources-list",
+    story: "components-sources--list",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "sources-marked-passages",
+    story: "components-sources--marked-passages",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "sources-together",
+    story: "components-sources--the-two-together",
+    themes: ["light"],
+    /** Pressed, so the entry it points at is marked. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /Source 2/ }).click();
+      await page.waitForTimeout(300);
+    },
+  },
+  {
     name: "chain-states",
     story: "components-chainofthought--states",
     themes: ["light", "dark"],

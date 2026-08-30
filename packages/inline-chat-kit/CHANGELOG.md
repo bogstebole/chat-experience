@@ -6,6 +6,31 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.18.0 — 2026-08-30
+
+### Added
+
+- **`<Sources>` and `<InlineCitation>`.** A numbered marker in the text and the
+  list underneath.
+
+  **The citation marker and the highlight marker are the same interaction seen
+  twice**, and this is where that pays. The kit already had a way of saying
+  *this run of words is picked out* — the marker somebody draws over an answer
+  to ask about it. A citation is that same statement made by the answer rather
+  than by the reader, so it is drawn the same way rather than in a second
+  visual language nobody has learned. Give `InlineCitation` the passage as its
+  children and the passage is marked, on every line it wraps onto.
+
+  Pressing a marker **marks** the entry rather than scrolling to it. The list
+  is already under the answer, and moving the page under somebody who clicked a
+  marker in a sentence they were reading loses them the sentence.
+
+  The list is open by default: sources are the difference between an answer
+  somebody can check and one they have to trust. An entry is a link only where
+  there is somewhere to go — a keyboard lands on every link, and one that goes
+  nowhere is a stop for nothing. Same for the marker, which is a `<button>`
+  only when it has an `onSelect`.
+
 ## 0.17.0 — 2026-08-30
 
 ### Added

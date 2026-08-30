@@ -68,6 +68,10 @@ export { TaskList } from "./TaskList/TaskList";
 export type { Task, TaskListProps, TaskState } from "./TaskList/TaskList";
 export { ChainOfThought } from "./ChainOfThought/ChainOfThought";
 export type { ChainOfThoughtProps, Thought } from "./ChainOfThought/ChainOfThought";
+export { Sources } from "./Sources/Sources";
+export type { Source, SourcesProps } from "./Sources/Sources";
+export { InlineCitation } from "./InlineCitation/InlineCitation";
+export type { InlineCitationProps } from "./InlineCitation/InlineCitation";
 
 /* Structured questions inside a conversation */
 export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";

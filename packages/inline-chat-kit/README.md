@@ -300,6 +300,51 @@ everywhere. It is a real word in the button rather than a `<Loader>`: the loader
 is decorative and marks itself `aria-hidden`, and hiding this one would leave a
 control with nothing to call it.
 
+### `<Sources>` and `<InlineCitation>`
+
+A numbered marker in the text, and the list underneath.
+
+```tsx
+<p>
+  The Higgs is a point particle, so{" "}
+  <InlineCitation index={1} source={sources[0]} onSelect={(_, s) => setActive(s.id)}>
+    it has no measurable spatial extent
+  </InlineCitation>.
+</p>
+<Sources sources={sources} activeId={active} />
+```
+
+| `Sources` | Type | Notes |
+| --- | --- | --- |
+| `sources` | `Source[]` | `{ id, title, url?, origin?, quote? }` |
+| `title` | `ReactNode` | Defaults to `labels.title` |
+| `collapsible` | `boolean` | `false` |
+| `activeId` | `string \| null` | The one arrived at from a marker |
+| `onSelect` | `(source, index) => void` | |
+
+| `InlineCitation` | Type | Notes |
+| --- | --- | --- |
+| `index` | `number` | 1-based, and it has to match the entry's place |
+| `source` | `Source` | Named in the marker's accessible name |
+| `children` | `ReactNode` | The passage this citation speaks for — marked, if given |
+| `onSelect` | `(index, source?) => void` | Without one the marker is not a control |
+
+**The citation marker and the highlight marker are the same interaction seen
+twice.** The kit already had a way of saying *this run of words is picked out*
+— the marker somebody draws over an answer to ask about it. A citation is that
+same statement made by the answer rather than by the reader, so it is drawn the
+same way rather than in a second visual language nobody has learned. Give
+`InlineCitation` the passage as `children` and the passage is marked; give it
+none and the marker stands on its own after whatever precedes it.
+
+Pressing a marker **marks** the entry it points at rather than scrolling to it.
+The list is already under the answer, and moving the page under somebody who
+clicked a marker in a sentence they were reading loses them the sentence.
+
+The list is open by default. Sources are the difference between an answer
+somebody can check and one they have to trust, and folding that away by default
+says the opposite of what a citation is for.
+
 ### `<ChainOfThought>`
 
 How the answer was arrived at, step by step.
