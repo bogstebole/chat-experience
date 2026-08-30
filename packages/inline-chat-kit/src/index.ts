@@ -77,6 +77,10 @@ export type { InlineCitationProps } from "./InlineCitation/InlineCitation";
 export { Approval } from "./Approval/Approval";
 export type { ApprovalProps, Decision } from "./Approval/Approval";
 
+/* How full the window is, and why a long conversation starts forgetting */
+export { Context } from "./Context/Context";
+export type { ContextProps } from "./Context/Context";
+
 /* Structured questions inside a conversation */
 export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";
 export type { QuestionCardProps } from "./QuestionCard/QuestionCard";

@@ -1,0 +1,56 @@
+/* ─────────────────────────────────────────────
+   Context
+
+   A gauge, not a feature. It sits in a header or over a composer and it should
+   be possible to ignore it until it matters — which is the whole design: quiet
+   until the window is nearly full, and then saying what happens next rather
+   than only that a number is high.
+   ───────────────────────────────────────────── */
+
+.context {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ick-space-3);
+  font-family: var(--ick-font-sans);
+  color: var(--ick-context-ink);
+}
+
+.context[data-warn] {
+  color: var(--ick-context-ink-warn);
+}
+
+.ring {
+  flex-shrink: 0;
+  width: var(--ick-context-size);
+  height: var(--ick-context-size);
+}
+
+.track {
+  fill: none;
+  stroke: var(--ick-context-track);
+  stroke-width: 2;
+}
+
+.fill {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  /* Rounded, so a nearly-empty window is still a mark rather than a speck. */
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--ick-duration-slow) var(--ick-ease);
+}
+
+/* The number climbing is the information; the sweep animating to it is not. */
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
+
+.label {
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  line-height: 1;
+  white-space: nowrap;
+}

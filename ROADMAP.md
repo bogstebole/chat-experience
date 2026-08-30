@@ -896,8 +896,22 @@ This is the "thinking, reasoning" the brief asks for.
       the shallow merge then wrote over the real title.
 
       14 tests, 2 axe cases, 5 stories, 6 tokens. `0.20.0`.
-- [ ] **G7 · `Context`.** How full the window is. Small, and the only honest
-      way to explain why a long conversation starts forgetting.
+- [x] **G7 · `Context` — done.** How full the window is, as a small ring.
+
+      The note was already the design brief: it is the only honest way to
+      explain why a long conversation starts forgetting, and without it the
+      forgetting looks like the model being stupid rather than the window being
+      full.
+
+      So the warning says **what happens next** rather than only that a number
+      is high. "82%" is not something anybody can act on; "the oldest messages
+      will start dropping out" is. The whole sentence is the meter's accessible
+      name and its `title`, so it reaches a pointer and a screen reader alike.
+
+      Two colours rather than three. An amber in the middle makes somebody
+      learn a scale to read a number they can already see.
+
+      20 tests, 2 axe cases, 4 stories, 4 tokens. `0.21.0`.
 
 ### H · Worth having, not urgent
 
@@ -920,7 +934,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → ~~G5~~ → ~~G6~~ → **G7** → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → ~~G5~~ → ~~G6~~ → ~~G7~~ → **H**.
 
 The floor is finished, and the two disclosures in the agent tier with it —
 `Reasoning` did turn out to be a special case of the tool row, and the part
@@ -929,6 +943,14 @@ they share is now `useDisclosure` rather than the same twenty lines twice.
 `ChainOfThought` is next, and the open question is whether it is a component
 at all or a `TaskList` with prose under each step. Worth answering before
 building it.
+
+**The agent tier is finished.** Seven components, and the two questions worth
+having asked were both about what *not* to build: whether `ChainOfThought` was
+a `TaskList` with prose (it was not, and the reason is one word) and whether
+`Reasoning` needed its own disclosure logic (it did not — four components share
+`useDisclosure` and three share `StateGlyph`).
+
+What is left is the H tier, none of which is load-bearing.
 
 The agent tier is reachable from the demo now. A turn carries `parts`
 alongside its prose and a `SendHandler` streams them, which is what was
