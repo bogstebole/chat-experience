@@ -510,8 +510,24 @@
        derived from the tool's corner, back when a tool call was the only thing
        on it; the approval has a card of its own now. */
     --ick-approval-radius: calc(var(--ick-nest-card) + var(--ick-approval-pad));
-    --ick-approval-surface: rgb(var(--ick-marker-rgb) / 0.08);
-    --ick-approval-edge: rgb(var(--ick-marker-rgb) / 0.35);
+    /* The same ground a question group stands on, because an approval **is** a
+       question — "may I run this" is the same species as "who else lives in
+       the household". Both are the assistant asking, both block, both have an
+       answer, and they should look like one object.
+
+       It was the marker at 8%, on the reasoning that this is the one thing in
+       an answer allowed to look like a box that stops you. The reasoning is
+       real and the colour was the wrong instrument for it. Everywhere else the
+       marker is a small mark pointed at one thing and means **this one** — the
+       badge on the option you picked, the stroke you drew, a citation, a
+       source's number. Here it was a wash across a whole box meaning "this
+       kind of box", which is a second job for the one accent.
+
+       And it did not carry its weight: at 8% it is too weak to be an alarm and
+       too strong to be nothing, and in the dark it came out olive, a colour
+       the palette does not have. What actually says "this is unanswered" is
+       that the box has **buttons in it**, and nothing else in a turn does. */
+    --ick-approval-surface: var(--ick-ground);
     --ick-approval-glyph: var(--ick-ink-soft);
 
     /* ═══ Citations ═════════════════════════════════════════════════════════

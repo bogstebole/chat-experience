@@ -208,11 +208,11 @@ a tool call and an approval all use the same three.
 
 The card is paper and **opaque**, which matters more than it sounds: a
 translucent panel picks up whatever it is sitting on, which is how a tool call
-inside an approval came out pale green. In the dark the card is a lifted grey,
+inside an approval came out pale green, back when the approval was tinted. In the dark the card is a lifted grey,
 because `--ick-surface` there is the page itself and a card painted with it
 would sink into the ground rather than sit on it — and that grey is **mixed,
 not washed**. It was nine percent white for a while, which looks identical on
-the page and olive on an approval's tinted ground. The rule held in the light,
+the page and olive over a tint. The rule held in the light,
 where the card is `#fff`, and was quietly false in the dark. An inset is mixed
 from the card for the same reason. A test now reads the values rather than the
 wiring: an alpha channel on either is the fault, whatever the number.
@@ -228,15 +228,31 @@ paragraph — each saying again what the surface had already said.
 
 **All three steps, every time.** A question is a group (ground) holding a card
 holding rows; a tool call is a ground holding a card holding its input and
-output; an approval is a *tinted* ground holding a card holding what it is
-asking about. The tool used to be one box, and the box was the grey one — the
+output; an approval is a ground holding a card holding what it is asking about. The tool used to be one box, and the box was the grey one — the
 same three surfaces stacked backwards, which on its own reads fine and beside a
 question card reads as a different system.
 
-The approval had the same shape of fault from the other end: the tint was the
-ground and the only thing on paper was the tool call, so the title and the
-buttons sat straight on the ground. A question card puts its header *and* its
-Next button on the card, and this now does the same.
+The approval had the same shape of fault from the other end: it was a tinted
+box and the only thing on paper was the tool call, so the title and the buttons
+sat straight on the ground. A question card puts its header *and* its Next
+button on the card, and this now does the same.
+
+**And the tint is gone**, which is worth its own paragraph. An approval *is* a
+question — "may I run this" is the same species as "who else lives in the
+household": the assistant asking, blocking, with an answer. It should look like
+one. The tint was there on the reasoning that this is the one thing in an
+answer allowed to look like a box that stops you; the reasoning is real and
+colour was the wrong instrument. Everywhere else the marker is a small mark
+pointed at one thing and means **this one** — the badge on the option you
+picked, the stroke you drew, a citation, a source's number. A wash across a
+whole box meaning "this kind of box" is a second job for the one accent, and at
+8% it was too weak to be an alarm and too strong to be nothing. In the dark it
+came out olive, which is not in the palette at all.
+
+What says "this is unanswered" is that the box has **buttons in it**, and
+nothing else in a turn does. They leave when it settles, the way a question
+card's rows leave when it folds — and like a folded question, the approval
+keeps its paper and its shadow rather than changing into something else.
 
 A component that is *given* a surface takes the next step down rather than
 repeating one. Inside an `<Approval>` the tool call is a **row on its card** —
