@@ -27,3 +27,7 @@ packages/*/dist
 # Anchored: unanchored it matches at any depth, and on a case-insensitive
 # filesystem that swallowed `tools/shots` along with it.
 /Shots/
+
+# Recordings. 35MB of them and growing, and git keeps every version forever.
+# Anchored for the same reason as `/Shots/` above.
+/Videos/
