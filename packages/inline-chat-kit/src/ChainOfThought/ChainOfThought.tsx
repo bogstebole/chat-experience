@@ -2,9 +2,11 @@
 
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown } from "lucide-react";
+
 import { StateGlyph, type WorkState } from "../stateGlyph/StateGlyph";
 import { useDisclosure } from "../disclosure/useDisclosure";
+import { DisclosureHeader } from "../disclosure/DisclosureHeader";
+import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { formatDuration } from "../duration/formatDuration";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./ChainOfThought.module.css";
@@ -103,71 +105,50 @@ export function ChainOfThought({
       data-state={state}
       {...rest}
     >
-      <button
-        type="button"
-        className={styles.header}
-        onClick={toggle}
-        /* Inside an answer this sits on the highlighter's surface, where a
-           pointerdown starts drawing a marker. The click is for the row. */
-        onPointerDown={(event) => event.stopPropagation()}
-        aria-expanded={isOpen}
-        aria-controls={listId}
-      >
-        <StateGlyph state={thinking ? "running" : "done"} />
-        {/* The word shimmers while it is happening, which is how this kit says
-            "provisional" everywhere. Its own element rather than a `Loader`:
-            the loader marks itself `aria-hidden`, and this is the button's
-            name. */}
-        <span className={styles.label} data-shimmer={thinking || undefined}>
-          {thinking ? (running?.label ?? label.thinking) : counted}
-        </span>
-        {time && <span className={styles.time}>{time}</span>}
-        <ChevronDown className={styles.chevron} size={14} aria-hidden />
-      </button>
+      {/* An aside in the flow of an answer, like `Reasoning`'s — it takes the
+          width of its own words rather than a band's. */}
+      <DisclosureHeader
+        fit="inline"
+        open={isOpen}
+        onToggle={toggle}
+        controls={listId}
+        glyph={<StateGlyph state={thinking ? "running" : "done"} />}
+        /* While it runs the header narrates the step it is on, which is the
+           one question somebody watching a folded chain is asking. */
+        label={thinking ? (running?.label ?? label.thinking) : counted}
+        pending={thinking}
+        meta={time || undefined}
+      />
 
-      {/* Always rendered, so `aria-controls` always points at something. */}
-      <div id={listId} className={styles.listOuter}>
-        <AnimatePresence initial={false}>
-          {isOpen && steps.length > 0 && (
-            <motion.div
-              key="steps"
-              className={styles.listWrap}
-              initial={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              animate={still ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-              exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={{ duration: still ? 0.12 : 0.22, ease: [0.32, 0.72, 0, 1] }}
-            >
-              <ol className={styles.list}>
-                <AnimatePresence initial={false}>
-                  {steps.map((step) => {
-                    const stepState = step.state ?? "done";
-                    return (
-                      <motion.li
-                        key={step.id}
-                        className={styles.step}
-                        data-state={stepState}
-                        aria-current={stepState === "running" ? "step" : undefined}
-                        initial={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                        transition={{ duration: still ? 0.12 : 0.2 }}
-                      >
-                        <span className={styles.rail} aria-hidden>
-                          <StateGlyph state={stepState} />
-                        </span>
-                        <span className={styles.body}>
-                          <span className={styles.stepLabel}>{step.label}</span>
-                          {step.body && <span className={styles.working}>{step.body}</span>}
-                        </span>
-                      </motion.li>
-                    );
-                  })}
-                </AnimatePresence>
-              </ol>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <DisclosureBody id={listId} open={isOpen && steps.length > 0}>
+        <ol className={styles.list}>
+          <AnimatePresence initial={false}>
+            {steps.map((step) => {
+              const stepState = step.state ?? "done";
+              return (
+                <motion.li
+                  key={step.id}
+                  className={styles.step}
+                  data-state={stepState}
+                  aria-current={stepState === "running" ? "step" : undefined}
+                  initial={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  transition={{ duration: still ? 0.12 : 0.2 }}
+                >
+                  <span className={styles.rail} aria-hidden>
+                    <StateGlyph state={stepState} />
+                  </span>
+                  <span className={styles.body}>
+                    <span className={styles.stepLabel}>{step.label}</span>
+                    {step.body && <span className={styles.working}>{step.body}</span>}
+                  </span>
+                </motion.li>
+              );
+            })}
+          </AnimatePresence>
+        </ol>
+      </DisclosureBody>
     </section>
   );
 }

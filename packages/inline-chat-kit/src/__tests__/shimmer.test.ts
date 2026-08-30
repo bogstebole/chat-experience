@@ -1,15 +1,21 @@
 import { describe, it, expect } from "vitest";
 
 /**
- * Three shimmers, one geometry.
+ * Two shimmers, one geometry.
  *
- * `Loader` and `Reasoning` draw the same effect — a bright band slid across
- * text and clipped to the glyphs — and they had the same bug in it: the band
- * spent two thirds of every cycle off the words, so most of the time it was a
- * static grey line pretending to be busy. Both were fixed, in two files.
+ * It was three. `Loader`, `Reasoning` and `ChainOfThought` drew the same
+ * effect — a bright band slid across text and clipped to the glyphs — and the
+ * same bug was in all of them: the band spent two thirds of every cycle off
+ * the words, so most of the time it was a static grey line pretending to be
+ * busy. Fixing it meant fixing it three times.
  *
- * Which is the risk this pins. Nothing makes the next person fixing one of
- * them look at the other, so the numbers are compared here instead.
+ * Two of the three were the same header, and they are one component now, so
+ * the shimmer under a disclosure's label is written once. `Loader`'s is still
+ * its own — it shimmers a row of dots rather than a word, and it marks itself
+ * `aria-hidden` where the label is a control's name.
+ *
+ * Which is the risk this still pins. Nothing makes the next person fixing one
+ * look at the other, so the numbers are compared here instead.
  */
 const sheet = async (path: string) =>
   ((await import(/* @vite-ignore */ path)).default as string).replace(/\/\*[\s\S]*?\*\//g, "");
@@ -27,8 +33,7 @@ describe("the shimmer", () => {
     expect(loader.size, "no background-size found in Loader").toBeTruthy();
 
     for (const [name, path] of [
-      ["Reasoning", "../Reasoning/Reasoning.module.css?raw"],
-      ["ChainOfThought", "../ChainOfThought/ChainOfThought.module.css?raw"],
+      ["DisclosureHeader", "../disclosure/DisclosureHeader.module.css?raw"],
     ] as const) {
       expect(geometry(await sheet(path)), `${name} drifted from Loader`).toEqual(loader);
     }
@@ -42,7 +47,7 @@ describe("the shimmer", () => {
    * two thirds came from.
    */
   it("travels the width of the words and not much further", async () => {
-    const css = await sheet("../Reasoning/Reasoning.module.css?raw");
+    const css = await sheet("../disclosure/DisclosureHeader.module.css?raw");
     const { size, from, to } = geometry(css);
     const pct = (v?: string) => Number(v?.match(/^(-?[\d.]+)%/)?.[1]);
 

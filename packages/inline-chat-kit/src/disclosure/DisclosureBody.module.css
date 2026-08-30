@@ -1,0 +1,16 @@
+/* ─────────────────────────────────────────────
+   DisclosureBody
+   ───────────────────────────────────────────── */
+
+/* Always present, so the header's `aria-controls` always points at something.
+   Empty and flat when the row is shut. */
+.outer {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.wrap {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}

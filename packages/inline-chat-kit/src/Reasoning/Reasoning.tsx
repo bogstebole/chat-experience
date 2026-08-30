@@ -1,11 +1,11 @@
 "use client";
 
 import { useId, useState, type HTMLAttributes, type ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Brain, ChevronDown } from "lucide-react";
+import { Brain } from "lucide-react";
 import { useDisclosure } from "../disclosure/useDisclosure";
+import { DisclosureHeader } from "../disclosure/DisclosureHeader";
+import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { formatDuration } from "../duration/formatDuration";
-import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./Reasoning.module.css";
 
 /** Still working it out, or finished. */
@@ -65,7 +65,6 @@ export function Reasoning({
 }: ReasoningProps) {
   const label = { ...LABELS, ...labels };
   const bodyId = useId();
-  const still = prefersReducedMotion();
   const thinking = state === "thinking";
 
   const { isOpen, toggle } = useDisclosure({
@@ -105,50 +104,21 @@ export function Reasoning({
       data-state={state}
       {...rest}
     >
-      <button
-        type="button"
-        className={styles.header}
-        onClick={toggle}
-        /* Inside an answer this sits on the highlighter's surface, where a
-           pointerdown starts drawing a marker. The click is for the row. */
-        onPointerDown={(event) => event.stopPropagation()}
-        aria-expanded={isOpen}
-        aria-controls={bodyId}
-      >
-        <Brain className={styles.glyph} size={14} aria-hidden />
+      {/* An aside in the flow of an answer, so the header takes the width of
+          its own words rather than a band's. See `DisclosureHeader`'s `fit`. */}
+      <DisclosureHeader
+        fit="inline"
+        open={isOpen}
+        onToggle={toggle}
+        controls={bodyId}
+        glyph={<Brain size={14} aria-hidden />}
+        label={thinking ? label.thinking : time ? `${label.thoughtFor} ${time}` : label.thought}
+        pending={thinking}
+      />
 
-        {/* The word shimmers while it is happening, which is how this kit
-            says "provisional" everywhere else. Its own element rather than a
-            `<Loader variant="shimmer">`: the loader is decorative and marks
-            itself `aria-hidden`, and this word is the button's name. Hiding it
-            would leave a control with nothing to call it.
-
-            No counter either. A number ticking up while somebody waits is a
-            stopwatch pointed at them. */}
-        <span className={styles.label} data-shimmer={thinking || undefined}>
-          {thinking ? label.thinking : time ? `${label.thoughtFor} ${time}` : label.thought}
-        </span>
-
-        <ChevronDown className={styles.chevron} size={14} aria-hidden />
-      </button>
-
-      {/* Always rendered, so `aria-controls` always points at something. */}
-      <div id={bodyId} className={styles.bodyOuter}>
-        <AnimatePresence initial={false}>
-          {isOpen && (
-            <motion.div
-              key="body"
-              className={styles.body}
-              initial={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              animate={still ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-              exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={{ duration: still ? 0.12 : 0.22, ease: [0.32, 0.72, 0, 1] }}
-            >
-              <div className={styles.bodyInner}>{children}</div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <DisclosureBody id={bodyId} open={isOpen} className={styles.bodyInner}>
+        {children}
+      </DisclosureBody>
     </div>
   );
 }

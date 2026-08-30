@@ -1,10 +1,9 @@
 "use client";
 
 import { useId, type HTMLAttributes, type ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown } from "lucide-react";
 import { useDisclosure } from "../disclosure/useDisclosure";
-import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
+import { DisclosureHeader } from "../disclosure/DisclosureHeader";
+import { DisclosureBody } from "../disclosure/DisclosureBody";
 import styles from "./Sources.module.css";
 
 /** Where a claim came from. */
@@ -66,100 +65,70 @@ export function Sources({
 }: SourcesProps) {
   const label = { ...LABELS, ...labels };
   const listId = useId();
-  const still = prefersReducedMotion();
 
   const disclosure = useDisclosure({ open, defaultOpen, onOpenChange, preferOpen: true });
   const isOpen = collapsible ? disclosure.isOpen : true;
 
   const count = `${sources.length} ${sources.length === 1 ? label.one : label.many}`;
 
-  const head = (
-    <>
-      <span className={styles.title}>{title ?? label.title}</span>
-      <span className={styles.count}>{count}</span>
-      {collapsible && <ChevronDown className={styles.chevron} size={14} aria-hidden />}
-    </>
-  );
-
   return (
     <section className={[styles.sources, className ?? ""].filter(Boolean).join(" ")} {...rest}>
-      {collapsible ? (
-        <button
-          type="button"
-          className={styles.header}
-          onClick={disclosure.toggle}
-          /* Inside an answer this sits on the highlighter's surface, where a
-             pointerdown starts drawing a marker. The click is for the row. */
-          onPointerDown={(event) => event.stopPropagation()}
-          aria-expanded={isOpen}
-          aria-controls={listId}
-        >
-          {head}
-        </button>
-      ) : (
-        <div className={`${styles.header} ${styles.static}`}>{head}</div>
-      )}
+      <DisclosureHeader
+        open={isOpen}
+        /* No handler when it cannot fold, which is what makes it a heading
+           rather than a control that does nothing. */
+        onToggle={collapsible ? disclosure.toggle : undefined}
+        controls={listId}
+        label={title ?? label.title}
+        meta={count}
+      />
 
-      {/* Always rendered, so `aria-controls` always points at something. */}
-      <div id={listId} className={styles.listOuter}>
-        <AnimatePresence initial={false}>
-          {isOpen && sources.length > 0 && (
-            <motion.div
-              key="list"
-              className={styles.listWrap}
-              initial={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              animate={still ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-              exit={still ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={{ duration: still ? 0.12 : 0.22, ease: [0.32, 0.72, 0, 1] }}
-            >
-              <ol className={styles.list}>
-                {sources.map((source, i) => {
-                  const number = i + 1;
-                  const active = source.id === activeId;
-                  const body = (
-                    <>
-                      {/* The same square the marker in the text wears, so the
-                          two read as one thing counted twice. */}
-                      <span className={styles.number} data-active={active || undefined}>
-                        {number}
-                      </span>
-                      <span className={styles.body}>
-                        <span className={styles.name}>{source.title}</span>
-                        {source.origin && <span className={styles.origin}>{source.origin}</span>}
-                        {source.quote && <span className={styles.quote}>{source.quote}</span>}
-                      </span>
-                    </>
-                  );
+      <DisclosureBody id={listId} open={isOpen && sources.length > 0}>
+        <ol className={styles.list}>
+          {sources.map((source, i) => {
+            const number = i + 1;
+            const active = source.id === activeId;
+            const body = (
+              <>
+                {/* The same square the marker in the text wears, so the
+                    two read as one thing counted twice. */}
+                <span className={styles.number} data-active={active || undefined}>
+                  {number}
+                </span>
+                <span className={styles.body}>
+                  <span className={styles.name}>{source.title}</span>
+                  {source.origin && <span className={styles.origin}>{source.origin}</span>}
+                  {source.quote && <span className={styles.quote}>{source.quote}</span>}
+                </span>
+              </>
+            );
 
-                  return (
-                    <li
-                      key={source.id}
-                      className={styles.item}
-                      data-active={active || undefined}
-                      id={`${listId}-${source.id}`}
-                    >
-                      {source.url ? (
-                        <a
-                          className={styles.entry}
-                          href={source.url}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          onClick={() => onSelect?.(source, number)}
-                          onPointerDown={(event) => event.stopPropagation()}
-                        >
-                          {body}
-                        </a>
-                      ) : (
-                        <div className={styles.entry}>{body}</div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            return (
+              <li
+                key={source.id}
+                className={styles.item}
+                data-active={active || undefined}
+                id={`${listId}-${source.id}`}
+              >
+                {source.url ? (
+                  <a
+                    className={styles.entry}
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    onClick={() => onSelect?.(source, number)}
+                    onPointerDown={(event) => event.stopPropagation()}
+                  >
+                    {body}
+                  </a>
+                ) : (
+                  <div className={styles.entry}>{body}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </DisclosureBody>
     </section>
   );
 }

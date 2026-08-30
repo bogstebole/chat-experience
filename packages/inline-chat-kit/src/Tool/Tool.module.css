@@ -30,69 +30,17 @@
   /* Clips the body to the box while it is opening, so growing reads as a
      reveal rather than as content arriving before its container has. */
   overflow: hidden;
+
+  /* An identifier, not prose — so the header's label is set as one. And its
+     meta sits on paper here rather than on the page, so it takes the tool's
+     own faint rather than the page's. */
+  --ick-disclosure-font: var(--ick-font-mono);
+  --ick-disclosure-size: var(--ick-text-sm);
+  --ick-disclosure-label: var(--ick-tool-name);
+  --ick-disclosure-meta: var(--ick-tool-meta);
 }
 
 /* ── The row you click ──────────────────────────────────────────────────── */
-
-/* The same row a question is when it is folded shut, down to the numbers:
-   16 in from the left, 8 from the right, and a 24px slot at the front. Which
-   makes it 8 + 24 + 8 = 40 tall — the height of a collapsed question — so the
-   two line up when they are stacked, and the glyph sits on the line the
-   badges sit on. */
-.header {
-  all: unset;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: var(--ick-space-4);
-  width: 100%;
-  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background var(--ick-duration-fast) ease;
-}
-
-/* The badge's slot, holding a glyph instead of a letter. The glyph is 16 and
-   a badge is 24; centred in the badge's box, the name after it starts on the
-   same left edge a question's title does. */
-.glyph {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--ick-badge-size);
-  height: var(--ick-badge-size);
-}
-
-.header:hover {
-  background: var(--ick-tool-surface-hover);
-}
-
-.header:focus-visible {
-  outline: 2px solid var(--ick-focus-ring);
-  outline-offset: -2px;
-}
-
-/* Nothing to open — no input, no output, nothing to say yet. It is still a
-   row worth reading, so it stays put and stops being a control. */
-.header:disabled {
-  cursor: default;
-}
-
-.header:disabled:hover {
-  background: none;
-}
-
-/* An identifier, not prose — so it is set as one. */
-.name {
-  flex-shrink: 0;
-  font-family: var(--ick-font-mono);
-  font-size: var(--ick-text-sm);
-  color: var(--ick-tool-name);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .summary {
   flex: 1;
@@ -102,62 +50,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.time {
-  /* Pushed right when there is no summary to do it. */
-  margin-left: auto;
-  flex-shrink: 0;
-  font-family: var(--ick-font-mono);
-  font-size: var(--ick-text-xs);
-  color: var(--ick-tool-meta);
-}
-
-/* The summary already took the space, so the time must not take it again. */
-.summary ~ .time {
-  margin-left: 0;
-}
-
-/* Hard against the right edge, the way a collapsed question keeps its pencil
-   there — whatever else the row happens to be carrying. With a summary the
-   summary does the pushing; with only a duration, the duration does; with
-   neither, this does. Left to hug the name, a `bash` with nothing to say came
-   out with its chevron halfway across an otherwise empty row. */
-.chevron {
-  flex-shrink: 0;
-  margin-left: auto;
-  color: var(--ick-tool-meta);
-  transition: transform var(--ick-duration-fast) var(--ick-ease);
-}
-
-.summary ~ .chevron,
-.time ~ .chevron {
-  margin-left: 0;
-}
-
-.header[aria-expanded="true"] .chevron {
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
-
-/* ── What is inside ─────────────────────────────────────────────────────── */
-
-/* Always present, so `aria-controls` always points at something. Empty and
-   flat when the row is shut. */
-.bodyOuter {
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.body {
-  box-sizing: border-box;
-  width: 100%;
-  overflow: hidden;
 }
 
 .bodyInner {

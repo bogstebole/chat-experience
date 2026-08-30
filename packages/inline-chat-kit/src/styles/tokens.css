@@ -529,7 +529,6 @@
     --ick-chain-size: var(--ick-reasoning-size);
     --ick-chain-leading: var(--ick-reasoning-leading);
     --ick-chain-ink: var(--ick-reasoning-ink);
-    --ick-chain-header: var(--ick-reasoning-label);
     --ick-chain-label: var(--ick-ink);
     --ick-chain-connector: var(--ick-border);
     --ick-chain-gap: var(--ick-space-5);
@@ -549,6 +548,24 @@
     --ick-task-ink-done: var(--ick-ink-soft);
     --ick-task-ink-pending: var(--ick-ink-faint);
 
+    /* ═══ Disclosure ════════════════════════════════════════════════════════
+       The row you click to open something — a tool call, a block of thinking,
+       a plan, a list of sources. One header, so one set of tokens; each of the
+       five used to carry its own copy of the same three values.
+
+       A component still repoints them when it means something different by
+       them: a tool call's meta is its own `--ick-tool-meta`, because inside a
+       card it sits on paper rather than on the page. */
+
+    --ick-disclosure-label: var(--ick-ink-soft);
+    --ick-disclosure-font: var(--ick-font-sans);
+    --ick-disclosure-weight: var(--ick-weight-regular);
+    --ick-disclosure-glyph: var(--ick-ink-faint);
+    --ick-disclosure-meta: var(--ick-ink-faint);
+    /* The answer's size, not the interface's — a header on an aside should not
+       be bigger than the thing it is explaining. */
+    --ick-disclosure-size: var(--ick-answer-size);
+
     /* ═══ Reasoning ═════════════════════════════════════════════════════════
        What the model worked through on the way to the answer. Quieter than a
        tool call on purpose: that is a record of something that ran and gets a
@@ -558,7 +575,6 @@
 
     --ick-reasoning-ink: var(--ick-ink-soft);
     --ick-reasoning-label: var(--ick-ink-soft);
-    --ick-reasoning-glyph: var(--ick-ink-faint);
     --ick-reasoning-rule: var(--ick-border);
     --ick-reasoning-indent: var(--ick-space-5);
     /* The answer's size, not the interface's — this is an aside to the answer

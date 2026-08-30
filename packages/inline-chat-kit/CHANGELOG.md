@@ -6,6 +6,46 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.29.0 — 2026-08-31
+
+### Changed
+
+- **One header for everything that folds.** `Tool`, `Reasoning`,
+  `ChainOfThought`, `TaskList` and `Sources` each had a row you click to open
+  something, written out five times — with two pairs byte-for-byte identical
+  and the rest differing in ways nobody had decided on. The shimmer under the
+  label was in two of them, twenty lines of gradient each. The reveal beneath
+  was the same ten lines of `motion` props in all five.
+
+  `DisclosureHeader` and `DisclosureBody` are internals, not exports. **Nothing
+  moved on screen** — the side-by-side story is pixel-identical.
+
+  What is *not* unified is the shape, because the difference is real. A `band`
+  is a full-width row with a right edge to push the meta and the chevron to;
+  `inline` is a label that hugs its own words, for a header that sits in the
+  flow of an answer. An inline header's chevron pushed to a right edge 500px
+  away floats alone in white space with nothing beside it.
+
+- **`--ick-disclosure-*` replaces the per-component header tokens.** `-label`,
+  `-font`, `-weight`, `-size`, `-glyph`, `-meta`. A component repoints them
+  from its own root when it means something different — `Sources` and
+  `TaskList` head a list so their label is ink at medium; `Tool`'s is an
+  identifier so it is mono.
+
+  Repointed rather than overridden with a class, deliberately: two `.label`
+  rules in two stylesheets have equal specificity and which one wins is import
+  order, which is not a thing to build on.
+
+- **The stylesheet is 4.1 kB smaller** (72.81 kB, 12.48 kB gzip), and the entry
+  is 4.2 kB smaller.
+
+### Removed
+
+- `--ick-reasoning-glyph` and `--ick-chain-header`, which said what
+  `--ick-disclosure-glyph` and `--ick-disclosure-label` now say. The kit's
+  `<Reasoning>` and `<ChainOfThought>` no longer set a `.header` of their own
+  for anything to point at.
+
 ## 0.28.0 — 2026-08-31
 
 ### Added

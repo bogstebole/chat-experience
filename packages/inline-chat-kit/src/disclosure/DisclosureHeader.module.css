@@ -1,0 +1,200 @@
+/* ─────────────────────────────────────────────
+   DisclosureHeader
+
+   The row you click to open something, written once. Five components had one
+   — `Tool`, `Reasoning`, `ChainOfThought`, `TaskList`, `Sources` — and the CSS
+   was written out five times. Two pairs of them were byte-for-byte identical.
+
+   What is **not** unified is the shape, because the difference is real. A
+   `band` is a full-width row: it has a right edge, so meta and the chevron are
+   pushed to it. An `inline` header is a label that hugs its own words — it
+   sits in the flow of an answer as an aside, and pushing its chevron to a
+   right edge 500px away would leave it floating alone in white space. One
+   attribute, two layouts, and everything else shared.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.header {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-2) var(--ick-space-3);
+  /* Pulled back by its own padding, so the label starts on the text's left
+     edge and only the hover wash is wider than the words. */
+  margin-left: calc(var(--ick-space-3) * -1);
+  border-radius: var(--ick-radius-sm);
+  font-family: var(--ick-font-sans);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+/* A label, not a band: it takes the width of its own words. */
+.header[data-fit="inline"] {
+  display: inline-flex;
+  gap: var(--ick-space-3);
+  width: auto;
+  max-width: 100%;
+}
+
+/* Inside a card, where the row *is* the card's top edge — so it goes corner to
+   corner, takes the card's padding, and pulls back nothing. */
+.header[data-filled] {
+  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
+  margin-left: 0;
+  border-radius: 0;
+}
+
+.header:hover {
+  background: var(--ick-surface-hover);
+}
+
+.header:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Nothing to fold: a heading, not a control. */
+.static,
+.static:hover {
+  cursor: default;
+  background: none;
+}
+
+/* Nothing to open yet — no input, no output, nothing to say. It is still a row
+   worth reading, so it stays put and stops being a control. */
+.header:disabled {
+  cursor: default;
+}
+
+.header:disabled:hover {
+  background: none;
+}
+
+.glyph {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--ick-disclosure-glyph);
+}
+
+/* The badge's box, for a header standing beside rows that carry one — so the
+   glyph rides where a badge rides and the label starts on the badge's line. */
+.header[data-filled] .glyph {
+  justify-content: center;
+  width: var(--ick-badge-size);
+  height: var(--ick-badge-size);
+}
+
+/* Set from tokens rather than overridden by a class the caller passes in:
+   two `.label`s from two stylesheets have the same specificity, so which one
+   wins is import order — which is not a thing to build on. A component that
+   means something different by its label repoints the token from its own
+   root, the way `Tool` already repoints the code block's fill. */
+.label {
+  font-family: var(--ick-disclosure-font);
+  font-size: var(--ick-disclosure-size);
+  font-weight: var(--ick-disclosure-weight);
+  color: var(--ick-disclosure-label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A gradient the width of the word, slid across it and clipped to the glyphs —
+   the kit's way of saying "provisional". Its own element rather than a
+   `<Loader variant="shimmer">`: the loader is decorative and marks itself
+   `aria-hidden`, and this word is the button's name. Hiding it would leave a
+   control with nothing to call it.
+
+   No counter either. A number ticking up while somebody waits is a stopwatch
+   pointed at them. */
+.label[data-pending] {
+  background: linear-gradient(
+    90deg,
+    var(--ick-disclosure-label) 0%,
+    var(--ick-disclosure-label) 40%,
+    var(--ick-ink) 50%,
+    var(--ick-disclosure-label) 60%,
+    var(--ick-disclosure-label) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sweep 1.8s linear infinite;
+}
+
+/* The geometry, because the numbers are not obvious and the first version got
+   them wrong.
+
+   With `background-size: 200%` the image is twice the element, so the bright
+   stop at 50% of the image sits one element-width in from its left edge. At
+   `background-position: 100%` that lands on the element's left edge and at
+   `0%` on its right — so the highlight crosses the whole word and nothing
+   else. The overshoot either side keeps it from arriving and leaving on the
+   letters themselves.
+
+   It was 250% swept from 150% to -50%, which sends the bright point from one
+   width left of the word to two widths right of it: on the text for a third of
+   the cycle and off it for the rest. Measured over one period, frame by frame
+   — two of every three frames were a static grey word, which is the opposite
+   of what a shimmer is for. */
+@keyframes sweep {
+  from { background-position: 110% 0; }
+  to { background-position: -10% 0; }
+}
+
+/* Standing still it is still the word "Thinking", which was always the part
+   carrying the meaning. */
+@media (prefers-reduced-motion: reduce) {
+  .label[data-pending] {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+/* Hard against the right end of a band, whatever else the row carries. In an
+   inline header there is no right end to be against, so it simply follows. */
+.meta {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-disclosure-meta);
+}
+
+.chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--ick-disclosure-meta);
+  transition: transform var(--ick-duration-fast) var(--ick-ease);
+}
+
+/* Something ahead of it already did the pushing; a second `auto` would split
+   the free space between them instead of closing the pair up. */
+.meta ~ .chevron {
+  margin-left: 0;
+}
+
+.header[data-fit="inline"] .meta,
+.header[data-fit="inline"] .chevron {
+  margin-left: 0;
+}
+
+.header[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
