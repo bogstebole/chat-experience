@@ -61,6 +61,31 @@
   -webkit-mask-image: linear-gradient(to top, black 50%, transparent 100%);
 }
 
+/* Over the fade, not under it.
+
+   The fade is for the *conversation* running off the bottom edge. The composer
+   is not conversation — it is the control you type into, and it lives at the
+   end of the feed because it morphs into the message it sends. Which put it
+   inside 180px of gradient: after a long answer the box came out washed to
+   nearly nothing, and a control you can barely see is one people assume they
+   are not allowed to use. It was never actually blocked — the fade has always
+   been `pointer-events: none` — so the whole fault was that it looked
+   unavailable.
+
+   Lifting it one step over the fade fixes exactly that and nothing else. The
+   gradient still blurs everything behind, including the answer sliding under
+   the composer, which is the effect it was there for. `[data-active-input]` is
+   the kit saying which row is the live one; it is only ever the last turn,
+   waiting, so no answer is lifted with it.
+
+   The blur is a sibling in `.chatPage`'s stacking context and `Conversation`'s
+   root is `z-index: auto`, which creates no context of its own — so a row
+   inside the feed competes with the blur directly, and 6 beats 5. */
+.chatFeed [data-active-input] {
+  position: relative;
+  z-index: 6;
+}
+
 .secondaryBtn {
   all: unset;
   cursor: pointer;

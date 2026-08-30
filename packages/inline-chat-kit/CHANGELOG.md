@@ -6,6 +6,26 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.28.0 — 2026-08-31
+
+### Added
+
+- **`data-active-input` on the row that owns the live composer.** Which turn
+  that is, is something `<ChatTurnRow>` knows and a host does not — the class
+  it used to set was a hashed CSS-module name nothing outside the package could
+  target, and no rule in the kit used it either, so it did nothing at all.
+
+  The case that wanted it: a page fading its conversation off the bottom edge
+  has no way to exempt the composer. This kit's composer lives at the *end of
+  the feed*, because it morphs into the message it sends — so after a long
+  answer it lands inside the gradient and comes out washed to nearly nothing.
+  It was never actually blocked; a fade is `pointer-events: none`. It just
+  looked unavailable, which is enough.
+
+  ```css
+  .feed [data-active-input] { position: relative; z-index: 6; }
+  ```
+
 ## 0.27.0 — 2026-08-31
 
 ### Changed
