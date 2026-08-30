@@ -113,12 +113,9 @@ export function Approval({
       ) : (
         !readOnly && (
           <div className={styles.actions}>
-            <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
-              {label.once}
-            </Button>
-            <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
-              {label.always}
-            </Button>
+            {/* First in the DOM as well as on the left, so it is also the first
+                thing a keyboard lands on. The safe answer should not be the one
+                you have to tab past two others to reach. */}
             <Button
               variant="outline"
               size="m"
@@ -126,6 +123,12 @@ export function Approval({
               onClick={() => onDecide?.("denied")}
             >
               {label.deny}
+            </Button>
+            <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
+              {label.once}
+            </Button>
+            <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
+              {label.always}
             </Button>
           </div>
         )

@@ -327,10 +327,12 @@ control with nothing to call it.
 **Three answers, not two.** "Yes" and "yes forever" are not the same answer,
 and a UI offering one button for both collects the wrong one. **Allow once is
 the primary**: the narrow permission is the one that should be easiest to give,
-and the standing one should cost a moment's thought. Deny sits at the far end —
-a destructive choice flush against an affirmative one is a mis-click waiting to
-happen — and turns red only under the pointer, because a permanently red button
-is the first thing the eye lands on.
+and the standing one should cost a moment's thought. Deny sits alone on the left with
+the two that say yes pushed right — a destructive choice flush against an
+affirmative one is a mis-click waiting to happen — and it is first in the DOM
+too, so a keyboard reaches the safe answer without tabbing past the other two.
+It turns red only under the pointer, because a permanently red button is the
+first thing the eye lands on.
 
 Give it something to show. An approval with nothing under it is asking for a
 signature on a blank page.
