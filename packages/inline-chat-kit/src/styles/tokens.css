@@ -393,8 +393,13 @@
        it, so it is inset into the page rather than raised off it — a card
        here would compete with the answer it belongs to. */
 
-    --ick-tool-surface: var(--ick-surface-sunken);
-    --ick-tool-surface-hover: var(--ick-surface-active);
+    /* A tool call is a **card**, the same object a question is: paper, lifted
+       off the page, with what it holds inset into it. It used to be the other
+       way round — a recessed grey strip with white panels inside — which is
+       the same three surfaces stacked in the opposite order, and next to a
+       question card it read as a different system rather than the same one. */
+    --ick-tool-surface: var(--ick-card);
+    --ick-tool-surface-hover: var(--ick-inset);
     --ick-tool-border: var(--ick-border);
     --ick-tool-name: var(--ick-ink);
     --ick-tool-meta: var(--ick-ink-faint);
@@ -403,7 +408,7 @@
        itself, or the two are one grey with a hairline through it. Paper, which
        is lighter than the row in the light and darker than it in the dark —
        different in both, which is the whole requirement. */
-    --ick-tool-code-fill: var(--ick-surface);
+    --ick-tool-code-fill: var(--ick-inset);
     /* Concentric, the same rule the question card follows: a box's corner is
        the corner of what it holds plus the gap between them.
 
@@ -411,6 +416,7 @@
        A tool row folded shut is about 40px tall, and a corner derived from a
        generous inner gap would make it a pill — so the gap is tight and the
        block inside takes the small corner. */
+    --ick-tool-shadow: var(--ick-shadow-float);
     --ick-tool-inner-gap: var(--ick-space-4);
     --ick-tool-inner-radius: var(--ick-radius-sm);
     --ick-tool-radius: calc(var(--ick-tool-inner-radius) + var(--ick-tool-inner-gap));

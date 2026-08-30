@@ -72,13 +72,25 @@ describe("the surface stack", () => {
   });
 
   /**
-   * An approval is a ground, so what sits on it is a card and what sits in
-   * that is inset. Repointed rather than restyled — if this stops, the tool
-   * call goes back to wearing the approval's tint.
+   * A tool call is a card, the same object a question is. It used to be the
+   * other way round — a recessed grey strip with white panels inside, which is
+   * the same three surfaces stacked in the opposite order — and beside a
+   * question card it read as a different system rather than the same one.
    */
-  it("makes an approval a ground for whatever it holds", async () => {
+  it("makes a tool call a card, like a question", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    expect(tokens).toMatch(/--ick-tool-surface:\s*var\(--ick-card\)/);
+    expect(tokens).toMatch(/--ick-tool-code-fill:\s*var\(--ick-inset\)/);
+
+    const css = await load("../Tool/Tool.module.css?raw");
+    expect(css, "a card on paper needs the lift, or it is not a card").toMatch(
+      /box-shadow:\s*var\(--ick-tool-shadow\)/
+    );
+  });
+
+  /** A card that already has a ground under it does not float off it as well. */
+  it("stops a tool call floating once an approval gives it a ground", async () => {
     const css = await load("../Approval/Approval.module.css?raw");
-    expect(css).toMatch(/--ick-tool-surface:\s*var\(--ick-card\)/);
-    expect(css).toMatch(/--ick-tool-code-fill:\s*var\(--ick-inset\)/);
+    expect(css).toMatch(/--ick-tool-shadow:\s*none/);
   });
 });

@@ -102,7 +102,7 @@ export const Boxes: StoryObj = {
 
       <Panel
         label="Approval → Tool → CodeBlock"
-        note={"ground 26 → card 14 → inset 6\nthe same three surfaces, one step tighter"}
+        note={"ground 26 → card 14 → inset 6\nthe card does not float as well: it already has a ground"}
       >
         <Approval
           title="Run a command in your shell"
@@ -114,7 +114,7 @@ export const Boxes: StoryObj = {
 
       <Panel
         label="Tool, on its own"
-        note={"inset on the page rather than a card on a ground\nno rule under the header"}
+        note={"card 14 → inset 6\nthe same object a question card is, lifted off the page"}
       >
         <Tool
           name="search_web"
