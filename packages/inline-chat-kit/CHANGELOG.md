@@ -6,6 +6,15 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.20.1 — 2026-08-30
+
+### Changed
+
+- **Deny moved to the left of an approval,** with the two that say yes pushed
+  right. It is first in the DOM as well, so a keyboard reaches the safe answer
+  without tabbing past the other two — the gap between it and the affirmative
+  choices is still what stops the mis-click.
+
 ## 0.20.0 — 2026-08-30
 
 ### Added

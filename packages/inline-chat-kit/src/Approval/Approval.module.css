@@ -86,14 +86,15 @@
   width: 100%;
 }
 
-/* Pushed to the far end, away from the two that say yes. A destructive choice
-   sitting flush against an affirmative one is a mis-click waiting to happen.
+/* Alone at the left end, with the two that say yes pushed to the right. A
+   destructive choice sitting flush against an affirmative one is a mis-click
+   waiting to happen, and the gap is what stops it.
 
    Neutral at rest and only red under the pointer: a permanently red button is
    the first thing the eye lands on, and the destructive choice is not the one
    to draw somebody towards. */
 .deny {
-  margin-left: auto;
+  margin-right: auto;
 }
 
 .deny:hover:not(:disabled),
