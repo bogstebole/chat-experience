@@ -1,16 +1,11 @@
 "use client";
 
-import {
-  isValidElement,
-  useCallback,
-  useId,
-  useState,
-  type HTMLAttributes,
-  type ReactNode,
-} from "react";
+import { isValidElement, useId, type HTMLAttributes, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronDown, TriangleAlert } from "lucide-react";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
+import { useDisclosure } from "../disclosure/useDisclosure";
+import { formatDuration } from "../duration/formatDuration";
 import { Loader } from "../Loader/Loader";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./Tool.module.css";
@@ -55,14 +50,6 @@ const LABELS: Labels = {
   running: "Running",
   done: "Done",
 };
-
-/** `840ms` under a second, `1.2s` over it. Nobody reads `1173ms`. */
-export function formatDuration(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) return "";
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  const seconds = ms / 1000;
-  return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)}s`;
-}
 
 /**
  * A value, and how it wants to be drawn.
@@ -151,23 +138,17 @@ export function Tool({
   const bodyId = useId();
   const still = prefersReducedMotion();
 
-  /* Three sources, in order of who gets the last word: the host if it is
-     controlling the row, then whoever clicked it, then the row's own idea —
-     which follows the state, so a call that fails later opens itself.
-
-     Deliberately not an effect that forces it open on failure: somebody who
-     closed this row closed it, and reopening under their hands to show them
-     something they have already dismissed is not help. */
-  const [toggled, setToggled] = useState<boolean | null>(null);
-  const isOpen = open ?? toggled ?? defaultOpen ?? state === "error";
-
-  const toggle = useCallback(() => {
-    const next = !isOpen;
-    if (open === undefined) setToggled(next);
-    onOpenChange?.(next);
-  }, [isOpen, onOpenChange, open]);
-
   const failed = state === "error";
+
+  /* Open when it failed, because an error nobody can see has not been
+     reported — but only as the row's own preference, which anybody reading it
+     can overrule. See `useDisclosure`. */
+  const { isOpen, toggle } = useDisclosure({
+    open,
+    defaultOpen,
+    onOpenChange,
+    preferOpen: failed,
+  });
   const shownInput = show(input);
   const shownOutput = failed ? null : show(output);
   const shownError = failed ? show(error) : null;

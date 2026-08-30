@@ -229,6 +229,40 @@ way you draw yourself.
 The state is never carried by colour alone: the glyph changes shape, and the
 row says which state it is in in words only a screen reader hears.
 
+### `<Reasoning>`
+
+What the model worked through before it answered.
+
+```tsx
+<Reasoning state={thinking ? "thinking" : "done"}>{thoughts}</Reasoning>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `children` | `ReactNode` | The thinking. Prose — see `Tool` for structure |
+| `state` | `"thinking" \| "done"` | Default `"done"` |
+| `duration` | `number` | In ms. Left out, the block times itself |
+| `open` / `defaultOpen` / `onOpenChange` | | Controlled or not |
+| `labels` | `Partial<Record<…, string>>` | `thinking`, `thought`, `thoughtFor` |
+
+**Open while it thinks, folded away once the answer starts.** That is the one
+detail every kit shipping this has converged on, and it is right: thinking is
+worth watching while it happens and worth almost nothing afterwards — but it
+has to stay reachable, because the times it matters are exactly the times the
+answer looks wrong.
+
+Folding is the block's *preference*, not something done to the reader. Open it
+and it stays open, however many times the state changes underneath.
+
+Without a `duration` it times itself, from the moment it starts thinking to the
+moment it stops. Pass one when you already know — replaying a transcript, where
+the thinking did not happen just now.
+
+While it thinks the word shimmers, which is how this kit says "provisional"
+everywhere. It is a real word in the button rather than a `<Loader>`: the loader
+is decorative and marks itself `aria-hidden`, and hiding this one would leave a
+control with nothing to call it.
+
 ### `<QuestionCard>` and `<QuestionGroup>`
 
 A structured question inside a conversation: the assistant asks something with

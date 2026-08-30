@@ -27,6 +27,7 @@ const EXPECTED_EXPORTS = [
   "QuestionFieldRow",
   "QuestionOptionRow",
   "QuestionOtherRow",
+  "Reasoning",
   "QuestionShell",
   "answerChips",
   "GlassButton",

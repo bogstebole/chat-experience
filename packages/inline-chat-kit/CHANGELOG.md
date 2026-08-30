@@ -6,6 +6,45 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.14.0 — 2026-08-30
+
+### Added
+
+- **`<Reasoning>`.** What the model worked through before it answered. Open
+  while it thinks, folded away once the answer starts — the one detail every
+  kit shipping this has converged on, and it is right: thinking is worth
+  watching while it happens and worth almost nothing afterwards, but it has to
+  stay reachable, because the times it matters are exactly the times the answer
+  looks wrong.
+
+  Folding is the block's preference, not something done to the reader. Open it
+  and it stays open, however many times the state changes underneath.
+
+  It times itself when no `duration` is given — adjusted during render on a
+  change of state rather than in an effect, which would mean a second pass
+  every time the thinking stopped.
+
+  Prose, not a panel, which is the difference between this and `Tool`: a tool
+  call is a record of something that ran and gets a box; this is the model
+  talking to itself, and a box would give it a weight it has not earned next to
+  the answer it is only explaining. A rule down the side says "aside" and stays
+  out of the way.
+
+  The shimmering word is a real word in the button rather than a `<Loader>`.
+  The loader is decorative and marks itself `aria-hidden`; drawn that way the
+  button had no accessible name at all. Caught by the tests before it shipped,
+  and three axe cases keep it that way.
+
+### Changed
+
+- **`formatDuration` moved out of `Tool`** into its own module, and both it and
+  `Reasoning` read it from there.
+
+- **`useDisclosure`** holds the open/shut rule both blocks share: the host if it
+  is controlling the row, then whoever clicked it, then the row's own
+  preference. Derived rather than an effect, which is what lets a reader's
+  decision outlive every state change after it.
+
 ## 0.13.0 — 2026-08-29
 
 ### Added

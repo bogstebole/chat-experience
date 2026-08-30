@@ -14,6 +14,7 @@ import { AnswerActions } from "../AnswerActions/AnswerActions";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Loader } from "../Loader/Loader";
 import { Tool } from "../Tool/Tool";
+import { Reasoning } from "../Reasoning/Reasoning";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import {
@@ -377,6 +378,37 @@ describe("axe — a tool call", () => {
 
   it("passes with nothing to open, where the row is not a control", async () => {
     const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
+    await check(container);
+  });
+});
+
+describe("axe — reasoning", () => {
+  const THINKING = "Two numbers matter here: the mass, and how well it is known.";
+
+  /* The word shimmers, and a shimmer is a gradient clipped to the glyphs with
+     the fill made transparent. If it were ever drawn with a decorative element
+     instead of real text, the button would have no accessible name — which is
+     what these two are here to catch. */
+  it("passes while it thinks, where the word is the button's whole name", async () => {
+    const { container } = render(<Reasoning state="thinking">{THINKING}</Reasoning>);
+    await check(container);
+  });
+
+  it("passes once it is done and folded away", async () => {
+    const { container } = render(
+      <Reasoning state="done" duration={12400}>
+        {THINKING}
+      </Reasoning>
+    );
+    await check(container);
+  });
+
+  it("passes opened again", async () => {
+    const { container } = render(
+      <Reasoning state="done" duration={12400} defaultOpen>
+        {THINKING}
+      </Reasoning>
+    );
     await check(container);
   });
 });
