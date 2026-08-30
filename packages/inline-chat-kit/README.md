@@ -228,13 +228,20 @@ paragraph — each saying again what the surface had already said.
 
 **All three steps, every time.** A question is a group (ground) holding a card
 holding rows; a tool call is a ground holding a card holding its input and
-output. The tool used to be one box, and the box was the grey one — the same
-three surfaces stacked backwards, which on its own reads fine and beside a
+output; an approval is a *tinted* ground holding a card holding what it is
+asking about. The tool used to be one box, and the box was the grey one — the
+same three surfaces stacked backwards, which on its own reads fine and beside a
 question card reads as a different system.
 
-A component that is *given* a ground brings neither one of its own nor a
-shadow: inside an `<Approval>`, the approval is the ground. Two grounds is one
-more than there is depth for.
+The approval had the same shape of fault from the other end: the tint was the
+ground and the only thing on paper was the tool call, so the title and the
+buttons sat straight on the ground. A question card puts its header *and* its
+Next button on the card, and this now does the same.
+
+A component that is *given* a surface takes the next step down rather than
+repeating one. Inside an `<Approval>` the tool call is a **row on its card** —
+inset, at the row corner, no ground of its own and no shadow. Two grounds is
+one more than there is depth for, and so is two cards.
 
 A rule down the **side** is a different device and stays: `<Reasoning>` uses one
 to mark an aside, and `<ChainOfThought>`'s says each step follows from the one
