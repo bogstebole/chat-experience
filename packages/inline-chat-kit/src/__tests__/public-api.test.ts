@@ -38,6 +38,7 @@ const EXPECTED_EXPORTS = [
   "TextHighlighter",
   "Tool",
   "announce",
+  "mergeParts",
   "defaultInlineAnimConfig",
   "useChatTurns",
 ] as const;

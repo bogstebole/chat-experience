@@ -6,6 +6,41 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.16.0 — 2026-08-30
+
+### Added
+
+- **A turn carries `parts`, and a `SendHandler` can stream them.** The agent
+  tier existed and was unreachable: `Reasoning`, `Tool`, `TaskList` and
+  `QuestionGroup` all worked, and nothing carried one into a conversation. An
+  answer was one string, so a tool call, a plan and a block of reasoning either
+  flattened into that string or never arrived.
+
+  A streamed item is now either a string — a delta of the answer's prose, as
+  before — or a `TurnPart`, merged into `turn.parts` **by its id**. The merge is
+  shallow, which is what makes streaming one bearable: send the state change on
+  its own and the text that arrived before it is still there.
+
+  `<ChatTurnRow>` draws each kind with the component that owns it, in one block
+  so the row's generous gap sits between the question and the answer — not
+  between a tool call and the sentence it produced.
+
+- **`updatePart(turnId, part)` on `useChatTurns`,** and `onAnswerQuestion` /
+  `onEditQuestion` on `<ChatTurnRow>`. A question the assistant asked is
+  answered by the person reading it, not by the stream, and that answer has to
+  land somewhere. The row never keeps it — the parts are the host's.
+
+- **`mergeParts`** is exported, for a host folding parts into state of its own.
+
+### Breaking
+
+- **`ChatTurn` now has a required `parts` field.** Turns from `useChatTurns`
+  always have it; code that builds a `ChatTurn` literal — a test, a story, a
+  host's own state — needs `parts: []`.
+
+- **`SendHandler`'s iterable widened** to `AsyncIterable<string | TurnPart>`.
+  A handler that only yields strings is unaffected.
+
 ## 0.15.0 — 2026-08-30
 
 ### Added

@@ -7,6 +7,7 @@ const turn = (over: Partial<ChatTurn> = {}): ChatTurn => ({
   id: "t1",
   user: "What does particle physics study?",
   ai: "",
+  parts: [],
   state: "idle",
   ...over,
 });

@@ -24,6 +24,8 @@ const NOT_COMPONENTS: Record<string, string> = {
   GlassButton: "deprecated wrapper around Button, which has the stories",
   FOLDABLE_FROM: "a number: the length above which a group offers to fold",
   answerChips: "a function that shortens an answer for its summary row",
+  mergeParts:
+    "a function that folds a part into a turn's list; what it produces is what the ChatTurnRow stories show",
 };
 
 const valueExports = (): string[] => {

@@ -23,6 +23,10 @@ export type { MorphGlyphProps } from "./ChatInput/MorphGlyph";
 
 /* Turn state, streaming and the reveal — the half a host app owns */
 export { useChatTurns } from "./useChatTurns/useChatTurns";
+/* What a turn carries besides its prose: reasoning, tool calls, a plan, a
+   question. A `SendHandler` streams these alongside the answer's deltas. */
+export { mergeParts } from "./turnParts/turnParts";
+export type { TurnPart } from "./turnParts/turnParts";
 export type {
   ChatAnnouncements,
   ChatTurn,

@@ -14,6 +14,7 @@ const turn = (over: Partial<ChatTurn> = {}): ChatTurn => ({
   id: "t1",
   user: "What does particle physics actually study?",
   ai: "",
+  parts: [],
   state: "idle",
   ...over,
 });
@@ -92,6 +93,56 @@ export const OpeningComposer: Story = {
         <ChatTurnRow {...args} turn={turn({ user: "" })} isActiveInput questionAlign="stretch" />
       </Frame>
     </div>
+  ),
+};
+
+/**
+ * A whole agent turn: what it thought, what it ran, and what it answered.
+ *
+ * Everything below the question is `turn.parts` — the row draws each kind with
+ * the component that owns it, and a `SendHandler` streams them in among the
+ * answer's prose.
+ */
+export const AnAgentTurn: Story = {
+  render: (args) => (
+    <Frame label="reasoning, a tool call, a plan, and the answer">
+      <ChatTurnRow
+        {...args}
+        turn={turn({
+          state: "resting",
+          ai: ANSWER,
+          parts: [
+            {
+              kind: "reasoning",
+              id: "r",
+              state: "done",
+              duration: 2400,
+              text: "The question is about size, and the honest answer is that it does not have one.\n\nBetter to give the mass instead — but check the current figure first.",
+            },
+            {
+              kind: "tool",
+              id: "t",
+              name: "search_web",
+              state: "done",
+              summary: "2 results",
+              duration: 412,
+              input: { query: "higgs boson mass measurement", limit: 3 },
+              output: { results: [{ title: "ATLAS and CMS combined", rank: 1 }], took_ms: 412 },
+            },
+            {
+              kind: "tasks",
+              id: "p",
+              title: "Plan",
+              collapsible: true,
+              tasks: [
+                { id: "look", label: "Look up the current figure", state: "done" },
+                { id: "write", label: "Say why size is the wrong question", state: "done" },
+              ],
+            },
+          ],
+        })}
+      />
+    </Frame>
   ),
 };
 

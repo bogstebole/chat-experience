@@ -218,6 +218,7 @@ describe("axe — a turn", () => {
     id: "t1",
     user: "What does particle physics study?",
     ai: "",
+    parts: [],
     state: "idle" as const,
   };
 

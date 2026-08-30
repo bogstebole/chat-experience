@@ -25,6 +25,20 @@
   justify-content: stretch;
 }
 
+/* Everything the answer is made of: the reasoning, the tool calls, the plan,
+   the question, and the prose. Closer together than the row's own gap, which
+   separates a whole turn from the next one. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-7);
+}
+
+/* Nothing arrived yet, so it should take up no room and add no gap. */
+.body:empty {
+  display: none;
+}
+
 .answer {
   margin: 0;
   font-family: var(--ick-font-sans);
