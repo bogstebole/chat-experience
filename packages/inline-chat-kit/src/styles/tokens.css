@@ -402,6 +402,17 @@
     --ick-state-error: var(--ick-danger);
     --ick-state-track: var(--ick-border);
 
+    /* ═══ Context ═══════════════════════════════════════════════════════════
+       How full the window is. Quiet until it matters, which is why the ink is
+       the faint one until the warning threshold and the danger colour after —
+       there is no middle amber, because a gauge with three colours makes
+       somebody learn a scale to read a number they can already see. */
+
+    --ick-context-size: 16px;
+    --ick-context-ink: var(--ick-ink-faint);
+    --ick-context-ink-warn: var(--ick-danger);
+    --ick-context-track: var(--ick-border);
+
     /* ═══ Approval ══════════════════════════════════════════════════════════
        "It wants to do this. Is that all right?" The one thing in an answer
        that is allowed to look like a box that stops you — everything else in

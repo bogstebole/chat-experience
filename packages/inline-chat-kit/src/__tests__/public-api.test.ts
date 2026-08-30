@@ -18,6 +18,7 @@ const EXPECTED_EXPORTS = [
   "Chip",
   "ChatTurnRow",
   "CodeBlock",
+  "Context",
   "Conversation",
   "CustomCursor",
   "EmptyState",

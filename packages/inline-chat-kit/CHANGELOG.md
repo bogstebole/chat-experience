@@ -6,6 +6,33 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.21.0 — 2026-08-30
+
+### Added
+
+- **`<Context>`.** How full the context window is, as a small ring.
+
+  It is a gauge, not a feature, and it earns its place for one reason: it is
+  the only honest way to explain why a long conversation starts forgetting.
+  Without it the forgetting looks like the model being stupid rather than the
+  window being full.
+
+  Which is why the warning says **what happens next** rather than only that a
+  number is high — "82%" tells somebody nothing they can act on. The whole
+  sentence is the meter's accessible name and its `title`, so it reaches a
+  pointer and a screen reader alike.
+
+  Two colours, not three: quiet until `warnAt`, then the danger colour. A gauge
+  with an amber in the middle makes somebody learn a scale to read a number
+  they can already see.
+
+  `role="meter"` with the value on it, rather than a number a screen reader has
+  to find in a sentence. A total of zero reads as empty rather than full — a
+  window nobody has reported yet is not a full one — and a host summing its own
+  tokens is clamped at 100 rather than drawn past it.
+
+  **This finishes the agent tier.** G1 through G7 are done.
+
 ## 0.20.1 — 2026-08-30
 
 ### Changed

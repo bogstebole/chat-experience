@@ -18,6 +18,7 @@ import { Reasoning } from "../Reasoning/Reasoning";
 import { TaskList } from "../TaskList/TaskList";
 import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { Approval } from "../Approval/Approval";
+import { Context } from "../Context/Context";
 import { Sources } from "../Sources/Sources";
 import { InlineCitation } from "../InlineCitation/InlineCitation";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
@@ -384,6 +385,24 @@ describe("axe — a tool call", () => {
 
   it("passes with nothing to open, where the row is not a control", async () => {
     const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
+    await check(container);
+  });
+});
+
+describe("axe — the context gauge", () => {
+  it("passes quiet", async () => {
+    const { container } = render(<Context used={128_000} total={1_000_000} />);
+    await check(container);
+  });
+
+  /* A meter needs its value; the label carries what to do about it. */
+  it("passes nearly full, and as a ring with no words of its own", async () => {
+    const { container } = render(
+      <>
+        <Context used={880_000} total={1_000_000} />
+        <Context used={880_000} total={1_000_000} label={false} />
+      </>
+    );
     await check(container);
   });
 });

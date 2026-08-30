@@ -152,6 +152,16 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "context-filling",
+    story: "components-context--filling",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "context-in-a-header",
+    story: "components-context--in-a-header",
+    themes: ["light"],
+  },
+  {
     name: "approval-asking",
     story: "components-approval--asking",
     themes: ["light", "dark"],

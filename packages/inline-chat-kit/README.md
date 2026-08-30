@@ -300,6 +300,37 @@ everywhere. It is a real word in the button rather than a `<Loader>`: the loader
 is decorative and marks itself `aria-hidden`, and hiding this one would leave a
 control with nothing to call it.
 
+### `<Context>`
+
+How full the context window is.
+
+```tsx
+<ChatHeader title="Higgs boson" subtitle="14 turns">
+  <Context used={840_000} total={1_000_000} label={false} />
+</ChatHeader>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `used` / `total` | `number` | In tokens, or whatever unit you count in |
+| `warnAt` | `number` | Fraction. Default `0.8` |
+| `label` | `ReactNode \| false` | The percentage by default; `false` for the ring alone |
+| `labels` | `Partial<Record<…, string>>` | `name`, `of`, `tokens`, `nearlyFull` |
+
+Small on purpose. It is a gauge, not a feature, and it earns its place for one
+reason: **it is the only honest way to explain why a long conversation starts
+forgetting.** Without it the forgetting looks like the model being stupid
+rather than the window being full.
+
+Which is why the warning says *what happens next* rather than only that a
+number is high — `"82%"` tells somebody nothing they can act on. The whole
+sentence is the meter's accessible name and its `title`, so it reaches a
+pointer and a screen reader alike.
+
+Two colours, not three: quiet until `warnAt`, then the danger colour. A gauge
+with an amber in the middle makes somebody learn a scale to read a number they
+can already see.
+
 ### `<Approval>`
 
 "It wants to do this. Is that all right?"
