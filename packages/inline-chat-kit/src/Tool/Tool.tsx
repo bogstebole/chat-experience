@@ -2,16 +2,17 @@
 
 import { isValidElement, useId, type HTMLAttributes, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, ChevronDown, TriangleAlert } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
+import { StateGlyph, type WorkState } from "../stateGlyph/StateGlyph";
 import { useDisclosure } from "../disclosure/useDisclosure";
 import { formatDuration } from "../duration/formatDuration";
 import { Loader } from "../Loader/Loader";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./Tool.module.css";
 
-/** Queued, working, finished, or failed. */
-export type ToolState = "pending" | "running" | "done" | "error";
+/** Queued, working, finished, or failed — the kit's four, shared with `TaskList`. */
+export type ToolState = WorkState;
 
 type Labels = Record<"input" | "output" | "error" | ToolState, string>;
 
@@ -173,17 +174,7 @@ export function Tool({
         aria-controls={bodyId}
         disabled={!hasBody}
       >
-        <span className={styles.glyph} aria-hidden>
-          {state === "running" ? (
-            <span className={styles.spinner} />
-          ) : state === "done" ? (
-            <Check size={13} />
-          ) : failed ? (
-            <TriangleAlert size={13} />
-          ) : (
-            <span className={styles.queued} />
-          )}
-        </span>
+        <StateGlyph state={state} />
 
         <span className={styles.name}>{name}</span>
         {/* The glyph is a picture. This is the same thing in words, for

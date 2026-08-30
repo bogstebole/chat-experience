@@ -152,6 +152,21 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "tasklist-states",
+    story: "components-tasklist--states",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "tasklist-failed",
+    story: "components-tasklist--failed",
+    themes: ["light"],
+  },
+  {
+    name: "tasklist-bare",
+    story: "components-tasklist--bare",
+    themes: ["dark"],
+  },
+  {
     name: "reasoning-states",
     story: "components-reasoning--states",
     themes: ["light", "dark"],

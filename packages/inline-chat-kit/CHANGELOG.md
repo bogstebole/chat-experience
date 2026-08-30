@@ -6,6 +6,43 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.15.0 — 2026-08-30
+
+### Added
+
+- **`<TaskList>`.** What the agent means to do, what it is doing, and what it
+  has finished.
+
+  **The order never changes.** A list that sorted itself as work progressed
+  would move the line somebody is reading out from under them, and the sequence
+  is half of what the list is saying — these steps, in this order. Only the
+  glyphs change.
+
+  A list rather than a box, which is the difference from `Tool`: that is a
+  record of one thing that ran and gets a surface; this is a sequence, and a
+  surface around it would make it a thing beside the answer rather than part of
+  it. Three inks down the list — what is finished recedes, what is queued is
+  quieter still, and the one being worked on is the answer to "where is it up
+  to".
+
+  `collapsible` folds it once every task is done, on the same terms as
+  `Reasoning`: the list's preference, overruled for good by anybody who touches
+  it. The running task carries `aria-current="step"`, so a screen reader can
+  jump to it rather than counting down the list.
+
+### Breaking
+
+- **`--ick-tool-glyph`, `--ick-tool-glyph-done`, `--ick-tool-glyph-error`,
+  `--ick-tool-spinner`, `--ick-tool-spinner-track` and
+  `--ick-tool-glyph-size` are gone.** The four states are shared with
+  `TaskList` now, and so are their colours: `--ick-state-pending`,
+  `--ick-state-running`, `--ick-state-done`, `--ick-state-error`,
+  `--ick-state-track` and `--ick-state-size`. If you had restyled a tool call's
+  glyph, the new names do the same job for both components.
+
+  Two copies of one drawing is how the two start to disagree — which the
+  shimmer had already demonstrated one release earlier.
+
 ## 0.14.1 — 2026-08-30
 
 ### Fixed

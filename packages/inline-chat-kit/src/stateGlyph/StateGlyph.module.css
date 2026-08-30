@@ -1,0 +1,61 @@
+/* ─────────────────────────────────────────────
+   StateGlyph
+
+   Shared by `Tool` and `TaskList`, which is the point: it lived in one of them
+   first, and a second copy is how two drawings of the same thing start to
+   disagree. The shimmer in `Loader` and `Reasoning` had already done exactly
+   that once.
+   ───────────────────────────────────────────── */
+
+.glyph {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ick-state-size);
+  height: var(--ick-state-size);
+  color: var(--ick-state-pending);
+}
+
+.glyph[data-state="running"] {
+  color: var(--ick-state-running);
+}
+
+.glyph[data-state="done"] {
+  color: var(--ick-state-done);
+}
+
+.glyph[data-state="error"] {
+  color: var(--ick-state-error);
+}
+
+/* Queued: an outline, because nothing has happened to fill it in yet. */
+.queued {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid currentColor;
+  border-radius: var(--ick-radius-pill);
+}
+
+/* Running: a ring with one quarter in ink, turning. */
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--ick-state-track);
+  border-top-color: currentColor;
+  border-radius: var(--ick-radius-pill);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Standing still it is still a ring that is not a tick and not a triangle,
+   which is the whole job. A spinner that vanishes with its animation was
+   carrying its meaning in the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

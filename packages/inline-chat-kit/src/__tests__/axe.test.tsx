@@ -15,6 +15,7 @@ import { EmptyState } from "../EmptyState/EmptyState";
 import { Loader } from "../Loader/Loader";
 import { Tool } from "../Tool/Tool";
 import { Reasoning } from "../Reasoning/Reasoning";
+import { TaskList } from "../TaskList/TaskList";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import {
@@ -378,6 +379,42 @@ describe("axe — a tool call", () => {
 
   it("passes with nothing to open, where the row is not a control", async () => {
     const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
+    await check(container);
+  });
+});
+
+describe("axe — a task list", () => {
+  const PLAN = [
+    { id: "read", label: "Read the care plan", state: "done" as const, detail: "42 lines" },
+    { id: "gaps", label: "Find the gaps", state: "running" as const },
+    { id: "draft", label: "Draft the questions" },
+  ];
+
+  it("passes as a bare list", async () => {
+    const { container } = render(<TaskList tasks={PLAN} />);
+    await check(container);
+  });
+
+  /* `aria-current="step"` on a list item, and a heading that is not a control. */
+  it("passes with a title it cannot fold", async () => {
+    const { container } = render(<TaskList title="Plan" tasks={PLAN} />);
+    await check(container);
+  });
+
+  it("passes folded away", async () => {
+    const { container } = render(
+      <TaskList title="Plan" tasks={PLAN.map((t) => ({ ...t, state: "done" as const }))} collapsible />
+    );
+    await check(container);
+  });
+
+  it("passes with a task that failed", async () => {
+    const { container } = render(
+      <TaskList
+        title="Plan"
+        tasks={[{ id: "db", label: "Look it up", state: "error", detail: "No record" }]}
+      />
+    );
     await check(container);
   });
 });
