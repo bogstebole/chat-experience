@@ -156,9 +156,15 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   return (
     <motion.article
       id={`turn-${turn.id}`}
-      className={[styles.turn, isActiveInput ? styles.active : "", className ?? ""]
-        .filter(Boolean)
-        .join(" ")}
+      className={[styles.turn, className ?? ""].filter(Boolean).join(" ")}
+      /* Which row is the live composer is something only this component knows,
+         and a hashed CSS-module class is not something a host can target. So
+         it is stated as an attribute.
+
+         The one that needs it: a page with a gradient fading the conversation
+         off the bottom edge has no way to exempt the box you type in, and a
+         washed-out composer reads as one you are not allowed to use. */
+      data-active-input={isActiveInput || undefined}
       aria-busy={turn.state === "responding" || undefined}
       initial={{ opacity: 0, y: offset }}
       animate={{ opacity: 1, y: 0 }}

@@ -163,3 +163,30 @@ describe("the memo, which is the reason this component exists", () => {
     expect(container.textContent).toContain("and forces");
   });
 });
+
+describe("the live composer", () => {
+  const turn: ChatTurn = {
+    id: "t1",
+    user: "",
+    ai: "",
+    parts: [],
+    state: "idle",
+  };
+
+  /**
+   * Which row is the one you type into is something only this component knows,
+   * and its CSS-module class is hashed — a host cannot target it. So it says so
+   * in an attribute.
+   *
+   * The case that needs it: a page fading the conversation off its bottom edge
+   * has no way to exempt the composer, and washed out behind a gradient the box
+   * reads as one you are not allowed to use.
+   */
+  it("says which row is the live one", () => {
+    const { container, rerender } = render(<ChatTurnRow turn={turn} isActiveInput />);
+    expect(container.querySelector("[data-active-input]")).not.toBeNull();
+
+    rerender(<ChatTurnRow turn={turn} />);
+    expect(container.querySelector("[data-active-input]")).toBeNull();
+  });
+});

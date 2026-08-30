@@ -178,6 +178,17 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `feedback` | `"up" \| "down" \| null` | `null` | Which one is lit |
 | `answerActions` | `boolean` | `true` | Leave the row out |
 
+The live row carries **`data-active-input`**, so a page can style the composer
+without knowing which turn it is. The case it exists for: a gradient fading the
+conversation off the bottom edge cannot tell the answer from the box you type
+in, and a washed-out composer reads as one you are not allowed to use. Lift it
+over the fade:
+
+```css
+.feed [data-active-input] { position: relative; z-index: 6; }
+```
+
+
 `questionAlign` is `end` by default, because the composer is about to become
 the reader's own bubble and those sit right. `stretch` fills the row instead,
 which is what an *opening* composer wants: on an empty conversation it is not a

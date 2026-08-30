@@ -421,6 +421,34 @@ const APP_SHOTS = [
     },
   },
   {
+    name: "demo-composer-in-the-fade",
+    themes: ["dark", "light"],
+    clip: null,
+    /** The composer sitting inside the bottom gradient, which is where it lands
+        after a long answer. It has to stay legible there: washed out, a control
+        reads as one you are not allowed to use. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /How big is the Higgs boson/ }).click();
+      await page.waitForTimeout(6000);
+      // Opened, so the answer is long enough to push the composer into the band.
+      await page.getByRole("button", { name: /search_web/ }).click();
+      await page.waitForTimeout(900);
+      /* Parked deliberately inside the fade, 40px off the bottom edge. Left to
+         land where it likes the composer is off-frame half the time, and the
+         one thing this shot is for is what it looks like *in* the gradient. */
+      await page.evaluate(() => {
+        const feed = document.querySelector(".chatFeed");
+        const row = document.querySelector("[data-active-input]");
+        if (!feed || !row) return;
+        const gap = row.getBoundingClientRect().bottom - (window.innerHeight - 40);
+        feed.scrollBy({ top: gap, behavior: "instant" });
+      });
+      await page.waitForTimeout(400);
+    },
+  },
+  {
     name: "demo-agent-sources",
     themes: ["light", "dark"],
     clip: null,
