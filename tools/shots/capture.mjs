@@ -152,6 +152,21 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "side-by-side-boxes",
+    story: "components-side-by-side--boxes",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "side-by-side-disclosures",
+    story: "components-side-by-side--disclosures",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "side-by-side-opened",
+    story: "components-side-by-side--opened",
+    themes: ["light"],
+  },
+  {
     name: "context-filling",
     story: "components-context--filling",
     themes: ["light", "dark"],
