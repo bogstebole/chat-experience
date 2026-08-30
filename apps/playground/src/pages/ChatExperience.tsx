@@ -6,6 +6,7 @@ import {
   Button,
   ChatHeader,
   ChatTurnRow,
+  Context,
   Conversation,
   EmptyState,
   ReplyThreadPopup,
@@ -25,6 +26,11 @@ import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
 
 type Phase = "intro" | "chat";
+
+/** A small window, so the meter is worth looking at. See `contextUsed`. */
+const CONTEXT_TOTAL = 8_000;
+/** What a system prompt and the tool definitions cost before anybody types. */
+const CONTEXT_BASE = 900;
 
 interface Highlight {
   turnId: string;
@@ -243,6 +249,20 @@ export function ChatExperience() {
   /* Nothing asked yet: one turn, and it is still blank. */
   const isEmpty = turns.length === 1 && !turns[0].user && !turns[0].ai;
 
+  /* What the conversation has spent so far. A real app reads this off the
+     API's `usage`; here it is counted off the text, four characters to the
+     token, which is close enough for a meter and costs nothing. The window is
+     small on purpose — a 200k one would sit at 1% all afternoon and never show
+     what the component does when it fills. */
+  const contextUsed =
+    CONTEXT_BASE +
+    Math.round(
+      turns.reduce(
+        (n, turn) => n + turn.user.length + turn.ai.length + JSON.stringify(turn.parts ?? []).length,
+        0
+      ) / 4
+    );
+
   /* Kept per turn rather than as one value, or rating a second answer would
      silently un-rate the first. */
   const [verdicts, setVerdicts] = useState<Record<string, "up" | "down" | null>>({});
@@ -418,6 +438,16 @@ export function ChatExperience() {
               },
             ]}
           >
+            {/* What the conversation has spent. A real app reads this off the
+                API's usage; here it grows with the turns, which is enough to
+                see the meter fill and to see it warn. */}
+            <Context
+              className="headerContext"
+              used={contextUsed}
+              total={CONTEXT_TOTAL}
+              label={false}
+            />
+
             {/* The kit does not manage this one: a segmented control has no
                 icon-and-label shape to fold into a menu. */}
             <div className="selectModeToggle" role="group" aria-label="Selection mode">
@@ -463,6 +493,7 @@ export function ChatExperience() {
                 suggestions={[
                   "What does particle physics actually study?",
                   "How big is the Higgs boson?",
+                  "How do you know — show me your sources",
                   "What would you do first — give me a plan",
                   "Ask me some questions instead",
                   "Delete the screenshots",

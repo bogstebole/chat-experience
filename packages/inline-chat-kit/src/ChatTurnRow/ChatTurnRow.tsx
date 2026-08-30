@@ -9,6 +9,8 @@ import { Reasoning } from "../Reasoning/Reasoning";
 import { Tool } from "../Tool/Tool";
 import { Approval, type Decision } from "../Approval/Approval";
 import { TaskList } from "../TaskList/TaskList";
+import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
+import { Sources } from "../Sources/Sources";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
@@ -149,6 +151,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   const offset = still ? 0 : -16;
   // A turn a host built by hand may not have any.
   const parts = turn.parts ?? [];
+  const cited = parts.find((part) => part.kind === "sources")?.sources;
 
   return (
     <motion.article
@@ -218,6 +221,24 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                   collapsible={part.collapsible}
                 />
               );
+            case "chain":
+              return (
+                <ChainOfThought
+                  key={part.id}
+                  steps={part.steps ?? []}
+                  state={part.state}
+                  duration={part.duration}
+                />
+              );
+            case "sources":
+              return (
+                <Sources
+                  key={part.id}
+                  sources={part.sources ?? []}
+                  title={part.title}
+                  collapsible={part.collapsible}
+                />
+              );
             case "approval":
               return (
                 <Approval
@@ -271,6 +292,10 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           <TextHighlighter
             text={turn.ai}
             selectionMode={selectionMode}
+            /* What `[^1]` in the answer points at. The first sources part in
+               the turn, because an answer stands on one list — a second would
+               make the numbering ambiguous the moment both are non-empty. */
+            sources={cited}
             onHighlightComplete={(text) => onHighlight?.(turn.id, text)}
             onReplyInThread={onReplyInThread}
           />

@@ -127,6 +127,18 @@ describe("the row drawing them", () => {
             { kind: "reasoning", id: "r1", text: "two numbers", state: "done", duration: 900 },
             { kind: "tool", id: "t1", name: "search_web", state: "done", summary: "3 results" },
             { kind: "tasks", id: "p1", title: "Plan", tasks: [{ id: "a", label: "Read it" }] },
+            {
+              kind: "chain",
+              id: "c1",
+              state: "done",
+              steps: [{ id: "s", label: "Separate the two numbers", state: "done" }],
+            },
+            {
+              kind: "sources",
+              id: "s1",
+              title: "Sources",
+              sources: [{ id: "pdg", title: "Particle Data Group" }],
+            },
           ],
         })}
       />
@@ -135,6 +147,34 @@ describe("the row drawing them", () => {
     expect(screen.getByText("search_web")).toBeInTheDocument();
     expect(screen.getByText("Plan")).toBeInTheDocument();
     expect(screen.getByText("Read it")).toBeInTheDocument();
+    /* Its summary row, not a step: a chain folds itself once it is done, the
+       same way a finished plan does. What it says when shut is the assertion. */
+    expect(screen.getByText(/Thought through 1 step/)).toBeInTheDocument();
+    expect(screen.getByText("Particle Data Group")).toBeInTheDocument();
+  });
+
+  /**
+   * A `[^1]` in the prose and the list it points at arrive as two parts of one
+   * turn, so the row is what connects them. Nothing else can: the highlighter
+   * is handed the answer as a string, and a string cannot carry a source.
+   */
+  it("hands the sources to the prose, so a citation resolves", () => {
+    render(
+      <ChatTurnRow
+        turn={turn({
+          ai: "About 125 GeV[^1].",
+          state: "resting",
+          parts: [
+            {
+              kind: "sources",
+              id: "s1",
+              sources: [{ id: "pdg", title: "Particle Data Group" }],
+            },
+          ],
+        })}
+      />
+    );
+    expect(screen.getByRole("note", { name: "Source 1: Particle Data Group" })).toBeInTheDocument();
   });
 
   it("reports an answer to a question it asked, rather than keeping it", () => {

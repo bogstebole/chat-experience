@@ -1,4 +1,6 @@
 import type { ReasoningState } from "../Reasoning/Reasoning";
+import type { Thought } from "../ChainOfThought/ChainOfThought";
+import type { Source } from "../Sources/Sources";
 import type { Task } from "../TaskList/TaskList";
 import type { ToolState } from "../Tool/Tool";
 import type { Decision } from "../Approval/Approval";
@@ -42,6 +44,34 @@ export type TurnPart =
       id: string;
       title?: string;
       tasks: Task[];
+      collapsible?: boolean;
+    }
+  | {
+      /**
+       * Reasoning that has structure — steps that follow from one another,
+       * rather than one block of prose. `reasoning` is the block; this is the
+       * chain. Sending both for the same stretch of thinking says it twice.
+       */
+      kind: "chain";
+      id: string;
+      steps: Thought[];
+      state?: "thinking" | "done";
+      /** In ms. Left out, the block times itself. */
+      duration?: number;
+    }
+  | {
+      /**
+       * What the answer stands on.
+       *
+       * Also what an inline `[^1]` in the prose resolves against: the citation
+       * takes the source at that position, so the list is ordered by the order
+       * the answer cites them, not by rank. Send it **before** the prose that
+       * cites it and the markers come up already knowing what they point at.
+       */
+      kind: "sources";
+      id: string;
+      sources: Source[];
+      title?: string;
       collapsible?: boolean;
     }
   | {

@@ -1,4 +1,4 @@
-import type { Question, TurnPart } from "inline-chat-kit";
+import type { Question, Source, TurnPart } from "inline-chat-kit";
 
 /**
  * The demo pretending to be a model, and now pretending to be an agent.
@@ -32,6 +32,56 @@ const HIGGS_RESPONSE = [
 
 const PLAN_RESPONSE = [
   "Here is what I would do, in order. The first two are cheap and tell us whether the rest is worth doing.",
+];
+
+/* `[^1]` is the kit's citation marker. The number is a position in the turn's
+   `sources` part, which is why that part is sent before the prose that cites
+   it. Written the way a model writes it — mid-sentence, after the claim it
+   supports, not gathered at the end. */
+const CITED_RESPONSE = [
+  "The current combined figure is **125.25 GeV/c²**[^1], from ATLAS and CMS together — separately, neither experiment gets there.",
+  "It is known to about a fifth of a percent[^2], which for a particle discovered in 2012 is a remarkably tight number.",
+  "The uncertainty is now dominated by systematics rather than statistics[^3] — more collisions alone will not sharpen it much further.",
+];
+
+const SOURCES: Source[] = [
+  {
+    id: "atlas-cms",
+    title: "Combined measurement of the Higgs boson mass",
+    origin: "atlas.cern",
+    url: "https://example.com/atlas-cms",
+    quote: "125.25 ± 0.17 GeV, from the combination of the ATLAS and CMS datasets.",
+  },
+  {
+    id: "pdg",
+    title: "Particle Data Group — Higgs boson listings",
+    origin: "pdg.lbl.gov",
+    url: "https://example.com/pdg",
+  },
+  {
+    id: "systematics",
+    title: "Systematic uncertainties in the mass measurement",
+    origin: "cms.cern",
+    url: "https://example.com/systematics",
+  },
+];
+
+const THOUGHTS = [
+  {
+    id: "read",
+    label: "Read what is being asked",
+    body: "Not the mass itself — how well it is known, and by whom.",
+  },
+  {
+    id: "split",
+    label: "Separate the two numbers",
+    body: "The value and its uncertainty come from different arguments; giving one without the other answers half.",
+  },
+  {
+    id: "check",
+    label: "Check which is the limiting one now",
+    body: "Statistics used to dominate. It is systematics now, and that changes what more data would buy.",
+  },
 ];
 
 export const QUESTIONS: Question[] = [
@@ -141,6 +191,28 @@ async function* plan(id: string): AsyncGenerator<TurnPart> {
   }
 }
 
+/** Steps arriving one at a time, each finishing before the next appears. */
+async function* chain(id: string): AsyncGenerator<TurnPart> {
+  for (let at = 0; at < THOUGHTS.length; at++) {
+    yield {
+      kind: "chain",
+      id,
+      state: "thinking",
+      steps: THOUGHTS.slice(0, at + 1).map((step, i) => ({
+        ...step,
+        state: i < at ? ("done" as const) : ("running" as const),
+      })),
+    };
+    await wait(700);
+  }
+  yield {
+    kind: "chain",
+    id,
+    state: "done",
+    steps: THOUGHTS.map((step) => ({ ...step, state: "done" as const })),
+  };
+}
+
 const asks = (message: string, ...words: string[]) => {
   const said = message.toLowerCase();
   return words.some((word) => said.includes(word));
@@ -184,6 +256,18 @@ export async function* scriptedApi(message: string): AsyncGenerator<string | Tur
     ]);
     yield* plan("p");
     yield* prose(PLAN_RESPONSE);
+    return;
+  }
+
+  /* Before the mass branch, which shares a word with it — asking to show the
+     working is a different request from asking for the number. */
+  if (asks(message, "sources", "cite", "how do you know", "izvor")) {
+    yield* chain("c");
+    /* The list first, so a `[^1]` in the prose comes up already pointing at
+       something. Sent after, the markers would draw bare and fill in — which
+       works, and looks like a bug. */
+    yield { kind: "sources", id: "s", sources: SOURCES, title: "Sources", collapsible: true };
+    yield* prose(CITED_RESPONSE);
     return;
   }
 

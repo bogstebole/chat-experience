@@ -121,6 +121,13 @@ function inline(nodes: Phrasing[], b: Builder): MdNode[] {
       case "image":
         out.push(el("img", [], { src: node.url, alt: node.alt ?? "" }));
         break;
+      case "citation":
+        /* Untokenised, like a fenced block and for the same reason: a marker
+           is not a word of the answer. Tokenising it would put `[1]` inside a
+           highlight and inside the text a thread quotes back, which is not
+           what anybody drew a line under. */
+        out.push(el("cite", [], { index: String(node.index) }));
+        break;
       case "break":
         out.push(el("br", []));
         break;
