@@ -879,10 +879,12 @@ they share is now `useDisclosure` rather than the same twenty lines twice.
 at all or a `TaskList` with prose under each step. Worth answering before
 building it.
 
-One thing none of the agent tier is yet: reachable from the demo. `Tool`,
-`Reasoning`, `TaskList`, `QuestionCard` and `QuestionGroup` all live in
-Storybook only — the playground still runs the plain question-and-answer loop
-it started with.
+The agent tier is reachable from the demo now. A turn carries `parts`
+alongside its prose and a `SendHandler` streams them, which is what was
+missing — the components all worked and nothing carried one into a
+conversation. Four openers on the empty state route to four branches of the
+scripted API, so everything the kit draws can be reached by pressing something
+rather than by knowing what to type. `0.16.0`.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

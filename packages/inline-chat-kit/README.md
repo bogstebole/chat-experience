@@ -229,6 +229,43 @@ way you draw yourself.
 The state is never carried by colour alone: the glyph changes shape, and the
 row says which state it is in in words only a screen reader hears.
 
+### What a turn carries: `TurnPart`
+
+An answer used to be one string, and everything the agent tier draws had
+nowhere to live. A turn now carries `parts` alongside `ai`, and a `SendHandler`
+streams them in among the prose:
+
+```tsx
+const send: SendHandler = async function* (message) {
+  yield { kind: "reasoning", id: "r", text: "Two numbers matter here.", state: "thinking" };
+  yield { kind: "tool", id: "t", name: "search_web", state: "running", input: { query } };
+  yield { kind: "tool", id: "t", name: "search_web", state: "done", output, duration: 412 };
+  yield { kind: "reasoning", id: "r", state: "done" };
+  yield "The Higgs weighs about 125 GeV.";   // a delta of the answer's prose
+};
+```
+
+A streamed item is either a **string** — appended to `ai`, as before — or a
+**`TurnPart`**, merged into `turn.parts` **by its `id`**. The merge is shallow
+and that is the point: send the state change on its own and the text that
+arrived before it is still there. `<ChatTurnRow>` draws each kind with the
+component that owns it.
+
+| `kind` | Drawn as | Carries |
+| --- | --- | --- |
+| `reasoning` | `<Reasoning>` | `text`, `state`, `duration` |
+| `tool` | `<Tool>` | `name`, `state`, `summary`, `input`, `output`, `error`, `duration` |
+| `tasks` | `<TaskList>` | `title`, `tasks`, `collapsible` |
+| `question` | `<QuestionGroup>` | `questions`, `answers`, `activeIndex`, `collapsible` |
+
+A question is answered by the person reading it, not by the stream — so
+`useChatTurns` also returns **`updatePart(turnId, part)`**, and `ChatTurnRow`
+reports through `onAnswerQuestion` / `onEditQuestion`. The row never keeps the
+answer; the parts are yours.
+
+Parts are cleared when a turn is answered again: the tool calls that produced
+the old answer are not evidence for the new one.
+
 ### `<Reasoning>`
 
 What the model worked through before it answered.

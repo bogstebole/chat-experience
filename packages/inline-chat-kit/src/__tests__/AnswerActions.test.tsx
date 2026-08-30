@@ -126,6 +126,7 @@ describe("inside a turn", () => {
     id: "t1",
     user: "What does particle physics study?",
     ai: TEXT,
+    parts: [],
     state: "resting",
     ...over,
   });

@@ -79,6 +79,7 @@ describe("waiting for the first word", () => {
     id: "t1",
     user: "What does particle physics study?",
     ai: "",
+    parts: [],
     state: "responding",
     ...over,
   });

@@ -334,6 +334,30 @@ const APP_SHOTS = [
     },
   },
   {
+    name: "demo-agent-tool",
+    themes: ["light", "dark"],
+    clip: null,
+    /** Reasoning, a tool call and the answer, all in one turn. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /How big is the Higgs boson/ }).click();
+      await page.waitForTimeout(6000);
+    },
+  },
+  {
+    name: "demo-agent-questions",
+    themes: ["light", "dark"],
+    clip: null,
+    /** The assistant asking rather than answering. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /Ask me some questions/ }).click();
+      await page.waitForTimeout(3000);
+    },
+  },
+  {
     name: "demo-markdown-answer",
     themes: ["light", "dark"],
     clip: null,

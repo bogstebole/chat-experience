@@ -5,6 +5,11 @@ import { motion } from "motion/react";
 import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
 import { Loader } from "../Loader/Loader";
+import { Reasoning } from "../Reasoning/Reasoning";
+import { Tool } from "../Tool/Tool";
+import { TaskList } from "../TaskList/TaskList";
+import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
+import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { ChatTurn } from "../useChatTurns/useChatTurns";
@@ -66,6 +71,17 @@ export interface ChatTurnRowProps {
   /** Leave the row out entirely. */
   answerActions?: boolean;
 
+  /**
+   * A question the assistant asked, answered.
+   *
+   * The row does not keep the answer — `turn.parts` is the host's, and this is
+   * how it hears that one of them changed. `useChatTurns` gives you
+   * `updatePart` to write it back.
+   */
+  onAnswerQuestion?: (turnId: string, partId: string, questionId: string, answer: Answer) => void;
+  /** Somebody asked to change an answer already given. */
+  onEditQuestion?: (turnId: string, partId: string, index: number) => void;
+
   className?: string;
 }
 
@@ -112,6 +128,8 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onFeedback,
   feedback = null,
   answerActions = true,
+  onAnswerQuestion,
+  onEditQuestion,
   className,
 }: ChatTurnRowProps) {
   // A row arriving is travel, and this reader has asked for less of it. The
@@ -119,6 +137,8 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   // which reads as a glitch rather than as calm.
   const still = prefersReducedMotion();
   const offset = still ? 0 : -16;
+  // A turn a host built by hand may not have any.
+  const parts = turn.parts ?? [];
 
   return (
     <motion.article
@@ -154,11 +174,64 @@ export const ChatTurnRow = memo(function ChatTurnRow({
         />
       </div>
 
+      {/* One block, so the row's generous gap sits between the question and
+          everything the answer is made of — and not between a tool call and
+          the sentence it produced, which belong together. */}
+      <div className={styles.body}>
+        {parts.map((part) => {
+          switch (part.kind) {
+            case "reasoning":
+              return (
+                <Reasoning key={part.id} state={part.state} duration={part.duration}>
+                  {part.text ?? ""}
+                </Reasoning>
+              );
+            case "tool":
+              return (
+                <Tool
+                  key={part.id}
+                  name={part.name}
+                  state={part.state}
+                  summary={part.summary}
+                  input={part.input}
+                  output={part.output}
+                  error={part.error}
+                  duration={part.duration}
+                />
+              );
+            case "tasks":
+              return (
+                <TaskList
+                  key={part.id}
+                  title={part.title}
+                  tasks={part.tasks}
+                  collapsible={part.collapsible}
+                />
+              );
+            case "question":
+              return (
+                <QuestionGroup
+                  key={part.id}
+                  id={part.id}
+                  questions={part.questions}
+                  answers={part.answers ?? {}}
+                  activeIndex={part.activeIndex}
+                  collapsible={part.collapsible}
+                  readOnly={part.readOnly}
+                  onCommit={(questionId, answer) =>
+                    onAnswerQuestion?.(turn.id, part.id, questionId, answer)
+                  }
+                  onEdit={(index) => onEditQuestion?.(turn.id, part.id, index)}
+                />
+              );
+          }
+        })}
+
       {/* Sent, and nothing back yet. Without this the turn is a question with
           a blank space under it, which reads as nothing having happened.
           Silent on purpose: `useChatTurns` has already announced that a
           response is coming, and a second live region says it twice. */}
-      {turn.state === "responding" && !turn.ai && (
+      {turn.state === "responding" && !turn.ai && parts.length === 0 && (
         <div className={styles.answer}>
           <Loader />
         </div>
@@ -185,6 +258,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           )}
         </div>
       )}
+      </div>
     </motion.article>
   );
 });

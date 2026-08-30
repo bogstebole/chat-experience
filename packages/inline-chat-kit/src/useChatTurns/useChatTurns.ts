@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatInputState } from "../ChatInput/ChatInput";
 import { announce } from "../announce/announce";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
+import { mergeParts, type TurnPart } from "../turnParts/turnParts";
 
 export interface ChatTurn {
   id: string;
@@ -11,6 +12,12 @@ export interface ChatTurn {
   user: string;
   /** What has arrived of the answer so far. */
   ai: string;
+  /**
+   * Everything the answer is made of that is not its prose — reasoning, tool
+   * calls, a plan, a question being asked. Merged by id as they arrive. See
+   * `TurnPart`.
+   */
+  parts: TurnPart[];
   state: ChatInputState;
 }
 
@@ -21,14 +28,22 @@ export interface SendContext {
 }
 
 /**
- * Produce the reply. Return a string for a complete answer, or an async
- * iterable of deltas to stream one. Whatever an API hands back — an SSE
- * reader, an SDK's stream, a plain fetch — fits one of those two shapes.
+ * Produce the reply.
+ *
+ * Return a string for a complete answer, or an async iterable to stream one.
+ * Whatever an API hands back — an SSE reader, an SDK's stream, a plain fetch —
+ * fits one of those two shapes.
+ *
+ * A streamed item is either a **delta of the answer's prose** (a string, which
+ * is appended) or a **`TurnPart`** (which is merged into the turn by its id).
+ * That is what carries a model's thinking, its tool calls and its plan through
+ * to the components that draw them; a stream of strings alone has nowhere to
+ * put any of it.
  */
 export type SendHandler = (
   message: string,
   context: SendContext
-) => AsyncIterable<string> | Promise<string> | string;
+) => AsyncIterable<string | TurnPart> | Promise<string> | string;
 
 /**
  * What a screen reader is told, and in which language.
@@ -68,6 +83,14 @@ export interface UseChatTurnsResult {
   beginEdit: (id: string) => void;
   cancelEdit: (id: string) => void;
   isStreaming: boolean;
+  /**
+   * Merge a part into a turn from outside the stream.
+   *
+   * The stream is not the only thing that changes a part: a question the
+   * assistant asked is answered by the person reading it, and that answer has
+   * to land somewhere. Same merge-by-id as a streamed part.
+   */
+  updatePart: (turnId: string, part: TurnPart) => void;
 }
 
 const DEFAULT_REVEAL_SPEED = 260;
@@ -79,9 +102,9 @@ const newId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2, 11);
 
-const emptyTurn = (): ChatTurn => ({ id: newId(), user: "", ai: "", state: "idle" });
+const emptyTurn = (): ChatTurn => ({ id: newId(), user: "", ai: "", parts: [], state: "idle" });
 
-const isAsyncIterable = (value: unknown): value is AsyncIterable<string> =>
+const isAsyncIterable = (value: unknown): value is AsyncIterable<string | TurnPart> =>
   typeof value === "object" && value !== null && Symbol.asyncIterator in value;
 
 /**
@@ -128,6 +151,11 @@ export function useChatTurns({
   const rafRef = useRef<number | null>(null);
   // Text that has arrived but not yet been shown. Flushed once per frame.
   const pendingRef = useRef<Map<string, string>>(new Map());
+  /* Parts wait for the same animation frame the text does. A stream that sends
+     a part per token would otherwise re-render the row per token, which is the
+     cost the frame batching exists to avoid. A queue rather than a map: two
+     updates to one part in a single frame both have to be folded, in order. */
+  const pendingPartsRef = useRef<Map<string, TurnPart[]>>(new Map());
   const editingRef = useRef<{ id: string; user: string } | null>(null);
   const onSendRef = useRef(onSend);
   // Consumers write this as an object literal, so it is a new object on every
@@ -170,13 +198,25 @@ export function useChatTurns({
   const flush = useCallback(() => {
     rafRef.current = null;
     const pending = pendingRef.current;
-    if (pending.size === 0) return;
+    const pendingParts = pendingPartsRef.current;
+    if (pending.size === 0 && pendingParts.size === 0) return;
+
     const entries = [...pending];
+    const partEntries = [...pendingParts];
     pending.clear();
+    pendingParts.clear();
+
     setTurns((current) => {
       const next = current.map((turn) => {
         const text = entries.find(([id]) => id === turn.id)?.[1];
-        return text === undefined ? turn : { ...turn, ai: text };
+        const incoming = partEntries.find(([id]) => id === turn.id)?.[1];
+        if (text === undefined && !incoming) return turn;
+
+        return {
+          ...turn,
+          ...(text === undefined ? null : { ai: text }),
+          ...(incoming ? { parts: incoming.reduce(mergeParts, turn.parts) } : null),
+        };
       });
       turnsRef.current = next;
       return next;
@@ -194,6 +234,23 @@ export function useChatTurns({
       schedule();
     },
     [schedule]
+  );
+
+  const publishPart = useCallback(
+    (id: string, part: TurnPart) => {
+      const queue = pendingPartsRef.current.get(id);
+      if (queue) queue.push(part);
+      else pendingPartsRef.current.set(id, [part]);
+      schedule();
+    },
+    [schedule]
+  );
+
+  const updatePart = useCallback(
+    (turnId: string, part: TurnPart) => {
+      publishPart(turnId, part);
+    },
+    [publishPart]
   );
 
   useEffect(
@@ -283,7 +340,9 @@ export function useChatTurns({
       const controller = new AbortController();
       abortRef.current = controller;
       setIsStreaming(true);
-      patchTurn(id, { user: message, state: "responding", ai: "" });
+      // Parts go with the old answer: regenerating a turn should not leave
+      // the tool calls from the answer it replaced sitting above the new one.
+      patchTurn(id, { user: message, state: "responding", ai: "", parts: [] });
       speak("responding");
 
       // Held out here so the announcement can read it in `finally`, whether
@@ -295,8 +354,12 @@ export function useChatTurns({
         if (isAsyncIterable(result)) {
           for await (const chunk of result) {
             if (controller.signal.aborted) break;
-            answer += chunk;
-            publish(id, answer);
+            if (typeof chunk === "string") {
+              answer += chunk;
+              publish(id, answer);
+            } else {
+              publishPart(id, chunk);
+            }
           }
         } else {
           answer = (await result) ?? "";
@@ -310,7 +373,7 @@ export function useChatTurns({
         speak("answer", answer);
       }
     },
-    [flush, patchTurn, publish, reveal, settle, speak]
+    [flush, patchTurn, publish, publishPart, reveal, settle, speak]
   );
 
   const setDraft = useCallback(
@@ -363,5 +426,5 @@ export function useChatTurns({
     [patchTurn]
   );
 
-  return { turns, setDraft, submit, stop, beginEdit, cancelEdit, isStreaming };
+  return { turns, setDraft, submit, stop, beginEdit, cancelEdit, isStreaming, updatePart };
 }

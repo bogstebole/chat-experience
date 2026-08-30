@@ -106,7 +106,13 @@ export const TheLoader: Story = {
       <Frame label="in a turn, sent and waiting">
         <div style={{ padding: 24 }}>
           <ChatTurnRow
-            turn={{ id: "t1", user: "What does particle physics study?", ai: "", state: "responding" }}
+            turn={{
+              id: "t1",
+              user: "What does particle physics study?",
+              ai: "",
+              parts: [],
+              state: "responding",
+            }}
           />
         </div>
       </Frame>

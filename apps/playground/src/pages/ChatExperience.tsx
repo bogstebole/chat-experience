@@ -12,33 +12,18 @@ import {
   CustomCursor,
   defaultInlineAnimConfig,
   useChatTurns,
+  type Answer,
   type ChatInputHandle,
 } from "inline-chat-kit";
 import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
 import { requestedTheme } from "../demo/showcase";
+import { QUESTIONS, scriptedApi, threadReply } from "../demo/scriptedApi";
 import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
 
 type Phase = "intro" | "chat";
-
-/* Markdown, because that is what a model returns. The first and last
-   paragraphs are left as plain prose on purpose: the showcase recording draws
-   a marker from "Higgs" to "2012", and a stroke has to cross the boundary of
-   a `**bold**` run to prove that it can. */
-const AI_RESPONSE = [
-  "Particle physics studies the most fundamental constituents of matter and the forces that act between them.",
-  "The **Standard Model** organises them into three families:",
-  "- twelve fermions — six quarks and six leptons\n- the force-carrying bosons\n- the Higgs, which gives the rest their mass",
-  "The Higgs boson, found at CERN in 2012, completes the picture by giving elementary particles their mass through interaction with the Higgs field.",
-];
-
-const HIGGS_RESPONSE = [
-  "The Higgs boson is a *point particle* — it has no measurable spatial extent at any scale we can currently probe.",
-  "| property | value |\n| --- | --- |\n| mass | ~125 GeV/c² |\n| charge | 0 |\n| spin | 0 |",
-  "So 'how big is it' has only one honest answer: it has no size, only `mass` and quantum numbers.",
-];
 
 interface Highlight {
   turnId: string;
@@ -148,31 +133,52 @@ export function ChatExperience() {
   const activeInputRef = useRef<ChatInputHandle>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const animConfig = defaultInlineAnimConfig;
-  const turnCountRef = useRef(0);
 
-  /**
-   * Where a real app would call its model. The kit owns the turn state, the
-   * streaming and the reveal; everything below is this demo pretending to be
-   * an API, so the playground costs nothing to run.
-   *
-   * Yielding word by word exercises the streaming path rather than the
-   * simpler "resolve a whole string" one.
-   */
-  const fakeApi = useCallback(async function* (): AsyncGenerator<string> {
-    const response = turnCountRef.current % 2 === 0 ? AI_RESPONSE : HIGGS_RESPONSE;
-    turnCountRef.current += 1;
-    // Joined as blocks, not sentences: markdown needs the blank line between
-    // a paragraph and the list that follows it.
-    const words = response.join("\n\n").split(/(\s+)/);
-    for (const word of words) {
-      await new Promise((r) => setTimeout(r, 24));
-      yield word;
-    }
-  }, []);
-
-  const { turns, setDraft, submit, stop, beginEdit, cancelEdit } = useChatTurns({
-    onSend: fakeApi,
+  const { turns, setDraft, submit, stop, beginEdit, cancelEdit, updatePart } = useChatTurns({
+    onSend: scriptedApi,
   });
+
+  /* The answers to a question the assistant asked.
+     
+     Held in a ref rather than in state, and read only inside the handler: the
+     row is memoised, and a callback rebuilt on every render is what makes
+     `memo` give up. Keyed by the part's id, so two questionnaires in one
+     conversation do not share answers. */
+  const answersRef = useRef<Record<string, Record<string, Answer>>>({});
+
+  const handleAnswerQuestion = useCallback(
+    (turnId: string, partId: string, questionId: string, answer: Answer) => {
+      const given = { ...(answersRef.current[partId] ?? {}), [questionId]: answer };
+      answersRef.current[partId] = given;
+
+      const next = QUESTIONS.findIndex((q) => q.id === questionId) + 1;
+      const finished = next >= QUESTIONS.length;
+      updatePart(turnId, {
+        kind: "question",
+        id: partId,
+        questions: QUESTIONS,
+        answers: given,
+        activeIndex: finished ? null : next,
+        // Once every question is answered the whole step folds to one row.
+        collapsible: finished,
+      });
+    },
+    [updatePart]
+  );
+
+  const handleEditQuestion = useCallback(
+    (turnId: string, partId: string, index: number) => {
+      updatePart(turnId, {
+        kind: "question",
+        id: partId,
+        questions: QUESTIONS,
+        answers: answersRef.current[partId] ?? {},
+        activeIndex: index,
+        collapsible: false,
+      });
+    },
+    [updatePart]
+  );
 
   /* The turn the view is held on.
      
@@ -419,9 +425,14 @@ export function ChatExperience() {
                 className="opening"
                 title="Ask me about particle physics"
                 description="The Standard Model, the Higgs, and what a boson actually is."
+                /* One opener per branch of `scriptedApi`, so everything the
+                   kit can draw is reachable by pressing something rather than
+                   by knowing what to type. */
                 suggestions={[
                   "What does particle physics actually study?",
                   "How big is the Higgs boson?",
+                  "What would you do first — give me a plan",
+                  "Ask me some questions instead",
                 ]}
                 /* Sent rather than typed into the box. An opener that only
                    fills the input asks somebody to press send on a sentence
@@ -462,6 +473,8 @@ export function ChatExperience() {
                   onCancelEdit={cancelEdit}
                   onHighlight={handleHighlight}
                   onReplyInThread={handleReplyInThread}
+                  onAnswerQuestion={handleAnswerQuestion}
+                  onEditQuestion={handleEditQuestion}
                 />
               ))}
             </AnimatePresence>
@@ -568,7 +581,9 @@ export function ChatExperience() {
             key="thread-popup"
             activeReply={activeReply}
             onClose={() => setActiveReply(null)}
-            onSendMessage={fakeApi}
+            /* Prose only: a thread is a follow-up on a passage, and a tool
+               call inside a popover over the answer would be absurd. */
+            onSendMessage={threadReply}
           />
         )}
       </AnimatePresence>
