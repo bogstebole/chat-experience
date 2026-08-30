@@ -147,6 +147,9 @@ these to move one thing without moving its neighbours:
   --ick-question-row-selected: var(--ick-marker-tint);
   --ick-question-row-focus: var(--ick-marker);
   --ick-badge-size: 24px;
+  /* Concentric: each is the one inside it plus the gap. Set the badge and the
+     rest follow; set one of the others and you have broken the chain. */
+  --ick-question-radius-badge: 8px;
   --ick-chip-fill: var(--ick-surface-active);
   --ick-empty-pad: 40px;               /* around the empty state */
   --ick-conversation-pad-block: 24px;  /* inside the scroll */

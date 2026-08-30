@@ -344,6 +344,23 @@
     --ick-question-row-hover: var(--ick-surface-active);
     --ick-question-row-selected: var(--ick-marker-tint);
     --ick-question-row-focus: var(--ick-marker);
+    /* Concentric corners. A box's corner is the corner of the thing inside it
+       plus the gap between them — otherwise a rounded row inside a rounded
+       card leaves a crescent of card between the two curves, which is the
+       thing that reads as "not quite fitting".
+
+       Written as the arithmetic rather than as four numbers, so the chain
+       cannot drift when one of the paddings changes. Read outward from the
+       badge, which is the innermost thing and the only one that seeds a value
+       of its own. */
+    --ick-question-radius-badge: var(--ick-radius-md);
+    /* + a row's own padding */
+    --ick-question-radius-row: calc(var(--ick-question-radius-badge) + var(--ick-space-4));
+    /* + the card's padding around its rows */
+    --ick-question-radius-card: calc(var(--ick-question-radius-row) + var(--ick-space-4));
+    /* + the group's padding around its cards */
+    --ick-question-radius-group: calc(var(--ick-question-radius-card) + var(--ick-space-6));
+
     --ick-badge-size: 24px;
     --ick-badge-fill: var(--ick-surface);
     --ick-badge-fill-on-card: var(--ick-surface-active);

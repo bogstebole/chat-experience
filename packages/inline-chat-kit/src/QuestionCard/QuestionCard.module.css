@@ -16,7 +16,7 @@
   box-sizing: border-box;
   position: relative;
   width: 100%;
-  border-radius: var(--ick-radius-lg);
+  border-radius: var(--ick-question-radius-card);
   /* Never shrink. The list around it is a flex column, and without this every
      card is squashed the moment one of them is tall. */
   flex-shrink: 0;
@@ -187,7 +187,7 @@
   justify-content: center;
   width: var(--ick-badge-size);
   height: var(--ick-badge-size);
-  border-radius: var(--ick-radius-md);
+  border-radius: var(--ick-question-radius-badge);
   background: var(--ick-badge-fill);
   color: var(--ick-ink);
   font-family: var(--ick-font-sans);
@@ -228,7 +228,7 @@
   gap: var(--ick-space-4);
   width: 100%;
   padding: var(--ick-space-4);
-  border-radius: var(--ick-radius-md);
+  border-radius: var(--ick-question-radius-row);
   background: var(--ick-question-row);
   font-family: var(--ick-font-sans);
   cursor: pointer;
@@ -304,7 +304,7 @@
   gap: var(--ick-space-4);
   width: 100%;
   padding: var(--ick-space-4);
-  border-radius: var(--ick-radius-md);
+  border-radius: var(--ick-question-radius-row);
   background: var(--ick-question-row);
   cursor: text;
   transition: box-shadow var(--ick-duration-fast) ease;
@@ -354,7 +354,7 @@
 /* The card box, for a shell standing on its own rather than inside a
    QuestionCard — which brings its own, and would otherwise nest two. */
 .shellCard {
-  border-radius: var(--ick-radius-lg);
+  border-radius: var(--ick-question-radius-card);
   background: var(--ick-question-card);
   box-shadow: var(--ick-shadow-float);
 }
