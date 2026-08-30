@@ -188,6 +188,36 @@ Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
 
+### Two rules everything follows
+
+**Surfaces nest in three steps.** A **ground** is what a group of things sits
+on, a **card** is an opaque panel raised on it, and an **inset** is a row set
+into the card. `--ick-ground`, `--ick-card`, `--ick-inset` — a question group,
+a tool call and an approval all use the same three.
+
+The card is paper and **opaque**, which matters more than it sounds: a
+translucent panel picks up whatever it is sitting on, which is how a tool call
+inside an approval came out pale green. In the dark the card is a lifted grey,
+because `--ick-surface` there is the page itself and a card painted with it
+would sink into the ground rather than sit on it.
+
+**Corners are concentric.** A box's corner is the corner of the thing inside it
+plus the gap between them:
+
+```
+badge 8  →  option row 16  →  card 24  →  group 40      gaps 8, 8, 16
+code 6   →  tool 14        →  approval 26               gaps 8, 12
+```
+
+Get it wrong and the two curves sit at different insets with the same radius,
+leaving a crescent between them — the thing that reads as "not quite fitting"
+without anybody being able to name it. It is written as `calc()` off a seed
+rather than as a list of numbers, so changing a padding moves the corners with
+it, and a test does the same sum for every nesting in the kit.
+
+A `<CodeBlock>` reads `--ick-code-radius`, so a box that nests one hands it a
+smaller corner — the way `<Tool>` does.
+
 ### `<Tool>`
 
 One tool call on the way to an answer: what was run, what with, what came

@@ -141,9 +141,17 @@ these to move one thing without moving its neighbours:
 
   --ick-conversation-gap: 48px;        /* between turns */
   --ick-loader-dot: 5px;
-  --ick-question-surface: var(--ick-surface-sunken);   /* the step's own ground */
-  --ick-question-card: var(--ick-surface-raised);      /* a question on it */
-  --ick-question-row: var(--ick-surface-hover);        /* an option in the card */
+  /* Three surfaces that nest, used in this order everywhere the kit stacks
+     boxes. Move these and the question card, the tool call and the approval
+     all follow. The card is paper and opaque — a translucent one picks up
+     whatever it is sitting on. */
+  --ick-ground: rgb(17 17 17 / 0.05);   /* what a group of things sits on */
+  --ick-card: #fff;                     /* an opaque panel raised on it */
+  --ick-inset: rgb(17 17 17 / 0.04);    /* a row set into the card */
+
+  --ick-question-surface: var(--ick-ground);
+  --ick-question-card: var(--ick-card);
+  --ick-question-row: var(--ick-inset);
   --ick-question-row-selected: var(--ick-marker-tint);
   --ick-question-row-focus: var(--ick-marker);
   --ick-badge-size: 24px;
