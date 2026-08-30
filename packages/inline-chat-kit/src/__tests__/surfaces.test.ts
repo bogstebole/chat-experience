@@ -158,6 +158,12 @@ describe("an approval", () => {
       return css.slice(at, css.indexOf("}", at));
     };
     expect(rule(".approval")).toMatch(/background:\s*var\(--ick-approval-surface\)/);
+    /* And that surface is the kit's ground, not a colour of its own. The
+       marker means "this one" — a badge, a stroke, a citation, a source's
+       number — and a wash across a whole box meaning "this kind of box" is a
+       second job for the one accent. */
+    const tokens = await load("../styles/tokens.css?raw");
+    expect(tokens).toMatch(/--ick-approval-surface:\s*var\(--ick-ground\)/);
     expect(rule(".card")).toMatch(/background:\s*var\(--ick-card\)/);
     expect(rule(".card")).toMatch(/box-shadow:\s*var\(--ick-shadow-float\)/);
   });

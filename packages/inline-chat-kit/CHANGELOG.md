@@ -6,6 +6,45 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.31.0 — 2026-08-31
+
+### Changed
+
+- **An approval is not tinted any more.** It stands on the same neutral ground
+  a question group does, because it *is* a question: "may I run this" is the
+  same species as "who else lives in the household" — the assistant asking,
+  blocking, with an answer.
+
+  The tint was there on the reasoning that this is the one thing in an answer
+  allowed to look like a box that stops you. The reasoning is real; colour was
+  the wrong instrument for it. Everywhere else in the kit the marker is a small
+  mark pointed at one thing and means **this one** — the badge on the option
+  you picked, the stroke you drew, a citation, a source's number. A wash across
+  a whole box meaning "this kind of box" is a second job for the one accent.
+
+  It also did not carry its weight: at 8% it was too weak to be an alarm and
+  too strong to be nothing, and in the dark it came out olive, which is not in
+  the palette. What says "this is unanswered" is that the box has **buttons in
+  it**, and nothing else in a turn does.
+
+  `--ick-approval-surface` is `var(--ick-ground)`. `--ick-approval-edge` is
+  gone with the ring it drew.
+
+- **Settled, nothing about the box changes** — the buttons simply leave. It
+  used to shed its background and pick up a border, because the tint was the
+  thing saying "unanswered" and had to stop saying it. A question card keeps
+  its paper and its shadow when it folds into an answered row; this does the
+  same.
+
+- **The shield rides in a badge's box**, so the title starts on the line a
+  question card's title starts on.
+
+### Breaking
+
+- `--ick-approval-edge` is removed. If you were overriding it to re-tint the
+  ring, set `box-shadow` on the component instead — or override
+  `--ick-approval-surface`, which is still the ground it stands on.
+
 ## 0.30.0 — 2026-08-31
 
 ### Changed

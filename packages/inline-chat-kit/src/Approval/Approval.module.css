@@ -10,16 +10,15 @@
    host's page — so each rule has to say it.
    ───────────────────────────────────────────── */
 
-/* The ground. Tinted, because this is the one component whose whole job is to
-   stop somebody for a moment — but a ground all the same, and it holds a card
-   the way a question group does rather than carrying content itself. */
+/* The ground — the same one a question group stands on. An approval is a
+   question: it asks, it blocks, it has an answer. See `--ick-approval-surface`
+   for why it stopped being tinted. */
 .approval {
   box-sizing: border-box;
   width: 100%;
   padding: var(--ick-approval-pad);
   border-radius: var(--ick-approval-radius);
   background: var(--ick-approval-surface);
-  box-shadow: inset 0 0 0 1px var(--ick-approval-edge);
   font-family: var(--ick-font-sans);
 
   /* An approval is the ground, so a tool call on it brings none of its own and
@@ -36,11 +35,11 @@
   --ick-tool-code-fill: var(--ick-card);
 }
 
-/* Once it is settled the box stops asking, so it stops looking like it is. */
-.approval[data-decision] {
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--ick-border);
-}
+/* Nothing here changes when it settles. It used to shed its tint and pick up a
+   border, because the tint was the thing saying "unanswered" and it had to
+   stop saying it. The buttons say that now, and they leave on their own — the
+   way a question card keeps its paper and its shadow when it folds into an
+   answered row. */
 
 /* The card, and everything the approval is made of sits on it: what is being
    asked, what it would run, and the answer. */
@@ -56,12 +55,6 @@
   box-shadow: var(--ick-shadow-float);
 }
 
-/* Settled, the card stops floating too — nothing is being asked any more. */
-.approval[data-decision] .card {
-  background: none;
-  box-shadow: none;
-}
-
 .head {
   box-sizing: border-box;
   display: flex;
@@ -73,9 +66,16 @@
   padding: var(--ick-space-2) 0 0 var(--ick-space-4);
 }
 
+/* The badge's box, holding a shield instead of a number — so the title starts
+   on the line a question card's title starts on. See the same slot in the
+   shared disclosure header. */
 .glyph {
   flex-shrink: 0;
-  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ick-badge-size);
+  height: var(--ick-badge-size);
   color: var(--ick-approval-glyph);
 }
 
