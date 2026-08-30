@@ -155,9 +155,14 @@ these to move one thing without moving its neighbours:
   --ick-question-row-selected: var(--ick-marker-tint);
   --ick-question-row-focus: var(--ick-marker);
   --ick-badge-size: 24px;
-  /* Concentric: each is the one inside it plus the gap. Set the badge and the
-     rest follow; set one of the others and you have broken the chain. */
-  --ick-question-radius-badge: 8px;
+  /* Concentric, one chain for the whole kit: each step is the one inside it
+     plus the gap. Set the seed or a gap and everything follows — a question
+     card, a tool call and an approval all read these. Set one of the derived
+     steps and you have broken the chain. */
+  --ick-nest-inner: 8px;         /* the seed: a badge, a chip, a fenced value */
+  --ick-nest-pad: 8px;           /* inside a card, and inside a row */
+  --ick-nest-ground-pad: 16px;   /* around a card, on its ground */
+  /* derived: --ick-nest-row 16, --ick-nest-card 24, --ick-nest-ground 40 */
   --ick-chip-fill: var(--ick-surface-active);
   --ick-empty-pad: 40px;               /* around the empty state */
   --ick-conversation-pad-block: 24px;  /* inside the scroll */

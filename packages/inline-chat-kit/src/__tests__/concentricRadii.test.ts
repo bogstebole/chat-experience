@@ -15,6 +15,34 @@ import { describe, it, expect } from "vitest";
  */
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
+/** `12px`, `var(--x)` and `calc(var(--a) + var(--b))`, resolved to a number. */
+const px = (tokens: string, name: string, seen = new Set<string>()): number => {
+  expect(seen.has(name), `${name} refers to itself`).toBe(false);
+  seen.add(name);
+
+  const raw = tokens.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1]?.trim();
+  expect(raw, `${name} is defined nowhere`).toBeTruthy();
+
+  const literal = (raw as string).match(/^(\d+(?:\.\d+)?)px$/);
+  if (literal) return Number(literal[1]);
+
+  const sum = (raw as string).match(/^calc\((.+)\)$/)?.[1];
+  if (sum) {
+    return sum
+      .split("+")
+      .map((part) => {
+        const token = part.trim().match(/^var\((--[\w-]+)\)$/)?.[1];
+        expect(token, `not a token: ${part.trim()}`).toBeTruthy();
+        return px(tokens, token as string, new Set(seen));
+      })
+      .reduce((a, b) => a + b, 0);
+  }
+
+  const alias = (raw as string).match(/^var\((--[\w-]+)\)$/)?.[1];
+  expect(alias, `${name} is not a length: ${raw}`).toBeTruthy();
+  return px(tokens, alias as string, seen);
+};
+
 const load = async (path: string) =>
   strip((await import(/* @vite-ignore */ path)).default as string);
 
@@ -64,34 +92,6 @@ describe("corners nest", () => {
     const [file, selector] = nesting.outer;
     const css = await load(`../${file}?raw`);
 
-    /** `12px`, `var(--x)` and `calc(var(--a) + var(--b))`, in px. */
-    const value = (name: string, seen = new Set<string>()): number => {
-      expect(seen.has(name), `${name} refers to itself`).toBe(false);
-      seen.add(name);
-
-      const raw = tokens.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1]?.trim();
-      expect(raw, `${name} is defined nowhere`).toBeTruthy();
-
-      const literal = (raw as string).match(/^(\d+(?:\.\d+)?)px$/);
-      if (literal) return Number(literal[1]);
-
-      const sum = (raw as string).match(/^calc\((.+)\)$/)?.[1];
-      if (sum) {
-        return sum
-          .split("+")
-          .map((part) => {
-            const token = part.trim().match(/^var\((--[\w-]+)\)$/)?.[1];
-            expect(token, `not a token: ${part.trim()}`).toBeTruthy();
-            return value(token as string, new Set(seen));
-          })
-          .reduce((a, b) => a + b, 0);
-      }
-
-      const alias = (raw as string).match(/^var\((--[\w-]+)\)$/)?.[1];
-      expect(alias, `${name} is not a length: ${raw}`).toBeTruthy();
-      return value(alias as string, seen);
-    };
-
     /* The rule the selector actually carries, so a raw value cannot slip past
        the arithmetic by agreeing with it once. */
     const at = css.indexOf(`${selector} {`);
@@ -100,9 +100,9 @@ describe("corners nest", () => {
     const outerToken = rule.match(/border-radius:\s*var\((--[\w-]+)\)/)?.[1];
     expect(outerToken, `${selector} does not take its corner from a token`).toBeTruthy();
 
-    const outer = value(outerToken as string);
-    const inner = value(nesting.inner);
-    const gap = value(nesting.gap);
+    const outer = px(tokens, outerToken as string);
+    const inner = px(tokens, nesting.inner);
+    const gap = px(tokens, nesting.gap);
 
     expect(outer - inner, JSON.stringify({ outer, inner, gap })).toBe(gap);
   });
@@ -119,15 +119,96 @@ describe("corners nest", () => {
   });
 
   /**
-   * A code block standing on its own keeps the larger corner; only one nested
-   * inside a tool takes the smaller one. If `Tool` ever stops repointing it,
-   * the block and its container go back to the same radius at two insets.
+   * A code block standing on its own takes the kit's default corner, which is
+   * seeded for nothing in particular. Nested in a tool it has to take the one
+   * its container implies, and `Tool` is what repoints it — if that ever goes,
+   * the block and the card around it go back to two radii at two insets.
    */
-  it("hands a nested code block a smaller corner than a standalone one", async () => {
+  it("repoints a nested code block at the corner its card implies", async () => {
     const tool = await load("../Tool/Tool.module.css?raw");
     expect(tool).toMatch(/--ick-code-radius:\s*var\(--ick-tool-inner-radius\)/);
 
     const block = await load("../CodeBlock/CodeBlock.module.css?raw");
     expect(block).toMatch(/border-radius:\s*var\(--ick-code-radius\)/);
+  });
+
+  /**
+   * One chain, not two.
+   *
+   * A tool call used to seed its own, one step tighter the whole way down: a
+   * 6px block in a 14px card on a 22px ground, beside a question's 8 / 16 / 24
+   * / 40. Both were internally concentric and the two were nothing like each
+   * other — the same three surfaces at two scales, which reads as two systems
+   * rather than one object holding different things.
+   *
+   * Every step, checked against the question's, because that is the thing the
+   * comparison is actually about.
+   */
+  it.each([
+    ["what a card holds", "--ick-question-radius-row", "--ick-tool-inner-radius"],
+    ["the card", "--ick-question-radius-card", "--ick-tool-radius"],
+    ["the ground it stands on", "--ick-question-radius-group", "--ick-tool-ground-radius"],
+  ])("gives a tool call and a question the same corner for %s", async (_step, q, t) => {
+    const tokens = await load("../styles/tokens.css?raw");
+    expect(px(tokens, t)).toBe(px(tokens, q));
+  });
+
+  /** And the same gaps, since the corners are only as equal as those are. */
+  it("pads a tool call the way a question is padded", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    expect(px(tokens, "--ick-tool-inner-gap")).toBe(px(tokens, "--ick-nest-pad"));
+    expect(px(tokens, "--ick-tool-ground-pad")).toBe(px(tokens, "--ick-nest-ground-pad"));
+    /* An approval *is* the ground, so it leaves a ground's gap. */
+    expect(px(tokens, "--ick-approval-pad")).toBe(px(tokens, "--ick-nest-ground-pad"));
+  });
+
+  /**
+   * A folded tool row and a folded question row are the same height, so a
+   * stack of them lines up and the glyph sits where the badges sit: a badge,
+   * and the card's padding above and below it.
+   */
+  it("folds a tool call to the height a question folds to", async () => {
+    const height = (css: string, selector: string) => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+      const pad = css.slice(at, css.indexOf("}", at)).match(/padding:\s*([^;]+);/)?.[1];
+      return pad?.trim().split(/\s+/);
+    };
+    const tool = await load("../Tool/Tool.module.css?raw");
+    const question = await load("../QuestionCard/QuestionCard.module.css?raw");
+    expect(height(tool, ".header")).toEqual(height(question, ".collapsed"));
+
+    /* And the glyph rides in the badge's box rather than at its own size. */
+    expect(tool).toMatch(/\.glyph\s*\{[^}]*width:\s*var\(--ick-badge-size\)/);
+
+    /* Trailing element hard right, the way a collapsed question keeps its
+       pencil there — even on a row carrying neither summary nor duration. */
+    expect(tool).toMatch(/\.chevron\s*\{[^}]*margin-left:\s*auto/);
+  });
+
+  /**
+   * Nothing builds a ground out of two numbers.
+   *
+   * The stories did — `padding: 16, borderRadius: 24` — which is a ground
+   * padded like a ground and cornered like the card standing on it. It is the
+   * one place the chain cannot reach, because a style object is not a
+   * stylesheet, so it gets checked here instead.
+   */
+  it("builds every ground in the stories out of the tokens", async () => {
+    const files = import.meta.glob("../stories/*.tsx", { query: "?raw", import: "default" });
+    for (const [name, read] of Object.entries(files)) {
+      const src = (await read()) as string;
+      let at = src.indexOf("var(--ick-question-surface)");
+      while (at > -1) {
+        const around = src.slice(Math.max(0, at - 400), at);
+        const corner = [...around.matchAll(/borderRadius:\s*([^,\n]+)/g)].pop()?.[1];
+        if (corner) {
+          expect(corner.trim(), `${name} corners a ground by hand`).toBe(
+            '"var(--ick-question-radius-group)"',
+          );
+        }
+        at = src.indexOf("var(--ick-question-surface)", at + 1);
+      }
+    }
   });
 });

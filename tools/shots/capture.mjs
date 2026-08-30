@@ -167,6 +167,11 @@ const SHOTS = [
     themes: ["light"],
   },
   {
+    name: "side-by-side-one-row",
+    story: "components-side-by-side--one-row",
+    themes: ["light", "dark"],
+  },
+  {
     name: "context-filling",
     story: "components-context--filling",
     themes: ["light", "dark"],

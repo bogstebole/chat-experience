@@ -172,6 +172,35 @@
     --ick-radius-xl: 24px;
     --ick-radius-pill: 999px;
 
+    /* ═══ Nesting ══════════════════════════════════════════════════════════
+       One chain, for every box in the kit that holds a box.
+
+       A box's corner is the corner of the thing inside it plus the gap
+       between them. Four steps, and everything that nests takes its corner
+       from one of them:
+
+           inner  8   a badge, a chip, a fenced value
+           row   16   an inset panel: an option, a field, a block of output
+           card  24   paper, lifted off the ground
+           ground 40  what the paper stands on
+
+       Each component used to derive its own. Two chains seeded from different
+       numbers is how a tool call ended up a 14px card on a 22px ground beside
+       a question's 24 on 40 — the same three surfaces, at two scales, reading
+       as two systems. There is one scale now, and a component picks a step
+       rather than inventing one. */
+
+    /* Inside a card, and inside a row. */
+    --ick-nest-pad: var(--ick-space-4);
+    /* Around a card, on the ground. Wider, because this is the one gap that
+       has to read as *separation* rather than as padding. */
+    --ick-nest-ground-pad: var(--ick-space-6);
+
+    --ick-nest-inner: var(--ick-radius-md);
+    --ick-nest-row: calc(var(--ick-nest-inner) + var(--ick-nest-pad));
+    --ick-nest-card: calc(var(--ick-nest-row) + var(--ick-nest-pad));
+    --ick-nest-ground: calc(var(--ick-nest-card) + var(--ick-nest-ground-pad));
+
     /* ═══ Elevation ════════════════════════════════════════════════════════
        Named by how far off the page a thing sits, not by how it is drawn. */
 
@@ -363,22 +392,16 @@
     --ick-question-row-hover: var(--ick-surface-active);
     --ick-question-row-selected: var(--ick-marker-tint);
     --ick-question-row-focus: var(--ick-marker);
-    /* Concentric corners. A box's corner is the corner of the thing inside it
-       plus the gap between them — otherwise a rounded row inside a rounded
-       card leaves a crescent of card between the two curves, which is the
-       thing that reads as "not quite fitting".
-
-       Written as the arithmetic rather than as four numbers, so the chain
-       cannot drift when one of the paddings changes. Read outward from the
-       badge, which is the innermost thing and the only one that seeds a value
-       of its own. */
-    --ick-question-radius-badge: var(--ick-radius-md);
-    /* + a row's own padding */
-    --ick-question-radius-row: calc(var(--ick-question-radius-badge) + var(--ick-space-4));
-    /* + the card's padding around its rows */
-    --ick-question-radius-card: calc(var(--ick-question-radius-row) + var(--ick-space-4));
-    /* + the group's padding around its cards */
-    --ick-question-radius-group: calc(var(--ick-question-radius-card) + var(--ick-space-6));
+    /* Concentric corners, from the kit's one chain. A badge is the innermost
+       thing, a row holds the badge, a card holds rows, a group is the ground
+       the cards stand on — which is `inner → row → card → ground`, named for
+       what a question calls each step. Nothing is derived here any more; the
+       arithmetic lives in the Nesting block above, where the tool call and
+       the approval read it too. */
+    --ick-question-radius-badge: var(--ick-nest-inner);
+    --ick-question-radius-row: var(--ick-nest-row);
+    --ick-question-radius-card: var(--ick-nest-card);
+    --ick-question-radius-group: var(--ick-nest-ground);
 
     --ick-badge-size: 24px;
     --ick-badge-fill: var(--ick-surface);
@@ -409,19 +432,28 @@
        is lighter than the row in the light and darker than it in the dark —
        different in both, which is the whole requirement. */
     --ick-tool-code-fill: var(--ick-inset);
-    /* Concentric, the same rule the question card follows: a box's corner is
-       the corner of what it holds plus the gap between them.
+    /* The same steps a question takes, off the same chain: output inset into
+       the card at the row corner, the card at the card corner, the ground
+       around it at the ground's.
 
-       Read inward here rather than outward, because the outer box is short.
-       A tool row folded shut is about 40px tall, and a corner derived from a
-       generous inner gap would make it a pill — so the gap is tight and the
-       block inside takes the small corner. */
+       It used to seed its own, one step tighter all the way down — 6 inside
+       14 inside 22 — on the reasoning that a row folded shut is only 40px
+       tall and a 24px corner would make it a pill. It does make it a pill.
+       So does a question folded shut, which is 40px tall and carries the same
+       24: the corner clamps, both rows come out the same shape, and that was
+       the point. A tool call and a question are the same object holding
+       different things.
+
+       `--ick-tool-ground-radius` stays arithmetic rather than an alias so it
+       still lands right where something overrides the padding — an approval
+       sets the gap to zero, and the card's corner has to become the outer one
+       rather than stay 16px too wide for it. */
     --ick-tool-ground: var(--ick-ground);
-    --ick-tool-ground-pad: var(--ick-space-4);
+    --ick-tool-ground-pad: var(--ick-nest-ground-pad);
     --ick-tool-shadow: var(--ick-shadow-float);
-    --ick-tool-inner-gap: var(--ick-space-4);
-    --ick-tool-inner-radius: var(--ick-radius-sm);
-    --ick-tool-radius: calc(var(--ick-tool-inner-radius) + var(--ick-tool-inner-gap));
+    --ick-tool-inner-gap: var(--ick-nest-pad);
+    --ick-tool-inner-radius: var(--ick-nest-row);
+    --ick-tool-radius: var(--ick-nest-card);
     /* + the ground's padding around the card */
     --ick-tool-ground-radius: calc(var(--ick-tool-radius) + var(--ick-tool-ground-pad));
 
@@ -463,7 +495,9 @@
        around it. */
 
     --ick-approval-size: var(--ick-answer-size);
-    --ick-approval-pad: var(--ick-space-5);
+    /* An approval *is* a ground, so it is padded like one — the same gap a
+       question group leaves around its cards. */
+    --ick-approval-pad: var(--ick-nest-ground-pad);
     /* + whatever it holds, which is a tool row. */
     --ick-approval-radius: calc(var(--ick-tool-radius) + var(--ick-approval-pad));
     --ick-approval-surface: rgb(var(--ick-marker-rgb) / 0.08);

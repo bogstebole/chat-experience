@@ -102,7 +102,7 @@ export const Boxes: StoryObj = {
 
       <Panel
         label="Approval → Tool → CodeBlock"
-        note={"ground 26 → card 14 → inset 6\nthe card does not float as well: it already has a ground"}
+        note={"ground 40 → card 24 → row 16\nthe card does not float as well: it already has a ground"}
       >
         <Approval
           title="Run a command in your shell"
@@ -114,7 +114,7 @@ export const Boxes: StoryObj = {
 
       <Panel
         label="Tool, on its own"
-        note={"ground 22 → card 14 → inset 6\nthe same three surfaces a question card has"}
+        note={"ground 40 → card 24 → row 16\nthe same three surfaces at the same sizes as a question"}
       >
         <Tool
           name="search_web"
@@ -129,6 +129,49 @@ export const Boxes: StoryObj = {
 
       <Panel label="QuestionCard, on its own" note={"the card without its group"}>
         <QuestionCard question={QUESTION} number={2} state="active" />
+      </Panel>
+    </Row>
+  ),
+};
+
+/**
+ * The claim, on one ground: a tool call and a question folded shut are the
+ * same row.
+ *
+ * Same 40px height, same 16px in from the left, same corner — the tool's glyph
+ * riding in the box a question's badge sits in, so the two labels start on one
+ * line. If the two ever stop lining up, this is where it shows, and there is
+ * nothing else in the panel to look at instead.
+ */
+export const OneRow: StoryObj = {
+  name: "The same row, twice",
+  render: () => (
+    <Row>
+      <Panel
+        label="Tool + QuestionCard, folded"
+        note={"the same box, holding different things"}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--ick-space-5)",
+            padding: "var(--ick-space-6)",
+            borderRadius: "var(--ick-question-radius-group)",
+            background: "var(--ick-question-surface)",
+          }}
+        >
+          {/* The tool brings its own ground; on one already, it drops it. */}
+          <div style={{ ["--ick-tool-ground-pad" as string]: "0px" }}>
+            <Tool name="search_web" state="done" summary="2 results" duration={412} input={{ query: "higgs boson mass" }} />
+          </div>
+          <QuestionCard
+            question={QUESTION}
+            number={2}
+            state="collapsed"
+            answer={{ optionId: "partner" }}
+          />
+        </div>
       </Panel>
     </Row>
   ),
