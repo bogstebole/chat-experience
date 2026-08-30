@@ -58,13 +58,88 @@ describe("what installing this costs", () => {
     }
   });
 
+  /**
+   * The grammars are 25 kB gzip, and most conversations never show a fence.
+   *
+   * They live in `CodeBlock/grammars.ts` and nothing may import that module
+   * statically — one `import` from anywhere the entry can reach folds the
+   * chunk straight back into everybody's bundle, with nothing failing. Which
+   * is why this is checked rather than remembered.
+   *
+   * `grammars.ts` is the one file allowed to import `lowlight` and
+   * `highlight.js` directly, and it has to: `lowlight`'s entry re-exports
+   * `all` (190 grammars) beside `createLowlight`, so importing the *package*
+   * dynamically materialises the whole namespace — 301 kB gzip, thirteen
+   * times what deferring it saves. Static named imports inside a deferred
+   * module shake normally; that is the entire trick.
+   */
+  it("keeps the syntax grammars in a chunk nothing pulls in", async () => {
+    const files = import.meta.glob("../**/*.{ts,tsx}", { query: "?raw", import: "default" });
+    for (const [name, read] of Object.entries(files)) {
+      if (name.startsWith("./") || name.startsWith("../stories/")) continue;
+      const src = (await read()) as string;
+      const statics = [...src.matchAll(/(?:^|\n)\s*import[^;]*?from\s+"([^"]+)"/g)].map(
+        (m) => m[1] as string
+      );
+
+      expect(
+        statics.some((spec) => /(^|\/)grammars$/.test(spec)),
+        `${name} imports the grammars statically; it has to be an import()`
+      ).toBe(false);
+
+      if (name.endsWith("/grammars.ts")) continue;
+      for (const spec of statics) {
+        expect(
+          /^(lowlight|highlight\.js)/.test(spec),
+          `${name} imports ${spec}; only grammars.ts may, and only statically`
+        ).toBe(false);
+      }
+    }
+  });
+
+  /**
+   * The list of languages is written out in `highlight.ts` so that
+   * `canHighlight` can answer without loading anything. Written out means it
+   * can disagree with what `grammars.ts` actually registers — a language the
+   * list claims and the chunk does not would answer `true` and render plain.
+   */
+  it("registers exactly the languages it claims", async () => {
+    const { canHighlight, loadHighlighter } = await import("../CodeBlock/highlight");
+    const highlight = await loadHighlighter();
+
+    const grammars = (await import("../CodeBlock/grammars.ts?raw")).default as string;
+    const registered = [
+      ...grammars.matchAll(/from "highlight\.js\/lib\/languages\/([\w-]+)"/g),
+    ].map((m) => m[1] as string);
+    expect(registered.length).toBeGreaterThan(0);
+
+    const src = (await import("../CodeBlock/highlight.ts?raw")).default as string;
+
+    for (const lang of registered) {
+      expect(canHighlight(lang), `${lang} is loaded but not claimed`).toBe(true);
+      /* And actually colours something, rather than being registered under a
+         name the grammar does not answer to. */
+      expect(highlight("x", lang).length).toBeGreaterThan(0);
+    }
+
+    const claimed = [...src.matchAll(/^ {2}"([\w-]+)",$/gm)].map((m) => m[1] as string);
+    expect(claimed.sort()).toEqual([...registered].sort());
+  });
+
   it("imports nothing the package does not declare", async () => {
     const files = import.meta.glob("../**/*.{ts,tsx}", { query: "?raw", import: "default" });
     const allowed = new Set([...Object.keys(RUNTIME), ...PEERS]);
 
     for (const [name, read] of Object.entries(files)) {
       const src = (await read()) as string;
-      for (const [, spec] of src.matchAll(/(?:^|\n)\s*import[^;]*?from\s+"([^"]+)"/g)) {
+      /* Static and dynamic both. A deferred import is still an import: the
+         grammars moved behind an `import()` and would otherwise have stopped
+         being checked at the moment they stopped being static. */
+      const specs = [
+        ...[...src.matchAll(/(?:^|\n)\s*import[^;]*?from\s+"([^"]+)"/g)].map((m) => m[1]),
+        ...[...src.matchAll(/\bimport\("([^"]+)"\)/g)].map((m) => m[1]),
+      ];
+      for (const spec of specs) {
         /* Relative, a Node builtin, or a stylesheet — none of them a package. */
         if (spec.startsWith(".") || spec.startsWith("node:") || spec.endsWith(".css")) continue;
         /* `motion/react`, `lucide-react/icons/x` — the package is the head. */

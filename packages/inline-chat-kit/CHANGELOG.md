@@ -6,6 +6,48 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.27.0 — 2026-08-31
+
+### Changed
+
+- **The syntax grammars are a chunk, fetched when something needs one.**
+  `lowlight` and eleven grammars were 25 kB gzipped in everybody's bundle for a
+  thing most conversations never show.
+
+  ```
+  entry   60.10 kB gzip  →  35.05 kB gzip     −42%
+  chunk                     25.10 kB gzip     only if an answer has a fence
+  ```
+
+  A code block paints its code plain on the first paint and colours in when the
+  chunk lands. Every block after the first is coloured from its first paint,
+  because the loaded highlighter is kept. No layout shift either way: the text
+  is identical, only the colour arrives late.
+
+  Call `loadHighlighter()` at start-up if that trade is wrong for you — a docs
+  tool where every answer is code. Idempotent; concurrent callers share the one
+  fetch. `canHighlight(lang)` still answers without loading anything.
+
+  The grammars live in their own module with **static** imports, and the guard
+  that keeps them there says why: `lowlight`'s entry re-exports `all` (190
+  grammars) beside `createLowlight`, so importing the *package* dynamically
+  materialises the whole namespace and nothing can shake it back out — 301 kB
+  gzip, thirteen times what deferring it saves. The first attempt did exactly
+  that. Static named imports inside a deferred module shake normally.
+
+### Added
+
+- `loadHighlighter` and `canHighlight` are public.
+
+### Breaking
+
+- `highlightCode(code, lang)` is gone from the module's surface; it was never
+  exported from the package. The highlighter now arrives through
+  `await loadHighlighter()`, which returns the same function.
+
+- A bundler-less consumer loading the ESM directly now sees a second request
+  the first time an answer contains a fence.
+
 ## 0.26.0 — 2026-08-31
 
 ### Added

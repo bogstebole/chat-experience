@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type HTMLAttributes } from "react";
 import { Check, Copy } from "lucide-react";
 import { announce } from "../announce/announce";
-import { highlightCode } from "./highlight";
+import {
+  canHighlight,
+  loadHighlighter,
+  loaded,
+  plain,
+  type Highlighter,
+} from "./highlight";
 import styles from "./CodeBlock.module.css";
 
 export interface CodeBlockProps
@@ -48,7 +54,29 @@ export function CodeBlock({
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const tokens = useMemo(() => highlightCode(code, lang), [code, lang]);
+  /* The grammars are a dynamic import — 22.4 kB that most conversations never
+     need — so the first block on a page paints plain and colours in when the
+     chunk lands. `loaded()` is what stops that from being a flash on every
+     block after it: once something has paid, the highlighter is there on the
+     first render and the initial state is already right. */
+  const [highlighter, setHighlighter] = useState<Highlighter | null>(loaded);
+
+  useEffect(() => {
+    if (highlighter || !canHighlight(lang)) return;
+    let alive = true;
+    void loadHighlighter().then((h) => {
+      // The block can be gone by then — in a chat they unmount all the time.
+      if (alive) setHighlighter(() => h);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [highlighter, lang]);
+
+  const tokens = useMemo(
+    () => (highlighter ? highlighter(code, lang) : plain(code)),
+    [highlighter, code, lang]
+  );
 
   // A block that unmounts while confirmed would otherwise set state on a gone
   // component, and in a chat they unmount all the time.

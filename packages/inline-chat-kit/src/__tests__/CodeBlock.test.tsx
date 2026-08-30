@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
-import { canHighlight, highlightCode } from "../CodeBlock/highlight";
+import { canHighlight, loadHighlighter } from "../CodeBlock/highlight";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 
 const TS = `const higgs: number = 125.25; // GeV`;
 
-describe("highlighting", () => {
+describe("highlighting", async () => {
+  /* The grammars are behind a dynamic import now, so every case that wants a
+     colour has to wait for them. The module keeps the loaded highlighter, so
+     this is one fetch for the file. */
+  const highlightCode = await loadHighlighter();
+
   it("knows the languages it registered, and their aliases", () => {
     expect(canHighlight("typescript")).toBe(true);
     expect(canHighlight("ts")).toBe(true);

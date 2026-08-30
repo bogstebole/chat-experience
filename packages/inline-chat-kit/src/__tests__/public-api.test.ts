@@ -44,6 +44,8 @@ const EXPECTED_EXPORTS = [
   "Tool",
   "announce",
   "mergeParts",
+  "loadHighlighter",
+  "canHighlight",
   "defaultInlineAnimConfig",
   "useChatTurns",
 ] as const;
