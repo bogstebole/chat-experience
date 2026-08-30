@@ -24,6 +24,17 @@ export type Phrasing =
   | { type: "inlineCode"; value: string }
   | { type: "link"; url: string; title?: string; children: Phrasing[] }
   | { type: "image"; url: string; alt: string }
+  /**
+   * `[^1]` — a citation marker, pointing at the nth source of the turn.
+   *
+   * The kit's one extension to the grammar, and the only place this parser
+   * deliberately reads something `remark` does not. GFM spells footnotes the
+   * same way but needs a `[^1]: …` definition somewhere in the document to
+   * make one; a model streaming an answer emits the marker and sends the
+   * sources beside the text, never below it. Without this an `InlineCitation`
+   * can only be written by hand in JSX, which a stream cannot do — so the
+   * component existed and nothing in a real conversation could reach it. */
+  | { type: "citation"; index: number }
   | { type: "break" }
   /** Recognised so it can be dropped, which is what the renderer does with it. */
   | { type: "html"; value: string };
@@ -221,6 +232,19 @@ export function parseInline(src: string): Phrasing[] {
         flush();
         out.push({ type: "image", url: dest.url, alt: src.slice(i + 2, close) });
         i = dest.end;
+        continue;
+      }
+    }
+
+    /* Before the link branch, which would otherwise take `[^1]` as a label
+       and then fail to find a `(url)` after it — leaving the marker as text. */
+    if (c === "[" && src[i + 1] === "^") {
+      const close = src.indexOf("]", i + 2);
+      const digits = close === -1 ? null : src.slice(i + 2, close);
+      if (digits && /^\d{1,3}$/.test(digits)) {
+        flush();
+        out.push({ type: "citation", index: Number(digits) });
+        i = close + 1;
         continue;
       }
     }

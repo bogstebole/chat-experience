@@ -421,6 +421,31 @@ const APP_SHOTS = [
     },
   },
   {
+    name: "demo-agent-sources",
+    themes: ["light", "dark"],
+    clip: null,
+    /** A chain of thought, the sources it stands on, and `[^n]` in the prose
+        resolved against them — the one path a stream could not reach before. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /show me your sources/ }).click();
+      await page.waitForTimeout(9000);
+    },
+  },
+  {
+    name: "demo-agent-plan",
+    themes: ["light"],
+    clip: null,
+    /** The plan working down its list. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /give me a plan/ }).click();
+      await page.waitForTimeout(5200);
+    },
+  },
+  {
     name: "demo-agent-approval",
     themes: ["light", "dark"],
     clip: null,

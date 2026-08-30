@@ -324,7 +324,37 @@ component that owns it.
 | `reasoning` | `<Reasoning>` | `text`, `state`, `duration` |
 | `tool` | `<Tool>` | `name`, `state`, `summary`, `input`, `output`, `error`, `duration` |
 | `tasks` | `<TaskList>` | `title`, `tasks`, `collapsible` |
+| `chain` | `<ChainOfThought>` | `steps`, `state`, `duration` |
+| `sources` | `<Sources>` | `sources`, `title`, `collapsible` |
+| `approval` | `<Approval>` | `title`, `description`, `tool`, `decision` |
 | `question` | `<QuestionGroup>` | `questions`, `answers`, `activeIndex`, `collapsible` |
+
+`reasoning` and `chain` are the same job at two grains — a block of prose, or
+steps that follow from one another. Sending both for one stretch of thinking
+says it twice.
+
+#### Citing a source from the prose
+
+`[^1]` in the answer is a **citation marker**, and the number is a position in
+the turn's `sources` part:
+
+```tsx
+yield { kind: "sources", id: "s", sources: [atlas, pdg] };
+yield "The combined figure is 125.25 GeV[^1], to a fifth of a percent[^2].";
+```
+
+It draws as an `<InlineCitation>` carrying the source's title, and the marker
+is left out of the tokens — so a highlight drawn across the sentence, and the
+text a thread quotes back, do not contain a stray `[1]`.
+
+This is the kit's one extension to the markdown grammar. GFM spells footnotes
+the same way but wants a `[^1]: …` definition in the document; a model streams
+the marker and sends the list beside the text, never below it. Without it a
+citation could only be written by hand in JSX — which a stream cannot do, so
+the component existed and no real conversation could reach it.
+
+Send the list **before** the prose that cites it. Sent after, the markers draw
+bare and fill in later, which works and looks like a bug.
 
 A question is answered by the person reading it, not by the stream — so
 `useChatTurns` also returns **`updatePart(turnId, part)`**, and `ChatTurnRow`

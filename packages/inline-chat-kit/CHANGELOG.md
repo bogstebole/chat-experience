@@ -6,6 +6,36 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.26.0 — 2026-08-31
+
+### Added
+
+- **`chain` and `sources` are turn parts.** `<ChainOfThought>` and `<Sources>`
+  were in Storybook and unreachable from a conversation — nothing a stream
+  could send drew them. A `SendHandler` yields
+  `{ kind: "chain", id, steps, state }` and
+  `{ kind: "sources", id, sources, title?, collapsible? }` now, and
+  `<ChatTurnRow>` draws both.
+
+- **`[^1]` in the prose is a citation.** The number is a position in the turn's
+  `sources` part, and the marker draws as an `<InlineCitation>` carrying that
+  source's title.
+
+  This is the kit's one extension to the markdown grammar, and it exists for a
+  specific reason: a citation is a component, a stream sends text. Before this,
+  `<InlineCitation>` could only be written by hand in JSX — so the component
+  existed and no actual conversation could reach it. GFM spells footnotes the
+  same way but wants a `[^1]: …` definition in the document; a model emits the
+  marker and sends its sources beside the text, never below it.
+
+  The marker is kept **out of the tokens**, so a highlight drawn across the
+  sentence — and the text a thread quotes back — do not contain a stray `[1]`.
+  A marker whose source has not arrived yet still draws, and starts working
+  when the list lands.
+
+- **`<TextHighlighter>` takes `sources` and `onSelectSource`**, which is how the
+  citations reach it. `<ChatTurnRow>` passes the turn's first `sources` part.
+
 ## 0.25.1 — 2026-08-30
 
 ### Fixed

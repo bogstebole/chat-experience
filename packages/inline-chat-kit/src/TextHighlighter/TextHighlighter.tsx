@@ -5,6 +5,8 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Button } from "../Button/Button";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { parseMarkdown, type MdNode } from "../markdown/parseMarkdown";
+import { InlineCitation } from "../InlineCitation/InlineCitation";
+import type { Source } from "../Sources/Sources";
 import styles from "./TextHighlighter.module.css";
 import { MessageCircle, Trash2 } from "lucide-react";
 
@@ -29,6 +31,14 @@ export interface TextHighlighterProps {
   selectionMode?: "marker" | "precise";
   onHighlightComplete?: (highlightedText: string) => void;
   onReplyInThread?: (text: string, rect: DOMRect) => void;
+  /**
+   * What `[^1]` in the text points at, in the order the answer cites them.
+   *
+   * Leave it out and a marker still draws — as a number with nothing behind
+   * it, which is what it is until the list arrives.
+   */
+  sources?: Source[];
+  onSelectSource?: (index: number, source?: Source) => void;
 }
 
 /* Pure geometry helpers — hoisted so memoised values can depend on them. */
@@ -94,7 +104,14 @@ const getSelectionPathString = (rects: { x: number; y: number; w: number; h: num
   return d.trim();
 };
 
-export function TextHighlighter({ text, selectionMode = "marker", onHighlightComplete, onReplyInThread }: TextHighlighterProps) {
+export function TextHighlighter({
+  text,
+  selectionMode = "marker",
+  onHighlightComplete,
+  onReplyInThread,
+  sources,
+  onSelectSource,
+}: TextHighlighterProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [paths, setPaths] = useState<PathData[]>([]);
   const [selections, setSelections] = useState<SelectionHighlight[]>([]);
@@ -681,6 +698,22 @@ export function TextHighlighter({ text, selectionMode = "marker", onHighlightCom
         // What it gets instead is a copy button, which is what people want
         // from code anyway.
         return <CodeBlock key={`c${i}`} code={node.value} lang={node.lang} />;
+      }
+      /* `[^1]` in the answer, resolved against the turn's sources. The number
+         is what the model wrote and the list is 1-based, which is why this
+         subtracts one and does not renumber: a marker pointing at a source
+         that has not arrived yet still draws, and starts working the moment
+         the list does. */
+      if (node.type === "el" && node.tag === "cite") {
+        const at = Number(node.props?.index ?? 0);
+        return (
+          <InlineCitation
+            key={`q${i}`}
+            index={at}
+            source={sources?.[at - 1]}
+            onSelect={onSelectSource ? (n, source) => onSelectSource(n, source) : undefined}
+          />
+        );
       }
       return createElement(
         node.tag,
