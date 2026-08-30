@@ -43,6 +43,39 @@ describe("the surface stack", () => {
   });
 
   /**
+   * And **opaque means opaque**, in both themes.
+   *
+   * The check above guarded the plumbing — that the card is wired to paper in
+   * the light and to its own value in the dark — and never looked at what that
+   * value was. It was `rgb(var(--ick-ink-rgb) / 0.09)`: a wash. On the page it
+   * is indistinguishable from the mix; on an approval's tinted ground the card
+   * and the code block inside it both came out olive. So the rule held in the
+   * light, where the card is `#fff`, and was never true in the dark, which is
+   * where it is easiest to see.
+   *
+   * An alpha channel on either of these two is the fault, whatever the number.
+   */
+  it.each(["--ick-card", "--ick-dark-card", "--ick-inset"])("gives %s no alpha", async (name) => {
+    const tokens = await load("../styles/tokens.css?raw");
+
+    const value = (token: string, seen = new Set<string>()): string => {
+      expect(seen.has(token), `${token} refers to itself`).toBe(false);
+      seen.add(token);
+      const raw = tokens.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1]?.trim();
+      expect(raw, `${token} is defined nowhere`).toBeTruthy();
+      const alias = (raw as string).match(/^var\((--[\w-]+)\)$/)?.[1];
+      return alias ? value(alias, seen) : (raw as string);
+    };
+
+    /* `rgb(r g b / 0.09)` and `rgba(…, 0.09)` are both the fault; a
+       `color-mix` of two opaque colours is not, and neither is a bare
+       `rgb(var(--x))`. */
+    const resolved = value(name).replace(/\s+/g, " ");
+    expect(resolved, `${name} is translucent: ${resolved}`).not.toMatch(/\/\s*0?\.\d/);
+    expect(resolved, `${name} is translucent: ${resolved}`).not.toMatch(/rgba\(/);
+  });
+
+  /**
    * Separation is surface and gap, not a line.
    *
    * The question card underlines nothing — a row is an inset panel with space
