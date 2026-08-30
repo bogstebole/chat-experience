@@ -23,14 +23,24 @@
   border-radius: var(--ick-radius-xs);
 }
 
+/* Sized to the number rather than to a square.
+
+   It was `min-width: 16px` with 2px of padding — the square the list uses. In
+   a list that is right: the numbers sit in a column and have to line up. In a
+   sentence it is not. A single digit is about five pixels wide, so five and a
+   half pixels of empty badge sat on either side of it, and whatever followed —
+   a comma, most often — came after that gap and read as detached from the
+   number it belongs to.
+
+   Padding in `em` so it tracks the number rather than a fixed square, and no
+   minimum: what a badge needs is a fill and a corner, not a width. */
 .marker {
   all: unset;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--ick-cite-size-marker);
   height: var(--ick-cite-size-marker);
-  padding: 0 var(--ick-space-1);
+  padding: 0 0.3em;
   margin-left: 0.25em;
   /* Lifted, the way a footnote mark is, without the size loss of a real
      superscript — the number still has to be readable and clickable. */

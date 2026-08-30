@@ -6,6 +6,21 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.31.1 — 2026-08-31
+
+### Fixed
+
+- **A citation in a sentence takes the width of its number.** It was the same
+  16px square the source list uses — right in a list, where the numbers sit in
+  a column and have to line up, and wrong in running prose. A single digit is
+  about five pixels wide, so five and a half pixels of empty badge sat either
+  side of it and whatever followed — a comma, most often — came after that gap
+  and read as detached from the number it belongs to.
+
+  Padding in `em` so it tracks the number, and no minimum: what makes it a
+  badge is a fill, a corner and the line's height, not a width. The one in the
+  list keeps its square.
+
 ## 0.31.0 — 2026-08-31
 
 ### Changed
