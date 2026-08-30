@@ -127,9 +127,15 @@
   flex-direction: column;
   gap: var(--ick-space-5);
   width: 100%;
-  padding: var(--ick-space-2) var(--ick-tool-inner-gap) var(--ick-tool-inner-gap);
-  border-top: 1px solid var(--ick-tool-border);
-  /* The rule belongs to the body, and the body's top padding sits under it. */
+  padding: 0 var(--ick-tool-inner-gap) var(--ick-tool-inner-gap);
+  /* No rule under the header.
+
+     The question card separates things by **surface and gap** — a row is an
+     inset panel with space around it, and nothing is underlined. This drew a
+     line instead, and with two sections open that made three stacked rules in
+     a component the size of a paragraph. The panels already sit on the tool's
+     ground with space between them; the line was saying again what the surface
+     had already said. */
   margin-top: var(--ick-space-2);
   /* Repointed rather than restyled: the code block reads its own tokens, so
      this moves its surface and its corner without knowing anything about how a
