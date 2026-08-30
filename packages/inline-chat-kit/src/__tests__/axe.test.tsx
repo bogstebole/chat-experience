@@ -16,6 +16,7 @@ import { Loader } from "../Loader/Loader";
 import { Tool } from "../Tool/Tool";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { TaskList } from "../TaskList/TaskList";
+import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import {
@@ -380,6 +381,32 @@ describe("axe — a tool call", () => {
 
   it("passes with nothing to open, where the row is not a control", async () => {
     const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
+    await check(container);
+  });
+});
+
+describe("axe — a chain of thought", () => {
+  const STEPS = [
+    { id: "a", label: "The question is about size", body: "And a point particle has none." },
+    { id: "b", label: "Checked the measured value", body: "125.25 GeV." },
+  ];
+
+  it("passes folded away", async () => {
+    const { container } = render(<ChainOfThought steps={STEPS} duration={4200} />);
+    await check(container);
+  });
+
+  it("passes opened", async () => {
+    const { container } = render(<ChainOfThought steps={STEPS} duration={4200} defaultOpen />);
+    await check(container);
+  });
+
+  /* The header's name is the running step's label, drawn with a gradient
+     clipped to the glyphs — real text, or the button would have no name. */
+  it("passes while it thinks", async () => {
+    const { container } = render(
+      <ChainOfThought state="thinking" steps={[STEPS[0], { ...STEPS[1], state: "running" as const }]} />
+    );
     await check(container);
   });
 });

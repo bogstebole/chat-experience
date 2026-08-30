@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 /**
- * Two shimmers, one geometry.
+ * Three shimmers, one geometry.
  *
  * `Loader` and `Reasoning` draw the same effect — a bright band slid across
  * text and clipped to the glyphs — and they had the same bug in it: the band
@@ -22,12 +22,16 @@ const geometry = (css: string) => ({
 });
 
 describe("the shimmer", () => {
-  it("sweeps the same way in both components", async () => {
+  it("sweeps the same way in every component that draws one", async () => {
     const loader = geometry(await sheet("../Loader/Loader.module.css?raw"));
-    const reasoning = geometry(await sheet("../Reasoning/Reasoning.module.css?raw"));
-
     expect(loader.size, "no background-size found in Loader").toBeTruthy();
-    expect(reasoning).toEqual(loader);
+
+    for (const [name, path] of [
+      ["Reasoning", "../Reasoning/Reasoning.module.css?raw"],
+      ["ChainOfThought", "../ChainOfThought/ChainOfThought.module.css?raw"],
+    ] as const) {
+      expect(geometry(await sheet(path)), `${name} drifted from Loader`).toEqual(loader);
+    }
   });
 
   /**

@@ -152,6 +152,21 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "chain-states",
+    story: "components-chainofthought--states",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "chain-thinking",
+    story: "components-chainofthought--thinking",
+    themes: ["light"],
+  },
+  {
+    name: "chain-with-a-tool",
+    story: "components-chainofthought--with-a-tool",
+    themes: ["dark"],
+  },
+  {
     name: "tasklist-states",
     story: "components-tasklist--states",
     themes: ["light", "dark"],

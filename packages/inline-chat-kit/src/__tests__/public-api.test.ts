@@ -11,6 +11,7 @@ const EXPECTED_EXPORTS = [
   "AddCardsOverlay",
   "AnswerActions",
   "Button",
+  "ChainOfThought",
   "ChatHeader",
   "ChatInput",
   "Chip",
