@@ -60,6 +60,8 @@ export { Tool } from "./Tool/Tool";
 export type { ToolProps, ToolState } from "./Tool/Tool";
 export { Reasoning } from "./Reasoning/Reasoning";
 export type { ReasoningProps, ReasoningState } from "./Reasoning/Reasoning";
+export { TaskList } from "./TaskList/TaskList";
+export type { Task, TaskListProps, TaskState } from "./TaskList/TaskList";
 
 /* Structured questions inside a conversation */
 export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";

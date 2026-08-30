@@ -362,21 +362,43 @@
     --ick-tool-border: var(--ick-border);
     --ick-tool-name: var(--ick-ink);
     --ick-tool-meta: var(--ick-ink-faint);
-    --ick-tool-glyph: var(--ick-ink-faint);
-    --ick-tool-glyph-done: var(--ick-ink-soft);
-    --ick-tool-glyph-error: var(--ick-danger);
     --ick-tool-error-surface: var(--ick-danger-tint);
-    /* The turning arc and the ring it turns in. Neutral rather than the
-       marker: a pale yellow reads as a fill behind dark text and all but
-       disappears as a 2px stroke. */
-    --ick-tool-spinner: var(--ick-ink-soft);
-    --ick-tool-spinner-track: var(--ick-border);
-    --ick-tool-glyph-size: 16px;
     /* A fenced value inside the row needs to be a different surface to the row
        itself, or the two are one grey with a hairline through it. Paper, which
        is lighter than the row in the light and darker than it in the dark —
        different in both, which is the whole requirement. */
     --ick-tool-code-fill: var(--ick-surface);
+
+    /* ═══ Work states ═══════════════════════════════════════════════════════
+       Queued, working, finished, failed — one vocabulary and one set of
+       colours, shared by a tool call and a task in a list. They were `Tool`'s
+       until a second component needed the same four; two copies of one drawing
+       is how the two start to disagree.
+
+       The turning arc is neutral rather than the marker: a pale yellow reads
+       as a fill behind dark text and all but disappears as a 1.5px stroke. */
+
+    --ick-state-size: 16px;
+    --ick-state-pending: var(--ick-ink-faint);
+    --ick-state-running: var(--ick-ink-soft);
+    --ick-state-done: var(--ick-ink-soft);
+    --ick-state-error: var(--ick-danger);
+    --ick-state-track: var(--ick-border);
+
+    /* ═══ Tasks ═════════════════════════════════════════════════════════════
+       What the agent means to do. A list rather than a box: the sequence is
+       half of what it is saying, and a surface around it would make it a thing
+       beside the answer rather than part of it.
+
+       Three inks down the list. What is finished recedes without going away,
+       what is queued is quieter still, and the one being worked on is the
+       answer to "where is it up to". */
+
+    --ick-task-size: var(--ick-answer-size);
+    --ick-task-gap: var(--ick-space-4);
+    --ick-task-ink: var(--ick-ink);
+    --ick-task-ink-done: var(--ick-ink-soft);
+    --ick-task-ink-pending: var(--ick-ink-faint);
 
     /* ═══ Reasoning ═════════════════════════════════════════════════════════
        What the model worked through on the way to the answer. Quieter than a

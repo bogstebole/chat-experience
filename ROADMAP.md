@@ -817,8 +817,28 @@ This is the "thinking, reasoning" the brief asks for.
       glyph changes shape and the row says its state in words.
 
       28 tests, 5 axe cases, 7 stories, 13 tokens. `0.12.0`.
-- [ ] **G4 · `TaskList`.** Claude Code's todo list: what it plans to do, what
-      it is doing now, what is finished.
+- [x] **G4 · `TaskList` — done.** What the agent means to do, what it is doing
+      now, what is finished.
+
+      **The order never changes.** That was the question worth getting right:
+      a list that sorted itself as work progressed would move the line somebody
+      is reading out from under them, and the sequence is half of what the list
+      is saying. Only the glyphs change.
+
+      A list rather than a box, which is the difference from `Tool` — that is a
+      record of one thing that ran and earns a surface; this is a sequence, and
+      a surface would make it a thing beside the answer rather than part of it.
+
+      Folds itself once everything is done, on `Reasoning`'s terms: the list's
+      preference, overruled for good by anybody who touches it. Three
+      components share `useDisclosure` now.
+
+      `StateGlyph` came out of `Tool` on the way: the same four states, drawn
+      once. Its colours moved with it, which renames six tokens — two copies of
+      one drawing is how the two start to disagree, and the shimmer had
+      demonstrated that a release earlier.
+
+      17 tests, 4 axe cases, 5 stories, 5 tokens. `0.15.0`.
 - [ ] **G5 · `Sources` + `InlineCitation`.** A numbered marker in the text
       and the list underneath. **Ours has an unfair advantage:** the citation
       marker and the highlight marker are the same interaction seen twice.
@@ -849,15 +869,20 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → **G4** → G2 → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → **G2** → G5 → G6 → G7 → H.
 
 The floor is finished, and the two disclosures in the agent tier with it —
 `Reasoning` did turn out to be a special case of the tool row, and the part
 they share is now `useDisclosure` rather than the same twenty lines twice.
 
-`TaskList` is next: the first one in this tier that is a list rather than a
-box, and the first where the interesting question is what happens as items
-change state under the reader.
+`ChainOfThought` is next, and the open question is whether it is a component
+at all or a `TaskList` with prose under each step. Worth answering before
+building it.
+
+One thing none of the agent tier is yet: reachable from the demo. `Tool`,
+`Reasoning`, `TaskList`, `QuestionCard` and `QuestionGroup` all live in
+Storybook only — the playground still runs the plain question-and-answer loop
+it started with.
 
 F1 first because everything else renders inside it. F2 next because it is the
 one that collides with `TextHighlighter`, and finding that out late would be

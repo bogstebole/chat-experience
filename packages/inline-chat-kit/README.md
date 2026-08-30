@@ -263,6 +263,45 @@ everywhere. It is a real word in the button rather than a `<Loader>`: the loader
 is decorative and marks itself `aria-hidden`, and hiding this one would leave a
 control with nothing to call it.
 
+### `<TaskList>`
+
+What the agent means to do, what it is doing, and what it has finished.
+
+```tsx
+<TaskList
+  title="Plan"
+  collapsible
+  tasks={[
+    { id: "read", label: "Read the care plan", state: "done", detail: "42 lines" },
+    { id: "gaps", label: "Find the gaps in the weekly cover", state: "running" },
+    { id: "draft", label: "Draft the questions for the family" },
+  ]}
+/>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `tasks` | `Task[]` | `{ id, label, state?, detail? }` |
+| `title` | `ReactNode` | Gives it a row to fold into. Without one there is no row |
+| `collapsible` | `boolean` | `false` |
+| `open` / `defaultOpen` / `onOpenChange` | | Controlled or not |
+| `labels` | `Partial<Record<…, string>>` | The four states, and `progress` (`"{done} of {total}"`) |
+
+A task is `pending`, `running`, `done` or `error` — the same four as a tool
+call, and the same glyphs, because they are the same four states and naming
+them differently in two places buys nothing.
+
+**The order never changes.** A list that sorted itself as work progressed would
+move the line somebody is reading out from under them, and the sequence is half
+of what the list is saying — these steps, in this order. Only the glyphs change.
+
+`collapsible` folds it away once every task is done: a plan is worth watching
+while it runs and worth little afterwards. Anybody reading it can overrule
+that, in either direction, for good.
+
+The one being worked on carries `aria-current="step"`, so a screen reader can
+jump to "where is it up to" rather than counting down the list.
+
 ### `<QuestionCard>` and `<QuestionGroup>`
 
 A structured question inside a conversation: the assistant asks something with
