@@ -6,6 +6,36 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.19.0 — 2026-08-30
+
+### Changed
+
+- **A question's corners nest.** A box's corner is now the corner of the thing
+  inside it plus the gap between them — the rule that stops a rounded row
+  inside a rounded card leaving a crescent of card between the two curves. It
+  is the thing that reads as "not quite fitting" without anybody being able to
+  name it.
+
+  Measured, from the inside out. The badge seeds the chain at 8, a row is 8
+  plus its own 8 of padding, a card is 16 plus the 8 it puts around its rows,
+  and the group is 24 plus the 16 it puts around its cards:
+
+  | | was | is |
+  | --- | --- | --- |
+  | badge | 8 | 8 |
+  | option / field row | 8 | **16** |
+  | card | 12 | **24** |
+  | group | 24 | **40** |
+
+  Written as arithmetic rather than as four numbers —
+  `--ick-question-radius-badge` seeds it and `-row`, `-card` and `-group` are
+  `calc()` off it — so the chain cannot drift when one of the paddings changes.
+  A test does the same sum and reports the whole chain when a link breaks.
+
+  The folded group row takes a card's corner, since that is what it is. The
+  count beside it is a pill, which is outside the chain: a pill's corner is its
+  own height, not something derived from what contains it.
+
 ## 0.18.0 — 2026-08-30
 
 ### Added

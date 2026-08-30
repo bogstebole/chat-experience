@@ -9,7 +9,7 @@
   gap: var(--ick-space-5);
   width: 100%;
   padding: var(--ick-space-6);
-  border-radius: var(--ick-radius-xl);
+  border-radius: var(--ick-question-radius-group);
   background: var(--ick-question-surface);
   font-family: var(--ick-font-sans);
 }
@@ -35,7 +35,7 @@
   gap: var(--ick-space-4);
   width: 100%;
   padding: var(--ick-space-4) var(--ick-space-5);
-  border-radius: var(--ick-radius-lg);
+  border-radius: var(--ick-question-radius-card);
   background: var(--ick-question-card);
   box-shadow: var(--ick-shadow-float);
   font-family: var(--ick-font-sans);
@@ -56,7 +56,7 @@
 .count {
   flex-shrink: 0;
   padding: var(--ick-space-1) var(--ick-space-4);
-  border-radius: var(--ick-radius-sm);
+  border-radius: var(--ick-radius-pill);
   background: var(--ick-question-surface);
   font-size: var(--ick-text-xs);
   font-weight: var(--ick-weight-medium);

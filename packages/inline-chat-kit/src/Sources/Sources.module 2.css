@@ -1,0 +1,197 @@
+/* ─────────────────────────────────────────────
+   Sources
+
+   What the answer was drawn from. Numbered to match the markers in the text,
+   and wearing the same square, so the two read as one thing counted twice
+   rather than as two numbering schemes that happen to agree.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.sources {
+  box-sizing: border-box;
+  width: 100%;
+  font-family: var(--ick-font-sans);
+}
+
+.header {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-2) var(--ick-space-3);
+  margin-left: calc(var(--ick-space-3) * -1);
+  border-radius: var(--ick-radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+.header:hover {
+  background: var(--ick-surface-hover);
+}
+
+.header:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Nothing to fold: a heading, not a control. */
+.static,
+.static:hover {
+  cursor: default;
+  background: none;
+}
+
+.title {
+  font-size: var(--ick-cite-size);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+.count {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-ink-faint);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--ick-ink-faint);
+  transition: transform var(--ick-duration-fast) var(--ick-ease);
+}
+
+.header[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* Always present, so `aria-controls` always points at something. */
+.listOuter {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.listWrap {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+.list {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-2);
+  width: 100%;
+  margin: var(--ick-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: var(--ick-radius-md);
+  transition: background var(--ick-duration-fast) ease;
+}
+
+/* Arrived at from a marker in the text. Marked rather than scrolled to: the
+   list is already under the answer, and moving the page under somebody who
+   clicked a marker in a sentence loses them the sentence. */
+.item[data-active] {
+  background: var(--ick-cite-active);
+}
+
+.entry {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-space-3) var(--ick-space-4);
+  border-radius: var(--ick-radius-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.entry {
+  cursor: pointer;
+}
+
+a.entry:hover {
+  background: var(--ick-surface-hover);
+}
+
+a.entry:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+.number {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ick-cite-size-marker);
+  height: var(--ick-cite-size-marker);
+  padding: 0 var(--ick-space-1);
+  border-radius: var(--ick-radius-sm);
+  background: var(--ick-cite-fill);
+  color: var(--ick-cite-ink);
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  line-height: 1;
+}
+
+.number[data-active] {
+  background: var(--ick-marker);
+  color: var(--ick-marker-ink);
+}
+
+.body {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-1);
+}
+
+.name {
+  font-size: var(--ick-cite-size);
+  line-height: 1.45;
+  color: var(--ick-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.origin {
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The passage in the source that carries the claim. Quoted, so it is visibly
+   somebody else's words and not the answer's. */
+.quote {
+  margin-top: var(--ick-space-1);
+  padding-left: var(--ick-space-4);
+  border-left: 1px solid var(--ick-border);
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-ink-soft);
+}
