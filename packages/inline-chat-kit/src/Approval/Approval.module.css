@@ -10,26 +10,30 @@
    host's page — so each rule has to say it.
    ───────────────────────────────────────────── */
 
+/* The ground. Tinted, because this is the one component whose whole job is to
+   stop somebody for a moment — but a ground all the same, and it holds a card
+   the way a question group does rather than carrying content itself. */
 .approval {
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ick-space-5);
   width: 100%;
   padding: var(--ick-approval-pad);
-  /* Concentric: whatever sits inside is a row at the kit's row corner, and
-     this is that plus the padding around it. */
   border-radius: var(--ick-approval-radius);
   background: var(--ick-approval-surface);
   box-shadow: inset 0 0 0 1px var(--ick-approval-edge);
   font-family: var(--ick-font-sans);
 
-  /* An approval **is** the ground, so a tool call on it brings neither one of
-     its own nor a shadow: two grounds is one more than there is depth for, and
-     a card already sitting on something does not float off it as well. */
+  /* An approval is the ground, so a tool call on it brings none of its own and
+     does not float: it is a **row on this card**, at the row corner and the
+     inset surface, the same thing an option is inside a question card. What it
+     holds takes the corner inside that. */
   --ick-tool-ground: transparent;
   --ick-tool-ground-pad: 0px;
   --ick-tool-shadow: none;
+  --ick-tool-surface: var(--ick-inset);
+  --ick-tool-surface-hover: var(--ick-surface-active);
+  --ick-tool-radius: var(--ick-nest-row);
+  --ick-tool-inner-radius: var(--ick-nest-inner);
+  --ick-tool-code-fill: var(--ick-card);
 }
 
 /* Once it is settled the box stops asking, so it stops looking like it is. */
@@ -38,12 +42,35 @@
   box-shadow: inset 0 0 0 1px var(--ick-border);
 }
 
+/* The card, and everything the approval is made of sits on it: what is being
+   asked, what it would run, and the answer. */
+.card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-5);
+  width: 100%;
+  padding: var(--ick-nest-pad);
+  border-radius: var(--ick-nest-card);
+  background: var(--ick-card);
+  box-shadow: var(--ick-shadow-float);
+}
+
+/* Settled, the card stops floating too — nothing is being asked any more. */
+.approval[data-decision] .card {
+  background: none;
+  box-shadow: none;
+}
+
 .head {
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   gap: var(--ick-space-4);
   width: 100%;
+  /* 8 here plus the card's own 8 puts the title on the line a question card's
+     title sits on. See the same note over `QuestionCard`'s `.header`. */
+  padding: var(--ick-space-2) 0 0 var(--ick-space-4);
 }
 
 .glyph {
@@ -91,6 +118,8 @@
   align-items: center;
   gap: var(--ick-space-3);
   width: 100%;
+  /* The footer, on the card — where a question card puts its Next. */
+  padding: var(--ick-space-2) var(--ick-space-2) var(--ick-space-2) var(--ick-space-4);
 }
 
 /* Alone at the left end, with the two that say yes pushed to the right. A
@@ -111,6 +140,7 @@
 
 .settled {
   display: flex;
+  padding: var(--ick-space-2) var(--ick-space-2) var(--ick-space-2) var(--ick-space-4);
   align-items: center;
   gap: var(--ick-space-3);
   margin: 0;

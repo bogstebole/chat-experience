@@ -135,3 +135,43 @@ describe("the surface stack", () => {
     expect(css).toMatch(/--ick-tool-shadow:\s*none/);
   });
 });
+
+/**
+ * An approval is the same object a question is: a ground holding a card
+ * holding rows.
+ *
+ * It was not. The tint was the ground and the *only* thing on paper was the
+ * tool call — so the title and the buttons sat directly on the ground, which
+ * is a card in a box rather than a box with a card in it. Beside a question
+ * card, where the header and the Next button are both on the card, it read as
+ * a different arrangement of the same three surfaces.
+ */
+describe("an approval", () => {
+  const load = async (path: string) =>
+    ((await import(/* @vite-ignore */ path)).default as string).replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("is a ground with a card on it", async () => {
+    const css = await load("../Approval/Approval.module.css?raw");
+    const rule = (selector: string) => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+      return css.slice(at, css.indexOf("}", at));
+    };
+    expect(rule(".approval")).toMatch(/background:\s*var\(--ick-approval-surface\)/);
+    expect(rule(".card")).toMatch(/background:\s*var\(--ick-card\)/);
+    expect(rule(".card")).toMatch(/box-shadow:\s*var\(--ick-shadow-float\)/);
+  });
+
+  /**
+   * And the tool call on that card is a **row**, not a second card. Two cards
+   * stacked is one surface more than there is depth for — the same fault as
+   * two grounds, from the other end.
+   */
+  it("makes the tool call a row on it rather than a card", async () => {
+    const css = await load("../Approval/Approval.module.css?raw");
+    expect(css).toMatch(/--ick-tool-surface:\s*var\(--ick-inset\)/);
+    expect(css).toMatch(/--ick-tool-radius:\s*var\(--ick-nest-row\)/);
+    expect(css).toMatch(/--ick-tool-shadow:\s*none/);
+    expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
+  });
+});

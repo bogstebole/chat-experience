@@ -6,6 +6,34 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.30.0 — 2026-08-31
+
+### Changed
+
+- **An approval is a ground holding a card, like everything else.** It was a
+  tinted box with the tool call as the only thing on paper — so the title, the
+  description and the three buttons sat directly on the ground. A question card
+  puts its header *and* its Next button on the card; this was the same three
+  surfaces in a different arrangement, which beside one read as a different
+  object.
+
+  ```
+  ground 40 (tinted)  →  card 24  →  row 16
+  ```
+
+  The tool call on that card is now a **row** rather than a second card: inset,
+  at the row corner, no shadow. Two cards stacked is one surface more than
+  there is depth for — the same fault as two grounds, from the other end. What
+  the row holds takes the corner inside that, and its fenced value is paper,
+  the way a question's badge is paper on a grey row.
+
+  Settled, the card stops floating along with the tint: nothing is being asked
+  any more.
+
+- `--ick-approval-radius` is derived from `--ick-nest-card` rather than from
+  `--ick-tool-radius`. The tool's corner was standing in for the card's back
+  when a tool call was the only thing on the ground.
+
 ## 0.29.1 — 2026-08-31
 
 ### Fixed

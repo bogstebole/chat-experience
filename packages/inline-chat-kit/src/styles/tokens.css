@@ -506,7 +506,10 @@
        question group leaves around its cards. */
     --ick-approval-pad: var(--ick-nest-ground-pad);
     /* + whatever it holds, which is a tool row. */
-    --ick-approval-radius: calc(var(--ick-tool-radius) + var(--ick-approval-pad));
+    /* Ground = card + the gap around it, the kit's one chain. It used to be
+       derived from the tool's corner, back when a tool call was the only thing
+       on it; the approval has a card of its own now. */
+    --ick-approval-radius: calc(var(--ick-nest-card) + var(--ick-approval-pad));
     --ick-approval-surface: rgb(var(--ick-marker-rgb) / 0.08);
     --ick-approval-edge: rgb(var(--ick-marker-rgb) / 0.35);
     --ick-approval-glyph: var(--ick-ink-soft);

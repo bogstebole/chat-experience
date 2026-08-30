@@ -79,10 +79,16 @@ const NESTINGS = [
     gap: "--ick-tool-ground-pad",
   },
   {
-    what: "a tool call in an approval",
+    what: "an approval's card on its ground",
     outer: ["Approval/Approval.module.css", ".approval"],
-    inner: "--ick-tool-radius",
+    inner: "--ick-nest-card",
     gap: "--ick-approval-pad",
+  },
+  {
+    what: "a tool call in an approval's card",
+    outer: ["Approval/Approval.module.css", ".card"],
+    inner: "--ick-nest-row",
+    gap: "--ick-nest-pad",
   },
 ] as const;
 
