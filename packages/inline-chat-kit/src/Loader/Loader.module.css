@@ -46,16 +46,18 @@
     var(--ick-ink-faint) 60%,
     var(--ick-ink-faint) 100%
   );
-  background-size: 250% 100%;
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: sweep 2.4s linear infinite;
+  animation: sweep 1.8s linear infinite;
 }
 
+/* See the note in `Reasoning.module.css`: the same numbers, and the same fix.
+   The bright point used to spend two thirds of every cycle off the words. */
 @keyframes sweep {
-  from { background-position: 150% 0; }
-  to { background-position: -50% 0; }
+  from { background-position: 110% 0; }
+  to { background-position: -10% 0; }
 }
 
 /* ── Reduced motion ─────────────────────────────────────────────────────────

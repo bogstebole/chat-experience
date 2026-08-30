@@ -6,6 +6,28 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.14.1 — 2026-08-30
+
+### Fixed
+
+- **The shimmer stood still for two thirds of every cycle.** With the gradient
+  two and a half times the element and swept from `150%` to `-50%`, the bright
+  point travels from one element-width left of the words to two widths right of
+  them — so it is on the text for a third of the pass and off it for the rest.
+  A shimmer that spends most of its time as a static grey line is doing the
+  opposite of its job.
+
+  Sampled frame by frame over one period to confirm it rather than guess: two
+  in every three frames were the word standing still.
+
+  It is `200%` swept `110%` → `-10%` now, which puts the bright stop on the
+  left edge at one end and the right edge at the other, so it crosses the words
+  and little else. 1.8s rather than 2.4.
+
+  Both `Loader`'s shimmer and `Reasoning`'s had it, and both are fixed. A test
+  compares the two, since nothing else would make the next person fixing one of
+  them look at the other.
+
 ## 0.14.0 — 2026-08-30
 
 ### Added
