@@ -6,6 +6,28 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.25.1 — 2026-08-30
+
+### Fixed
+
+- **`highlight.js` is declared.** `CodeBlock` imports eleven grammars from it
+  one at a time, and the package listed only `lowlight`. It resolved because
+  `lowlight` depends on `highlight.js` and npm hoists it into reach — so under
+  a strict resolver, or the day `lowlight` picks a different highlighter, it is
+  a consumer's build breaking on an import this package wrote. It is a
+  dependency now, at the version `lowlight` already pulls.
+
+  Nothing new is installed and the bundle does not move; it was always there.
+  What changes is that it is there on purpose.
+
+### Added
+
+- **A test for what installing this costs.** The runtime dependencies, the
+  peers, and every bare import in `src` checked against both — so an import
+  cannot outrun the manifest again, and the playground's dev tooling (DialKit,
+  the perf HUD) cannot cross into the package by being convenient. It found the
+  `highlight.js` gap on its first run.
+
 ## 0.25.0 — 2026-08-30
 
 ### Changed

@@ -21,9 +21,21 @@ npm run dev
 The playground aliases `inline-chat-kit` straight to the package source, so
 editing a component hot-reloads immediately — no rebuild step while iterating.
 
-The DialKit panel in the corner live-tweaks the entrance springs, stagger and
-blur. Numbers you settle on go into `defaultInlineAnimConfig` in
-`packages/inline-chat-kit/src/ChatInput/ChatInput.tsx`.
+### Dev chrome
+
+`npm run dev -- --open '/?dev'`, or add `?dev` to the URL, and the playground
+puts two panels on screen: a **DialKit** panel for live-tweaking the entrance
+springs, stagger and blur, and a **perf HUD**. Numbers you settle on in the dial
+go into `defaultInlineAnimConfig` in
+`packages/inline-chat-kit/src/ChatInput/ChatInput.tsx` — the panel persists
+nothing.
+
+Both are **the playground's, not the kit's**. `dialkit` is a dependency of
+`apps/playground` and of nothing else; no file under `packages/inline-chat-kit`
+imports it, it is not in the package's `dependencies` or `peerDependencies`, and
+none of it reaches the tarball the website installs. A test asserts all of that,
+because a dev tool that quietly becomes a runtime dependency is the kind of
+thing nobody notices until somebody else installs the package.
 
 ## Scripts
 
@@ -61,3 +73,10 @@ Anything reusable by a third party belongs in the package. Anything specific to
 this playground — the logo, the feature-status banner, the canned particle
 physics answers, the intro landing — stays in `apps/playground/src/demo` and
 `apps/playground/src/pages`.
+
+**Tooling is playground-side, always.** DialKit and the perf HUD exist to build
+the kit, not to ship with it. The package's runtime dependencies are two, both
+for the same job — `lowlight` and `highlight.js`, syntax highlighting in a code
+block — plus four peers a host app already has: `react`, `react-dom`, `motion`,
+`lucide-react`. Adding a third is a decision, not a convenience, and the test
+that pins the list is where you make it.
