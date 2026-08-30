@@ -45,14 +45,27 @@ Picked from the sidebar:
 - **D — Inline (ref)** / **D — Inline (wip)** — a single `ChatInput` isolated
   across all four states, for comparing variants side by side.
 
-## Tuning motion
+## Dev chrome
+
+Both panels below are **off unless the URL says `?dev`**. It used to be the
+other way round, with `?showcase` stripping them: opening the demo put two
+panels of tooling on screen and the component third, which is the wrong default
+for a page whose whole point is the thing in the middle. `?showcase` still means
+"no chrome" whatever else is in the URL, so recordings and screenshots are
+unaffected either way.
+
+Neither belongs to the kit. `dialkit` is a dependency of this app alone — the
+package does not import it and does not list it, and a test in
+`packages/inline-chat-kit` keeps it that way.
+
+### Tuning motion
 
 The DialKit panel live-tweaks entrance stagger, spring stiffness, damping and
 blur. Values you settle on belong in `defaultInlineAnimConfig` in
 `packages/inline-chat-kit/src/ChatInput/ChatInput.tsx` — the panel does not
 persist anything.
 
-## Measuring performance
+### Measuring performance
 
 A HUD sits bottom-left. It observes from the outside — it reads the DOM and the
 performance timeline and never touches the kit, so it cannot change what it
