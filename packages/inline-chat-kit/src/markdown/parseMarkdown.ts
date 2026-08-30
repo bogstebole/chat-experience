@@ -1,7 +1,4 @@
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkGfm from "remark-gfm";
-import type { Root, RootContent, PhrasingContent } from "mdast";
+import { parseBlocks, type Block, type Phrasing } from "./parse";
 
 /**
  * Markdown, in the one shape the highlighter can work with.
@@ -87,7 +84,7 @@ function siblings<T>(items: T[], b: Builder, each: (item: T) => MdNode): MdNode[
   });
 }
 
-function inline(nodes: PhrasingContent[], b: Builder): MdNode[] {
+function inline(nodes: Phrasing[], b: Builder): MdNode[] {
   const out: MdNode[] = [];
   for (const node of nodes) {
     switch (node.type) {
@@ -132,14 +129,14 @@ function inline(nodes: PhrasingContent[], b: Builder): MdNode[] {
       // worth the surface it opens.
       default:
         if ("children" in node && Array.isArray(node.children)) {
-          out.push(...inline(node.children as PhrasingContent[], b));
+          out.push(...inline(node.children as Phrasing[], b));
         }
     }
   }
   return out;
 }
 
-function block(nodes: RootContent[], b: Builder): MdNode[] {
+function block(nodes: Block[], b: Builder): MdNode[] {
   const out: MdNode[] = [];
   nodes.forEach((node, i) => {
     if (i > 0) b.break();
@@ -187,14 +184,12 @@ function block(nodes: RootContent[], b: Builder): MdNode[] {
       }
       default:
         if ("children" in node && Array.isArray(node.children)) {
-          out.push(...inline(node.children as PhrasingContent[], b));
+          out.push(...inline(node.children as Phrasing[], b));
         }
     }
   });
   return out;
 }
-
-const processor = unified().use(remarkParse).use(remarkGfm);
 
 /**
  * Parse once per distinct string.
@@ -205,7 +200,6 @@ const processor = unified().use(remarkParse).use(remarkGfm);
  */
 export function parseMarkdown(text: string): MarkdownDoc {
   const b = new Builder();
-  const tree = processor.parse(text) as Root;
-  const nodes = block(tree.children, b);
+  const nodes = block(parseBlocks(text), b);
   return { tokens: b.tokens, nodes };
 }

@@ -6,6 +6,40 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.23.0 — 2026-08-30
+
+### Changed
+
+- **The kit parses markdown itself.** `unified` + `remark-parse` +
+  `remark-gfm` were 31.6 KB gzip — a third of the package — and the slowest
+  thing in it. They are gone from `dependencies`; `lowlight` is the only one
+  left.
+
+  | | before | after |
+  | --- | --- | --- |
+  | bundle | 90.8 KB gzip | **58.2 KB gzip** |
+  | parse, 1.7k chars | 1.95 ms | **0.049 ms** |
+  | parse, 5.2k chars | 5.84 ms | **0.110 ms** |
+
+  That second column is the one that mattered: parsing runs once per frame
+  while an answer streams, so 5.8 ms was a third of a frame spent re-reading an
+  answer that grew by one word.
+
+  The kit only ever used a thin slice — nine block types and nine inline ones,
+  walked straight into a flat token list — so it parses that slice in about
+  three hundred lines. **It is not a CommonMark implementation and does not
+  claim to be.**
+
+  What makes that safe: `remark` stays a **dev** dependency, and a test parses
+  a corpus of real answers through both and compares the finished documents —
+  including every prefix of one, which is what streaming actually parses and
+  where the two first disagreed. Three real differences came out of that and
+  were resolved deliberately: trailing whitespace at the end of a paragraph
+  (matched), a delimiter row that must match the header's cell count before a
+  half-typed table becomes a table (matched), and short table rows, where this
+  pads and `remark` leaves it to the renderer (kept, so a streaming table's
+  last column does not pop in and out).
+
 ## 0.22.0 — 2026-08-30
 
 ### Changed
