@@ -786,8 +786,25 @@ This is the "thinking, reasoning" the brief asks for.
       footnote above the text it was explaining.
 
       17 tests, 3 axe cases, 4 stories, 7 tokens. `0.14.0`.
-- [ ] **G2 · `ChainOfThought` / `Steps`.** A sequence with per-step status.
-      Distinct from G1: reasoning is prose, steps are structure.
+- [x] **G2 · `ChainOfThought` — done.** A sequence with per-step status, and
+      the working under each step.
+
+      The question worth answering first was whether this is a component at all
+      or a `TaskList` with prose in it. It is a component, and the reason is one
+      word: a derivation's steps **follow from** each other, which is what the
+      line down the glyph column draws. A plan's items do not — they are a set,
+      in an order somebody chose, and `TaskList` draws no line between them.
+
+      So there are three ways to draw a sequence here, and the line between
+      them is stated in the README rather than left for a consumer to guess:
+      `Reasoning` is prose, `TaskList` is a plan, this is a derivation. Nothing
+      is duplicated to get there — four components share `useDisclosure`, three
+      share `StateGlyph`.
+
+      The connector came out of the first screenshot as a nine-pixel stub: the
+      rail was only as tall as its glyph, so the line had nothing to span.
+
+      17 tests, 3 axe cases, 4 stories, 7 tokens. `0.17.0`.
 - [x] **G3 · `Tool` — done.** Name, input, output, and state — pending,
       running, done, error. Shut by default, because most of the time nobody
       cares.
@@ -869,7 +886,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → **G2** → G5 → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → **G5** → G6 → G7 → H.
 
 The floor is finished, and the two disclosures in the agent tier with it —
 `Reasoning` did turn out to be a special case of the tool row, and the part

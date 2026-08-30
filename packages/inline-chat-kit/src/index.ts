@@ -66,6 +66,8 @@ export { Reasoning } from "./Reasoning/Reasoning";
 export type { ReasoningProps, ReasoningState } from "./Reasoning/Reasoning";
 export { TaskList } from "./TaskList/TaskList";
 export type { Task, TaskListProps, TaskState } from "./TaskList/TaskList";
+export { ChainOfThought } from "./ChainOfThought/ChainOfThought";
+export type { ChainOfThoughtProps, Thought } from "./ChainOfThought/ChainOfThought";
 
 /* Structured questions inside a conversation */
 export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";

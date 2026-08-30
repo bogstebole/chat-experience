@@ -6,6 +6,38 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.17.0 — 2026-08-30
+
+### Added
+
+- **`<ChainOfThought>`.** How the answer was arrived at, step by step.
+
+  Three components now draw a sequence, and the line between them is the only
+  reason there are three: `Reasoning` is prose, `TaskList` is a plan — known up
+  front, fixed order, items changing state — and this is a **derivation**,
+  which grows, and where each step follows from the one above it. That last
+  word is what the line down the glyph column draws; a task list has no line
+  between its items, because a plan's items do not follow from each other.
+
+  A step's `body` takes anything, including a `<Tool>` when the step was a tool
+  call. While it thinks, the header carries the running step's label rather
+  than a count — that is the question somebody watching is asking, and the
+  reason to look at a folded chain at all.
+
+  Folds on the same terms as `Reasoning`: open while thinking, away once the
+  answer starts, and overruled for good by anybody who touches it. Four
+  components share `useDisclosure` now, and three share `StateGlyph`.
+
+  The connector came out of the first screenshot as a nine-pixel stub — the
+  rail was only as tall as its glyph, so there was nothing for the line to span.
+  It stretches to the step now.
+
+### Changed
+
+- **The shimmer guard covers all three shimmers**, not two. A third copy of the
+  same effect landed in `ChainOfThought`, which is exactly the drift the test
+  was written for.
+
 ## 0.16.0 — 2026-08-30
 
 ### Added

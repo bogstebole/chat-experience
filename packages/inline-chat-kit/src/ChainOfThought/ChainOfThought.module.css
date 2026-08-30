@@ -1,0 +1,215 @@
+/* ─────────────────────────────────────────────
+   ChainOfThought
+
+   A derivation, and the line down the glyph column is the point: each step
+   follows from the one above it. `TaskList` is a plan and draws no line
+   between its items, because a plan's items do not follow from each other —
+   they are a set, in an order somebody chose.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.chain {
+  box-sizing: border-box;
+  width: 100%;
+  font-family: var(--ick-font-sans);
+}
+
+/* ── The row you click ──────────────────────────────────────────────────── */
+
+.header {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ick-space-3);
+  max-width: 100%;
+  padding: var(--ick-space-2) var(--ick-space-3);
+  margin-left: calc(var(--ick-space-3) * -1);
+  border-radius: var(--ick-radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+.header:hover {
+  background: var(--ick-surface-hover);
+}
+
+.header:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+.label {
+  font-size: var(--ick-chain-size);
+  color: var(--ick-chain-header);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The same technique the loader's shimmer uses, and the same geometry — see
+   the note in `Reasoning.module.css`. Written here rather than borrowed
+   because this word is the button's name and has to stay readable. */
+.label[data-shimmer] {
+  background: linear-gradient(
+    90deg,
+    var(--ick-chain-header) 0%,
+    var(--ick-chain-header) 40%,
+    var(--ick-ink) 50%,
+    var(--ick-chain-header) 60%,
+    var(--ick-chain-header) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sweep 1.8s linear infinite;
+}
+
+@keyframes sweep {
+  from { background-position: 110% 0; }
+  to { background-position: -10% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label[data-shimmer] {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+.time {
+  flex-shrink: 0;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-ink-faint);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--ick-ink-faint);
+  transition: transform var(--ick-duration-fast) var(--ick-ease);
+}
+
+.header[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* ── The steps ──────────────────────────────────────────────────────────── */
+
+/* Always present, so `aria-controls` always points at something. */
+.listOuter {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.listWrap {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+.list {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: var(--ick-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding-bottom: var(--ick-chain-gap);
+}
+
+/* Nothing follows the last one, so nothing should suggest it does. */
+.step:last-child {
+  padding-bottom: 0;
+}
+
+/* The glyph, and the line to the step under it. Drawn on the rail rather than
+   between the rows, so it stretches with however tall a step's working is. */
+.rail {
+  position: relative;
+  flex-shrink: 0;
+  /* The line runs from under this glyph to the next one, so the rail has to be
+     as tall as the step is. Left to itself it is as tall as the glyph, and the
+     line came out a nine-pixel stub — measured, after the first screenshot. */
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--ick-state-size);
+  /* One pixel down, so the glyph sits on the label's first line rather than
+     above it — the text is smaller than the glyph's box. */
+  padding-top: 1px;
+}
+
+.step:not(:last-child) .rail::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--ick-state-size) + var(--ick-space-2));
+  bottom: calc(var(--ick-chain-gap) * -1);
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--ick-chain-connector);
+}
+
+.body {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-2);
+  padding-top: 1px;
+}
+
+.stepLabel {
+  font-size: var(--ick-chain-size);
+  line-height: 1.45;
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-chain-label);
+}
+
+/* Still to come, so it should not read as something that happened. */
+.step[data-state="pending"] .stepLabel {
+  font-weight: var(--ick-weight-regular);
+  color: var(--ick-ink-faint);
+}
+
+/* The working behind the step. Prose, so it is set like the answer it belongs
+   to and coloured like an aside. */
+.working {
+  font-size: var(--ick-chain-size);
+  line-height: var(--ick-chain-leading);
+  color: var(--ick-chain-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.working > :first-child {
+  margin-top: 0;
+}
+
+.working > :last-child {
+  margin-bottom: 0;
+}

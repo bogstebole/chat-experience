@@ -300,6 +300,47 @@ everywhere. It is a real word in the button rather than a `<Loader>`: the loader
 is decorative and marks itself `aria-hidden`, and hiding this one would leave a
 control with nothing to call it.
 
+### `<ChainOfThought>`
+
+How the answer was arrived at, step by step.
+
+```tsx
+<ChainOfThought
+  state={thinking ? "thinking" : "done"}
+  duration={4200}
+  steps={[
+    { id: "a", label: "The question is about size, not mass", body: "A point particle has none." },
+    { id: "b", label: "Checked the measured value", body: <Tool name="search_web" … /> },
+  ]}
+/>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `steps` | `Thought[]` | `{ id, label, body?, state? }` |
+| `state` | `"thinking" \| "done"` | `thinking` holds it open and narrates the running step |
+| `duration` | `number` | In ms, for the whole chain |
+| `open` / `defaultOpen` / `onOpenChange` | | Controlled or not |
+| `labels` | `Partial<Record<…, string>>` | `through`, `step`, `steps`, `thinking` |
+
+**Three components in this kit draw a sequence, and the line between them is
+the only reason there are three:**
+
+| | What it is | Shape |
+| --- | --- | --- |
+| `Reasoning` | The model talking to itself | Prose, unstructured |
+| `TaskList` | A plan | Known up front, fixed order, items change state |
+| `ChainOfThought` | A derivation | Grows; each step follows from the one above |
+
+That last word is what the line down the glyph column draws. A task list has no
+line between its items, because a plan's items do not follow from each other —
+they are a set, in an order somebody chose.
+
+A step's `body` is whatever you put there: prose, or a `<Tool>` if the step was
+a tool call. While the chain is thinking its header carries the running step's
+label rather than a count — that is the question somebody watching is asking,
+and the reason to look at a folded chain at all.
+
 ### `<TaskList>`
 
 What the agent means to do, what it is doing, and what it has finished.

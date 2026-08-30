@@ -385,6 +385,20 @@
     --ick-state-error: var(--ick-danger);
     --ick-state-track: var(--ick-border);
 
+    /* ═══ Chain of thought ══════════════════════════════════════════════════
+       A derivation. Same family as `Reasoning` — both are the model working
+       something out — so it takes its ink and its measure from there rather
+       than restating them, and adds only what is its own: the line that says
+       each step follows from the one above it. */
+
+    --ick-chain-size: var(--ick-reasoning-size);
+    --ick-chain-leading: var(--ick-reasoning-leading);
+    --ick-chain-ink: var(--ick-reasoning-ink);
+    --ick-chain-header: var(--ick-reasoning-label);
+    --ick-chain-label: var(--ick-ink);
+    --ick-chain-connector: var(--ick-border);
+    --ick-chain-gap: var(--ick-space-5);
+
     /* ═══ Tasks ═════════════════════════════════════════════════════════════
        What the agent means to do. A list rather than a box: the sequence is
        half of what it is saying, and a surface around it would make it a thing
