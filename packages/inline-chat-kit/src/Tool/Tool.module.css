@@ -1,24 +1,32 @@
 /* ─────────────────────────────────────────────
    Tool
 
-   One tool call, folded shut. Inset into the answer rather than raised off it:
-   this belongs to the answer above it, and a card would set it apart from the
-   thing it is explaining.
+   One tool call, in the same three surfaces a question is: a **ground**, a
+   **card** on it, and what the card holds **inset** into it. It used to be one
+   box, and the box was the grey one — the same three stacked backwards, which
+   beside a question card read as a different system.
 
    `box-sizing` is stated on every box here that has padding and a width. The
    package has no global reset — one written inside a CSS module leaks into the
    host's page — so each rule has to say it.
    ───────────────────────────────────────────── */
 
+/* The ground. What the card stands on, so it has something to stand on. */
 .tool {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--ick-tool-ground-pad);
+  border-radius: var(--ick-tool-ground-radius);
+  background: var(--ick-tool-ground);
+  font-family: var(--ick-font-sans);
+}
+
+.card {
   box-sizing: border-box;
   width: 100%;
   border-radius: var(--ick-tool-radius);
   background: var(--ick-tool-surface);
-  /* Lifted off the page, which is what makes paper on paper a card rather than
-     nothing. The same shadow a question card uses. */
   box-shadow: var(--ick-tool-shadow);
-  font-family: var(--ick-font-sans);
   /* Clips the body to the box while it is opening, so growing reads as a
      reveal rather than as content arriving before its container has. */
   overflow: hidden;

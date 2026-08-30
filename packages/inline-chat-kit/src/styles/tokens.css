@@ -416,10 +416,14 @@
        A tool row folded shut is about 40px tall, and a corner derived from a
        generous inner gap would make it a pill — so the gap is tight and the
        block inside takes the small corner. */
+    --ick-tool-ground: var(--ick-ground);
+    --ick-tool-ground-pad: var(--ick-space-4);
     --ick-tool-shadow: var(--ick-shadow-float);
     --ick-tool-inner-gap: var(--ick-space-4);
     --ick-tool-inner-radius: var(--ick-radius-sm);
     --ick-tool-radius: calc(var(--ick-tool-inner-radius) + var(--ick-tool-inner-gap));
+    /* + the ground's padding around the card */
+    --ick-tool-ground-radius: calc(var(--ick-tool-radius) + var(--ick-tool-ground-pad));
 
     /* ═══ Work states ═══════════════════════════════════════════════════════
        Queued, working, finished, failed — one vocabulary and one set of

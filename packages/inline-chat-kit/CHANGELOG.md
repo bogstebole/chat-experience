@@ -6,6 +6,22 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.24.1 — 2026-08-30
+
+### Changed
+
+- **A tool call gets the ground its card stands on.** The last release made it
+  a card; a card needs something to be a card *on*, and on the page alone it
+  was only paper with a shadow. It is a ground holding a card holding its input
+  and output now — the same three the question card has, in the same order.
+
+  `--ick-tool-ground` and `--ick-tool-ground-pad`, with the corner chain
+  running through both: **inset 6 → card 14 → ground 22**.
+
+  Inside an `<Approval>` the tool brings neither a ground nor a shadow, because
+  the approval already is the ground. Two grounds is one more than there is
+  depth for.
+
 ## 0.24.0 — 2026-08-30
 
 ### Changed
