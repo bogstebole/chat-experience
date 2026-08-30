@@ -111,24 +111,28 @@ export function Approval({
           {label[SETTLED[decision]]}
         </p>
       ) : (
+        /* Three weights for three answers, in the order they should be reached
+           for: filled for the narrow yes, outlined for the standing one, flat
+           for no. Two outlined buttons beside each other said the last two were
+           equals, which they are not.
+
+           Deny stays first in the DOM, so a keyboard lands on the safe answer
+           without tabbing past two that say yes. */
         !readOnly && (
           <div className={styles.actions}>
-            {/* First in the DOM as well as on the left, so it is also the first
-                thing a keyboard lands on. The safe answer should not be the one
-                you have to tab past two others to reach. */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="m"
               className={styles.deny}
               onClick={() => onDecide?.("denied")}
             >
               {label.deny}
             </Button>
-            <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
-              {label.once}
-            </Button>
             <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
               {label.always}
+            </Button>
+            <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
+              {label.once}
             </Button>
           </div>
         )

@@ -6,6 +6,42 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.22.0 — 2026-08-30
+
+### Changed
+
+- **The concentric corner rule is the kit's, not the question card's.** It was
+  worked out for one component and stayed there, and the same fault turned up
+  immediately in a tool call inside an approval: the tool and the code block in
+  it both had an 8px corner at two different insets, which is the crescent the
+  rule exists to prevent.
+
+  Read inward here rather than outward, because the outer box is short — a tool
+  row folded shut is about 40px tall, and a corner derived from a generous
+  inner gap would make it a pill. So the gap is tight and the block inside
+  takes the small corner: **code 6 → tool 14 → approval 26**, gaps 8 and 12.
+
+  `<CodeBlock>` now reads `--ick-code-radius`, so a box that nests one hands it
+  a smaller corner the way `<Tool>` already handed it a different fill. The
+  guard covers every nesting in the kit — adding a box that holds a box means
+  adding a row to it.
+
+- **One stack of surfaces, named once.** `--ick-ground`, `--ick-card`,
+  `--ick-inset`: what a group sits on, an opaque panel raised on it, a row set
+  into the panel. The question card had worked this out and kept it to itself.
+
+  Which is how a tool call inside an approval came out **pale green**: the
+  tool's own surface is a translucent grey, and a translucent panel on a tinted
+  ground wears the tint. An approval is a ground now, so the tool on it is a
+  card and the code panel in that is inset — the same three steps the question
+  card uses.
+
+- **Three weights for an approval's three answers.** Filled for the narrow yes,
+  outlined for the standing one, flat for no. Two outlined buttons beside each
+  other said the last two were equals, which they are not. Left to right: Deny,
+  Always allow, Allow once — and Deny is still first in the DOM, so a keyboard
+  lands on the safe answer without tabbing past two that say yes.
+
 ## 0.21.0 — 2026-08-30
 
 ### Added

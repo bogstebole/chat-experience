@@ -1,0 +1,55 @@
+import { describe, it, expect } from "vitest";
+
+/**
+ * One stack of surfaces, used in one order.
+ *
+ *   ground   the recessed surface a group of things sits on
+ *   card     an opaque panel raised on the ground
+ *   inset    a row set into the card
+ *
+ * The question card worked this out first and then it stayed local to it,
+ * which is how a tool call inside an approval ended up pale green: the tool's
+ * own surface is a translucent grey, and a translucent panel on a tinted
+ * ground wears the tint. Anything that nests boxes now names the same three.
+ */
+const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
+
+const load = async (path: string) =>
+  strip((await import(/* @vite-ignore */ path)).default as string);
+
+describe("the surface stack", () => {
+  it("is named once, and the question card takes its three from it", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    for (const name of ["--ick-ground", "--ick-card", "--ick-inset"]) {
+      expect(tokens, `${name} is defined nowhere`).toMatch(new RegExp(`${name}:`));
+    }
+    expect(tokens).toMatch(/--ick-question-surface:\s*var\(--ick-ground\)/);
+    expect(tokens).toMatch(/--ick-question-card:\s*var\(--ick-card\)/);
+    expect(tokens).toMatch(/--ick-question-row:\s*var\(--ick-inset\)/);
+  });
+
+  /**
+   * The card is paper, and **opaque**. A translucent one picks up whatever it
+   * is sitting on, which is the whole fault this guards: two greys three
+   * percent apart are one surface in two shades, and a tinted ground showing
+   * through a panel is a panel wearing the ground.
+   */
+  it("paints the card with paper rather than a mix of the ground", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    expect(tokens).toMatch(/--ick-card:\s*var\(--ick-surface\)/);
+    // Inverted in the dark, where `--ick-surface` is the page itself.
+    expect(tokens).toMatch(/--ick-dark-card:/);
+    expect((tokens.match(/--ick-card:\s*var\(--ick-dark-card\)/g) ?? []).length).toBe(2);
+  });
+
+  /**
+   * An approval is a ground, so what sits on it is a card and what sits in
+   * that is inset. Repointed rather than restyled — if this stops, the tool
+   * call goes back to wearing the approval's tint.
+   */
+  it("makes an approval a ground for whatever it holds", async () => {
+    const css = await load("../Approval/Approval.module.css?raw");
+    expect(css).toMatch(/--ick-tool-surface:\s*var\(--ick-card\)/);
+    expect(css).toMatch(/--ick-tool-code-fill:\s*var\(--ick-inset\)/);
+  });
+});

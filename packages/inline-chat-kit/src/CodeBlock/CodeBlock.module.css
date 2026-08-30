@@ -12,7 +12,12 @@
 
 .block {
   position: relative;
-  border-radius: var(--ick-radius-md);
+  /* A token rather than the scale directly: a block nested inside another box
+     has to take a smaller corner than one standing on its own, or the two
+     curves sit at different insets with the same radius — which is the thing
+     that reads as not fitting. `Tool` repoints this, the way it already
+     repoints the fill. */
+  border-radius: var(--ick-code-radius);
   background: var(--ick-md-code-fill);
   overflow: hidden;
   font-family: var(--ick-font-mono);

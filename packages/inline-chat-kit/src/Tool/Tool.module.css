@@ -13,7 +13,7 @@
 .tool {
   box-sizing: border-box;
   width: 100%;
-  border-radius: var(--ick-radius-md);
+  border-radius: var(--ick-tool-radius);
   background: var(--ick-tool-surface);
   font-family: var(--ick-font-sans);
   /* Clips the body to the box while it is opening, so growing reads as a
@@ -127,13 +127,15 @@
   flex-direction: column;
   gap: var(--ick-space-5);
   width: 100%;
-  padding: var(--ick-space-2) var(--ick-space-5) var(--ick-space-5);
+  padding: var(--ick-space-2) var(--ick-tool-inner-gap) var(--ick-tool-inner-gap);
   border-top: 1px solid var(--ick-tool-border);
   /* The rule belongs to the body, and the body's top padding sits under it. */
   margin-top: var(--ick-space-2);
-  /* Repointed rather than restyled: the code block reads its own token, so
-     this moves it without knowing anything about how a code block is built. */
+  /* Repointed rather than restyled: the code block reads its own tokens, so
+     this moves its surface and its corner without knowing anything about how a
+     code block is built. */
   --ick-md-code-fill: var(--ick-tool-code-fill);
+  --ick-code-radius: var(--ick-tool-inner-radius);
 }
 
 .section {

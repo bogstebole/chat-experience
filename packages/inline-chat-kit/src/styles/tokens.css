@@ -104,6 +104,25 @@
        nothing. */
     --ick-recede: 0.15;
 
+    /* Surfaces that nest. Three steps, and everything in the kit that stacks
+       boxes uses them in this order:
+
+         ground  the recessed surface a group of things sits on
+         card    an opaque panel raised on the ground
+         inset   a row set into the card
+
+       The card is **paper** — actually white, not a grey a shade off the
+       ground. Two greys three percent apart are one surface in two shades, not
+       a card on a ground. And it is opaque, which matters more than it sounds:
+       a translucent panel on a tinted ground picks the tint up, which is how a
+       tool call inside an approval came out pale green.
+
+       Inverted in the dark, where `--ick-surface` is the page itself and a card
+       painted with it would sink into the ground rather than sit on it. */
+    --ick-ground: rgb(var(--ick-ink-rgb) / 0.05);
+    --ick-card: var(--ick-surface);
+    --ick-inset: var(--ick-surface-hover);
+
     /* Failure. The first hue here beyond ink, paper and the marker, and it
        earns the place: the marker already means "this one", so a tool call
        that failed wearing the accent for choice would say the wrong thing.
@@ -338,9 +357,9 @@
        three percent of each other and made the card read as a slightly
        different patch of the same surface rather than as a card. The ground
        goes down to meet it. */
-    --ick-question-surface: rgb(var(--ick-ink-rgb) / 0.05);
-    --ick-question-card: var(--ick-surface);
-    --ick-question-row: var(--ick-surface-hover);
+    --ick-question-surface: var(--ick-ground);
+    --ick-question-card: var(--ick-card);
+    --ick-question-row: var(--ick-inset);
     --ick-question-row-hover: var(--ick-surface-active);
     --ick-question-row-selected: var(--ick-marker-tint);
     --ick-question-row-focus: var(--ick-marker);
@@ -385,6 +404,16 @@
        is lighter than the row in the light and darker than it in the dark —
        different in both, which is the whole requirement. */
     --ick-tool-code-fill: var(--ick-surface);
+    /* Concentric, the same rule the question card follows: a box's corner is
+       the corner of what it holds plus the gap between them.
+
+       Read inward here rather than outward, because the outer box is short.
+       A tool row folded shut is about 40px tall, and a corner derived from a
+       generous inner gap would make it a pill — so the gap is tight and the
+       block inside takes the small corner. */
+    --ick-tool-inner-gap: var(--ick-space-4);
+    --ick-tool-inner-radius: var(--ick-radius-sm);
+    --ick-tool-radius: calc(var(--ick-tool-inner-radius) + var(--ick-tool-inner-gap));
 
     /* ═══ Work states ═══════════════════════════════════════════════════════
        Queued, working, finished, failed — one vocabulary and one set of
@@ -425,7 +454,8 @@
 
     --ick-approval-size: var(--ick-answer-size);
     --ick-approval-pad: var(--ick-space-5);
-    --ick-approval-radius: calc(var(--ick-radius-md) + var(--ick-approval-pad));
+    /* + whatever it holds, which is a tool row. */
+    --ick-approval-radius: calc(var(--ick-tool-radius) + var(--ick-approval-pad));
     --ick-approval-surface: rgb(var(--ick-marker-rgb) / 0.08);
     --ick-approval-edge: rgb(var(--ick-marker-rgb) / 0.35);
     --ick-approval-glyph: var(--ick-ink-soft);
@@ -522,6 +552,7 @@
        They are still six separate tokens, which is the point — a brand that
        wants colour sets these and gets it, without touching a stylesheet. */
 
+    --ick-code-radius: var(--ick-radius-md);
     --ick-code-size: 0.75rem;
     --ick-code-leading: 1.55;
     --ick-code-comment: var(--ick-ink-faint);
@@ -562,7 +593,7 @@
     /* Inverted in the dark: `--ick-surface` is the page itself there, so a
        card painted with it would sink into the ground rather than sit on it.
        Raised means lighter. */
-    --ick-dark-question-card: rgb(var(--ick-ink-rgb) / 0.09);
+    --ick-dark-card: rgb(var(--ick-ink-rgb) / 0.09);
     /* The light red is nearly black on a near-black page. Lifted until it
        reads as red rather than as a dark patch. */
     --ick-dark-danger-rgb: 248 113 113;
@@ -663,7 +694,7 @@
       --ick-ink-rgb: var(--ick-dark-ink-rgb);
       --ick-paper-rgb: var(--ick-dark-paper-rgb);
       --ick-header-bg: var(--ick-dark-header-bg);
-      --ick-question-card: var(--ick-dark-question-card);
+      --ick-card: var(--ick-dark-card);
       --ick-danger-rgb: var(--ick-dark-danger-rgb);
       --ick-ink-glass: var(--ick-dark-ink-glass);
       --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
@@ -694,7 +725,7 @@
     --ick-ink-rgb: var(--ick-dark-ink-rgb);
     --ick-paper-rgb: var(--ick-dark-paper-rgb);
     --ick-header-bg: var(--ick-dark-header-bg);
-    --ick-question-card: var(--ick-dark-question-card);
+    --ick-card: var(--ick-dark-card);
     --ick-danger-rgb: var(--ick-dark-danger-rgb);
     --ick-ink-glass: var(--ick-dark-ink-glass);
     --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
