@@ -43,6 +43,35 @@ describe("the surface stack", () => {
   });
 
   /**
+   * Separation is surface and gap, not a line.
+   *
+   * The question card underlines nothing — a row is an inset panel with space
+   * around it, and that is the whole of it. A tool call drew a rule under its
+   * header and a code block drew one under its label, which with two sections
+   * open made three stacked rules in a component the size of a paragraph, each
+   * saying again what the surface had already said.
+   *
+   * A rule down the **side** is a different device and stays: `Reasoning` and
+   * `ChainOfThought` use one to mark an aside, and `ChainOfThought`'s says
+   * each step follows from the one above. Neither is separating stacked boxes.
+   */
+  it("separates stacked boxes with surface rather than a rule", async () => {
+    for (const file of [
+      "../Tool/Tool.module.css?raw",
+      "../CodeBlock/CodeBlock.module.css?raw",
+      "../QuestionCard/QuestionCard.module.css?raw",
+      "../Approval/Approval.module.css?raw",
+      "../TaskList/TaskList.module.css?raw",
+      "../Sources/Sources.module.css?raw",
+    ]) {
+      const css = await load(file);
+      const rules = css.match(/border-(?:top|bottom):\s*[^;]+;/g) ?? [];
+      const drawn = rules.filter((r) => !/transparent|none|0/.test(r));
+      expect(drawn, `${file} draws a rule between stacked boxes: ${drawn.join(" ")}`).toEqual([]);
+    }
+  });
+
+  /**
    * An approval is a ground, so what sits on it is a card and what sits in
    * that is inset. Repointed rather than restyled — if this stops, the tool
    * call goes back to wearing the approval's tint.

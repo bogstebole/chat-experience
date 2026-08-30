@@ -6,6 +6,23 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.23.1 — 2026-08-30
+
+### Changed
+
+- **Three rules removed.** A tool call drew one under its header and a code
+  block one under its label, so an open tool with an input and an output had
+  three stacked rules in a component the size of a paragraph.
+
+  The question card underlines nothing — a row is an inset panel with space
+  around it, and that is the whole of it. Two ways of saying the same thing was
+  one too many, and the surface was already saying it. A test now fails if a
+  rule goes back between stacked boxes.
+
+  A rule down the **side** is a different device and stays: `Reasoning` marks
+  an aside with one, and `ChainOfThought`'s says each step follows from the one
+  above it. Neither is separating stacked boxes.
+
 ## 0.23.0 — 2026-08-30
 
 ### Changed

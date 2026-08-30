@@ -201,6 +201,16 @@ inside an approval came out pale green. In the dark the card is a lifted grey,
 because `--ick-surface` there is the page itself and a card painted with it
 would sink into the ground rather than sit on it.
 
+**Stacked boxes are separated by surface and gap, not by a rule.** A row is an
+inset panel with space around it, and nothing is underlined. A tool call used
+to draw a line under its header and a code block one under its label, which
+with two sections open made three stacked rules in a component the size of a
+paragraph — each saying again what the surface had already said.
+
+A rule down the **side** is a different device and stays: `<Reasoning>` uses one
+to mark an aside, and `<ChainOfThought>`'s says each step follows from the one
+above it.
+
 **Corners are concentric.** A box's corner is the corner of the thing inside it
 plus the gap between them:
 
