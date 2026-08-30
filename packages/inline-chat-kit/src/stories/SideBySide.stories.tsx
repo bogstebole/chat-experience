@@ -114,7 +114,7 @@ export const Boxes: StoryObj = {
 
       <Panel
         label="Tool, on its own"
-        note={"card 14 → inset 6\nthe same object a question card is, lifted off the page"}
+        note={"ground 22 → card 14 → inset 6\nthe same three surfaces a question card has"}
       >
         <Tool
           name="search_web"
@@ -171,12 +171,14 @@ export const Disclosures: StoryObj = {
       </Panel>
 
       <Panel label="TaskList" note="title · count · chevron — no glyph">
+        {/* Finished, so it folds itself — otherwise it is the one open row in
+            a line of shut ones and the headers cannot be compared. */}
         <TaskList
           title="Plan"
           collapsible
           tasks={[
             { id: "a", label: "Read the care plan", state: "done" },
-            { id: "b", label: "Find the gaps", state: "running" },
+            { id: "b", label: "Find the gaps", state: "done" },
           ]}
         />
       </Panel>

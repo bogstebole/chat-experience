@@ -86,11 +86,19 @@ describe("the surface stack", () => {
     expect(css, "a card on paper needs the lift, or it is not a card").toMatch(
       /box-shadow:\s*var\(--ick-tool-shadow\)/
     );
+    // And a ground for it to be a card *on*, which is the other half.
+    expect(tokens).toMatch(/--ick-tool-ground:\s*var\(--ick-ground\)/);
+    expect(css).toMatch(/background:\s*var\(--ick-tool-ground\)/);
   });
 
-  /** A card that already has a ground under it does not float off it as well. */
-  it("stops a tool call floating once an approval gives it a ground", async () => {
+  /**
+   * An approval **is** the ground, so a tool call on it brings neither one of
+   * its own nor a shadow. Two grounds is one more than there is depth for.
+   */
+  it("stops a tool call bringing a second ground into an approval", async () => {
     const css = await load("../Approval/Approval.module.css?raw");
+    expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
+    expect(css).toMatch(/--ick-tool-ground-pad:\s*0px/);
     expect(css).toMatch(/--ick-tool-shadow:\s*none/);
   });
 });

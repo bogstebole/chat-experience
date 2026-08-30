@@ -39,10 +39,16 @@ const NESTINGS = [
     gap: "--ick-space-6",
   },
   {
-    what: "a code block in a tool call",
-    outer: ["Tool/Tool.module.css", ".tool"],
+    what: "a code block in a tool call's card",
+    outer: ["Tool/Tool.module.css", ".card"],
     inner: "--ick-tool-inner-radius",
     gap: "--ick-tool-inner-gap",
+  },
+  {
+    what: "a tool call's card on its ground",
+    outer: ["Tool/Tool.module.css", ".tool"],
+    inner: "--ick-tool-radius",
+    gap: "--ick-tool-ground-pad",
   },
   {
     what: "a tool call in an approval",

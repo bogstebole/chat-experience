@@ -207,12 +207,15 @@ to draw a line under its header and a code block one under its label, which
 with two sections open made three stacked rules in a component the size of a
 paragraph — each saying again what the surface had already said.
 
-A **card** is the same object wherever it appears. A question card and a tool
-call are both paper lifted off the page with what they hold inset into them —
-the tool used to be the other way round, a recessed grey strip with white
-panels inside, which is the same three surfaces stacked backwards. Given a
-ground to sit on (inside an `<Approval>`) a card stops floating, because it no
-longer needs to.
+**All three steps, every time.** A question is a group (ground) holding a card
+holding rows; a tool call is a ground holding a card holding its input and
+output. The tool used to be one box, and the box was the grey one — the same
+three surfaces stacked backwards, which on its own reads fine and beside a
+question card reads as a different system.
+
+A component that is *given* a ground brings neither one of its own nor a
+shadow: inside an `<Approval>`, the approval is the ground. Two grounds is one
+more than there is depth for.
 
 A rule down the **side** is a different device and stays: `<Reasoning>` uses one
 to mark an aside, and `<ChainOfThought>`'s says each step follows from the one

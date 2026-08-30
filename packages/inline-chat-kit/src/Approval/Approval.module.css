@@ -24,10 +24,11 @@
   box-shadow: inset 0 0 0 1px var(--ick-approval-edge);
   font-family: var(--ick-font-sans);
 
-  /* An approval is a **ground**, and what sits on it is already a card — that
-     is the tool's own surface now rather than something repointed here. All
-     this has left to say is that a card on a tinted ground does not need to
-     float off it as well. */
+  /* An approval **is** the ground, so a tool call on it brings neither one of
+     its own nor a shadow: two grounds is one more than there is depth for, and
+     a card already sitting on something does not float off it as well. */
+  --ick-tool-ground: transparent;
+  --ick-tool-ground-pad: 0px;
   --ick-tool-shadow: none;
 }
 

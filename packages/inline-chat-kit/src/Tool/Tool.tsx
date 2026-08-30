@@ -163,6 +163,10 @@ export function Tool({
       data-state={state}
       {...rest}
     >
+      {/* The ground, then the card on it — the same two the question card has.
+          A card needs something to be a card *on*; on the page alone it was
+          only paper with a shadow. */}
+      <div className={styles.card}>
       <button
         type="button"
         className={styles.header}
@@ -213,6 +217,7 @@ export function Tool({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
       </div>
     </div>
   );
