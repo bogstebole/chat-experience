@@ -1,0 +1,116 @@
+/* ─────────────────────────────────────────────
+   Approval
+
+   The one component here whose whole job is to slow somebody down for a
+   moment, so it is the one thing in an answer that is allowed to look like a
+   box that stops you. Everything else in the agent tier is quiet on purpose.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.approval {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-5);
+  width: 100%;
+  padding: var(--ick-approval-pad);
+  /* Concentric: whatever sits inside is a row at the kit's row corner, and
+     this is that plus the padding around it. */
+  border-radius: var(--ick-approval-radius);
+  background: var(--ick-approval-surface);
+  box-shadow: inset 0 0 0 1px var(--ick-approval-edge);
+  font-family: var(--ick-font-sans);
+}
+
+/* Once it is settled the box stops asking, so it stops looking like it is. */
+.approval[data-decision] {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--ick-border);
+}
+
+.head {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  width: 100%;
+}
+
+.glyph {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--ick-approval-glyph);
+}
+
+.approval[data-decision="denied"] .glyph {
+  color: var(--ick-ink-faint);
+}
+
+.headText {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ick-approval-size);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+.description {
+  margin: var(--ick-space-1) 0 0;
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-ink-soft);
+}
+
+.subject {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── The decision ───────────────────────────────────────────────────────── */
+
+.actions {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ick-space-3);
+  width: 100%;
+}
+
+/* Pushed to the far end, away from the two that say yes. A destructive choice
+   sitting flush against an affirmative one is a mis-click waiting to happen.
+
+   Neutral at rest and only red under the pointer: a permanently red button is
+   the first thing the eye lands on, and the destructive choice is not the one
+   to draw somebody towards. */
+.deny {
+  margin-left: auto;
+}
+
+.deny:hover:not(:disabled),
+.deny:focus-visible {
+  color: var(--ick-danger);
+  outline-color: var(--ick-danger);
+}
+
+.settled {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-3);
+  margin: 0;
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink-soft);
+}
+
+.settled[data-decision="denied"] {
+  color: var(--ick-danger);
+}

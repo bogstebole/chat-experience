@@ -17,6 +17,7 @@ import { Tool } from "../Tool/Tool";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { TaskList } from "../TaskList/TaskList";
 import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
+import { Approval } from "../Approval/Approval";
 import { Sources } from "../Sources/Sources";
 import { InlineCitation } from "../InlineCitation/InlineCitation";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
@@ -383,6 +384,25 @@ describe("axe — a tool call", () => {
 
   it("passes with nothing to open, where the row is not a control", async () => {
     const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
+    await check(container);
+  });
+});
+
+describe("axe — an approval", () => {
+  it("passes while it is asking, with the command under it", async () => {
+    const { container } = render(
+      <Approval title="Run a command in your shell" description="It removes the screenshots.">
+        <CodeBlock lang="bash" code="rm -rf Shots/" />
+      </Approval>
+    );
+    await check(container);
+  });
+
+  /* A region named by what it is asking, so it can be found and left. */
+  it("passes once it is decided and the buttons are gone", async () => {
+    const { container } = render(
+      <Approval title="Run a command in your shell" decision="denied" />
+    );
     await check(container);
   });
 });

@@ -3,7 +3,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import styles from "./Button.module.css";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "glass";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "glass";
 
 /**
  * Heights: xs 24, s 28, m 32, l 40, xl 48.
@@ -30,6 +30,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variantClass: Record<ButtonVariant, string> = {
   primary: styles.primary,
   secondary: styles.secondary,
+  outline: styles.outline,
   ghost: styles.ghost,
   glass: styles.glass,
 };

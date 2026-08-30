@@ -7,7 +7,7 @@ const meta: Meta<typeof Button> = {
   component: Button,
   parameters: { layout: "centered" },
   argTypes: {
-    variant: { control: "inline-radio", options: ["primary", "secondary", "ghost", "glass"] },
+    variant: { control: "inline-radio", options: ["primary", "secondary", "outline", "ghost", "glass"] },
     size: { control: "inline-radio", options: ["xs", "s", "m", "l", "xl"] },
   },
   args: { variant: "primary", size: "s", children: "Reply in thread" },
@@ -16,7 +16,7 @@ const meta: Meta<typeof Button> = {
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-const VARIANTS: ButtonVariant[] = ["primary", "secondary", "ghost", "glass"];
+const VARIANTS: ButtonVariant[] = ["primary", "secondary", "outline", "ghost", "glass"];
 const SIZES: ButtonSize[] = ["xs", "s", "m", "l", "xl"];
 
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (

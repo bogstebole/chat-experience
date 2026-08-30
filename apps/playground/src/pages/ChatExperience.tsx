@@ -14,6 +14,7 @@ import {
   useChatTurns,
   type Answer,
   type ChatInputHandle,
+  type Decision,
 } from "inline-chat-kit";
 import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
@@ -162,6 +163,37 @@ export function ChatExperience() {
         // Once every question is answered the whole step folds to one row.
         collapsible: finished,
       });
+    },
+    [updatePart]
+  );
+
+  /* A decision the agent asked for. Recorded on the part it was asked on, and
+     then the thing it asked about either happens or does not — which in a demo
+     with no shell is one more part rather than a command. */
+  const handleDecideApproval = useCallback(
+    (turnId: string, partId: string, decision: Decision) => {
+      updatePart(turnId, { kind: "approval", id: partId, decision });
+      if (decision === "denied") return;
+
+      updatePart(turnId, {
+        kind: "tool",
+        id: `${partId}-ran`,
+        name: "bash",
+        state: "running",
+        summary: "Removing Shots/",
+        input: { command: "rm -rf Shots/" },
+      });
+      window.setTimeout(() => {
+        updatePart(turnId, {
+          kind: "tool",
+          id: `${partId}-ran`,
+          name: "bash",
+          state: "done",
+          summary: "42 files removed",
+          duration: 380,
+          output: "removed 42 files, 3 directories",
+        });
+      }, 1100);
     },
     [updatePart]
   );
@@ -433,6 +465,7 @@ export function ChatExperience() {
                   "How big is the Higgs boson?",
                   "What would you do first — give me a plan",
                   "Ask me some questions instead",
+                  "Delete the screenshots",
                 ]}
                 /* Sent rather than typed into the box. An opener that only
                    fills the input asks somebody to press send on a sentence
@@ -475,6 +508,7 @@ export function ChatExperience() {
                   onReplyInThread={handleReplyInThread}
                   onAnswerQuestion={handleAnswerQuestion}
                   onEditQuestion={handleEditQuestion}
+                  onDecideApproval={handleDecideApproval}
                 />
               ))}
             </AnimatePresence>

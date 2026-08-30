@@ -108,6 +108,32 @@
   transition-duration: var(--ick-duration-press);
 }
 
+/* ── Outline: an edge at rest ────────────────────────────────────────────────
+   The gap between `primary`, which is filled, and `secondary`, which is naked
+   until touched. A button that looks like one before you reach for it, without
+   competing with a filled one beside it.
+
+   `secondary` reading as bold text has caught this kit twice — once on the
+   empty state's openers, once on an approval's Deny. The second time it was a
+   permission control that did not look like a control, which is worse than any
+   colour being wrong, so the gap is filled rather than worked around again. */
+
+.outline {
+  background: transparent;
+  outline: 1px solid var(--ick-border);
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--ick-surface-hover);
+  outline-color: var(--ick-ink-faint);
+}
+
+.outline:active:not(:disabled) {
+  background: var(--ick-surface-press);
+  transform: scale(0.94);
+  transition-duration: var(--ick-duration-press);
+}
+
 /* ── Ghost: flat ────────────────────────────────────────────────────────── */
 
 .ghost {

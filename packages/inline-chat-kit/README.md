@@ -300,6 +300,50 @@ everywhere. It is a real word in the button rather than a `<Loader>`: the loader
 is decorative and marks itself `aria-hidden`, and hiding this one would leave a
 control with nothing to call it.
 
+### `<Approval>`
+
+"It wants to do this. Is that all right?"
+
+```tsx
+<Approval
+  title="Run a command in your shell"
+  description="It removes the generated screenshots. Nothing else is touched."
+  decision={decision}
+  onDecide={setDecision}
+>
+  <Tool name="bash" state="pending" input={{ command: "rm -rf Shots/" }} defaultOpen />
+</Approval>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `title` | `ReactNode` | What is being asked. Names the region |
+| `description` | `ReactNode` | Why, or what it will touch |
+| `children` | `ReactNode` | The thing itself — usually a `<Tool>` or a `<CodeBlock>` |
+| `decision` | `"once" \| "always" \| "denied" \| null` | `null` while it is still asking |
+| `onDecide` | `(decision) => void` | |
+| `readOnly` | `boolean` | A record of a decision made elsewhere |
+
+**Three answers, not two.** "Yes" and "yes forever" are not the same answer,
+and a UI offering one button for both collects the wrong one. **Allow once is
+the primary**: the narrow permission is the one that should be easiest to give,
+and the standing one should cost a moment's thought. Deny sits at the far end —
+a destructive choice flush against an affirmative one is a mis-click waiting to
+happen — and turns red only under the pointer, because a permanently red button
+is the first thing the eye lands on.
+
+Give it something to show. An approval with nothing under it is asking for a
+signature on a blank page.
+
+Decided, it stops being a set of buttons and becomes a record of what was
+decided. Live controls under a decision already made invite a second one that
+contradicts the first.
+
+As a `TurnPart` it is `{ kind: "approval", id, title, description?, tool?,
+decision? }` — data, like every part, so the tool it names is drawn for it
+rather than passed in as an element. `<ChatTurnRow>` reports through
+`onDecideApproval`.
+
 ### `<Sources>` and `<InlineCitation>`
 
 A numbered marker in the text, and the list underneath.
