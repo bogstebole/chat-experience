@@ -17,6 +17,8 @@ import { Tool } from "../Tool/Tool";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { TaskList } from "../TaskList/TaskList";
 import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
+import { Sources } from "../Sources/Sources";
+import { InlineCitation } from "../InlineCitation/InlineCitation";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import {
@@ -381,6 +383,37 @@ describe("axe — a tool call", () => {
 
   it("passes with nothing to open, where the row is not a control", async () => {
     const { container } = render(<Tool name="warm_cache" state="pending" summary="Behind two others" />);
+    await check(container);
+  });
+});
+
+describe("axe — citations", () => {
+  const SOURCES = [
+    { id: "a", title: "Combined measurement", origin: "atlas.cern", url: "https://example.com/a", quote: "125.25 GeV." },
+    { id: "b", title: "Particle Data Group", origin: "pdg.lbl.gov" },
+  ];
+
+  it("passes as a list, where one entry is a link and one is not", async () => {
+    const { container } = render(<Sources sources={SOURCES} />);
+    await check(container);
+  });
+
+  it("passes folded", async () => {
+    const { container } = render(<Sources sources={SOURCES} collapsible defaultOpen={false} />);
+    await check(container);
+  });
+
+  /* A number is not a name, so the marker carries one. */
+  it("passes as markers in a sentence, pressable and not", async () => {
+    const { container } = render(
+      <p>
+        The Higgs is a point particle, so{" "}
+        <InlineCitation index={1} source={SOURCES[0]} onSelect={() => {}}>
+          it has no measurable extent
+        </InlineCitation>
+        . Its mass is known well<InlineCitation index={2} source={SOURCES[1]} />.
+      </p>
+    );
     await check(container);
   });
 });

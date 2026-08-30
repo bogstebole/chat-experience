@@ -385,6 +385,22 @@
     --ick-state-error: var(--ick-danger);
     --ick-state-track: var(--ick-border);
 
+    /* ═══ Citations ═════════════════════════════════════════════════════════
+       A numbered marker in the text and the list under it. The marker wears
+       the accent at a fraction of its strength and takes the whole of it on
+       hover — the same yellow the highlighter draws, because it is the same
+       statement: this run of words is picked out. A second visual language for
+       the same idea is one more thing to learn for nothing. */
+
+    --ick-cite-size: var(--ick-answer-size);
+    --ick-cite-size-marker: 16px;
+    --ick-cite-fill: var(--ick-marker-tint);
+    --ick-cite-ink: var(--ick-ink);
+    /* Behind the passage a citation speaks for. Lighter than the marker itself,
+       since it sits under a whole sentence rather than on one number. */
+    --ick-cite-passage: rgb(var(--ick-marker-rgb) / 0.22);
+    --ick-cite-active: rgb(var(--ick-marker-rgb) / 0.14);
+
     /* ═══ Chain of thought ══════════════════════════════════════════════════
        A derivation. Same family as `Reasoning` — both are the model working
        something out — so it takes its ink and its measure from there rather

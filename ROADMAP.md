@@ -856,9 +856,27 @@ This is the "thinking, reasoning" the brief asks for.
       demonstrated that a release earlier.
 
       17 tests, 4 axe cases, 5 stories, 5 tokens. `0.15.0`.
-- [ ] **G5 · `Sources` + `InlineCitation`.** A numbered marker in the text
-      and the list underneath. **Ours has an unfair advantage:** the citation
-      marker and the highlight marker are the same interaction seen twice.
+- [x] **G5 · `Sources` + `InlineCitation` — done.** A numbered marker in the
+      text and the list underneath, and the unfair advantage was real.
+
+      The kit already had a way of saying *this run of words is picked out* —
+      the marker somebody draws over an answer to ask about it. A citation is
+      that same statement made by the answer rather than by the reader, so it
+      is drawn the same way rather than in a second visual language nobody has
+      learned. `InlineCitation` takes the passage as its children and marks it,
+      on every line it wraps onto.
+
+      Not the technical integration the note implied, though, and worth being
+      straight about: `TextHighlighter` takes a `text` string and there is no
+      seam to weave a marker into. What is shared is the language, not the
+      code. Weaving citations through the highlighter's token model is its own
+      piece of work and it is not this one.
+
+      Pressing a marker **marks** the entry rather than scrolling to it —
+      moving the page under somebody who clicked a marker in a sentence they
+      were reading loses them the sentence.
+
+      17 tests, 3 axe cases, 4 stories, 6 tokens. `0.18.0`.
 - [ ] **G6 · `Approval`.** "Claude wants to run X" with allow / allow always
       / deny, inline in the thread. The one Claude Code pattern that
       generalises to any agent that acts.
@@ -886,7 +904,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → **G5** → G6 → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → ~~G5~~ → **G6** → G7 → H.
 
 The floor is finished, and the two disclosures in the agent tier with it —
 `Reasoning` did turn out to be a special case of the tool row, and the part
