@@ -71,16 +71,31 @@
     var(--ick-reasoning-label) 60%,
     var(--ick-reasoning-label) 100%
   );
-  background-size: 250% 100%;
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: sweep 2.4s linear infinite;
+  animation: sweep 1.8s linear infinite;
 }
 
+/* The geometry, because the numbers are not obvious and the first version got
+   them wrong.
+
+   With `background-size: 200%` the image is twice the element, so the bright
+   stop at 50% of the image sits one element-width in from its left edge. At
+   `background-position: 100%` that lands on the element's left edge and at
+   `0%` on its right — so the highlight crosses the whole word and nothing
+   else. The overshoot either side keeps it from arriving and leaving on the
+   letters themselves.
+
+   It was 250% swept from 150% to -50%, which sends the bright point from one
+   width left of the word to two widths right of it: on the text for a third of
+   the cycle and off it for the rest. Measured over one period, frame by frame
+   — two of every three frames were a static grey word, which is the opposite
+   of what a shimmer is for. */
 @keyframes sweep {
-  from { background-position: 150% 0; }
-  to { background-position: -50% 0; }
+  from { background-position: 110% 0; }
+  to { background-position: -10% 0; }
 }
 
 /* Standing still it is still the word "Thinking", which was always the part
