@@ -6,6 +6,44 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.20.0 — 2026-08-30
+
+### Added
+
+- **`<Approval>`.** "It wants to do this. Is that all right?" — the one pattern
+  from a coding agent that generalises to any agent that acts, and the only
+  component here whose whole job is to slow somebody down for a moment.
+
+  **Three answers, not two.** "Yes" and "yes forever" are not the same answer,
+  and one button for both collects the wrong one. Allow once is the primary:
+  the narrow permission should be the easy one to give and the standing one
+  should cost a moment's thought. Deny sits at the far end and only turns red
+  under the pointer.
+
+  Decided, it stops being a set of buttons and becomes a record of what was
+  decided — live controls under a decision already made invite a second one
+  that contradicts the first.
+
+- **`kind: "approval"` on `TurnPart`,** and `onDecideApproval` on
+  `<ChatTurnRow>`. Data like every other part: the tool it names is drawn for
+  it, unrun, rather than passed in as an element.
+
+- **`variant="outline"` on `<Button>`.** The gap between `primary`, which is
+  filled, and `secondary`, which is naked until touched: a button that looks
+  like one before you reach for it.
+
+  `secondary` reading as bold text has now caught this kit twice — the empty
+  state's openers in 0.9.0, and an approval's Deny here. The second time it was
+  a permission control that did not look like a control, so the gap is filled
+  rather than worked around again.
+
+- **`TurnPartUpdate`** — a part with everything optional but `kind` and `id`,
+  which is what a stream and `updatePart` actually send. Saying a tool call
+  finished is now `{ kind: "tool", id, state: "done" }` and nothing else.
+  Repeating a field to satisfy a type is how one that was not meant to change
+  gets overwritten with whatever was easiest to type — which is exactly what
+  happened to an approval's title before this existed.
+
 ## 0.19.0 — 2026-08-30
 
 ### Changed

@@ -7,6 +7,7 @@ import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatI
 import { Loader } from "../Loader/Loader";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { Tool } from "../Tool/Tool";
+import { Approval, type Decision } from "../Approval/Approval";
 import { TaskList } from "../TaskList/TaskList";
 import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
 import type { Answer } from "../QuestionCard/types";
@@ -82,6 +83,14 @@ export interface ChatTurnRowProps {
   /** Somebody asked to change an answer already given. */
   onEditQuestion?: (turnId: string, partId: string, index: number) => void;
 
+  /**
+   * Something the agent asked to do, decided.
+   *
+   * Same shape as the question callbacks and for the same reason: the row does
+   * not keep the decision, it reports it. Write it back with `updatePart`.
+   */
+  onDecideApproval?: (turnId: string, partId: string, decision: Decision) => void;
+
   className?: string;
 }
 
@@ -130,6 +139,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   answerActions = true,
   onAnswerQuestion,
   onEditQuestion,
+  onDecideApproval,
   className,
 }: ChatTurnRowProps) {
   // A row arriving is travel, and this reader has asked for less of it. The
@@ -190,7 +200,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
               return (
                 <Tool
                   key={part.id}
-                  name={part.name}
+                  name={part.name ?? ""}
                   state={part.state}
                   summary={part.summary}
                   input={part.input}
@@ -204,16 +214,35 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                 <TaskList
                   key={part.id}
                   title={part.title}
-                  tasks={part.tasks}
+                  tasks={part.tasks ?? []}
                   collapsible={part.collapsible}
                 />
+              );
+            case "approval":
+              return (
+                <Approval
+                  key={part.id}
+                  title={part.title}
+                  description={part.description}
+                  decision={part.decision ?? null}
+                  onDecide={(decision) => onDecideApproval?.(turn.id, part.id, decision)}
+                >
+                  {part.tool && (
+                    <Tool
+                      name={part.tool.name}
+                      state="pending"
+                      input={part.tool.input}
+                      defaultOpen
+                    />
+                  )}
+                </Approval>
               );
             case "question":
               return (
                 <QuestionGroup
                   key={part.id}
                   id={part.id}
-                  questions={part.questions}
+                  questions={part.questions ?? []}
                   answers={part.answers ?? {}}
                   activeIndex={part.activeIndex}
                   collapsible={part.collapsible}

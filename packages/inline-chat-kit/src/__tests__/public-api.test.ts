@@ -10,6 +10,7 @@ import * as kit from "../index";
 const EXPECTED_EXPORTS = [
   "AddCardsOverlay",
   "AnswerActions",
+  "Approval",
   "Button",
   "ChainOfThought",
   "ChatHeader",

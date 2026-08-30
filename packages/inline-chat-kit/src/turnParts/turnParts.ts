@@ -1,6 +1,7 @@
 import type { ReasoningState } from "../Reasoning/Reasoning";
 import type { Task } from "../TaskList/TaskList";
 import type { ToolState } from "../Tool/Tool";
+import type { Decision } from "../Approval/Approval";
 import type { Answer, Question } from "../QuestionCard/types";
 
 /**
@@ -44,6 +45,22 @@ export type TurnPart =
       collapsible?: boolean;
     }
   | {
+      /**
+       * Something the agent wants to do, and has not done yet.
+       *
+       * Data rather than JSX, like every other part: a part is what a stream
+       * can send, and a stream cannot send a component. The tool it names is
+       * drawn for it, unrun.
+       */
+      kind: "approval";
+      id: string;
+      title: string;
+      description?: string;
+      tool?: { name: string; input?: unknown };
+      /** `null` or absent while it is still being asked. */
+      decision?: Decision | null;
+    }
+  | {
       kind: "question";
       id: string;
       questions: Question[];
@@ -55,15 +72,29 @@ export type TurnPart =
     };
 
 /**
- * Fold one part into a turn's list, by id.
+ * An update to a part, which is a part with everything optional but the two
+ * fields that say which one it is.
  *
- * A shallow merge, deliberately: the fields left out of an update keep the
- * values they had. Sending a state change should not wipe the text that
- * arrived before it.
+ * This is what a stream and a host actually send. Once a tool call is on
+ * screen, saying it finished should be `{ kind: "tool", id, state: "done" }`
+ * and nothing else — repeating the name to satisfy a type is how a field that
+ * was not meant to change gets overwritten with whatever was easiest to type.
  */
-export function mergeParts(parts: TurnPart[], incoming: TurnPart): TurnPart[] {
+export type TurnPartUpdate = {
+  [K in TurnPart["kind"]]: { kind: K; id: string } & Partial<
+    Omit<Extract<TurnPart, { kind: K }>, "kind" | "id">
+  >;
+}[TurnPart["kind"]];
+
+/**
+ * Fold one update into a turn's list, by id.
+ *
+ * A shallow merge, deliberately: the fields left out keep the values they had.
+ * Sending a state change should not wipe the text that arrived before it.
+ */
+export function mergeParts(parts: TurnPart[], incoming: TurnPartUpdate): TurnPart[] {
   const at = parts.findIndex((part) => part.id === incoming.id);
-  if (at === -1) return [...parts, incoming];
+  if (at === -1) return [...parts, incoming as TurnPart];
 
   const next = parts.slice();
   next[at] = { ...next[at], ...incoming } as TurnPart;

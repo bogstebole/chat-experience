@@ -26,7 +26,7 @@ export { useChatTurns } from "./useChatTurns/useChatTurns";
 /* What a turn carries besides its prose: reasoning, tool calls, a plan, a
    question. A `SendHandler` streams these alongside the answer's deltas. */
 export { mergeParts } from "./turnParts/turnParts";
-export type { TurnPart } from "./turnParts/turnParts";
+export type { TurnPart, TurnPartUpdate } from "./turnParts/turnParts";
 export type {
   ChatAnnouncements,
   ChatTurn,
@@ -72,6 +72,10 @@ export { Sources } from "./Sources/Sources";
 export type { Source, SourcesProps } from "./Sources/Sources";
 export { InlineCitation } from "./InlineCitation/InlineCitation";
 export type { InlineCitationProps } from "./InlineCitation/InlineCitation";
+
+/* "It wants to do this. Is that all right?" */
+export { Approval } from "./Approval/Approval";
+export type { ApprovalProps, Decision } from "./Approval/Approval";
 
 /* Structured questions inside a conversation */
 export { QuestionCard, answerChips } from "./QuestionCard/QuestionCard";

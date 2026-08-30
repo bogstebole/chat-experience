@@ -152,6 +152,16 @@ const SHOTS = [
     themes: ["dark"],
   },
   {
+    name: "approval-asking",
+    story: "components-approval--asking",
+    themes: ["light", "dark"],
+  },
+  {
+    name: "approval-decided",
+    story: "components-approval--decided",
+    themes: ["light"],
+  },
+  {
     name: "sources-list",
     story: "components-sources--list",
     themes: ["light", "dark"],
@@ -378,6 +388,18 @@ const APP_SHOTS = [
       await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
       await page.getByRole("button", { name: /How big is the Higgs boson/ }).click();
       await page.waitForTimeout(6000);
+    },
+  },
+  {
+    name: "demo-agent-approval",
+    themes: ["light", "dark"],
+    clip: null,
+    /** The agent asking before it acts, in the conversation. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /Delete the screenshots/ }).click();
+      await page.waitForTimeout(3200);
     },
   },
   {

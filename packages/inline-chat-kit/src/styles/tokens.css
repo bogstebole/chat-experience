@@ -402,6 +402,23 @@
     --ick-state-error: var(--ick-danger);
     --ick-state-track: var(--ick-border);
 
+    /* ═══ Approval ══════════════════════════════════════════════════════════
+       "It wants to do this. Is that all right?" The one thing in an answer
+       that is allowed to look like a box that stops you — everything else in
+       the agent tier is quiet on purpose, and this one is not asking to be
+       ignored.
+
+       Its corner is concentric like the question card's: whatever it holds is
+       a row at the kit's row corner, and this is that plus the padding it puts
+       around it. */
+
+    --ick-approval-size: var(--ick-answer-size);
+    --ick-approval-pad: var(--ick-space-5);
+    --ick-approval-radius: calc(var(--ick-radius-md) + var(--ick-approval-pad));
+    --ick-approval-surface: rgb(var(--ick-marker-rgb) / 0.08);
+    --ick-approval-edge: rgb(var(--ick-marker-rgb) / 0.35);
+    --ick-approval-glyph: var(--ick-ink-soft);
+
     /* ═══ Citations ═════════════════════════════════════════════════════════
        A numbered marker in the text and the list under it. The marker wears
        the accent at a fraction of its strength and takes the whole of it on

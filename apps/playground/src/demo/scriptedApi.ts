@@ -162,6 +162,21 @@ export async function* scriptedApi(message: string): AsyncGenerator<string | Tur
     return;
   }
 
+  if (asks(message, "delete", "run ", "send an email", "permission", "approve")) {
+    yield* thinking("r", [
+      "This one changes something outside the conversation, so it is not mine to decide.",
+      "Show what it would run, and wait.",
+    ]);
+    yield {
+      kind: "approval",
+      id: "ask",
+      title: "Run a command in your shell",
+      description: "It removes the generated screenshots. Nothing else is touched.",
+      tool: { name: "bash", input: { command: "rm -rf Shots/", cwd: "~/Projects/chat" } },
+    };
+    return;
+  }
+
   if (asks(message, "plan", "todo", "steps", "what would you do")) {
     yield* thinking("r", [
       "This is a sequence, not a single answer, so the plan is the answer.",

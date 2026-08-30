@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatInputState } from "../ChatInput/ChatInput";
 import { announce } from "../announce/announce";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
-import { mergeParts, type TurnPart } from "../turnParts/turnParts";
+import { mergeParts, type TurnPart, type TurnPartUpdate } from "../turnParts/turnParts";
 
 export interface ChatTurn {
   id: string;
@@ -43,7 +43,7 @@ export interface SendContext {
 export type SendHandler = (
   message: string,
   context: SendContext
-) => AsyncIterable<string | TurnPart> | Promise<string> | string;
+) => AsyncIterable<string | TurnPartUpdate> | Promise<string> | string;
 
 /**
  * What a screen reader is told, and in which language.
@@ -90,7 +90,7 @@ export interface UseChatTurnsResult {
    * assistant asked is answered by the person reading it, and that answer has
    * to land somewhere. Same merge-by-id as a streamed part.
    */
-  updatePart: (turnId: string, part: TurnPart) => void;
+  updatePart: (turnId: string, part: TurnPartUpdate) => void;
 }
 
 const DEFAULT_REVEAL_SPEED = 260;
@@ -104,7 +104,7 @@ const newId = () =>
 
 const emptyTurn = (): ChatTurn => ({ id: newId(), user: "", ai: "", parts: [], state: "idle" });
 
-const isAsyncIterable = (value: unknown): value is AsyncIterable<string | TurnPart> =>
+const isAsyncIterable = (value: unknown): value is AsyncIterable<string | TurnPartUpdate> =>
   typeof value === "object" && value !== null && Symbol.asyncIterator in value;
 
 /**
@@ -155,7 +155,7 @@ export function useChatTurns({
      a part per token would otherwise re-render the row per token, which is the
      cost the frame batching exists to avoid. A queue rather than a map: two
      updates to one part in a single frame both have to be folded, in order. */
-  const pendingPartsRef = useRef<Map<string, TurnPart[]>>(new Map());
+  const pendingPartsRef = useRef<Map<string, TurnPartUpdate[]>>(new Map());
   const editingRef = useRef<{ id: string; user: string } | null>(null);
   const onSendRef = useRef(onSend);
   // Consumers write this as an object literal, so it is a new object on every
@@ -237,7 +237,7 @@ export function useChatTurns({
   );
 
   const publishPart = useCallback(
-    (id: string, part: TurnPart) => {
+    (id: string, part: TurnPartUpdate) => {
       const queue = pendingPartsRef.current.get(id);
       if (queue) queue.push(part);
       else pendingPartsRef.current.set(id, [part]);
@@ -247,7 +247,7 @@ export function useChatTurns({
   );
 
   const updatePart = useCallback(
-    (turnId: string, part: TurnPart) => {
+    (turnId: string, part: TurnPartUpdate) => {
       publishPart(turnId, part);
     },
     [publishPart]

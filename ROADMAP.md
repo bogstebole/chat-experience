@@ -877,9 +877,25 @@ This is the "thinking, reasoning" the brief asks for.
       were reading loses them the sentence.
 
       17 tests, 3 axe cases, 4 stories, 6 tokens. `0.18.0`.
-- [ ] **G6 · `Approval`.** "Claude wants to run X" with allow / allow always
-      / deny, inline in the thread. The one Claude Code pattern that
-      generalises to any agent that acts.
+- [x] **G6 · `Approval` — done.** Allow once, always allow, deny — inline, with
+      the thing it wants to run underneath.
+
+      Three answers rather than two, because "yes" and "yes forever" are not the
+      same answer and one button for both collects the wrong one. Allow once is
+      the primary: the narrow permission should be the easy one to give.
+
+      Decided, it stops being a set of buttons. Live controls under a decision
+      already made invite a second one that contradicts the first.
+
+      Two things came out of it. `variant="outline"` on `Button`, because
+      `secondary` is naked until touched and read as bold text — the same fault
+      as the empty state's openers in `0.9.0`, and this time on a permission
+      control, so the gap got filled rather than worked around again. And
+      `TurnPartUpdate`, a part with everything optional but `kind` and `id`:
+      recording a decision meant sending `title: ""` to satisfy the type, which
+      the shallow merge then wrote over the real title.
+
+      14 tests, 2 axe cases, 5 stories, 6 tokens. `0.20.0`.
 - [ ] **G7 · `Context`.** How full the window is. Small, and the only honest
       way to explain why a long conversation starts forgetting.
 
@@ -904,7 +920,7 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → ~~G5~~ → **G6** → G7 → H.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → ~~G5~~ → ~~G6~~ → **G7** → H.
 
 The floor is finished, and the two disclosures in the agent tier with it —
 `Reasoning` did turn out to be a special case of the tool row, and the part
