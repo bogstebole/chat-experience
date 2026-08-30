@@ -6,6 +6,28 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.24.0 — 2026-08-30
+
+### Changed
+
+- **A tool call is a card, the same object a question is.** Paper, lifted off
+  the page, with what it holds inset into it.
+
+  It was the other way round — a recessed grey strip with white panels inside —
+  which is the same three surfaces stacked backwards. On its own that reads
+  fine; beside a question card it reads as a different system. Lined up in the
+  new *Side by side* story, it was the first thing you saw.
+
+  `--ick-tool-shadow` is new, and an `<Approval>` sets it to `none`: a card
+  that already has a ground under it does not need to float off it as well.
+  Which also retires the three tokens the approval was repointing — saying a
+  tool call is a card is the tool's job now, not something done to it from
+  outside.
+
+- **A `Side by side` story.** Everything the kit draws, next to everything else
+  it draws. Not a demo: every fault worth fixing so far was found by looking at
+  two things at once, and none of them were visible in one component alone.
+
 ## 0.23.1 — 2026-08-30
 
 ### Changed

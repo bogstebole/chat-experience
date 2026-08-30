@@ -15,6 +15,9 @@
   width: 100%;
   border-radius: var(--ick-tool-radius);
   background: var(--ick-tool-surface);
+  /* Lifted off the page, which is what makes paper on paper a card rather than
+     nothing. The same shadow a question card uses. */
+  box-shadow: var(--ick-tool-shadow);
   font-family: var(--ick-font-sans);
   /* Clips the body to the box while it is opening, so growing reads as a
      reveal rather than as content arriving before its container has. */
