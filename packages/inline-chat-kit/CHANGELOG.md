@@ -6,6 +6,31 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.29.1 — 2026-08-31
+
+### Fixed
+
+- **The card is opaque in the dark too.** `--ick-dark-card` was
+  `rgb(var(--ick-ink-rgb) / 0.09)` — a wash. On the page that is
+  indistinguishable from an opaque mix; on anything tinted it is not. A tool
+  call inside an `<Approval>` sits on the marker at eight percent, and the card
+  and the code block inside it both came out **olive** — the panel wearing its
+  ground, which is the one thing "the card is paper and opaque" exists to
+  prevent.
+
+  It held in the light, where the card is `#fff`, and was never true in the
+  dark, which is where it is easiest to see. `--ick-dark-card` is a
+  `color-mix` of paper and ink now, and `--ick-inset` is mixed **from the
+  card** rather than washed over whatever is behind it. Same colour on the
+  page; committed to rather than borrowed.
+
+  `--ick-ground` stays a wash on purpose — it is the bottom of the stack, so
+  there is nothing under it to pick up but the page.
+
+  The guard that was meant to catch this checked the **wiring** — that the card
+  points at paper in the light and at its own token in the dark — and never
+  looked at the value. It reads the value now.
+
 ## 0.29.0 — 2026-08-31
 
 ### Changed

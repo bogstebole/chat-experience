@@ -119,9 +119,16 @@
 
        Inverted in the dark, where `--ick-surface` is the page itself and a card
        painted with it would sink into the ground rather than sit on it. */
+    /* The ground is a wash on the page and stays one: it is the bottom of the
+       stack, so there is nothing under it to pick up but the page. */
     --ick-ground: rgb(var(--ick-ink-rgb) / 0.05);
     --ick-card: var(--ick-surface);
-    --ick-inset: var(--ick-surface-hover);
+    /* An inset is always inside a card, so it is mixed **from** the card
+       rather than washed over whatever happens to be behind it. Same colour
+       either way when the card is on the page; on an approval's tinted ground
+       the wash came through olive, which is a code block wearing the marker.
+       See `--ick-dark-card`. */
+    --ick-inset: color-mix(in srgb, var(--ick-card) 96%, rgb(var(--ick-ink-rgb)));
 
     /* Failure. The first hue here beyond ink, paper and the marker, and it
        earns the place: the marker already means "this one", so a tool call
@@ -652,8 +659,22 @@
     --ick-dark-header-bg: rgb(var(--ick-paper-rgb) / 0.85);
     /* Inverted in the dark: `--ick-surface` is the page itself there, so a
        card painted with it would sink into the ground rather than sit on it.
-       Raised means lighter. */
-    --ick-dark-card: rgb(var(--ick-ink-rgb) / 0.09);
+       Raised means lighter.
+
+       **Mixed, not washed.** This was `rgb(var(--ick-ink-rgb) / 0.09)` — nine
+       percent white, and translucent, which on the page looks exactly the same
+       and on anything tinted does not. A tool call inside an approval sits on
+       the marker at eight percent, and a translucent card over it came out
+       olive: the card wearing its ground, which is the one thing "the card is
+       paper and opaque" was written to prevent. It held in the light, where
+       the card is `#fff`, and was never true in the dark.
+
+       Same colour on the page, now committed to rather than borrowed. */
+    --ick-dark-card: color-mix(
+      in srgb,
+      rgb(var(--ick-dark-paper-rgb)) 91%,
+      rgb(var(--ick-dark-ink-rgb))
+    );
     /* The light red is nearly black on a near-black page. Lifted until it
        reads as red rather than as a dark patch. */
     --ick-dark-danger-rgb: 248 113 113;

@@ -210,7 +210,15 @@ The card is paper and **opaque**, which matters more than it sounds: a
 translucent panel picks up whatever it is sitting on, which is how a tool call
 inside an approval came out pale green. In the dark the card is a lifted grey,
 because `--ick-surface` there is the page itself and a card painted with it
-would sink into the ground rather than sit on it.
+would sink into the ground rather than sit on it — and that grey is **mixed,
+not washed**. It was nine percent white for a while, which looks identical on
+the page and olive on an approval's tinted ground. The rule held in the light,
+where the card is `#fff`, and was quietly false in the dark. An inset is mixed
+from the card for the same reason. A test now reads the values rather than the
+wiring: an alpha channel on either is the fault, whatever the number.
+
+The **ground** stays a wash, deliberately. It is the bottom of the stack, so
+there is nothing under it to pick up but the page.
 
 **Stacked boxes are separated by surface and gap, not by a rule.** A row is an
 inset panel with space around it, and nothing is underlined. A tool call used
