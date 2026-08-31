@@ -6,6 +6,30 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.38.3 — 2026-08-31
+
+### Fixed
+
+- **A folding row gets a compositor layer while it moves, and gives it back.**
+  Motion animates `y` as an independent transform, and an independent transform
+  does not promote the element on its own — sampled through a whole fold, every
+  row read `will-change: auto`. Motion's own guidance is to name the properties
+  being animated and then take the hint away again, since a permanent hint is a
+  permanent layer. `[data-moving]` on the ground is on for the length of one
+  fold: measured, the layers exist from the click to about 460ms and are gone
+  by 500.
+
+  The taking-away needed care. Both bodies report completion and the leaving
+  one finishes first, so clearing on the first report took the layers back at
+  165ms with the rows still travelling until 300. It clears on the *arriving*
+  body now.
+
+### Changed
+
+- The stylesheet guards look up a rule by its selector at the start of a line.
+  A plain substring found `.summary` inside `.group[data-moving] .summary` and
+  read a `will-change` rule when it wanted the padding one.
+
 ## 0.38.2 — 2026-08-31
 
 ### Fixed

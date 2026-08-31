@@ -65,6 +65,20 @@
   width: 100%;
 }
 
+/* Motion animates a row's `y` as an independent transform, and an independent
+   transform does not promote the element on its own — sampled through a whole
+   fold, every row read `will-change: auto`. Motion's own guidance is to name
+   the properties being animated and then take the hint away again, because a
+   permanent one is a permanent layer.
+
+   Hence the attribute rather than a rule on `.row`: it goes on when the fold
+   starts and comes off when the bodies have settled, so the layers exist for
+   the three hundred milliseconds that need them. */
+.group[data-moving] .row,
+.group[data-moving] .summary {
+  will-change: transform, opacity;
+}
+
 /* ── Folded ─────────────────────────────────────────────────────────────── */
 
 /* Folded: what the step covered, on one card. Not a control any more — the

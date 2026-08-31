@@ -70,10 +70,22 @@ const split = (value: string) => {
   return out;
 };
 
+/**
+ * Where a rule for exactly this selector starts.
+ *
+ * Anchored to the start of a line, because a plain `indexOf` finds `.summary`
+ * inside `.group[data-moving] .summary` too — and picked up a `will-change`
+ * rule when it wanted the padding one.
+ */
+const ruleAt = (css: string, selector: string) => {
+  const at = css.search(new RegExp(`^${selector.replace(/[.[\]]/g, "\\$&")} \\{`, "m"));
+  expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+  return at;
+};
+
 /** A rule's `padding` shorthand, expanded the way the browser expands it. */
 const padding = (tokens: string, css: string, selector: string, probes = {}) => {
-  const at = css.indexOf(`${selector} {`);
-  expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+  const at = ruleAt(css, selector);
   const raw = css.slice(at, css.indexOf("}", at)).match(/padding:\s*([^;]+);/)?.[1]?.trim();
   expect(raw, `${selector} has no padding`).toBeTruthy();
   const parts = split(raw as string).map((part) => px(tokens, part, probes));
@@ -83,8 +95,7 @@ const padding = (tokens: string, css: string, selector: string, probes = {}) => 
 
 /** One declaration out of a rule. */
 const decl = (css: string, selector: string, property: string) => {
-  const at = css.indexOf(`${selector} {`);
-  expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+  const at = ruleAt(css, selector);
   const found = css
     .slice(at, css.indexOf("}", at))
     .match(new RegExp(`(?:^|[;{]|\\n)\\s*${property}:\\s*([^;]+);`))?.[1];
