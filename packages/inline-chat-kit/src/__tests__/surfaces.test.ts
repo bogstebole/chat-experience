@@ -234,3 +234,50 @@ describe("a tool call's body", () => {
     expect(tool, "the nested error box is back").not.toMatch(/\n\.error \{/);
   });
 });
+
+/**
+ * A shadow is darker than what it falls on. In both themes.
+ *
+ * The small ones were built on `--ick-ink-rgb`, which is near-black in the
+ * light and `245 245 245` in the dark — so in the dark every `primary` and
+ * `secondary` button cast a **white glow**. Measured: the outer layer of
+ * `shadow-2` lifted the page from 18 to 40, brighter than the card it sat on.
+ *
+ * `--ick-glass-shade-rgb` is black in both themes, which is what a shadow is
+ * made of. Anything ink-based needs a dark counterpart, and this is what says
+ * so — the fault is silent otherwise, because in the light it looks perfect.
+ */
+describe("shadows fall dark", () => {
+  it("gives every ink-based shadow a dark counterpart", async () => {
+    const tokens = ((await import("../styles/tokens.css?raw")).default as string).replace(
+      /\/\*[\s\S]*?\*\//g,
+      ""
+    );
+
+    const declared = [...tokens.matchAll(/--ick-shadow-([\w-]+):\s*([^;]+);/g)];
+    expect(declared.length).toBeGreaterThan(3);
+
+    for (const [, name, value] of declared) {
+      if (!/--ick-ink-rgb/.test(value)) continue;
+      expect(
+        tokens,
+        `--ick-shadow-${name} is made of ink, so it turns into a glow in the dark ` +
+          `unless --ick-dark-shadow-${name} overrides it`
+      ).toMatch(new RegExp(`--ick-dark-shadow-${name}:`));
+      expect(tokens).toMatch(
+        new RegExp(`--ick-shadow-${name}:\\s*var\\(--ick-dark-shadow-${name}\\)`)
+      );
+    }
+  });
+
+  /** And the counterparts are made of the shade, which is black either way. */
+  it("makes every dark shadow out of the shade rather than the ink", async () => {
+    const tokens = ((await import("../styles/tokens.css?raw")).default as string).replace(
+      /\/\*[\s\S]*?\*\//g,
+      ""
+    );
+    for (const [, name, value] of tokens.matchAll(/--ick-dark-shadow-([\w-]+):\s*([^;]+);/g)) {
+      expect(value, `--ick-dark-shadow-${name} is made of ink`).not.toMatch(/--ick-ink-rgb/);
+    }
+  });
+});

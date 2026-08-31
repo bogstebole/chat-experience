@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ChevronDown } from "lucide-react";
-import { Button } from "../Button/Button";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { Answer, Question } from "../QuestionCard/types";
@@ -75,30 +74,9 @@ export function QuestionGroup({
            box. See `useCorrectedRadius`. */
         style={{ borderRadius: groundRadius }}
       >
-        <AnimatePresence mode="popLayout" initial={false}>
-          {folded ? (
-            <motion.button
-              key="summary"
-              type="button"
-              layout={still ? false : "position"}
-              className={styles.summary}
-              onClick={() => setExpanded(true)}
-              aria-expanded={false}
-              {...content}
-            >
-              <span className={styles.count}>
-                {questions.length} {label.answers}
-              </span>
-              <span className={styles.summaryList}>{summary}</span>
-              <ChevronDown className={styles.chevron} size={14} aria-hidden />
-            </motion.button>
-          ) : (
-            <motion.div
-              key="list"
-              layout={still ? false : "position"}
-              className={styles.list}
-              {...content}
-            >
+        <AnimatePresence initial={false} mode="popLayout">
+          {!folded && (
+            <motion.div key="list" layout={still ? false : "position"} className={styles.list} {...content}>
               {questions.map((question, i) => (
                 <QuestionCard
                   key={question.id}
@@ -115,13 +93,42 @@ export function QuestionGroup({
           )}
         </AnimatePresence>
 
-        {collapsible && expanded && (
-          <div className={styles.toggle}>
-            <Button variant="secondary" size="m" onClick={() => setExpanded(false)} aria-expanded>
-              {label.hide}
-              <ChevronDown className={styles.chevronUp} size={14} aria-hidden />
-            </Button>
-          </div>
+        {/* One control, in both states.
+        
+            It used to be two: a full-width card when folded, and a centred pill
+            underneath the list when expanded. Two shapes for one job, so the
+            fold cross-faded a button through a div and neither knew where the
+            other had been.
+        
+            The same element now, kept mounted, so Motion moves it instead of
+            replacing it — and the row reads the same going both ways. */}
+        {collapsible && (
+          <motion.button
+            layout={still ? false : "position"}
+            type="button"
+            className={styles.summary}
+            onClick={() => setExpanded((open) => !open)}
+            aria-expanded={expanded}
+          >
+            {folded ? (
+              <>
+                <span className={styles.count}>
+                  {questions.length} {label.answers}
+                </span>
+                <span className={styles.summaryList}>{summary}</span>
+              </>
+            ) : (
+              <span className={styles.summaryList} data-hide>
+                {label.hide}
+              </span>
+            )}
+            <ChevronDown
+              className={styles.chevron}
+              data-open={expanded || undefined}
+              size={14}
+              aria-hidden
+            />
+          </motion.button>
         )}
       </motion.div>
     </LayoutGroup>

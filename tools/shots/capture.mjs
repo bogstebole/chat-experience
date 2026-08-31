@@ -126,6 +126,31 @@ const SHOTS = [
     },
   },
   {
+    name: "question-folding",
+    story: "components-questioncard--folding",
+    themes: ["light", "dark"],
+    /** Answer all three, so the group offers to fold — then unfold it, which
+        is the state the control is hardest to get right in. */
+    act: async (page) => {
+      const boxes = page.getByRole("textbox");
+      await boxes.nth(0).fill("Milica Stevanović");
+      await boxes.nth(1).fill("84");
+      await boxes.nth(2).fill("Vračar, Beograd");
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.waitForTimeout(700);
+      await page.getByRole("button", { name: /With a partner/ }).click();
+      await page.waitForTimeout(900);
+      await page.getByRole("button", { name: /Meals/ }).click();
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.waitForTimeout(1100);
+      /* Folded the moment the last one is answered, so the summary row is
+         what is on screen — pressing it is what shows the control expanded,
+         which is the state it is hardest to get right in. */
+      await page.getByRole("button", { name: /answers/ }).first().click();
+      await page.waitForTimeout(900);
+    },
+  },
+  {
     name: "question-parts-composed",
     story: "components-question-parts--a-composed-question",
     themes: ["light", "dark"],

@@ -806,6 +806,30 @@
       0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
     --ick-dark-recede: 0.32;
     --ick-dark-shadow-modal: 0 12px 31px -9px rgb(var(--ick-glass-shade-rgb) / 0.65);
+    /* The small shadows, in the dark.
+    
+       These are built on `--ick-ink-rgb`, which is near-black in the light and
+       `245 245 245` in the dark — so every `primary` and `secondary` button
+       was casting a **white glow**. Measured: the outer layer of `shadow-2`
+       lifted the page from 18 to 40, brighter than the card it sat on. That is
+       what a light shadow under a button is.
+    
+       Black, at alphas tuned for a near-black page rather than copied from the
+       light theme. The light values are left exactly as they were: there, ink
+       and shade are three levels apart and the ink-based ones are right. */
+    --ick-dark-shadow-1: 0 1px 1px rgb(var(--ick-glass-shade-rgb) / 0.4),
+      0 2px 3px rgb(var(--ick-glass-shade-rgb) / 0.3);
+    --ick-dark-shadow-2: 0 1px 2px rgb(var(--ick-glass-shade-rgb) / 0.45),
+      0 5px 4px rgb(var(--ick-glass-shade-rgb) / 0.28);
+    --ick-dark-shadow-inset: 0 1px 1px rgb(var(--ick-glass-shade-rgb) / 0.4),
+      0 1px 1px rgb(var(--ick-glass-shade-rgb) / 0.3);
+    /* Nothing in the kit draws with this one — it is here because the scale is
+       public, and a token that is only wrong once somebody reaches for it is
+       the worst kind. The guard found it on its first run. */
+    --ick-dark-shadow-3: 0 10px 6px rgb(var(--ick-glass-shade-rgb) / 0.3),
+      0 4px 4px rgb(var(--ick-glass-shade-rgb) / 0.35),
+      0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.35);
+
     /* Softer than it was, and worth the arithmetic.
        
        It was 0.5 and 0.35 — six times the light theme's alpha, on the
@@ -853,6 +877,14 @@
       --ick-recede: var(--ick-dark-recede);
       --ick-shadow-modal: var(--ick-dark-shadow-modal);
       --ick-shadow-float: var(--ick-dark-shadow-float);
+    --ick-shadow-1: var(--ick-dark-shadow-1);
+    --ick-shadow-2: var(--ick-dark-shadow-2);
+    --ick-shadow-inset: var(--ick-dark-shadow-inset);
+    --ick-shadow-3: var(--ick-dark-shadow-3);
+      --ick-shadow-1: var(--ick-dark-shadow-1);
+      --ick-shadow-2: var(--ick-dark-shadow-2);
+      --ick-shadow-inset: var(--ick-dark-shadow-inset);
+      --ick-shadow-3: var(--ick-dark-shadow-3);
     }
   }
 

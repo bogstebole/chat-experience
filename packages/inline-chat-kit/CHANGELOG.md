@@ -6,6 +6,36 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.34.0 — 2026-08-31
+
+### Fixed
+
+- **Shadows are dark in the dark.** `--ick-shadow-1`, `-2`, `-3` and `-inset`
+  are built on `--ick-ink-rgb`, which is near-black in the light and
+  `245 245 245` in the dark — so every `primary` and `secondary` button was
+  casting a **white glow**. Measured: the outer layer of `shadow-2` lifted the
+  page from 18 to 40, brighter than the card it sat on.
+
+  Four `--ick-dark-shadow-*` counterparts, made of the shade, which is black in
+  both themes. The light values are untouched. A test now says every ink-based
+  shadow needs a dark counterpart and every dark one is made of the shade — it
+  found `-3` on its first run, which nothing in the kit draws with and which
+  would have been wrong the day somebody reached for it.
+
+- **`<QuestionGroup>` folds with one control instead of two.** It had a
+  full-width card when folded and a centred pill underneath the list when
+  expanded — two shapes for one job, so the fold cross-faded a button through a
+  div and neither knew where the other had been.
+
+  The same element now, kept mounted in both states, so Motion moves it rather
+  than replacing it. Label left, chevron hard right, and the chevron **turns**
+  rather than being swapped for a second glyph.
+
+- **The chevron had no gap.** It was passed as a child, so it landed inside the
+  button's label span rather than in the trailing icon slot — "Hide answers⌃"
+  with the caret against the word. There is no `<Button>` there at all now, but
+  the same mistake is worth naming: `iconRight` is the slot.
+
 ## 0.33.2 — 2026-08-31
 
 ### Fixed
