@@ -181,3 +181,56 @@ describe("an approval", () => {
     expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
   });
 });
+
+/**
+ * One column down a tool call's body.
+ *
+ * A fenced value is a `CodeBlock` — its own panel, with its own inner padding.
+ * A string value was a bare stack: no surface, no padding, so its label and
+ * its text sat flush at the body's 8px while the block's sat at 12px inside
+ * the block. Two sections of one tool call at two left edges, which is what
+ * "the padding ran away at the bottom" looks like when the bottom one happens
+ * to be the plain-text one.
+ *
+ * Both are panels now, both take `--ick-code-pad`, and the tool repoints that
+ * to 8 so everything lands 16 from the card's edge — the column the header's
+ * glyph is in. Measured in the browser once; pinned here, because jsdom has no
+ * layout and the thing that can drift is which token each one reads.
+ */
+describe("a tool call's body", () => {
+  const load = async (path: string) =>
+    ((await import(/* @vite-ignore */ path)).default as string).replace(/\/\*[\s\S]*?\*\//g, "");
+
+  const rule = (css: string, selector: string) => {
+    const at = css.indexOf(`${selector} {`);
+    expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+    return css.slice(at, css.indexOf("}", at));
+  };
+
+  it("gives a text section and a code block the same inner padding", async () => {
+    const tool = await load("../Tool/Tool.module.css?raw");
+    const block = await load("../CodeBlock/CodeBlock.module.css?raw");
+
+    /* The block reads it for both its bar and its code, so a label and the
+       code under it cannot separate either. */
+    expect(rule(block, ".bar")).toMatch(/var\(--ick-code-pad\)/);
+    expect(rule(block, ".pre")).toMatch(/padding:\s*var\(--ick-code-pad\)/);
+
+    /* And the section takes the same one, rather than a number of its own. */
+    expect(rule(tool, ".section")).toMatch(/padding:[^;]*var\(--ick-code-pad\)/);
+  });
+
+  it("makes a text section the same panel a code block is", async () => {
+    const tool = await load("../Tool/Tool.module.css?raw");
+    const section = rule(tool, ".section");
+    expect(section).toMatch(/background:\s*var\(--ick-tool-code-fill\)/);
+    expect(section).toMatch(/border-radius:\s*var\(--ick-tool-inner-radius\)/);
+  });
+
+  /** And a failure is that panel tinted, not a second panel inside it. */
+  it("tints the panel for an error rather than nesting one", async () => {
+    const tool = await load("../Tool/Tool.module.css?raw");
+    expect(tool).toMatch(/\.section\[data-tone="error"\]\s*\{[^}]*background:\s*var\(--ick-tool-error-surface\)/);
+    expect(tool, "the nested error box is back").not.toMatch(/\n\.error \{/);
+  });
+});

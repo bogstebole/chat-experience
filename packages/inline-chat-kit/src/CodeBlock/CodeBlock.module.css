@@ -30,7 +30,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ick-space-4);
-  padding: var(--ick-space-3) var(--ick-space-3) 0 var(--ick-space-5);
+  padding: var(--ick-space-3) var(--ick-space-3) 0 var(--ick-code-pad);
   /* A label over code, not a header with a rule under it. See the note in
      `Tool.module.css`: this kit separates by surface and gap. */
   min-height: 26px;
@@ -90,7 +90,7 @@
 
 .pre {
   margin: 0;
-  padding: var(--ick-space-5);
+  padding: var(--ick-code-pad);
   overflow-x: auto;
   /* A long line scrolls inside the block rather than widening the answer. */
   white-space: pre;

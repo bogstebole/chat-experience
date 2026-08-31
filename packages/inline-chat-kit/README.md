@@ -296,7 +296,10 @@ A short box takes the corner it can. A row folded shut is 40px tall and a 24px
 corner on it clamps to a pill — both of them, equally, which is the point.
 
 A `<CodeBlock>` reads `--ick-code-radius`, so a box that nests one repoints it
-at the step its own corner implies — the way `<Tool>` hands it the row's.
+at the step its own corner implies — the way `<Tool>` hands it the row's. It
+reads `--ick-code-pad` the same way, for its inner padding: `<Tool>` takes that
+down to 8 so a panel's label lands on the column its header's glyph is in, and
+every section of a tool call — code or text — starts on that one column.
 
 ### `<Tool>`
 

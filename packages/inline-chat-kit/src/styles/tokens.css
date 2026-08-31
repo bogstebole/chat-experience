@@ -652,6 +652,11 @@
        wants colour sets these and gets it, without touching a stylesheet. */
 
     --ick-code-radius: var(--ick-radius-md);
+    /* Inside the panel: the label's left edge and the code's. A box that nests
+       one repoints this, the way it already repoints the fill and the corner —
+       `Tool` takes it down so the label lands on the column its header glyph
+       is in rather than four pixels off it. */
+    --ick-code-pad: var(--ick-space-5);
     --ick-code-size: 0.75rem;
     --ick-code-leading: 1.55;
     --ick-code-comment: var(--ick-ink-faint);
