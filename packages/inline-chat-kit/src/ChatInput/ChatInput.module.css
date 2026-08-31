@@ -258,14 +258,23 @@
 
 /* Holds an attached image above the input. Opaque against the page, and
    transparent once the bubble it sits in is made of glass. */
-/* The row of attachments, above the line you type on. It is the composer's
-   padding that puts it where it is; the row draws itself. */
+/* A section at the top of the composer, above the line you type on. Its own
+   surface, because what is going with the message is a different thing from
+   the message — and this is how it has looked since it was one image. */
 .attachedTray {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding: var(--ick-space-4) var(--ick-space-4) 0;
+  min-height: 80px;
+  padding: var(--ick-space-4);
   margin-bottom: var(--ick-space-4);
+  border-radius: var(--ick-radius-lg);
+  background-color: var(--ick-surface);
+}
+
+/* Sent: the bubble is glass and the section stops being a panel inside it. */
+.attachedTray[data-glass] {
+  background-color: transparent;
 }
 
 .addOverlay {

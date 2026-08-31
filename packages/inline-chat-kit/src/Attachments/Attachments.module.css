@@ -35,7 +35,7 @@
   max-width: var(--ick-attachment-max);
   min-width: 0;
   padding: var(--ick-space-3) var(--ick-space-4);
-  border-radius: var(--ick-nest-row);
+  border-radius: var(--ick-attachment-radius);
   background: var(--ick-attachment-fill);
 }
 
@@ -46,9 +46,11 @@
   height: var(--ick-attachment-size);
   padding: 0;
   overflow: hidden;
-  /* Against a picture that happens to end in the surface's own colour. */
+  /* Against a picture that happens to end in the surface's own colour, and
+     lifted a little off the section it sits in. */
   outline: 1px solid var(--ick-border-bright);
   outline-offset: -1px;
+  box-shadow: 0 2px 3px -2px rgb(var(--ick-ink-rgb) / 0.2);
 }
 
 .picture {

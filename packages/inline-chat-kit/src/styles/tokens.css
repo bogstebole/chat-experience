@@ -474,6 +474,8 @@
        them wrap rather than making one long strip. */
     --ick-attachment-max: 260px;
     --ick-attachment-fill: var(--ick-inset);
+    /* The corner a thumbnail has had since it was one image, kept. */
+    --ick-attachment-radius: var(--ick-radius-md);
 
     /* ═══ Work states ═══════════════════════════════════════════════════════
        Queued, working, finished, failed — one vocabulary and one set of

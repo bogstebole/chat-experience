@@ -6,6 +6,20 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.32.1 — 2026-08-31
+
+### Fixed
+
+- **The composer's attachment section is back.** Making attachments survive
+  the send should not have touched how they look, and it did: the tray lost its
+  surface and its corner and became a bare padded row. It is a section at the
+  top of the composer again — its own paper, its own corner, and transparent
+  once the bubble goes glass, which is how it has looked since it held one
+  image. The thumbnail keeps its `--ick-radius-md` corner and its lift.
+
+  `--ick-attachment-radius` names that corner so it is a token rather than a
+  number somebody has to remember not to change.
+
 ## 0.32.0 — 2026-08-31
 
 ### Added

@@ -441,13 +441,14 @@ export function ChatExperience() {
           >
             {/* What the conversation has spent. A real app reads this off the
                 API's usage; here it grows with the turns, which is enough to
-                see the meter fill and to see it warn. */}
-            <Context
-              className="headerContext"
-              used={contextUsed}
-              total={CONTEXT_TOTAL}
-              label={false}
-            />
+                see the meter fill and to see it warn.
+
+                With its percentage, not without. `label={false}` leaves a bare
+                ring in a header, and a bare ring beside a row of icons reads
+                as a spinner — something loading, not something measured. The
+                sentence is in the tooltip either way, but a tooltip is not
+                where anybody finds out what a thing is. */}
+            <Context className="headerContext" used={contextUsed} total={CONTEXT_TOTAL} />
 
             {/* The kit does not manage this one: a segmented control has no
                 icon-and-label shape to fold into a menu. */}
