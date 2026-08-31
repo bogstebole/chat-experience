@@ -6,6 +6,39 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.33.2 — 2026-08-31
+
+### Fixed
+
+- **A badge sits in the middle of the line it belongs to.** The badge is 24
+  tall and a title line was 16, both top-aligned — which put the number **four
+  pixels** below the middle of the question, and a letter **two** below the
+  middle of its option. Measured in a browser; at four pixels it reads as wrong
+  long before anybody can name it.
+
+  The text's line box takes the badge's height, so the two centre together and
+  stay centred if the type changes — rather than a margin on the badge, which
+  is a number that has to be re-guessed every time either side moves. Field
+  rows were the only ones already right, because `.fieldLabel` had been doing
+  exactly this all along.
+
+  On the first line, deliberately: a question long enough to wrap keeps its
+  badge on the line it starts on.
+
+- **The corner stops breathing during a morph.** A `layout` animation does not
+  resize a box, it **scales** one — and a browser scaling a box scales the
+  corner with it. Measured on a group opening a card: `scaleY` ran 0.932 → 1
+  while `border-radius` stayed a flat 40px, painting a 40 × 37 ellipse that
+  eased back to a circle.
+
+  Motion has a corrector for this and it was not running: it only touches
+  values Motion is *managing*, and a radius living in a CSS class is invisible
+  to it. The number is now read off the element and handed back through
+  `style`, where Motion can see it — read rather than hard-coded, since the
+  corner is a token a host may retune. Both `<QuestionGroup>` and
+  `<QuestionCard>` do it; the card is the one that scales furthest, morphing
+  between a tall card and a 40px row.
+
 ## 0.33.1 — 2026-08-31
 
 ### Fixed
