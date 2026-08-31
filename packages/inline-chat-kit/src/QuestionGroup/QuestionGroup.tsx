@@ -51,7 +51,7 @@ export const defaultFoldMotion: FoldMotion = {
   visualDuration: 0.34,
   bounce: 0.1,
   rowDuration: 0.3,
-  rowBounce: 0.18,
+  rowBounce: 0.12,
   rowOffset: -10,
   stagger: 0.045,
   fadeIn: 0.16,
@@ -148,31 +148,33 @@ export function QuestionGroup({
      it, one after the next, and leave the same way. The ground follows them
      rather than the other way round. */
   const bodyVariants = {
-    hidden: {
-      transition: { staggerChildren: still ? 0 : beat.stagger, staggerDirection: -1 as const },
-    },
+    /* Both directions stagger the same way round. The conventional mirror —
+       last in, first out — is right when a thing is being *dismissed*, because
+       it unwinds the way it was built. This is not a dismissal: it is one body
+       being replaced by another on the same edge, and the two are the same
+       answers. Read forwards both ways, leaving and arriving are one gesture
+       passing through the row rather than two gestures meeting in the middle. */
+    hidden: { transition: { staggerChildren: still ? 0 : beat.stagger } },
     shown: { transition: { staggerChildren: still ? 0 : beat.stagger } },
   };
 
+  /* One spring, both directions. A row leaving used to be a plain tween while a
+     row arriving was sprung, which made collapsing a different gesture from
+     expanding rather than the same one run backwards. */
+  const travel = (fade: number) =>
+    still
+      ? { duration: 0 }
+      : {
+          type: "spring" as const,
+          visualDuration: beat.rowDuration,
+          bounce: beat.rowBounce,
+          /* Opacity is bounded, so it gets the tween. See `FoldMotion`. */
+          opacity: { duration: fade },
+        };
+
   const rowMotion = {
-    hidden: {
-      opacity: 0,
-      y: still ? 0 : beat.rowOffset,
-      transition: { duration: still ? 0 : beat.fadeOut },
-    },
-    shown: {
-      opacity: 1,
-      y: 0,
-      transition: still
-        ? { duration: 0 }
-        : {
-            type: "spring" as const,
-            visualDuration: beat.rowDuration,
-            bounce: beat.rowBounce,
-            /* Opacity is bounded, so it gets the tween. See `FoldMotion`. */
-            opacity: { duration: beat.fadeIn },
-          },
-    },
+    hidden: { opacity: 0, y: still ? 0 : beat.rowOffset, transition: travel(beat.fadeOut) },
+    shown: { opacity: 1, y: 0, transition: travel(beat.fadeIn) },
   };
 
   const bodyMotion = {

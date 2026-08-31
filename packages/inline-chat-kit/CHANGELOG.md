@@ -6,6 +6,25 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.39.0 — 2026-09-01
+
+### Changed
+
+- **Collapsing is expanding run backwards.** A row leaving was a plain tween
+  while a row arriving was sprung, and the two bodies staggered in opposite
+  directions — last out, first in. The reverse is right when something is being
+  *dismissed*, because it unwinds the way it was built; this is not a
+  dismissal, it is one body replaced by another on the same edge, holding the
+  same answers. One spring builder now serves both states, and both stagger
+  forwards.
+
+  Sampled frame by frame in both directions: the first row leads either way,
+  and `y` runs 0 → -10 on the way out exactly as it runs -10 → 0 on the way in.
+
+- **`rowBounce` is 0.12**, down a third from 0.18. Measured, `y` no longer
+  passes its target at all on the way in — it settles rather than arriving and
+  correcting.
+
 ## 0.38.4 — 2026-08-31
 
 ### Fixed
