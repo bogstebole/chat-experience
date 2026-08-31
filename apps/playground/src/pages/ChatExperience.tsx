@@ -498,7 +498,7 @@ export function ChatExperience() {
                   "How big is the Higgs boson?",
                   "How do you know — show me your sources",
                   "What would you do first — give me a plan",
-                  "Ask me some questions instead",
+                  "Set up a double-slit experiment",
                   "Delete the screenshots",
                 ]}
                 /* Sent rather than typed into the box. An opener that only

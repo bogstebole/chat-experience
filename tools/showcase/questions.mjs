@@ -50,12 +50,12 @@ const SIDE = 1080;
 const DOWNSCALE = ["-vf", `scale=${SIDE}:${SIDE}:flags=lanczos`];
 
 /** The opener that routes to the question branch of the scripted agent. */
-const ASK = "Ask me some questions instead";
+const ASK = "Set up a double-slit experiment";
 
 /** What gets typed into the two free-text fields of the first question. */
-const NAME = "Milica Stevanović";
-const AGE = "84";
-const OTHER = "Company in the afternoons";
+const PARTICLE = "Electron";
+const SEPARATION = "120 nm";
+const OTHER = "Detection rate over time";
 
 /**
  * Bring the open question fully into frame, footer and all.
@@ -117,7 +117,7 @@ async function main() {
   await press(page, page.getByRole("button", { name: ASK }), 300);
 
   // Three questions arrive: one open, two waiting with their numbers.
-  await page.waitForSelector("text=Who are we caring for?", { timeout: 15000 });
+  await page.waitForSelector("text=What are we running?", { timeout: 15000 });
   await beat(page, 1500);
 
   // ── 1. Free text ──────────────────────────────────────────────────────
@@ -125,29 +125,31 @@ async function main() {
      so `getByRole("textbox").nth(0)` picks the box at the bottom of the page
      and the card's fields stay empty — which is how the first take reached a
      disabled Next and sat there for thirty seconds. */
-  await type(page, page.getByPlaceholder("Milica Stevanović"), NAME);
-  await type(page, page.getByPlaceholder("84"), AGE);
+  await type(page, page.getByPlaceholder("Electron"), PARTICLE);
+  await type(page, page.getByPlaceholder("100 nm"), SEPARATION);
   await beat(page, 400);
 
   /* Committing is the moment worth watching: the card folds into an answered
      row carrying its own answers, and the next one opens in the same motion. */
   await press(page, page.getByRole("button", { name: "Next" }), 400);
-  await page.waitForSelector("text=Who else lives in the household?", { timeout: 10000 });
+  await page.waitForSelector("text=Where do you put the detector?", { timeout: 10000 });
   await beat(page, 1400);
 
   // ── 2. Pick one ───────────────────────────────────────────────────────
   /* No Next here, and that is the point of the type: picking *is* answering.
      A beat between the pick and the fold, so the choice is visible before the
      card is gone. */
-  await reach(page, page.getByRole("button", { name: /They live alone/ }), 500);
-  await press(page, page.getByRole("button", { name: /With a partner/ }), 500);
-  await page.waitForSelector("text=What do they need help with?", { timeout: 10000 });
+  await reach(page, page.getByRole("button", { name: /At the slits/ }), 500);
+  /* "Nowhere" is the answer that makes the experiment interesting, and the
+     one a video should land on. */
+  await press(page, page.getByRole("button", { name: /Nowhere/ }), 500);
+  await page.waitForSelector("text=What should I plot?", { timeout: 10000 });
   await showCard(page);
   await beat(page, 900);
 
   // ── 3. Pick several, or say something else ────────────────────────────
-  await press(page, page.getByRole("button", { name: /Meals/ }), 450);
-  await press(page, page.getByRole("button", { name: /Getting around/ }), 700);
+  await press(page, page.getByRole("button", { name: /Interference pattern/ }), 450);
+  await press(page, page.getByRole("button", { name: /Wavefunction/ }), 700);
   await type(page, page.getByPlaceholder("Something else"), OTHER);
   await beat(page, 500);
   await press(page, page.getByRole("button", { name: "Next" }), 2400);
@@ -156,12 +158,12 @@ async function main() {
   /* With every question answered the group folds itself into one row. Three
      answered cards is a receipt taking up half the screen; one row saying
      what was covered is the same information at the size it deserves. */
-  await press(page, page.getByRole("button", { name: /About them · Household/ }), 1800);
+  await press(page, page.getByRole("button", { name: /The setup · Detector/ }), 1800);
 
   // ── Going back ────────────────────────────────────────────────────────
   /* An answered question is not a receipt either. The row is a control: it
      reopens with what was said still in it. */
-  await press(page, page.getByRole("button", { name: /Edit answer: About them/ }), 900);
+  await press(page, page.getByRole("button", { name: /Edit answer: The setup/ }), 900);
   /* The pointer leaves, so the last frames are the thing rather than a cursor
      sitting on it. A social video loops, and this is the frame it pauses on. */
   await page.mouse.move(VIEWPORT.width / 2, VIEWPORT.height - 40, { steps: 18 });

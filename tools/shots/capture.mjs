@@ -570,7 +570,7 @@ const APP_SHOTS = [
     act: async (page) => {
       await page.getByRole("button", { name: /start experience/i }).click();
       await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
-      await page.getByRole("button", { name: /Ask me some questions/ }).click();
+      await page.getByRole("button", { name: /double-slit/ }).click();
       await page.waitForTimeout(3000);
     },
   },

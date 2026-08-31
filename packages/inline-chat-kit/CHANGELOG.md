@@ -6,6 +6,21 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.33.1 — 2026-08-31
+
+### Fixed
+
+- **The float shadow is softer in the dark.** It was black at 50% and 35% — six
+  times the light theme's alpha, on the reasoning that a shadow in the dark has
+  to darken something already dark. It overshot: measured on a rendered frame,
+  the ground under a card is `26 26 26` and the shadow's core was taking it to
+  **13**, half its brightness. That is not a card lifted off a page, it is a
+  card cut out of one, and the ring around it was the first thing you saw.
+
+  At 0.28 and 0.18 the core lands at **22** — a four-level dip, the same read
+  the light theme gets going 255 → 235. `<Tool>` and `<Approval>` take the same
+  token, so all three lift the same way again.
+
 ## 0.33.0 — 2026-08-31
 
 ### Added

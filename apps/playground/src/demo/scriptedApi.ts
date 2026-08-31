@@ -90,42 +90,81 @@ const THOUGHTS = [
   },
 ];
 
+/**
+ * Three questions, one of each type, about the experiment the rest of this
+ * demo is about.
+ *
+ * They used to be about arranging care for somebody — carried over from
+ * another product, and the one thing in a chat headed "ask me about particle
+ * physics" that had nothing to do with it. A demo that changes subject
+ * halfway is a demo somebody has to explain.
+ */
 export const QUESTIONS: Question[] = [
   {
-    id: "who",
+    id: "setup",
     type: "inputs",
-    title: "Who are we caring for?",
-    subtitle: "Just the basics for now — we'll go into detail together",
-    shortTitle: "About them",
+    title: "What are we running?",
+    subtitle: "Enough to set the geometry up — the rest I can assume",
+    shortTitle: "The setup",
     fields: [
-      { id: "name", label: "Their name", placeholder: "Milica Stevanović" },
-      { id: "age", label: "Age", placeholder: "84" },
+      { id: "particle", label: "Particle", placeholder: "Electron" },
+      { id: "separation", label: "Slit separation", placeholder: "100 nm" },
     ],
   },
   {
-    id: "household",
+    id: "detector",
     type: "single",
-    title: "Who else lives in the household?",
-    subtitle: "This tells us how much support is already around them",
-    shortTitle: "Household",
+    title: "Where do you put the detector?",
+    subtitle: "This is the experiment, really — the rest is apparatus",
+    shortTitle: "Detector",
     options: [
-      { id: "alone", title: "They live alone", description: "Nobody else in the home", short: "Alone" },
-      { id: "partner", title: "With a partner", description: "Two in the household", short: "Partner" },
-      { id: "family", title: "With family", description: "Children or relatives in the home", short: "Family" },
+      {
+        id: "slits",
+        title: "At the slits",
+        description: "Learn which path each particle took",
+        short: "At the slits",
+      },
+      {
+        id: "screen",
+        title: "At the screen",
+        description: "Learn only where each one landed",
+        short: "At the screen",
+      },
+      {
+        id: "nowhere",
+        title: "Nowhere",
+        description: "Let it run unobserved and see what arrives",
+        short: "Nowhere",
+      },
     ],
   },
   {
-    id: "help",
+    id: "plots",
     type: "multi",
-    title: "What do they need help with?",
-    subtitle: "Pick everything that applies",
-    shortTitle: "Support needed",
+    title: "What should I plot?",
+    subtitle: "Pick everything worth looking at",
+    shortTitle: "Plots",
     allowOther: true,
     allowEmpty: true,
     options: [
-      { id: "meals", title: "Meals", description: "Cooking and shopping", short: "Meals" },
-      { id: "mobility", title: "Getting around", description: "Stairs, walks, appointments", short: "Mobility" },
-      { id: "meds", title: "Medication", description: "Reminders and refills", short: "Meds" },
+      {
+        id: "fringes",
+        title: "Interference pattern",
+        description: "Counts across the screen",
+        short: "Fringes",
+      },
+      {
+        id: "psi",
+        title: "Wavefunction",
+        description: "|ψ|² as it evolves",
+        short: "|ψ|²",
+      },
+      {
+        id: "path",
+        title: "Which-path record",
+        description: "Only meaningful with a detector at the slits",
+        short: "Which-path",
+      },
     ],
   },
 ];
@@ -263,10 +302,10 @@ export async function* scriptedApi(
     return;
   }
 
-  if (asks(message, "question", "ask me", "pitanj")) {
+  if (asks(message, "question", "ask me", "set up", "double-slit", "experiment", "pitanj")) {
     yield* thinking("r", [
-      "They want to be asked rather than to write it all out.",
-      "Three questions is the most anybody answers in one sitting — start with who, then the household, then what they need.",
+      "They want to be asked rather than to specify the whole thing up front.",
+      "Three is the most anybody answers in one sitting: the geometry, then where the detector goes — which is the only choice that changes the physics — then what to plot.",
     ]);
     yield { kind: "question", id: "q", questions: QUESTIONS, answers: {}, activeIndex: 0 };
     return;
