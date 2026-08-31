@@ -74,16 +74,29 @@
   white-space: nowrap;
 }
 
+/* Hard right, and it turns rather than swapping for a second glyph. The same
+   thing every other disclosure in the kit does. */
 .chevron {
   flex-shrink: 0;
+  margin-left: auto;
   color: var(--ick-ink-faint);
+  transition: transform var(--ick-duration-fast) var(--ick-ease);
 }
 
-.toggle {
-  display: flex;
-  justify-content: center;
-}
-
-.chevronUp {
+.chevron[data-open] {
   transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* Expanded, the row says what pressing it does rather than what it holds — so
+   the text is the label, not a list, and it stops being ellipsised prose. */
+.summaryList[data-hide] {
+  flex: 0 0 auto;
+  color: var(--ick-ink);
+  font-weight: var(--ick-weight-medium);
 }
