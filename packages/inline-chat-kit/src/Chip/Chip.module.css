@@ -5,7 +5,7 @@
   gap: var(--ick-space-2);
   height: var(--ick-chip-height);
   padding: 0 var(--ick-space-4);
-  border-radius: var(--ick-radius-pill);
+  border-radius: var(--ick-chip-radius);
   background: var(--ick-chip-fill);
   color: var(--ick-ink);
   font-family: var(--ick-font-sans);

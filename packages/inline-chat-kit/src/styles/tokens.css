@@ -426,6 +426,11 @@
     --ick-badge-fill-on-card: var(--ick-surface-active);
 
     --ick-chip-height: 22px;
+    /* The chain's innermost corner, the same one a badge takes — a chip sits
+       in a row beside badges, and a fully round pill beside an 8px badge is
+       two shapes for one level of the nesting. `--ick-radius-pill` still means
+       pill; it is buttons and the composer that want one. */
+    --ick-chip-radius: var(--ick-nest-inner);
     --ick-chip-fill: var(--ick-surface-active);
     --ick-chip-max: 180px;
 

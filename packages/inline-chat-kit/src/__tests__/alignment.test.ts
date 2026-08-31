@@ -207,4 +207,21 @@ describe("badges", () => {
       decl(card, ".badge[data-on-card]", "background")
     );
   });
+
+  /**
+   * A chip corners like a badge. They sit in the same row — the numbered badge
+   * at one end and the answer at the other — and a fully round pill beside an
+   * 8px badge is two shapes for one level of the nesting chain.
+   */
+  it("corners an answer chip the way the badge beside it is cornered", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const chip = await load("../Chip/Chip.module.css?raw");
+    const card = await load("../QuestionCard/QuestionCard.module.css?raw");
+
+    expect(px(tokens, decl(chip, ".chip", "border-radius"))).toBe(
+      px(tokens, decl(card, ".badge", "border-radius"))
+    );
+    /* Through the chain, not by both happening to say 8px. */
+    expect(px(tokens, "var(--ick-chip-radius)")).toBe(px(tokens, "var(--ick-nest-inner)"));
+  });
 });
