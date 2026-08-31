@@ -6,6 +6,16 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.38.2 — 2026-08-31
+
+### Fixed
+
+- **Every badge in a question card is one size.** `--ick-chip-height` was 22
+  against the badge's 24 — measured across every state the card has, the chip
+  was the only box in it that was not 24, two pixels shorter than the numbered
+  badge at the other end of its own row. It points at `--ick-badge-size` now,
+  so a host that resizes one resizes both.
+
 ## 0.38.1 — 2026-08-31
 
 ### Fixed
