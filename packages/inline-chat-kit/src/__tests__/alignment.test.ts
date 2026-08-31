@@ -213,7 +213,7 @@ describe("badges", () => {
    * at one end and the answer at the other — and a fully round pill beside an
    * 8px badge is two shapes for one level of the nesting chain.
    */
-  it("corners an answer chip the way the badge beside it is cornered", async () => {
+  it("builds an answer chip out of the badge beside it", async () => {
     const tokens = await load("../styles/tokens.css?raw");
     const chip = await load("../Chip/Chip.module.css?raw");
     const card = await load("../QuestionCard/QuestionCard.module.css?raw");
@@ -223,5 +223,14 @@ describe("badges", () => {
     );
     /* Through the chain, not by both happening to say 8px. */
     expect(px(tokens, "var(--ick-chip-radius)")).toBe(px(tokens, "var(--ick-nest-inner)"));
+
+    /* And the same height. Measured across every state the card has, the chip
+       was the one box in it that was not 24 — two pixels shorter than the
+       badge at the other end of its own row. */
+    expect(px(tokens, decl(chip, ".chip", "height"))).toBe(
+      px(tokens, decl(card, ".badge", "height"))
+    );
+    /* From the badge's own token, so a host that resizes one resizes both. */
+    expect(tokens).toMatch(/--ick-chip-height:\s*var\(--ick-badge-size\)/);
   });
 });

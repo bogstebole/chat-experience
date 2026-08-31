@@ -425,11 +425,18 @@
     --ick-badge-fill: var(--ick-surface);
     --ick-badge-fill-on-card: var(--ick-surface-active);
 
-    --ick-chip-height: 22px;
-    /* The chain's innermost corner, the same one a badge takes — a chip sits
-       in a row beside badges, and a fully round pill beside an 8px badge is
-       two shapes for one level of the nesting. `--ick-radius-pill` still means
-       pill; it is buttons and the composer that want one. */
+    /* A chip is a badge that holds words.
+    
+       It was 22 against the badge's 24 — the only box in the whole question
+       card that was not 24, measured across every state it has. Two pixels
+       shorter than the numbered badge at the other end of the same row, which
+       is not a hierarchy, just a wobble. Whatever a host sets the badge to,
+       the chip beside it is the same height. */
+    --ick-chip-height: var(--ick-badge-size);
+    /* And the chain's innermost corner, the one a badge takes. A fully round
+       pill beside an 8px badge is two shapes for one level of the nesting.
+       `--ick-radius-pill` still means pill; buttons and the composer want
+       one. */
     --ick-chip-radius: var(--ick-nest-inner);
     --ick-chip-fill: var(--ick-surface-active);
     --ick-chip-max: 180px;
