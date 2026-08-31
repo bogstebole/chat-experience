@@ -4,6 +4,7 @@ import { memo, type Ref } from "react";
 import { motion } from "motion/react";
 import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
+import type { Attachment } from "../Attachments/Attachments";
 import { Loader } from "../Loader/Loader";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { Tool } from "../Tool/Tool";
@@ -49,7 +50,7 @@ export interface ChatTurnRowProps {
    * component below. Taking the id lets a consumer hoist these once.
    */
   onDraft?: (id: string, value: string) => void;
-  onSubmit?: (id: string, value: string) => void;
+  onSubmit?: (id: string, value: string, attachments: Attachment[]) => void;
   onStop?: () => void;
   onEdit?: (id: string) => void;
   onCancelEdit?: (id: string) => void;
@@ -180,7 +181,11 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           state={turn.state}
           value={turn.user}
           onChange={(v) => onDraft?.(turn.id, v)}
-          onSubmit={(v) => onSubmit?.(turn.id, v)}
+          onSubmit={(v, files) => onSubmit?.(turn.id, v, files)}
+          /* The bubble *is* the message, so what went with it is shown by the
+             same composer that held it — read-only once it is sent, because a
+             sent message is a record. */
+          attachments={turn.attachments}
           onStop={onStop}
           onCopy={onCopy}
           onEdit={() => onEdit?.(turn.id)}

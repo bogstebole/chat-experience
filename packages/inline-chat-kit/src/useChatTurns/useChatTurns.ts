@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Attachment } from "../Attachments/Attachments";
 import type { ChatInputState } from "../ChatInput/ChatInput";
 import { announce } from "../announce/announce";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
@@ -10,6 +11,8 @@ export interface ChatTurn {
   id: string;
   /** What the person asked. */
   user: string;
+  /** What went with it. */
+  attachments?: Attachment[];
   /** What has arrived of the answer so far. */
   ai: string;
   /**
@@ -25,6 +28,14 @@ export interface SendContext {
   /** Aborted when the reader presses stop, or the component unmounts. */
   signal: AbortSignal;
   turnId: string;
+  /**
+   * What was sent along with the message. Empty when nothing was.
+   *
+   * On the context rather than as a second argument: the signature already has
+   * a place for "everything about this send that is not the message", and a
+   * handler that does not care never has to mention it.
+   */
+  attachments: Attachment[];
 }
 
 /**
@@ -77,7 +88,7 @@ export interface UseChatTurnsResult {
   turns: ChatTurn[];
   /** Report the person's editing of a turn's input. */
   setDraft: (id: string, value: string) => void;
-  submit: (id: string, value?: string) => void;
+  submit: (id: string, value?: string, attachments?: Attachment[]) => void;
   /** Abort the answer in flight and settle the turn where it stands. */
   stop: () => void;
   beginEdit: (id: string) => void;
@@ -336,7 +347,7 @@ export function useChatTurns({
   }, []);
 
   const run = useCallback(
-    async (id: string, message: string, wasEdit: boolean) => {
+    async (id: string, message: string, wasEdit: boolean, attachments: Attachment[] = []) => {
       const controller = new AbortController();
       abortRef.current = controller;
       setIsStreaming(true);
@@ -349,7 +360,11 @@ export function useChatTurns({
       // the answer completed, was stopped, or threw partway through.
       let answer = "";
       try {
-        const result = onSendRef.current(message, { signal: controller.signal, turnId: id });
+        const result = onSendRef.current(message, {
+          signal: controller.signal,
+          turnId: id,
+          attachments,
+        });
 
         if (isAsyncIterable(result)) {
           for await (const chunk of result) {
@@ -384,11 +399,15 @@ export function useChatTurns({
   );
 
   const submit = useCallback(
-    (id: string, value?: string) => {
+    (id: string, value?: string, attachments?: Attachment[]) => {
       const turn = turnsRef.current.find((t) => t.id === id);
       if (!turn) return;
       const message = (value ?? turn.user).trim();
-      if (!message) return;
+      const going = attachments ?? turn.attachments ?? [];
+      /* A picture on its own is a message. Blocking on empty text would offer
+         an attach button and then refuse to send what it attached. */
+      if (!message && going.length === 0) return;
+      if (going.length > 0 || turn.attachments) patchTurn(id, { attachments: going });
 
       // Re-submitting a turn that already has an answer regenerates it in
       // place; it must not spawn a second input below.
@@ -396,9 +415,9 @@ export function useChatTurns({
       editingRef.current = null;
       // Synchronous, so the turn enters `responding` in the same update as the
       // keystroke that sent it and the morph starts with the text already set.
-      void run(id, message, wasEdit);
+      void run(id, message, wasEdit, going);
     },
-    [run]
+    [run, patchTurn]
   );
 
   const stop = useCallback(() => {

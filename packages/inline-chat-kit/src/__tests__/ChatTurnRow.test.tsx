@@ -98,7 +98,7 @@ describe("the callbacks", () => {
     render(<ChatTurnRow turn={turn({ state: "typing" })} isActiveInput onSubmit={onSubmit} />);
     const editor = document.querySelector("[contenteditable]") as HTMLElement;
     fireEvent.keyDown(editor, { key: "Enter" });
-    expect(onSubmit).toHaveBeenCalledWith("t1", expect.any(String));
+    expect(onSubmit).toHaveBeenCalledWith("t1", expect.any(String), []);
   });
 
   /**

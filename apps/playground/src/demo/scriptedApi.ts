@@ -1,4 +1,4 @@
-import type { Question, Source, TurnPart } from "inline-chat-kit";
+import type { Attachment, Question, Source, TurnPart } from "inline-chat-kit";
 
 /**
  * The demo pretending to be a model, and now pretending to be an agent.
@@ -224,7 +224,26 @@ const asks = (message: string, ...words: string[]) => {
  * The kit owns the turn state, the streaming and the reveal; everything here
  * is the demo pretending to be an API, so the playground costs nothing to run.
  */
-export async function* scriptedApi(message: string): AsyncGenerator<string | TurnPart> {
+const LOOKED = [
+  "I can see it. Whatever you send along with a message arrives here the same way the text does — one `attachments` array on the turn, and the composer that held it is the same one that shows it afterwards.",
+  "This demo does not read the picture; there is no model behind it. A real one would get the file and the sentence in the same request.",
+];
+
+export async function* scriptedApi(
+  message: string,
+  { attachments }: { attachments: Attachment[] }
+): AsyncGenerator<string | TurnPart> {
+  /* Before the routing on words: something was sent along, and that is what
+     the answer should be about. */
+  if (attachments.length > 0) {
+    yield* thinking("r", [
+      `${attachments.length === 1 ? "A file" : `${attachments.length} files`} came with this.`,
+      "Say what arrived, and be honest that nothing here is looking at it.",
+    ]);
+    yield* prose(LOOKED);
+    return;
+  }
+
   if (asks(message, "question", "ask me", "pitanj")) {
     yield* thinking("r", [
       "They want to be asked rather than to write it all out.",

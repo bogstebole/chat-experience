@@ -20,6 +20,7 @@ function placeCursorAtEnd(el: HTMLElement) {
 }
 import { AnimatePresence, LayoutGroup, MotionConfig, animate, motion, useAnimationControls, type Transition } from "motion/react";
 import { Plus, X } from "lucide-react";
+import { Attachments, type Attachment } from "../Attachments/Attachments";
 import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
@@ -66,9 +67,32 @@ export interface ChatInputProps {
   state: ChatInputState;
   value: string;
   onChange: (value: string) => void;
-  onSubmit: (value: string) => void;
+  /**
+   * What was typed, and what is going with it.
+   *
+   * The second argument is the whole reason attachments exist: before it, one
+   * could be picked and shown in the composer and then quietly dropped on
+   * send, which is worse than not offering it.
+   */
+  onSubmit: (value: string, attachments: Attachment[]) => void;
   onStop?: () => void;
   onAdd?: () => void;
+  /**
+   * What is attached, controlled. Leave it out and the composer keeps its own
+   * — the same rule `useDisclosure` follows.
+   */
+  attachments?: Attachment[];
+  /**
+   * Files somebody picked. Given, this is called instead of the composer
+   * attaching them itself — for a host that wants to upload first and attach
+   * the URL it gets back.
+   */
+  onAttach?: (files: File[]) => void;
+  onRemoveAttachment?: (id: string) => void;
+  /** Passed to the file picker. Defaults to images. */
+  accept?: string;
+  /** More than one at a time. Off by default. */
+  multiple?: boolean;
   onCopy?: (value: string) => void;
   onEdit?: (value: string) => void;
   onCancelEdit?: () => void;
@@ -129,6 +153,11 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onSubmit,
       onStop,
       onAdd,
+      attachments,
+      onAttach,
+      onRemoveAttachment,
+      accept = "image/*",
+      multiple = false,
       onCopy,
       onEdit,
       onCancelEdit,
@@ -175,15 +204,82 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     animCfgRef.current = animationConfig;
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [attachedImage, setAttachedImage] = useState<string | null>(null);
+    const [own, setOwn] = useState<Attachment[]>([]);
+    const attached = attachments ?? own;
+    /* Read through a ref by the keydown handler, which is memoised on things
+       that do not change per keystroke. Putting the list in its deps would
+       rebuild the handler on every attach for no gain. */
+    const attachedRef = useRef(attached);
+    attachedRef.current = attached;
+
+    /* Every object URL this composer made, so it can hand them back.
+       `URL.createObjectURL` pins the file in memory until it is revoked, and
+       nothing was revoking: attaching and removing an image ten times leaked
+       ten of them, and so did navigating away with one attached. */
+    const madeUrls = useRef<string[]>([]);
+    useEffect(
+      () => () => {
+        madeUrls.current.forEach((url) => URL.revokeObjectURL(url));
+        madeUrls.current = [];
+      },
+      []
+    );
+
+    const forget = useCallback((url?: string) => {
+      if (!url) return;
+      const at = madeUrls.current.indexOf(url);
+      // Only ours. A URL the host passed in is the host's to revoke.
+      if (at === -1) return;
+      URL.revokeObjectURL(url);
+      madeUrls.current.splice(at, 1);
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        setAttachedImage(url);
+      const files = Array.from(e.target.files ?? []);
+      // Cleared, so picking the same file twice in a row still fires.
+      e.target.value = "";
+      if (files.length === 0) return;
+
+      if (onAttach) {
+        onAttach(files);
+        return;
       }
+
+      const picked = files.map((file) => {
+        const url = URL.createObjectURL(file);
+        madeUrls.current.push(url);
+        return {
+          id: `${file.name}-${file.size}-${file.lastModified}`,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          url,
+        };
+      });
+      setOwn((current) => {
+        if (multiple) return [...current, ...picked];
+        // Replacing drops the old one, so its URL goes with it. Picking six
+        // images in a row leaked five otherwise.
+        const kept = picked.slice(-1);
+        current.forEach((a) => forget(a.url));
+        picked.slice(0, -1).forEach((a) => forget(a.url));
+        return kept;
+      });
     };
+
+    const removeAttachment = useCallback(
+      (id: string) => {
+        if (onRemoveAttachment) {
+          onRemoveAttachment(id);
+          return;
+        }
+        setOwn((current) => {
+          forget(current.find((a) => a.id === id)?.url);
+          return current.filter((a) => a.id !== id);
+        });
+      },
+      [onRemoveAttachment, forget]
+    );
 
     useImperativeHandle(ref, () => ({
       focus: (options) => editorRef.current?.focus(options),
@@ -197,7 +293,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     const isGlass = state === "responding" || state === "resting";
     const isReadOnly = isGlass;
-    const hasContent = value.trim().length > 0 || !!attachedImage;
+    const hasContent = value.trim().length > 0 || attached.length > 0;
     const isInputting = state === "typing" || state === "idle";
     const showSend = isInputting && hasContent;
     const showStop = state === "responding";
@@ -371,11 +467,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          if (!e.shiftKey && (value.trim().length > 0 || !!attachedImage)) onSubmit(value);
-          else if (e.shiftKey && !insertTextAtCaret("\n")) handleInput();
+          if (!e.shiftKey && (value.trim().length > 0 || attachedRef.current.length > 0)) {
+            onSubmit(value, attachedRef.current);
+          } else if (e.shiftKey && !insertTextAtCaret("\n")) handleInput();
         }
       },
-      [value, onSubmit, attachedImage, handleInput]
+      [value, onSubmit, handleInput]
     );
 
     useEffect(() => {
@@ -432,45 +529,29 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept="image/png, image/jpeg"
+                  accept={accept}
+                  multiple={multiple}
                   style={{ display: "none" }}
                   onChange={handleFileChange}
                 />
 
                 <AnimatePresence>
-                  {attachedImage && (
+                  {attached.length > 0 && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.5, height: 0 }}
-                      animate={{ opacity: 1, scale: 1, height: 88 }}
-                      exit={{ opacity: 0, scale: 0.5, height: 0 }}
-                      transition={{ 
-                        type: "spring", 
-                        stiffness: 300, 
-                        damping: 28 
-                      }}
-                      style={{ overflow: "hidden", width: "100%", flexShrink: 0, transformOrigin: "center" }}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                      style={{ overflow: "hidden", width: "100%", flexShrink: 0 }}
                     >
-                      <div className={styles.attachedTray} data-glass={isGlass || undefined}>
-                        <div className={styles.attachedImgWrap}>
-                          <div className={styles.attachedImgBg} style={{ backgroundImage: `url(${attachedImage})` }} />
-                          {!isGlass && (
-                            <div className={styles.attachedImgOverlay}>
-                              <Button
-                                variant="glass"
-                                size="s"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAttachedImage(null);
-                                  if (fileInputRef.current) {
-                                    fileInputRef.current.value = "";
-                                  }
-                                }}
-                                aria-label="Remove attached image"
-                                icon={<X size={14} aria-hidden />}
-                              />
-                            </div>
-                          )}
-                        </div>
+                      <div className={styles.attachedTray}>
+                        {/* Read-only while the bubble is glass: the message has
+                            been sent, so these are a record of what went with
+                            it rather than something still being assembled. */}
+                        <Attachments
+                          attachments={attached}
+                          onRemove={isGlass ? undefined : removeAttachment}
+                        />
                       </div>
                     </motion.div>
                   )}
@@ -653,7 +734,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         onClick={(e) => {
                           e.stopPropagation();
                           if (showStop) onStop?.();
-                          else onSubmit(value);
+                          else onSubmit(value, attached);
                         }}
                         aria-label={showStop ? "Stop response" : isEditing ? "Save edits" : "Send message"}
                         style={{ flexShrink: 0, width: 28 }}

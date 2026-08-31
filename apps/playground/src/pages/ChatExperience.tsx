@@ -14,6 +14,7 @@ import {
   defaultInlineAnimConfig,
   useChatTurns,
   type Answer,
+  type Attachment,
   type ChatInputHandle,
   type Decision,
 } from "inline-chat-kit";
@@ -229,9 +230,9 @@ export function ChatExperience() {
   const [anchorTurnId, setAnchorTurnId] = useState<string | null>(null);
 
   const handleSubmit = useCallback(
-    (id: string, value: string) => {
+    (id: string, value: string, attachments?: Attachment[]) => {
       setAnchorTurnId(id);
-      submit(id, value);
+      submit(id, value, attachments);
     },
     [submit]
   );

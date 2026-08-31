@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import { createRef } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -74,7 +74,7 @@ describe("ChatInput — submitting", () => {
     await user.click(editor);
     await user.keyboard("{Enter}");
 
-    expect(onSubmit).toHaveBeenCalledWith("a question");
+    expect(onSubmit).toHaveBeenCalledWith("a question", []);
   });
 
   it("does not submit an empty input", async () => {
@@ -103,7 +103,7 @@ describe("ChatInput — submitting", () => {
 
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
-    expect(onSubmit).toHaveBeenCalledWith("a question");
+    expect(onSubmit).toHaveBeenCalledWith("a question", []);
   });
 });
 
@@ -176,5 +176,130 @@ describe("ChatInput — imperative handle", () => {
     ref.current?.setValue("written imperatively");
 
     expect(onChange).toHaveBeenCalledWith("written imperatively");
+  });
+});
+
+/**
+ * Attaching, which used to stop at the composer.
+ *
+ * A file could be picked and shown and then quietly dropped on send — the
+ * message went and the picture did not. Offering an attach button and then
+ * losing what it attached is worse than not offering one.
+ */
+describe("ChatInput — attaching", () => {
+  const png = () => new File(["x"], "kitchen.png", { type: "image/png" });
+
+  /**
+   * jsdom has no object URLs at all, and this is what leaked before — so they
+   * are stubbed for the whole block rather than per test. Per test is not
+   * enough: Testing Library unmounts *after* a test finishes, so the cleanup
+   * that revokes them would run against the real `URL` and throw.
+   */
+  let made: string[] = [];
+  let revoked: string[] = [];
+
+  beforeEach(() => {
+    made = [];
+    revoked = [];
+    let n = 0;
+    vi.stubGlobal("URL", {
+      createObjectURL: () => {
+        const url = `blob:${(n += 1)}`;
+        made.push(url);
+        return url;
+      },
+      revokeObjectURL: (url: string) => revoked.push(url),
+    });
+  });
+
+  /* `afterAll`, not `afterEach`. Testing Library's automatic cleanup is
+     registered when the setup file loads, so it runs *after* a hook declared
+     here — unstubbing per test puts the real `URL` back before the unmount
+     that revokes, and jsdom's has no `revokeObjectURL` at all. */
+  afterAll(() => vi.unstubAllGlobals());
+
+  /* `fireEvent`, not `userEvent.upload`: the picker is `display: none` — it is
+     opened by the composer's own button — and userEvent refuses to touch an
+     element nobody can see. Which is correct of it, and not the thing under
+     test here. */
+  const pick = (container: HTMLElement, files: File[]) => {
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files } });
+    return input;
+  };
+
+  it("sends what was attached along with what was typed", async () => {
+    const { onSubmit, container } = setup({ value: "look at this" });
+    pick(container, [png()]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Send message" }));
+    expect(onSubmit).toHaveBeenCalledWith("look at this", [
+      expect.objectContaining({ name: "kitchen.png", type: "image/png" }),
+    ]);
+  });
+
+  /** A picture on its own is a message. */
+  it("can send with nothing typed", async () => {
+    const { onSubmit, container } = setup({ value: "" });
+    expect(screen.queryByRole("button", { name: "Send message" })).toBeNull();
+
+    pick(container, [png()]);
+    await userEvent.click(screen.getByRole("button", { name: "Send message" }));
+    expect(onSubmit).toHaveBeenCalledWith("", [expect.objectContaining({ name: "kitchen.png" })]);
+  });
+
+  it("takes one at a time unless asked for more", () => {
+    const { container } = setup({ value: "hi" });
+    pick(container, [png()]);
+    pick(container, [new File(["y"], "hallway.jpg", { type: "image/jpeg" })]);
+    expect(screen.getByRole("img", { name: "hallway.jpg" })).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "kitchen.png" })).toBeNull();
+    /* And the one it dropped went with it. Picking six in a row leaked five. */
+    expect(revoked).toEqual([made[0]]);
+  });
+
+  it("takes several when asked", () => {
+    const { container } = setup({ value: "hi", multiple: true });
+    pick(container, [png()]);
+    pick(container, [new File(["y"], "hallway.jpg", { type: "image/jpeg" })]);
+    expect(screen.getByRole("img", { name: "hallway.jpg" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "kitchen.png" })).toBeInTheDocument();
+  });
+
+  /**
+   * `createObjectURL` pins the file in memory until it is revoked, and nothing
+   * was revoking. Attaching and removing ten times leaked ten of them, and so
+   * did navigating away with one attached.
+   */
+  it("hands back the object URLs it made", async () => {
+    const { container, unmount } = setup({ value: "hi" });
+    pick(container, [png()]);
+    expect(made).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole("button", { name: /Remove kitchen.png/ }));
+    expect(revoked).toEqual(made);
+
+    pick(container, [png()]);
+    unmount();
+    expect(revoked).toEqual(made);
+  });
+
+  /** Given a handler, the composer hands the files over rather than keeping them. */
+  it("lets the host take the files instead", () => {
+    const onAttach = vi.fn();
+    const { container } = setup({ value: "hi", onAttach });
+    pick(container, [png()]);
+    expect(onAttach).toHaveBeenCalledWith([expect.objectContaining({ name: "kitchen.png" })]);
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(made).toEqual([]);
+  });
+
+  /** Picking the same file twice in a row has to fire twice. */
+  it("clears the picker after a pick", () => {
+    const onAttach = vi.fn();
+    const { container } = setup({ value: "hi", onAttach });
+    pick(container, [png()]);
+    pick(container, [png()]);
+    expect(onAttach).toHaveBeenCalledTimes(2);
   });
 });
