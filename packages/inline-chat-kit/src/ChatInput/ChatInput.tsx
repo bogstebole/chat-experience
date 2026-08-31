@@ -544,7 +544,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       transition={{ type: "spring", stiffness: 300, damping: 28 }}
                       style={{ overflow: "hidden", width: "100%", flexShrink: 0 }}
                     >
-                      <div className={styles.attachedTray}>
+                      <div className={styles.attachedTray} data-glass={isGlass || undefined}>
                         {/* Read-only while the bubble is glass: the message has
                             been sent, so these are a record of what went with
                             it rather than something still being assembled. */}

@@ -394,6 +394,35 @@ const SHOTS = [
 ];
 
 /** The playground, driven far enough to show a real answer. */
+/**
+ * A picture, drawn in the page and handed to the file picker.
+ *
+ * Drawn rather than kept as a fixture on disk: a shot that needs a file beside
+ * it is a shot that breaks when somebody moves the file.
+ */
+const attachAPicture = async (page) => {
+  const png = await page.evaluate(async () => {
+    const c = document.createElement("canvas");
+    c.width = 240;
+    c.height = 240;
+    const x = c.getContext("2d");
+    const g = x.createLinearGradient(0, 0, 240, 240);
+    g.addColorStop(0, "#ccff00");
+    g.addColorStop(1, "#0a7d55");
+    x.fillStyle = g;
+    x.fillRect(0, 0, 240, 240);
+    const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+    return Array.from(new Uint8Array(await blob.arrayBuffer()));
+  });
+
+  await page.locator('input[type="file"]').first().setInputFiles({
+    name: "kitchen.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(png),
+  });
+  await page.waitForTimeout(500);
+};
+
 const APP_SHOTS = [
   {
     name: "demo-opening",
@@ -429,33 +458,24 @@ const APP_SHOTS = [
       await page.getByRole("button", { name: /start experience/i }).click();
       await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
 
-      /* Drawn here rather than kept as a fixture on disk: a shot that needs a
-         file beside it is a shot that breaks when somebody moves the file. */
-      const png = await page.evaluate(async () => {
-        const c = document.createElement("canvas");
-        c.width = 240;
-        c.height = 240;
-        const x = c.getContext("2d");
-        const g = x.createLinearGradient(0, 0, 240, 240);
-        g.addColorStop(0, "#ccff00");
-        g.addColorStop(1, "#0a7d55");
-        x.fillStyle = g;
-        x.fillRect(0, 0, 240, 240);
-        const blob = await new Promise((r) => c.toBlob(r, "image/png"));
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        return Array.from(bytes);
-      });
-
-      await page.locator('input[type="file"]').first().setInputFiles({
-        name: "kitchen.png",
-        mimeType: "image/png",
-        buffer: Buffer.from(png),
-      });
-      await page.waitForTimeout(500);
+      await attachAPicture(page);
 
       await page.locator("[contenteditable]").first().fill("what do you make of this?");
       await page.getByRole("button", { name: "Send message" }).click();
       await page.waitForTimeout(5200);
+    },
+  },
+  {
+    name: "demo-attachment-composing",
+    themes: ["light", "dark"],
+    clip: null,
+    /** The section at the top of the composer, holding what is about to go. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await attachAPicture(page);
+      await page.locator("[contenteditable]").first().fill("what do you make of this?");
+      await page.waitForTimeout(600);
     },
   },
   {

@@ -113,14 +113,14 @@
 
 /* Precise-mode native selection looks like the marker, not the default blue */
 /* Selection-mode segmented toggle (freeform marker | precise selection) */
-/* The context meter, sized for a header rather than for a panel. It carries
-   its own label in a tooltip, so the bar is all that is on screen — a header
-   is the one place where "Context used 3.4k of 8k" is more than anybody asked
-   for. Hidden on a narrow screen, where the actions have already folded into a
-   menu and there is no room left to spare. */
+/* The context meter: a ring and its percentage. A header is the one place
+   where "Context used 3.4k of 8k tokens" is more than anybody asked for, so
+   only the number is on screen and the sentence stays in the tooltip — but the
+   number stays. Hidden on a narrow screen, where the actions have already
+   folded into a menu and there is no room left to spare. */
 .headerContext {
-  width: 84px;
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 @media (max-width: 560px) {
