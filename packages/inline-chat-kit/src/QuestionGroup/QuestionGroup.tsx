@@ -15,40 +15,47 @@ export const FOLDABLE_FROM = 3;
 /**
  * What the fold is made of, in numbers.
  *
- * Two of them, deliberately. `visualDuration` is how long the box *looks* like
- * it takes — Motion solves the spring for it — and `bounce` is how much it
- * overshoots. Stiffness and damping describe the same spring and neither one
- * answers "how long is this", which is the only question anybody tuning it is
- * actually asking.
+ * Springs for anything that moves, tweens for opacity alone.
  *
- * The fades are separate because they are not the same event: the box changing
- * size and the content changing identity happen together and want different
- * lengths. The old numbers had the incoming body waiting 100ms — a tenth of a
- * second of a grown, empty box, which is most of what read as a flicker.
+ * That split is not a preference. A spring is a description of *travel* —
+ * where a thing is going and how it arrives — and opacity has nowhere to
+ * travel: it is bounded at 0 and 1, so a spring with any bounce in it
+ * overshoots into a clamp and spends the overshoot sitting still. Position and
+ * size have no such ceiling, which is exactly why they are worth springing.
+ *
+ * `visualDuration` rather than stiffness and damping, for the same reason
+ * throughout: the two of them describe one spring between them without either
+ * answering "how long is this", which is the only question anybody tuning it
+ * is asking. Motion solves the spring for the duration you name.
  */
 export interface FoldMotion {
-  /** How long the box looks like it takes to resize, in seconds. */
+  /** How long the ground looks like it takes to resize, in seconds. */
   visualDuration: number;
-  /** Overshoot, 0–1. At 0 it settles without passing the target. */
+  /** The ground's overshoot, 0–1. */
   bounce: number;
-  /** The arriving body's fade, in seconds. */
+  /** How long a row takes to arrive, in seconds. */
+  rowDuration: number;
+  /** A row's overshoot, 0–1. Enough to read as arriving, not as bouncing. */
+  rowBounce: number;
+  /** How far above its place a row starts, in pixels. */
+  rowOffset: number;
+  /** Between one row and the next, in seconds. */
+  stagger: number;
+  /** A row's fade, in seconds. Tween: see the note above. */
   fadeIn: number;
-  /** How long it waits first. Enough to not cross the leaving body, no more. */
-  fadeInDelay: number;
-  /** The leaving body's fade, in seconds. */
+  /** And the fade of one leaving. */
   fadeOut: number;
 }
 
 export const defaultFoldMotion: FoldMotion = {
-  visualDuration: 0.32,
-  bounce: 0.08,
-  /* A real crossfade: both bodies sit on the same top edge, so the arriving
-     one starts the moment the leaving one does. With the old delay of 0.1 the
-     box was grown and empty for a tenth of a second. Sampled at the midpoint
-     the two now sum to about 0.9 of an opaque body rather than 0.4. */
-  fadeIn: 0.18,
-  fadeInDelay: 0,
-  fadeOut: 0.14,
+  visualDuration: 0.34,
+  bounce: 0.1,
+  rowDuration: 0.3,
+  rowBounce: 0.18,
+  rowOffset: -10,
+  stagger: 0.045,
+  fadeIn: 0.16,
+  fadeOut: 0.1,
 };
 
 export interface QuestionGroupProps {
@@ -126,14 +133,51 @@ export function QuestionGroup({
     ? { duration: 0 }
     : { type: "spring" as const, visualDuration: beat.visualDuration, bounce: beat.bounce };
 
-  const content = {
-    initial: { opacity: 0 },
-    animate: {
-      opacity: 1,
-      transition: { duration: still ? 0 : beat.fadeIn, delay: still ? 0 : beat.fadeInDelay },
+  /* What a body does, one row at a time.
+  
+     This was a crossfade between two blocks: the summary dissolving into the
+     list and back. A dissolve is what you reach for when two things are
+     unrelated, and these are not — the row and the stack are the same answers
+     in two states. It read as the box moving while the content sat there
+     bleeding through itself.
+  
+     Rows arrive instead, each one a little above its place and settling into
+     it, one after the next, and leave the same way. The ground follows them
+     rather than the other way round. */
+  const bodyVariants = {
+    hidden: {
+      transition: { staggerChildren: still ? 0 : beat.stagger, staggerDirection: -1 as const },
     },
-    exit: { opacity: 0, transition: { duration: still ? 0 : beat.fadeOut } },
+    shown: { transition: { staggerChildren: still ? 0 : beat.stagger } },
   };
+
+  const rowMotion = {
+    hidden: {
+      opacity: 0,
+      y: still ? 0 : beat.rowOffset,
+      transition: { duration: still ? 0 : beat.fadeOut },
+    },
+    shown: {
+      opacity: 1,
+      y: 0,
+      transition: still
+        ? { duration: 0 }
+        : {
+            type: "spring" as const,
+            visualDuration: beat.rowDuration,
+            bounce: beat.rowBounce,
+            /* Opacity is bounded, so it gets the tween. See `FoldMotion`. */
+            opacity: { duration: beat.fadeIn },
+          },
+    },
+  };
+
+  const bodyMotion = {
+    variants: bodyVariants,
+    initial: "hidden",
+    animate: "shown",
+    exit: "hidden",
+  } as const;
 
   return (
     <LayoutGroup id={id}>
@@ -190,32 +234,38 @@ export function QuestionGroup({
                  summary left its own row and travelled 67px down the moment it
                  popped, so it faded out somewhere it had never been. Scale
                  correction is what these needed and they inherit it from the
-                 body above them. */
-              <motion.div key="summary" className={styles.summary} {...content}>
-                <span className={styles.count}>
-                  {questions.length} {label.answers}
-                </span>
-                <span className={styles.summaryList}>{summary}</span>
+                 body above them.
+
+                 Each body is a list of rows even when it holds one, so that
+                 both sides of the fold arrive by the same rule. */
+              <motion.div key="summary" {...bodyMotion}>
+                <motion.div variants={rowMotion} className={styles.summary}>
+                  <span className={styles.count}>
+                    {questions.length} {label.answers}
+                  </span>
+                  <span className={styles.summaryList}>{summary}</span>
+                </motion.div>
               </motion.div>
             ) : (
-              <motion.div key="list" className={styles.list} {...content}>
+              <motion.div key="list" className={styles.list} {...bodyMotion}>
                 {questions.map((question, i) => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    number={i + 1}
-                    state={
-                      i === activeIndex
-                        ? "active"
-                        : answers[question.id]
-                          ? "collapsed"
-                          : "upcoming"
-                    }
-                    answer={answers[question.id]}
-                    readOnly={readOnly}
-                    onCommit={(answer) => onCommit?.(question.id, answer)}
-                    onEdit={() => onEdit?.(i)}
-                  />
+                  <motion.div key={question.id} variants={rowMotion} className={styles.row}>
+                    <QuestionCard
+                      question={question}
+                      number={i + 1}
+                      state={
+                        i === activeIndex
+                          ? "active"
+                          : answers[question.id]
+                            ? "collapsed"
+                            : "upcoming"
+                      }
+                      answer={answers[question.id]}
+                      readOnly={readOnly}
+                      onCommit={(answer) => onCommit?.(question.id, answer)}
+                      onEdit={() => onEdit?.(i)}
+                    />
+                  </motion.div>
                 ))}
               </motion.div>
             )}

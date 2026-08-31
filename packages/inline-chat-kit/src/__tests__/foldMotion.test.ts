@@ -93,13 +93,48 @@ describe("the fold", () => {
   });
 
   /**
-   * A crossfade, not a relay. The arriving body used to wait 100ms for the
-   * leaving one, which is a tenth of a second of grown, empty box — most of
-   * what read as the flicker. Sampled at the midpoint the two now sum to about
-   * 0.9 of an opaque body; they summed to 0.4.
+   * Rows arrive; the box follows. It was two blocks dissolving through each
+   * other, which is what you reach for when two things are unrelated — and the
+   * summary row and the stack of cards are the same answers in two states. It
+   * read as the box moving while the content sat there bleeding through
+   * itself.
    */
-  it("starts the arriving body while the leaving one is still there", async () => {
+  it("brings the rows in one at a time rather than dissolving one body into another", async () => {
+    const source = await load("../QuestionGroup/QuestionGroup.tsx?raw");
     const { defaultFoldMotion } = await import("../QuestionGroup/QuestionGroup");
-    expect(defaultFoldMotion.fadeInDelay).toBeLessThan(defaultFoldMotion.fadeOut / 2);
+
+    /* Both sides of the fold are lists of rows, even the one holding one row,
+       so both arrive by the same rule. */
+    expect((source.match(/\{\.\.\.bodyMotion\}/g) ?? []).length).toBe(2);
+    expect((source.match(/variants=\{rowMotion\}/g) ?? []).length).toBe(2);
+    expect(source).toMatch(/staggerChildren: still \? 0 : beat\.stagger/);
+    expect(defaultFoldMotion.stagger).toBeGreaterThan(0);
+  });
+
+  /**
+   * Springs for what travels, a tween for opacity.
+   *
+   * Not a preference. A spring describes where a thing is going and how it
+   * arrives, and opacity has nowhere to go: bounded at 0 and 1, so a spring
+   * with any bounce overshoots into a clamp and spends the overshoot sitting
+   * still. Position and size have no ceiling, which is what makes them worth
+   * springing. Every duration here was a `duration` on everything, which is
+   * how the whole fold came to be a dissolve.
+   */
+  it("springs what moves and tweens only the opacity", async () => {
+    const source = await load("../QuestionGroup/QuestionGroup.tsx?raw");
+
+    /* The ground and a row: two springs, both named by how long they look. */
+    expect((source.match(/type: "spring" as const/g) ?? []).length).toBe(2);
+    expect(source).toMatch(/visualDuration: beat\.visualDuration/);
+    expect(source).toMatch(/visualDuration: beat\.rowDuration/);
+
+    /* And the only `duration` left in an arriving transition is the opacity's,
+       inside the row's spring. */
+    expect(source).toMatch(/opacity: \{ duration: beat\.fadeIn \}/);
+
+    /* A row travels, or the spring has nothing to describe. */
+    const { defaultFoldMotion } = await import("../QuestionGroup/QuestionGroup");
+    expect(Math.abs(defaultFoldMotion.rowOffset)).toBeGreaterThan(0);
   });
 });

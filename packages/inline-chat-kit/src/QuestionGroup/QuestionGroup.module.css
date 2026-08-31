@@ -53,6 +53,18 @@
   padding: 0 var(--ick-space-4);
 }
 
+/* One card's slot in the list, and the thing the row variants are applied to.
+   It exists because a card arriving has to be a Motion child of the list for
+   the stagger to reach it, and `QuestionCard` is not one.
+
+   `flex-shrink: 0` for the reason `.item` carries it: this is a flex column,
+   and without it every card is squashed the moment one of them is tall. */
+.row {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 100%;
+}
+
 /* ── Folded ─────────────────────────────────────────────────────────────── */
 
 /* Folded: what the step covered, on one card. Not a control any more — the
