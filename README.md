@@ -37,6 +37,33 @@ none of it reaches the tarball the website installs. A test asserts all of that,
 because a dev tool that quietly becomes a runtime dependency is the kind of
 thing nobody notices until somebody else installs the package.
 
+### The Motion AI Kit
+
+`.claude/skills/motion/` and `.claude/agents/motion-reviewer.md` are Motion's
+own animation guidance, installed by `npx motion-ai` and **committed on
+purpose**. The comments and guards around the question group's fold cite those
+rules directly — "Motion's own guidance is to set `will-change` and remove it
+once the animation finishes" is a quotation, not a paraphrase — and a citation
+whose source is not in the repo points at nothing. Committed, the advice the
+code was written against is pinned, and `npx motion-ai@latest` shows in a diff
+what changed about it.
+
+`.mcp.json` registers Motion's two hosted MCP servers. The open one needs
+nothing; `motion-plus` needs a sign-in from the editor's MCP settings and
+unlocks the MotionScore audit methodology and example source. Neither is
+required to read the skill, which is self-contained — it is what found that
+Motion does not set `will-change` for independent transforms, and that we
+therefore had to.
+
+The runtime audit needs no account at all:
+
+```
+npx motionscore http://localhost:6006/iframe.html?id=components-questioncard--folding --agent
+```
+
+Like DialKit, none of this reaches the package. It is guidance for whoever is
+writing the animations.
+
 ## Scripts
 
 | Command | Does |
