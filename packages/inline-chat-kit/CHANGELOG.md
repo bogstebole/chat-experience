@@ -6,6 +6,26 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.38.4 — 2026-08-31
+
+### Fixed
+
+- **Text beside a badge takes the badge's line box.** A badge is 24 tall with
+  `line-height: 1`; text beside it inherited whatever line height its type
+  gave it, and two line boxes of different heights, both centred in the same
+  row, land half a pixel apart. Measured with a `Range` over the text itself,
+  the folded group's summary sat at 86.5 against the count's 87.
+
+  `.title` and `.optionTitle` had the rule already — the line box takes the
+  badge's height rather than the badge taking a margin, because a margin is a
+  guess that has to be re-guessed whenever the type changes. `.summaryList`,
+  `.collapsedTitle` and `.upcomingLabel` take it now too, and a guard walks all
+  five.
+
+  Only `.summaryList` moved: the card's own rows were already baseline-aligned,
+  the badge and the title simply being different type sizes. The rule is stated
+  on all of them so the next one does not have to be found by eye.
+
 ## 0.38.3 — 2026-08-31
 
 ### Fixed

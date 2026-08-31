@@ -125,6 +125,11 @@
   flex: 1;
   min-width: 0;
   font-size: var(--ick-text-sm);
+  /* The count beside it is a badge, so this takes the badge's line box — the
+     same rule the card's own rows follow. Measured with a `Range` over the
+     text itself, it sat at 86.5 against the count's 87: two line boxes of
+     different heights, both centred, land half a pixel apart. */
+  line-height: var(--ick-badge-size);
   color: var(--ick-ink-soft);
   overflow: hidden;
   text-overflow: ellipsis;
