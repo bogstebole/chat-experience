@@ -6,6 +6,17 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.38.1 — 2026-08-31
+
+### Fixed
+
+- **An answer chip corners like the badge beside it.** New `--ick-chip-radius`,
+  pointed at `--ick-nest-inner` — the chain's innermost corner, the one a badge
+  already takes. They sit in the same row, the number at one end and the answer
+  at the other, and a fully round pill beside an 8px badge is two shapes for one
+  level of the nesting. `--ick-radius-pill` still means pill; buttons and the
+  composer are what want one.
+
 ## 0.38.0 — 2026-08-31
 
 ### Changed
