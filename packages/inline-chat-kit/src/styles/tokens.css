@@ -120,7 +120,11 @@
        Inverted in the dark, where `--ick-surface` is the page itself and a card
        painted with it would sink into the ground rather than sit on it. */
     /* The ground is a wash on the page and stays one: it is the bottom of the
-       stack, so there is nothing under it to pick up but the page. */
+       stack, so there is nothing under it to pick up but the page.
+
+       Ink, because a recess in the light is the page darkened. In the dark it
+       has to be the shade instead — see `--ick-dark-ground`, where ink would
+       make the recess *lighter* than the page it is cut into. */
     --ick-ground: rgb(var(--ick-ink-rgb) / 0.05);
     --ick-card: var(--ick-surface);
     /* An inset is always inside a card, so it is mixed **from** the card
@@ -393,6 +397,13 @@
        three percent of each other and made the card read as a slightly
        different patch of the same surface rather than as a card. The ground
        goes down to meet it. */
+    /* The column a card's content starts in, measured from the card's edge.
+       Every row that *is* the card takes it as a left padding; the active
+       card reaches the same line as its own 8 plus the row's 8; and the
+       group's title sits on it too, because a section's name aligns with the
+       words under it rather than with the cards' edges. Named because three
+       stylesheets now have to agree on it. */
+    --ick-question-pad: var(--ick-space-6);
     --ick-question-surface: var(--ick-ground);
     --ick-question-card: var(--ick-card);
     --ick-question-row: var(--ick-inset);
@@ -605,6 +616,22 @@
        them: a tool call's meta is its own `--ick-tool-meta`, because inside a
        card it sits on paper rather than on the page. */
 
+    /* How far the header's own content sits inside the box it is in. Zero for
+       a header that stands on its container's edge, which is every one of them
+       except a section title standing over cards: there the words have to
+       reach the column the cards' words start in, and the chevron the column
+       their icons end on — the same number on both sides, because a card's
+       padding is the same on both sides.
+
+       Repointed from the component's root, never by a class: two `.header`
+       rules from two stylesheets have equal specificity and import order
+       decides, which is not a thing to build on. */
+    --ick-disclosure-inset: 0px;
+    /* A section title is not a row to be washed on hover — the wash is a
+       rounded box the width of the header, and there is no box under it for
+       that shape to agree with. Set to `transparent` there; the chevron
+       lighting up is the whole response. */
+    --ick-disclosure-hover: var(--ick-surface-hover);
     --ick-disclosure-label: var(--ick-ink-soft);
     --ick-disclosure-font: var(--ick-font-sans);
     --ick-disclosure-weight: var(--ick-weight-regular);
@@ -721,6 +748,28 @@
       rgb(var(--ick-dark-paper-rgb)) 91%,
       rgb(var(--ick-dark-ink-rgb))
     );
+    /* The ground, which in the dark had been going the wrong way. `--ick-ground`
+       is a wash of ink, and ink in the dark is white: the recess a group of
+       cards sits in came out *lighter* than the page, with the card lighter
+       again. Three surfaces stacked on the same side of the page, and the two
+       that matter — ground and card — 29 and 38 out of 255.
+
+       Measured against the light theme, the tonal contrast was already the
+       same in both: 1.11 either way, which is why this did not show up as a
+       number. What the light has and the dark cannot is the shadow. A dark
+       shadow on a white ground is plainly visible and does half the work of
+       lifting the card; the same shadow on a near-black ground does almost
+       nothing. So the tone in the dark has to carry both jobs, and 1.11 is
+       what one job's worth of separation looks like.
+
+       Shade, not ink, and heavier than five percent because the room between
+       the page and black is 18 values wide. That puts the ground at 10, the
+       card at 38, and their contrast at 1.31 — about three times the light's
+       tone, to stand in for the shadow the light gets for free.
+
+       Still a wash, for the same reason the light one is: the ground is the
+       bottom of the stack and has only the host's page under it. */
+    --ick-dark-ground: rgb(var(--ick-glass-shade-rgb) / 0.45);
     /* The light red is nearly black on a near-black page. Lifted until it
        reads as red rather than as a dark patch. */
     --ick-dark-danger-rgb: 248 113 113;
@@ -856,7 +905,8 @@
       --ick-ink-rgb: var(--ick-dark-ink-rgb);
       --ick-paper-rgb: var(--ick-dark-paper-rgb);
       --ick-header-bg: var(--ick-dark-header-bg);
-      --ick-card: var(--ick-dark-card);
+      --ick-ground: var(--ick-dark-ground);
+    --ick-card: var(--ick-dark-card);
       --ick-danger-rgb: var(--ick-dark-danger-rgb);
       --ick-ink-glass: var(--ick-dark-ink-glass);
       --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
@@ -877,10 +927,6 @@
       --ick-recede: var(--ick-dark-recede);
       --ick-shadow-modal: var(--ick-dark-shadow-modal);
       --ick-shadow-float: var(--ick-dark-shadow-float);
-    --ick-shadow-1: var(--ick-dark-shadow-1);
-    --ick-shadow-2: var(--ick-dark-shadow-2);
-    --ick-shadow-inset: var(--ick-dark-shadow-inset);
-    --ick-shadow-3: var(--ick-dark-shadow-3);
       --ick-shadow-1: var(--ick-dark-shadow-1);
       --ick-shadow-2: var(--ick-dark-shadow-2);
       --ick-shadow-inset: var(--ick-dark-shadow-inset);
@@ -895,6 +941,7 @@
     --ick-ink-rgb: var(--ick-dark-ink-rgb);
     --ick-paper-rgb: var(--ick-dark-paper-rgb);
     --ick-header-bg: var(--ick-dark-header-bg);
+    --ick-ground: var(--ick-dark-ground);
     --ick-card: var(--ick-dark-card);
     --ick-danger-rgb: var(--ick-dark-danger-rgb);
     --ick-ink-glass: var(--ick-dark-ink-glass);

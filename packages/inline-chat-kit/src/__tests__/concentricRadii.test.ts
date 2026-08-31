@@ -174,17 +174,40 @@ describe("corners nest", () => {
    * and the card's padding above and below it.
    */
   it("folds a tool call to the height a question folds to", async () => {
-    const height = (css: string, selector: string) => {
-      const at = css.indexOf(`${selector} {`);
+    const tokens = await load("../styles/tokens.css?raw");
+    /* Resolved to numbers rather than compared as text: the two rows reach the
+       same column through different tokens — one names the card's padding, the
+       other names the column — and a guard that compares spellings fails on a
+       rename while passing on a wrong number, which is backwards. */
+    const pad = (css: string, selector: string) => {
+      const at = strip(css).indexOf(`${selector} {`);
       expect(at, `${selector} is missing`).toBeGreaterThan(-1);
-      const pad = css.slice(at, css.indexOf("}", at)).match(/padding:\s*([^;]+);/)?.[1];
-      return pad?.trim().split(/\s+/);
+      const raw = strip(css)
+        .slice(at, strip(css).indexOf("}", at))
+        .match(/padding:\s*([^;]+);/)?.[1]
+        ?.trim();
+      expect(raw, `${selector} has no padding`).toBeTruthy();
+      const parts = (raw as string).split(/\s+/).map((part) => {
+        if (part === "0") return 0;
+        const token = part.match(/^var\((--[\w-]+)\)$/)?.[1];
+        expect(token, `not a token: ${part}`).toBeTruthy();
+        return px(tokens, token as string);
+      });
+      /* Top, right, bottom, left — the shorthand expanded, since the two rows
+         no longer write it out to the same number of values. */
+      const [a, b = a, c = a, d = b] = parts;
+      return { top: a, right: b, bottom: c, left: d };
     };
     /* The header is shared now, and a tool call's is the `filled` one — the
        variant whose row *is* a card's top edge. */
     const head = await load("../disclosure/DisclosureHeader.module.css?raw");
     const question = await load("../QuestionCard/QuestionCard.module.css?raw");
-    expect(height(head, '.header[data-filled]')).toEqual(height(question, ".collapsed"));
+    const tool = pad(head, ".header[data-filled]");
+    const folded = pad(question, ".collapsed");
+    expect(tool.top).toBe(folded.top);
+    expect(tool.bottom).toBe(folded.bottom);
+    /* And the same column, so a glyph starts where a badge starts. */
+    expect(tool.left).toBe(folded.left);
 
     /* And the glyph rides in the badge's box rather than at its own size. */
     expect(head).toMatch(

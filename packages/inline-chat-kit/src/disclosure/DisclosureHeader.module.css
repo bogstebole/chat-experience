@@ -23,11 +23,19 @@
   display: flex;
   align-items: center;
   gap: var(--ick-space-4);
-  width: 100%;
-  padding: var(--ick-space-2) var(--ick-space-3);
-  /* Pulled back by its own padding, so the label starts on the text's left
-     edge and only the hover wash is wider than the words. */
-  margin-left: calc(var(--ick-space-3) * -1);
+  /* The box is the container's content column widened by its own padding on
+     both sides, so the label lands exactly on the left edge and the chevron
+     on the right edge, with only the hover wash reaching past them. It used
+     to be `width: 100%` with a pull-back on the left alone, which left the
+     chevron six pixels shy of an edge every other row in the kit sits on.
+
+     `--ick-disclosure-inset` then moves both ends inward together — for a
+     section title standing over cards, whose words start a card's padding in
+     from the cards' edges. The widening is the same either way: the inset
+     eats into the content column, not into the box. */
+  width: calc(100% + var(--ick-space-3) * 2);
+  margin-inline: calc(var(--ick-space-3) * -1);
+  padding: var(--ick-space-2) calc(var(--ick-space-3) + var(--ick-disclosure-inset));
   border-radius: var(--ick-radius-sm);
   font-family: var(--ick-font-sans);
   cursor: pointer;
@@ -41,18 +49,30 @@
   gap: var(--ick-space-3);
   width: auto;
   max-width: 100%;
+  /* It hugs its words, so there is no right edge to reach — and a negative
+     margin there would pull whatever follows in over it. */
+  margin-right: 0;
 }
 
 /* Inside a card, where the row *is* the card's top edge — so it goes corner to
    corner, takes the card's padding, and pulls back nothing. */
 .header[data-filled] {
   padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
-  margin-left: 0;
+  /* It *is* the card's top edge, so it runs corner to corner and pulls back
+     nothing — the padding here is the card's own. */
+  width: calc(100% + var(--ick-space-3) * 2);
+  margin-inline: 0;
   border-radius: 0;
 }
 
 .header:hover {
-  background: var(--ick-surface-hover);
+  background: var(--ick-disclosure-hover);
+}
+
+/* The response when there is no wash to give one — and an improvement where
+   there is, since the chevron is the part that says what the row does. */
+.header:hover .chevron {
+  color: var(--ick-ink);
 }
 
 .header:focus-visible {
@@ -65,6 +85,11 @@
 .static:hover {
   cursor: default;
   background: none;
+}
+
+.static:hover .chevron,
+.header:disabled:hover .chevron {
+  color: var(--ick-disclosure-meta);
 }
 
 /* Nothing to open yet — no input, no output, nothing to say. It is still a row

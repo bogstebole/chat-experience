@@ -349,14 +349,21 @@ describe("the rules that only matter when painted", () => {
       ""
     );
 
-    /** `var(--ick-space-4)` and `0`, in px. Anything else is a new idea. */
+    /** `var(--ick-space-4)` and `0`, in px — following a token that points at
+        another token, since `--ick-question-pad` names the column rather than
+        restating the number. Anything else is a new idea. */
     const px = (value: string): number => {
-      if (value === "0") return 0;
-      const token = value.match(/^var\((--[\w-]+)\)$/)?.[1];
-      expect(token, `not a token: ${value}`).toBeTruthy();
-      const declared = tokens.match(new RegExp(`${token}:\\s*(\\d+)px`))?.[1];
-      expect(declared, `${token} is not a px token`).toBeTruthy();
-      return Number(declared);
+      let at = value.trim();
+      for (let hop = 0; hop < 4; hop += 1) {
+        if (at === "0") return 0;
+        if (/^\d+px$/.test(at)) return Number.parseInt(at, 10);
+        const token = at.match(/^var\((--[\w-]+)\)$/)?.[1];
+        expect(token, `not a token: ${at}`).toBeTruthy();
+        const declared = tokens.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1];
+        expect(declared, `${token} is not declared`).toBeTruthy();
+        at = (declared as string).trim();
+      }
+      throw new Error(`${value} does not reach a px value`);
     };
 
     const rule = (selector: string) => {
