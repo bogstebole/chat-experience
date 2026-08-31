@@ -63,14 +63,26 @@
   font-family: var(--ick-font-sans);
 }
 
+/* A badge, not a chip. It stands in the badge column on a card, so it is the
+   same box the numbers stand in one state over: same height, same corner, same
+   fill on a card, same type. Only the width differs, because this one holds
+   words rather than a numeral.
+
+   It had been 2px of padding, a pill corner and the smallest type in the kit,
+   which made the single badge on the folded row about half the size of every
+   badge on the open one — and the two states are a fold apart. */
 .count {
+  box-sizing: border-box;
   flex-shrink: 0;
-  padding: var(--ick-space-1) var(--ick-space-4);
-  border-radius: var(--ick-radius-pill);
-  background: var(--ick-question-surface);
-  font-size: var(--ick-text-xs);
-  font-weight: var(--ick-weight-medium);
-  color: var(--ick-ink-soft);
+  display: flex;
+  align-items: center;
+  height: var(--ick-badge-size);
+  padding: 0 var(--ick-space-4);
+  border-radius: var(--ick-question-radius-badge);
+  background: var(--ick-badge-fill-on-card);
+  font-size: var(--ick-text-sm);
+  line-height: 1;
+  color: var(--ick-ink);
 }
 
 /* One line, ellipsised. A summary that wraps is not a summary. */
