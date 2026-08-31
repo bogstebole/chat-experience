@@ -23,6 +23,14 @@
   border-radius: var(--ick-question-radius-group);
   background: var(--ick-question-surface);
   font-family: var(--ick-font-sans);
+  /* The ground is the edge of this thing, so nothing paints past it.
+     `AnimatePresence mode="popLayout"` takes the leaving body out of flow so
+     the arriving one can have its place immediately — which means that while
+     the ground shrinks, the old list stays pinned where it was and hangs out
+     of the bottom, three rows of it, over whatever is underneath. Card shadows
+     still have room: the ground's own 16 of padding is more than the float
+     shadow reaches. */
+  overflow: hidden;
 }
 
 /* What the header opens. One slot: the questions, or the one row they fold
@@ -30,6 +38,7 @@
    swap read as content changing rather than a control changing places. */
 .body {
   box-sizing: border-box;
+  position: relative;
   width: 100%;
 }
 

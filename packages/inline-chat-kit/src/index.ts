@@ -91,8 +91,8 @@ export type {
   QuestionOption,
   QuestionState,
 } from "./QuestionCard/types";
-export { QuestionGroup, FOLDABLE_FROM } from "./QuestionGroup/QuestionGroup";
-export type { QuestionGroupProps } from "./QuestionGroup/QuestionGroup";
+export { QuestionGroup, FOLDABLE_FROM, defaultFoldMotion } from "./QuestionGroup/QuestionGroup";
+export type { QuestionGroupProps, FoldMotion } from "./QuestionGroup/QuestionGroup";
 
 /* The parts a card is built from — exported so a fourth kind of question is a
    composition rather than a fork of this one. */

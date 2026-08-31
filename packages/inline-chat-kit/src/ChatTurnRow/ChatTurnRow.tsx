@@ -13,7 +13,7 @@ import { Approval, type Decision } from "../Approval/Approval";
 import { TaskList } from "../TaskList/TaskList";
 import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { Sources } from "../Sources/Sources";
-import { QuestionGroup } from "../QuestionGroup/QuestionGroup";
+import { QuestionGroup, type FoldMotion } from "../QuestionGroup/QuestionGroup";
 import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
@@ -27,6 +27,8 @@ export interface ChatTurnRowProps {
   inputRef?: Ref<ChatInputHandle> | null;
   placeholder?: string;
   animationConfig?: InlineAnimConfig;
+  /** Overrides for a question group's fold timing. See `defaultFoldMotion`. */
+  foldMotion?: Partial<FoldMotion>;
   /** Stagger for the entrance, in seconds. */
   entranceDelay?: number;
   /** Passed through to the highlighter over the answer. */
@@ -129,6 +131,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   inputRef = null,
   placeholder,
   animationConfig,
+  foldMotion,
   entranceDelay = 0,
   selectionMode = "marker",
   questionAlign = "end",
@@ -285,6 +288,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                   activeIndex={part.activeIndex}
                   collapsible={part.collapsible}
                   readOnly={part.readOnly}
+                  foldMotion={foldMotion}
                   onCommit={(questionId, answer) =>
                     onAnswerQuestion?.(turn.id, part.id, questionId, answer)
                   }
