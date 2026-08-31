@@ -372,7 +372,7 @@ component that owns it.
 | `chain` | `<ChainOfThought>` | `steps`, `state`, `duration` |
 | `sources` | `<Sources>` | `sources`, `title`, `collapsible` |
 | `approval` | `<Approval>` | `title`, `description`, `tool`, `decision` |
-| `question` | `<QuestionGroup>` | `questions`, `answers`, `activeIndex`, `collapsible` |
+| `question` | `<QuestionGroup>` | `title`, `questions`, `answers`, `activeIndex`, `collapsible` |
 
 `reasoning` and `chain` are the same job at two grains — a block of prose, or
 steps that follow from one another. Sending both for one stretch of thinking
@@ -681,6 +681,7 @@ a shape to it, and the answer is picked or typed rather than written out.
 ```tsx
 <QuestionGroup
   id="about-them"
+  title="Setting up the run"
   questions={questions}
   answers={answers}
   activeIndex={activeIndex}
@@ -702,9 +703,15 @@ A card is in one of three states, and morphs between them:
 | `active` | the question, open, being answered |
 | `collapsed` | one row: the short title, the answer as chips, and a way back in |
 
-`QuestionGroup` holds a step's worth and folds the whole thing to a single
-summary row once the conversation has moved past it — not a peek at the list,
-because a peek costs more height than the answers it shows.
+`QuestionGroup` holds a step's worth. **`title` names the step, at the top**,
+and is also the fold control when there is one — which is the point of putting
+it there. A control at the top does not move when the body under it changes, so
+folding stops being two shapes swapping places and becomes one header with two
+bodies. Left out on a foldable group, the count stands in so the control still
+has a name; left out on one that cannot fold, there is no header at all.
+
+Folded, the body is a single summary row — not a peek at the list, because a
+peek costs more height than the answers it shows.
 
 Two decisions carried over from the original, both worth keeping: `single`
 waits a beat after a choice before committing, or the card is gone before

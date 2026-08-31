@@ -279,6 +279,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                 <QuestionGroup
                   key={part.id}
                   id={part.id}
+                  title={part.title}
                   questions={part.questions ?? []}
                   answers={part.answers ?? {}}
                   activeIndex={part.activeIndex}

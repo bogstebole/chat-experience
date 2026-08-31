@@ -93,6 +93,8 @@ export type TurnPart =
   | {
       kind: "question";
       id: string;
+      /** What this step is about, at the top of the group. */
+      title?: string;
       questions: Question[];
       /** Owned by the host: the row reports an answer, it does not keep one. */
       answers?: Record<string, Answer | undefined>;

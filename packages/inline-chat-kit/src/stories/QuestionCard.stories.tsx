@@ -195,6 +195,7 @@ function Flow({ collapsible }: { collapsible?: boolean }) {
         questions={questions}
         answers={answers}
         activeIndex={activeIndex}
+        title="Some title about this section"
         collapsible={collapsible && done && questions.length >= FOLDABLE_FROM}
         onCommit={(id, answer) => {
           setAnswers((all) => ({ ...all, [id]: answer }));
