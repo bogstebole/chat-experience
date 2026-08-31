@@ -6,6 +6,16 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.36.1 — 2026-08-31
+
+### Fixed
+
+- **The count on a folded question group is a badge.** It stands in the badge
+  column, on a card, one fold away from the numbered badges it stands in for —
+  and it was a pill: 2px of padding, the smallest type in the kit and the
+  ground's fill, which came out about half their height. Same box now, and only
+  the width differs, because this one holds words rather than a numeral.
+
 ## 0.36.0 — 2026-08-31
 
 ### Changed

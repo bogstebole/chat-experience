@@ -14,6 +14,10 @@ import { describe, it, expect } from "vitest";
  * arithmetic on them rather than checking that particular tokens were spelled
  * a particular way. Two rows can reach the same column through different
  * tokens and both be right; two rows can share a token and still land apart.
+ *
+ * The same goes for the boxes standing in those columns: a badge on the folded
+ * row and a badge on the open one are a fold apart, and one of them was half
+ * the size of the other.
  */
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -172,5 +176,35 @@ describe("columns", () => {
     expect(decl(group, ".group", "--ick-disclosure-hover")).toBe("transparent");
     expect(decl(css, ".header:hover", "background")).toBe("var(--ick-disclosure-hover)");
     expect(css).toMatch(/\.header:hover \.chevron\s*\{[^}]*color:\s*var\(--ick-ink\)/);
+  });
+});
+
+describe("badges", () => {
+  /**
+   * The count on a folded group is a badge — it stands in the badge column, on
+   * a card, one fold away from the numbered badges it stands in for. It was a
+   * pill: 2px of padding, the smallest type in the kit and the ground's fill,
+   * which came out about half the height of every badge on the open group.
+   */
+  it("gives the folded group's count the badge's own box", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const card = await load("../QuestionCard/QuestionCard.module.css?raw");
+    const group = await load("../QuestionGroup/QuestionGroup.module.css?raw");
+
+    /* A badge is a square, so its height is the size token itself. */
+    expect(decl(card, ".badge", "height")).toBe("var(--ick-badge-size)");
+    expect(decl(group, ".count", "height")).toBe("var(--ick-badge-size)");
+    expect(px(tokens, decl(group, ".count", "height"))).toBe(
+      px(tokens, decl(card, ".badge", "height"))
+    );
+
+    for (const property of ["border-radius", "font-size", "line-height"]) {
+      expect(decl(group, ".count", property), property).toBe(decl(card, ".badge", property));
+    }
+
+    /* And the fill a badge takes when it is on a card, which the summary is. */
+    expect(decl(group, ".count", "background")).toBe(
+      decl(card, ".badge[data-on-card]", "background")
+    );
   });
 });
