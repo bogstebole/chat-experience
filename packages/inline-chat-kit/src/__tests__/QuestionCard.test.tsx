@@ -245,7 +245,39 @@ describe("a whole step", () => {
     expect(screen.getByText("Support")).toBeInTheDocument();
   });
 
-  it("folds to one row, and opens again", () => {
+  /**
+   * Folded, the step is its name and one row saying what it covered. The
+   * control is the header, and the header does not move — which is the whole
+   * reason it is up there. It used to be the summary card itself, so opening
+   * the group meant one shape leaving and another arriving somewhere else.
+   */
+  it("folds to one row under a header that stays put", () => {
+    render(
+      <QuestionGroup
+        id="s"
+        title="Some title about this section"
+        questions={questions}
+        answers={{ who: {}, household: {}, help: {} } as never}
+        collapsible
+      />
+    );
+    const header = screen.getByRole("button", { name: "Some title about this section" });
+    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText(/About them · Household · Support/)).toBeInTheDocument();
+
+    fireEvent.click(header);
+    /* The same button, still named the same thing, now open — and the
+       questions are what is under it. Asserted on what arrived rather than on
+       what left: `AnimatePresence` keeps the outgoing node mounted until its
+       exit finishes, and in jsdom nothing drives that clock. */
+    expect(header).toHaveAttribute("aria-expanded", "true");
+    /* Every question is answered here, so each card is a row you can reopen —
+       which is a thing only the expanded body has. */
+    expect(screen.getByRole("button", { name: "Edit answer: Household" })).toBeInTheDocument();
+  });
+
+  /** No title, and the count stands in so the control still has a name. */
+  it("names the control with the count when there is no title", () => {
     render(
       <QuestionGroup
         id="s"
@@ -254,12 +286,14 @@ describe("a whole step", () => {
         collapsible
       />
     );
-    const summary = screen.getByRole("button", { expanded: false });
-    expect(summary).toHaveTextContent("3 answers");
-    expect(summary).toHaveTextContent("About them · Household · Support");
+    expect(screen.getByRole("button", { name: "3 answers" })).toBeInTheDocument();
+  });
 
-    fireEvent.click(summary);
-    expect(screen.getByRole("button", { name: "Hide answers" })).toBeInTheDocument();
+  /** A step nobody can fold is a heading, not a control. */
+  it("draws the title as a heading when there is nothing to fold", () => {
+    render(<QuestionGroup id="s" title="The setup" questions={questions} answers={{}} />);
+    expect(screen.queryByRole("button", { name: "The setup" })).toBeNull();
+    expect(screen.getByText("The setup")).toBeInTheDocument();
   });
 
   it("reports which question was answered", () => {

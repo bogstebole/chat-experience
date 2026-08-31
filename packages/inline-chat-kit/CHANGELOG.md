@@ -6,6 +6,35 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.35.0 — 2026-08-31
+
+### Added
+
+- **`<QuestionGroup>` takes a `title`** — what the step is about, at the top of
+  the group — and `TurnPart` of kind `question` carries it through.
+
+### Changed
+
+- **The fold control is that header, and it does not move.** It was the summary
+  card itself: folded, a card at the top; expanded, a row at the bottom. One
+  control in two places, so opening the group meant one shape leaving and
+  another arriving somewhere else, and both directions read badly however the
+  animation was tuned.
+
+  A header that stays put turns the whole thing into one control with two
+  bodies — the questions, or the one row they fold into. Which is also the
+  shape `<Tool>`, `<TaskList>` and `<Sources>` already fold in, so the kit has
+  one folding idiom rather than two.
+
+  Without a title, a foldable group names its control with the count. Without
+  either, there is no header and the group is the list, as before.
+
+### Removed
+
+- `labels.hide` on `<QuestionGroup>`. It worded a pill that no longer exists —
+  the header carries the section's name in both states, so there is nothing
+  left to word.
+
 ## 0.34.0 — 2026-08-31
 
 ### Fixed

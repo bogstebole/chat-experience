@@ -143,11 +143,33 @@ const SHOTS = [
       await page.getByRole("button", { name: /Meals/ }).click();
       await page.getByRole("button", { name: "Next" }).click();
       await page.waitForTimeout(1100);
-      /* Folded the moment the last one is answered, so the summary row is
-         what is on screen — pressing it is what shows the control expanded,
-         which is the state it is hardest to get right in. */
-      await page.getByRole("button", { name: /answers/ }).first().click();
+      /* Folded the moment the last one is answered. The header is the control
+         and it does not move, so pressing it is what shows the expanded body —
+         the state this is hardest to get right in. */
+      await page.getByRole("button", { name: /Some title about this section/ }).click();
+      /* The pointer off the header, or the shot is of its hover state. */
+      await page.mouse.move(20, 20);
       await page.waitForTimeout(900);
+    },
+  },
+  {
+    name: "question-folded",
+    story: "components-questioncard--folding",
+    themes: ["light", "dark"],
+    /** The other half: the same header, the body folded to one row. */
+    act: async (page) => {
+      const boxes = page.getByRole("textbox");
+      await boxes.nth(0).fill("Milica Stevanović");
+      await boxes.nth(1).fill("84");
+      await boxes.nth(2).fill("Vračar, Beograd");
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.waitForTimeout(700);
+      await page.getByRole("button", { name: /With a partner/ }).click();
+      await page.waitForTimeout(900);
+      await page.getByRole("button", { name: /Meals/ }).click();
+      await page.getByRole("button", { name: "Next" }).click();
+      await page.mouse.move(20, 20);
+      await page.waitForTimeout(1200);
     },
   },
   {

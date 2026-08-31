@@ -165,6 +165,7 @@ export function ChatExperience() {
       updatePart(turnId, {
         kind: "question",
         id: partId,
+        title: "Setting up the run",
         questions: QUESTIONS,
         answers: given,
         activeIndex: finished ? null : next,

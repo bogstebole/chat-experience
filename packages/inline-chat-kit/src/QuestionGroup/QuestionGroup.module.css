@@ -7,11 +7,23 @@
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-5);
+
+  /* A section's name, not an aside's label. See `Sources` for the same note. */
+  --ick-disclosure-label: var(--ick-ink);
+  --ick-disclosure-weight: var(--ick-weight-medium);
   width: 100%;
   padding: var(--ick-space-6);
   border-radius: var(--ick-question-radius-group);
   background: var(--ick-question-surface);
   font-family: var(--ick-font-sans);
+}
+
+/* What the header opens. One slot: the questions, or the one row they fold
+   into. The header above it does not move either way, which is what makes the
+   swap read as content changing rather than a control changing places. */
+.body {
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* The negative margin and matching padding keep the cards' shadows out of the
@@ -27,8 +39,9 @@
 
 /* ── Folded ─────────────────────────────────────────────────────────────── */
 
+/* Folded: what the step covered, on one card. Not a control any more — the
+   header above it is. */
 .summary {
-  all: unset;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -39,18 +52,6 @@
   background: var(--ick-question-card);
   box-shadow: var(--ick-shadow-float);
   font-family: var(--ick-font-sans);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: box-shadow var(--ick-duration-fast) ease;
-}
-
-.summary:hover {
-  box-shadow: var(--ick-shadow-2);
-}
-
-.summary:focus-visible {
-  outline: 2px solid var(--ick-focus-ring);
-  outline-offset: 2px;
 }
 
 .count {
@@ -74,29 +75,3 @@
   white-space: nowrap;
 }
 
-/* Hard right, and it turns rather than swapping for a second glyph. The same
-   thing every other disclosure in the kit does. */
-.chevron {
-  flex-shrink: 0;
-  margin-left: auto;
-  color: var(--ick-ink-faint);
-  transition: transform var(--ick-duration-fast) var(--ick-ease);
-}
-
-.chevron[data-open] {
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
-
-/* Expanded, the row says what pressing it does rather than what it holds — so
-   the text is the label, not a list, and it stops being ellipsised prose. */
-.summaryList[data-hide] {
-  flex: 0 0 auto;
-  color: var(--ick-ink);
-  font-weight: var(--ick-weight-medium);
-}

@@ -307,7 +307,14 @@ export async function* scriptedApi(
       "They want to be asked rather than to specify the whole thing up front.",
       "Three is the most anybody answers in one sitting: the geometry, then where the detector goes — which is the only choice that changes the physics — then what to plot.",
     ]);
-    yield { kind: "question", id: "q", questions: QUESTIONS, answers: {}, activeIndex: 0 };
+    yield {
+      kind: "question",
+      id: "q",
+      title: "Setting up the run",
+      questions: QUESTIONS,
+      answers: {},
+      activeIndex: 0,
+    };
     return;
   }
 
