@@ -73,8 +73,23 @@
      code block is built. */
   --ick-md-code-fill: var(--ick-tool-code-fill);
   --ick-code-radius: var(--ick-tool-inner-radius);
+  /* 8, so a panel's label sits at 8 + 8 = 16 from the card's edge — the column
+     the header's glyph is in. At 12 it landed at 20, which is the kind of
+     four-pixel near-miss that reads as wrong without being nameable. */
+  --ick-code-pad: var(--ick-space-4);
 }
 
+/* An inset panel, exactly like the code block beside it.
+
+   It was a bare stack: no surface, no padding of its own, so its label and its
+   text sat flush at the body's 8px while a fenced value's label and code sat
+   at 12px inside the block's own panel. Two sections of one tool call at two
+   left edges — which is what "the padding ran away at the bottom" is, when the
+   bottom section happens to be the plain-text one.
+
+   The numbers are `CodeBlock`'s, deliberately: its bar puts a label 12px in
+   and its `pre` puts the code 12px in, so matching that is what makes the two
+   line up rather than nearly line up. */
 .section {
   box-sizing: border-box;
   display: flex;
@@ -82,6 +97,9 @@
   gap: var(--ick-space-3);
   width: 100%;
   min-width: 0;
+  padding: var(--ick-space-3) var(--ick-code-pad) var(--ick-code-pad);
+  border-radius: var(--ick-tool-inner-radius);
+  background: var(--ick-tool-code-fill);
 }
 
 .sectionLabel {
@@ -104,17 +122,15 @@
 
 /* ── When it failed ─────────────────────────────────────────────────────── */
 
-.error {
-  box-sizing: border-box;
-  width: 100%;
-  padding: var(--ick-space-4) var(--ick-space-5);
-  /* An inset panel in the card, like any other — so, the row corner. */
-  border-radius: var(--ick-tool-inner-radius);
+/* The same panel, tinted. It used to be a box *inside* the section's box —
+   two panels for one thing, and the inner one at a different inset again. */
+.section[data-tone="error"] {
   background: var(--ick-tool-error-surface);
   color: var(--ick-danger);
 }
 
-.error .text {
+.section[data-tone="error"] .text,
+.section[data-tone="error"] .sectionLabel {
   color: inherit;
 }
 

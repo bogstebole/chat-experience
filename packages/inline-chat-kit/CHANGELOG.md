@@ -6,6 +6,31 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.32.2 — 2026-08-31
+
+### Fixed
+
+- **A tool call's sections all start on one column.** A fenced value is a
+  `CodeBlock` — its own panel, with its own inner padding. A string value was a
+  bare stack: no surface, no padding of its own, so its label and its text sat
+  flush at the body's 8px while the block's sat 12px inside the block. Two
+  sections of one tool call at two left edges.
+
+  A text section is the same panel now, and both read `--ick-code-pad`. `Tool`
+  repoints that to 8, so every label, every value and the code itself land
+  **16 from the card's edge** — the column the header's glyph is in. It was 20,
+  which is the kind of four-pixel near-miss that reads as wrong without being
+  nameable.
+
+- **A failed section is that panel tinted, not a second panel inside it.** The
+  error box sat inside the section's box, at a third inset again.
+
+### Added
+
+- `--ick-code-pad`, the inner padding of a `<CodeBlock>` — its label's left
+  edge and its code's. A box that nests one repoints it, the way it already
+  repoints the fill and the corner.
+
 ## 0.32.1 — 2026-08-31
 
 ### Fixed

@@ -104,9 +104,9 @@ function Section({
     value.kind === "text" ? <p className={styles.text}>{value.text}</p> : value.node;
 
   return (
-    <div className={styles.section}>
+    <div className={styles.section} data-tone={tone}>
       <span className={styles.sectionLabel}>{label}</span>
-      {tone === "error" ? <div className={styles.error}>{body}</div> : body}
+      {body}
     </div>
   );
 }
