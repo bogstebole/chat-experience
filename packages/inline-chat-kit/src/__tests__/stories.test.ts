@@ -26,6 +26,7 @@ const NOT_COMPONENTS: Record<string, string> = {
   answerChips: "a function that shortens an answer for its summary row",
   mergeParts:
     "a function that folds a part into a turn's list; what it produces is what the ChatTurnRow stories show",
+  formatSize: "a function that turns a byte count into `1.2 MB`",
   loadHighlighter:
     "fetches the syntax grammars; what it produces is the colour in the CodeBlock stories",
   canHighlight: "asks whether a language is one of the eleven; answers a boolean",

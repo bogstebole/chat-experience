@@ -880,6 +880,56 @@ A component that watches scrolling cannot tell its own from theirs, and ends up
 either dragging them back down mid-sentence or never following at all. A wheel
 upwards, a page key, a drag away from the end: any of those and it lets go.
 
+### `<Attachments>`
+
+What goes along with a message.
+
+```tsx
+<Attachments attachments={files} onRemove={(id) => drop(id)} />
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `attachments` | `Attachment[]` | Required. Nothing to show draws nothing at all |
+| `onRemove` | `(id: string) => void` | Leave it out and they are a record rather than a control |
+| `labels` | `Partial<{ remove }>` | |
+
+An `Attachment` is `{ id, name, url?, type?, size? }`. An **image with a `url`
+shows itself**; everything else shows a glyph, its name and its size — a
+thumbnail of a PDF at 64px is a grey rectangle with a corner turned down and
+tells you less than the filename does.
+
+The same row draws them in the composer and under the message once it has been
+sent. `onRemove` is the whole difference between a control and a record, and
+`<ChatInput>` stops passing one the moment the message goes.
+
+**In the composer.** `<ChatInput>` opens the picker from its `+` and keeps what
+comes back, unless you take over:
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `attachments` | `Attachment[]` | Controlled. Left out, the composer keeps its own |
+| `onAttach` | `(files: File[]) => void` | Given, the composer hands the files over instead of attaching them — for uploading first and attaching the URL you get back |
+| `onRemoveAttachment` | `(id: string) => void` | |
+| `accept` | `string` | Passed to the picker. Defaults to `image/*` |
+| `multiple` | `boolean` | Off |
+
+`onSubmit` is `(value, attachments)`. That second argument is the point: before
+it, a file could be picked, shown in the composer, and then quietly dropped on
+send — the message went and the picture did not, which is worse than not
+offering the button. A picture on its own is a message, so an empty box with
+something attached still sends.
+
+The object URLs the composer makes are **revoked** — when one is removed, when
+one replaces another, and on unmount. `createObjectURL` pins the file in memory
+until it is; nothing was revoking, so attaching and removing ten times leaked
+ten of them.
+
+They arrive at your `SendHandler` on the context: `(message, { signal, turnId,
+attachments })`. And they live on the turn as `turn.attachments`, which is what
+`<ChatTurnRow>` hands back to the composer so a sent message still shows what
+went with it.
+
 ### `<CodeBlock>`
 
 A fenced block: the language, a copy button, and code that scrolls sideways

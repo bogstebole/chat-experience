@@ -1,0 +1,129 @@
+/* ─────────────────────────────────────────────
+   Attachments
+
+   What is going along with the message. One row, drawn the same in the
+   composer and under the message once it has been sent — the only difference
+   is whether it carries a remove button, which is the difference between a
+   control and a record.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.list {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ick-space-3);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--ick-font-sans);
+}
+
+/* A named file: a glyph, its name, its size. An inset panel, the same thing an
+   option row is inside a question card. */
+.item {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-3);
+  max-width: var(--ick-attachment-max);
+  min-width: 0;
+  padding: var(--ick-space-3) var(--ick-space-4);
+  border-radius: var(--ick-nest-row);
+  background: var(--ick-attachment-fill);
+}
+
+/* A picture is its own panel: it fills the square and needs no padding around
+   itself to say what it is. */
+.item[data-picture] {
+  width: var(--ick-attachment-size);
+  height: var(--ick-attachment-size);
+  padding: 0;
+  overflow: hidden;
+  /* Against a picture that happens to end in the surface's own colour. */
+  outline: 1px solid var(--ick-border-bright);
+  outline-offset: -1px;
+}
+
+.picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-position: 50%;
+  background-size: cover;
+  transition: filter var(--ick-duration-fast) ease;
+}
+
+.glyph {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--ick-ink-faint);
+}
+
+.body {
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: var(--ick-space-3);
+  min-width: 0;
+}
+
+/* One line, ellipsised. A filename that wraps is a paragraph. */
+.name {
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.size {
+  flex-shrink: 0;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-ink-faint);
+}
+
+/* ── Removing one ───────────────────────────────────────────────────────── */
+
+/* On the picture, over a scrim, because there is nowhere beside it to put a
+   button without making the square bigger. Beside a named file, where there
+   is. */
+.remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item[data-picture] .remove {
+  position: absolute;
+  inset: 0;
+  background: var(--ick-scrim);
+  opacity: 0;
+  transition: opacity var(--ick-duration-fast) ease;
+}
+
+.item[data-picture]:hover .remove,
+.item[data-picture]:focus-within .remove {
+  opacity: 1;
+}
+
+.item[data-picture]:hover .picture {
+  filter: blur(2px);
+}
+
+/* Reaching for the button must not be a race against the reveal. */
+@media (prefers-reduced-motion: reduce) {
+  .item[data-picture] .remove,
+  .picture {
+    transition: none;
+  }
+}

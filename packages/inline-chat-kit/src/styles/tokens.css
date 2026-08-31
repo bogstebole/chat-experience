@@ -464,6 +464,17 @@
     /* + the ground's padding around the card */
     --ick-tool-ground-radius: calc(var(--ick-tool-radius) + var(--ick-tool-ground-pad));
 
+    /* ═══ Attachments ═══════════════════════════════════════════════════════
+       What goes along with a message. An image shows itself at the size of a
+       thumbnail; everything else is a named row, the same inset panel an
+       option is inside a question card. */
+
+    --ick-attachment-size: 64px;
+    /* Wide enough for a filename and its size, narrow enough that three of
+       them wrap rather than making one long strip. */
+    --ick-attachment-max: 260px;
+    --ick-attachment-fill: var(--ick-inset);
+
     /* ═══ Work states ═══════════════════════════════════════════════════════
        Queued, working, finished, failed — one vocabulary and one set of
        colours, shared by a tool call and a task in a list. They were `Tool`'s

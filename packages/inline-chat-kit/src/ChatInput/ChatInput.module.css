@@ -258,57 +258,14 @@
 
 /* Holds an attached image above the input. Opaque against the page, and
    transparent once the bubble it sits in is made of glass. */
+/* The row of attachments, above the line you type on. It is the composer's
+   padding that puts it where it is; the row draws itself. */
 .attachedTray {
-  height: 80px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding: var(--ick-space-4);
+  padding: var(--ick-space-4) var(--ick-space-4) 0;
   margin-bottom: var(--ick-space-4);
-  border-radius: var(--ick-radius-lg);
-  background-color: var(--ick-surface);
-}
-
-.attachedTray[data-glass] {
-  background-color: transparent;
-}
-
-.attachedImgWrap {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  border-radius: var(--ick-radius-md);
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 2px 3px -2px rgb(var(--ick-ink-rgb) / 0.2);
-  outline: 1px solid var(--ick-border-bright);
-}
-
-.attachedImgBg {
-  width: 100%;
-  height: 100%;
-  background-position: 50%;
-  background-size: cover;
-  transition: filter 0.2s ease;
-}
-
-.attachedImgOverlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ick-scrim);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.attachedImgWrap:hover .attachedImgBg {
-  filter: blur(2px);
-}
-
-.attachedImgWrap:hover .attachedImgOverlay {
-  opacity: 1;
 }
 
 .addOverlay {

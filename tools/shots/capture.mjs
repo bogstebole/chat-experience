@@ -421,6 +421,44 @@ const APP_SHOTS = [
     },
   },
   {
+    name: "demo-attachment",
+    themes: ["dark", "light"],
+    clip: null,
+    /** A picture attached, sent, and still there under the message. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+
+      /* Drawn here rather than kept as a fixture on disk: a shot that needs a
+         file beside it is a shot that breaks when somebody moves the file. */
+      const png = await page.evaluate(async () => {
+        const c = document.createElement("canvas");
+        c.width = 240;
+        c.height = 240;
+        const x = c.getContext("2d");
+        const g = x.createLinearGradient(0, 0, 240, 240);
+        g.addColorStop(0, "#ccff00");
+        g.addColorStop(1, "#0a7d55");
+        x.fillStyle = g;
+        x.fillRect(0, 0, 240, 240);
+        const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        return Array.from(bytes);
+      });
+
+      await page.locator('input[type="file"]').first().setInputFiles({
+        name: "kitchen.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(png),
+      });
+      await page.waitForTimeout(500);
+
+      await page.locator("[contenteditable]").first().fill("what do you make of this?");
+      await page.getByRole("button", { name: "Send message" }).click();
+      await page.waitForTimeout(5200);
+    },
+  },
+  {
     name: "demo-composer-in-the-fade",
     themes: ["dark", "light"],
     clip: null,

@@ -6,6 +6,44 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.32.0 — 2026-08-31
+
+### Added
+
+- **`<Attachments>`, and attachments that survive the send.** The composer
+  could already pick an image and show it. It could not send it: `onSubmit`
+  took the text and nothing else, so the message went and the picture did not.
+  Offering an attach button and then losing what it attached is worse than not
+  offering one.
+
+  - `onSubmit` is `(value, attachments)`.
+  - `SendContext` carries `attachments`, so a handler gets the file and the
+    sentence together.
+  - `ChatTurn.attachments`, and `<ChatTurnRow>` hands them back to the composer
+    — the bubble *is* the message, so the same component that held them shows
+    them afterwards, read-only.
+  - A picture on its own is a message: an empty box with something attached
+    still sends.
+
+  `<Attachments>` draws them. An image with a `url` shows itself; everything
+  else gets a glyph, its name and its size, because a thumbnail of a PDF at
+  64px is a grey rectangle with a corner turned down. `onRemove` is the whole
+  difference between the composer's copy and the sent message's.
+
+- **`<ChatInput>` takes `attachments`, `onAttach`, `onRemoveAttachment`,
+  `accept` and `multiple`.** Controlled if given, its own otherwise — the rule
+  `useDisclosure` already follows. `onAttach` is for a host that wants to
+  upload first and attach the URL it gets back.
+
+### Fixed
+
+- **The object URLs are revoked.** `createObjectURL` pins the file in memory
+  until it is, and nothing was revoking: attaching and removing an image ten
+  times leaked ten of them, replacing one leaked the one it replaced, and
+  navigating away with one attached leaked that. Now on remove, on replace, and
+  on unmount — and only the ones the composer made, since a URL the host passed
+  in is the host's.
+
 ## 0.31.1 — 2026-08-31
 
 ### Fixed
