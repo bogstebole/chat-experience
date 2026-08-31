@@ -132,13 +132,34 @@ describe("the fold", () => {
     expect(source).toMatch(/visualDuration: beat\.visualDuration/);
     expect(source).toMatch(/visualDuration: beat\.rowDuration/);
 
-    /* And the only `duration` left in an arriving transition is the opacity's,
-       inside the row's spring. */
-    expect(source).toMatch(/opacity: \{ duration: beat\.fadeIn \}/);
+    /* And the only `duration` left in a row's transition is the opacity's,
+       inside the spring. */
+    expect(source).toMatch(/type: "spring" as const,[\s\S]{0,200}opacity: \{ duration: fade \}/);
 
     /* A row travels, or the spring has nothing to describe. */
     const { defaultFoldMotion } = await import("../QuestionGroup/QuestionGroup");
     expect(Math.abs(defaultFoldMotion.rowOffset)).toBeGreaterThan(0);
+  });
+
+  /**
+   * Collapsing is expanding run backwards, not a different gesture.
+   *
+   * A row leaving was a plain tween while a row arriving was sprung, and the
+   * bodies staggered in opposite directions — last out, first in. The mirror
+   * is right when a thing is being *dismissed*, because it unwinds the way it
+   * was built. This is not a dismissal: it is one body replaced by another on
+   * the same edge, and the two hold the same answers.
+   */
+  it("collapses the way it expands", async () => {
+    const source = await load("../QuestionGroup/QuestionGroup.tsx?raw");
+
+    /* One transition builder, used for both states. */
+    expect(source).toMatch(/hidden: \{[^}]*transition: travel\(beat\.fadeOut\)/);
+    expect(source).toMatch(/shown: \{[^}]*transition: travel\(beat\.fadeIn\)/);
+
+    /* And the same stagger, the same way round. */
+    expect((source.match(/staggerChildren: still \? 0 : beat\.stagger/g) ?? []).length).toBe(2);
+    expect(source, "nothing reverses the stagger").not.toMatch(/staggerDirection/);
   });
 
   /**
