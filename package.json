@@ -17,6 +17,7 @@
     "test": "npm run test --workspace packages/inline-chat-kit",
     "test:watch": "npm run test:watch --workspace packages/inline-chat-kit",
     "showcase": "node tools/showcase/record.mjs",
+    "showcase:questions": "node tools/showcase/questions.mjs",
     "shots": "node tools/shots/capture.mjs"
   },
   "devDependencies": {
