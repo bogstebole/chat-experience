@@ -6,6 +6,45 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.38.0 — 2026-08-31
+
+### Changed
+
+- **The fold's bodies arrive on springs, one row at a time.** 0.37.0 fixed the
+  distortion and left the swap itself a crossfade — two blocks dissolving
+  through each other. A dissolve is what you reach for when two things are
+  unrelated, and the summary row and the stack of cards are the same answers in
+  two states. It read as the box moving while the content sat there bleeding
+  through itself.
+
+  Rows now enter a little above their place and settle into it, one after the
+  next, and leave the same way; the ground follows them. Both sides of the fold
+  are lists of rows, even the folded side that holds one, so both arrive by the
+  same rule.
+
+- **Springs for what travels, a tween for opacity.** Not a preference. A spring
+  describes where a thing is going and how it arrives, and opacity has nowhere
+  to go — bounded at 0 and 1, so a spring with any bounce overshoots into a
+  clamp and spends the overshoot sitting still. Position and size have no
+  ceiling, which is what makes them worth springing.
+
+### Breaking
+
+- **`FoldMotion` lost `fadeInDelay` and gained four.** `rowDuration`,
+  `rowBounce`, `rowOffset` and `stagger` describe a row arriving; the delay is
+  gone because the stagger is what sequences them now. `visualDuration`,
+  `bounce`, `fadeIn` and `fadeOut` are unchanged in meaning.
+
+  Passing the old shape still type-checks for every key it kept and the rest
+  fall back to `defaultFoldMotion`, so nothing breaks silently — a `fadeInDelay`
+  in an override is simply ignored.
+
+### Fixed
+
+- **`package.json` was published empty in 0.37.0.** A `open(path, "w")` in the
+  script that bumped the version truncated the file before the read that was
+  supposed to fill it. Restored from 0.36.1 with the version applied.
+
 ## 0.37.0 — 2026-08-31
 
 ### Fixed

@@ -63,14 +63,18 @@ export function ChatExperience() {
        than a stiffness and a damping that between them describe the same
        spring without telling you how long it is.
 
-       The fades are separate because the box resizing and the body changing
-       identity are two events. They run against each other: the arriving body
-       comes up while the leaving one goes down, on the same top edge. */
+       The row numbers are the same idea one level down: rows arrive one after
+       the next, each a little above its place and settling into it. `fadeIn`
+       and `fadeOut` are tweens on purpose — opacity is bounded, so a spring on
+       it overshoots into a clamp and spends the overshoot sitting still. */
     "Question Fold": {
       visualDuration: [defaultFoldMotion.visualDuration, 0.1, 1.2],
       bounce: [defaultFoldMotion.bounce, 0, 0.8],
+      rowDuration: [defaultFoldMotion.rowDuration, 0.1, 1.2],
+      rowBounce: [defaultFoldMotion.rowBounce, 0, 0.8],
+      rowOffset: [defaultFoldMotion.rowOffset, -60, 60],
+      stagger: [defaultFoldMotion.stagger, 0, 0.25],
       fadeIn: [defaultFoldMotion.fadeIn, 0, 0.6],
-      fadeInDelay: [defaultFoldMotion.fadeInDelay, 0, 0.4],
       fadeOut: [defaultFoldMotion.fadeOut, 0, 0.6],
     },
   });
