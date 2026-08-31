@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { ChevronDown } from "lucide-react";
 import { Button } from "../Button/Button";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { Answer, Question } from "../QuestionCard/types";
+import { useCorrectedRadius } from "../radiusCorrection/useCorrectedRadius";
 import styles from "./QuestionGroup.module.css";
 
 /** Below this, folding saves less room than the summary row costs. */
@@ -50,6 +51,8 @@ export function QuestionGroup({
   className,
 }: QuestionGroupProps) {
   const [expanded, setExpanded] = useState(false);
+  const groundRef = useRef<HTMLDivElement>(null);
+  const groundRadius = useCorrectedRadius(groundRef);
   const label = { ...DEFAULT_LABELS, ...labels };
   const still = prefersReducedMotion();
   const folded = collapsible && !expanded;
@@ -65,8 +68,12 @@ export function QuestionGroup({
   return (
     <LayoutGroup id={id}>
       <motion.div
+        ref={groundRef}
         layout={!still}
         className={[styles.group, className ?? ""].filter(Boolean).join(" ")}
+        /* Handed to Motion so it can keep the corner round while it scales the
+           box. See `useCorrectedRadius`. */
+        style={{ borderRadius: groundRadius }}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           {folded ? (

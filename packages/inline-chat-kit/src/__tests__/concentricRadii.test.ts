@@ -222,3 +222,53 @@ describe("corners nest", () => {
     }
   });
 });
+
+/**
+ * A badge sits in the middle of the line it belongs to.
+ *
+ * The badge is 24 tall; a title line is 16. Top-aligned, that puts the number
+ * four pixels below the middle of the question — measured in a browser, and at
+ * four pixels it reads as wrong long before anybody can name it. Option rows
+ * were two out, for the same reason plus a 2px nudge that was trying to fix it
+ * by hand. Field rows were the only ones right, because `.fieldLabel` already
+ * took the badge's height.
+ *
+ * The rule: **the text's line box is the badge's box**, so the two centre
+ * together and stay centred when the type changes. Not a margin on the badge —
+ * a margin is a number that has to be re-guessed every time either side moves.
+ *
+ * jsdom has no layout, so what is pinned here is the rule rather than the
+ * pixels. The pixels were checked in a browser once, and the browser is where
+ * they get checked again.
+ */
+describe("a badge and its line", () => {
+  const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rule = (css: string, selector: string) => {
+    const at = css.indexOf(`${selector} {`);
+    expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+    return css.slice(at, css.indexOf("}", at));
+  };
+
+  it.each([".title", ".optionTitle"])("gives %s the badge's line box", async (selector) => {
+    const css = strip(
+      (await import("../QuestionCard/QuestionCard.module.css?raw")).default as string
+    );
+    expect(rule(css, selector)).toMatch(/line-height:\s*var\(--ick-badge-size\)/);
+  });
+
+  /** The field row's older spelling of the same rule, kept. */
+  it("gives a field's label the badge's height", async () => {
+    const css = strip(
+      (await import("../QuestionCard/QuestionCard.module.css?raw")).default as string
+    );
+    expect(rule(css, ".fieldLabel")).toMatch(/height:\s*var\(--ick-badge-size\)/);
+  });
+
+  /** And nothing nudges on top of it. */
+  it("leaves no padding compensating for the old misalignment", async () => {
+    const css = strip(
+      (await import("../QuestionCard/QuestionCard.module.css?raw")).default as string
+    );
+    expect(rule(css, ".optionBody")).not.toMatch(/padding:/);
+  });
+});

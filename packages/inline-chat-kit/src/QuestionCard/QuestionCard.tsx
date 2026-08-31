@@ -14,6 +14,7 @@ import {
   QuestionShell,
 } from "./parts";
 import type { Answer, Question, QuestionState } from "./types";
+import { useCorrectedRadius } from "../radiusCorrection/useCorrectedRadius";
 import styles from "./QuestionCard.module.css";
 
 export interface QuestionCardProps {
@@ -266,6 +267,8 @@ export function QuestionCard({
   const label = { ...DEFAULT_LABELS, ...labels };
   const isCard = state !== "upcoming";
   const still = prefersReducedMotion();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRadius = useCorrectedRadius(cardRef);
 
   let body: ReactNode;
   if (state === "active") {
@@ -327,11 +330,16 @@ export function QuestionCard({
 
   return (
     <motion.div
+      ref={cardRef}
       layout={!still}
       data-active={state === "active" || undefined}
       className={styles.item}
       data-card={isCard || undefined}
       transition={{ layout: SPRING }}
+      /* Handed to Motion so it can keep the corner round while it scales the
+         box. This one morphs between a tall card and a 40px row, so it is the
+         one that scales furthest. See `useCorrectedRadius`. */
+      style={{ borderRadius: cardRadius }}
     >
       {/* The wrapper resizes with FLIP, which scales everything inside it.
           `layout="position"` makes Motion counter-scale the content, so text

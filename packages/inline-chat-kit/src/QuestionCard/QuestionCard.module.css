@@ -148,10 +148,22 @@
   min-width: 0;
 }
 
+/* The badge is 24 tall and this line was 16, both top-aligned — which puts the
+   number four pixels below the middle of the question it belongs to. Measured,
+   because at four pixels it reads as wrong long before anybody can say why.
+
+   The line box takes the badge's height rather than the badge taking a margin:
+   a margin is a guess that has to be re-guessed whenever the type changes, and
+   this way the two boxes are the same box. It is also what `.fieldLabel` has
+   always done, which is why field rows were the only ones already right.
+
+   On the first line, deliberately. A question long enough to wrap keeps its
+   badge on the line it starts on, which is where a number belongs. */
 .title {
   margin: 0;
   font-size: var(--ick-text-md);
   font-weight: var(--ick-weight-medium);
+  line-height: var(--ick-badge-size);
   color: var(--ick-ink);
 }
 
@@ -261,6 +273,8 @@
   cursor: text;
 }
 
+/* No padding: the 2px here was nudging the title towards the badge's middle
+   and landing two pixels short. The line box does it exactly now. */
 .optionBody {
   box-sizing: border-box;
   flex: 1;
@@ -268,12 +282,13 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: var(--ick-space-1) 0;
 }
 
+/* Same again, two pixels' worth. See the note over `.title`. */
 .optionTitle {
   font-size: var(--ick-text-md);
   font-weight: var(--ick-weight-medium);
+  line-height: var(--ick-badge-size);
   color: var(--ick-ink);
 }
 
