@@ -50,6 +50,7 @@ const EXPECTED_EXPORTS = [
   "loadHighlighter",
   "canHighlight",
   "defaultInlineAnimConfig",
+  "defaultFoldMotion",
   "useChatTurns",
 ] as const;
 
@@ -69,7 +70,7 @@ describe("public API", () => {
   it("ships components as functions, not accidental objects", () => {
     // Values, not components. Each is exported because a consumer needs the
     // number or the function, not because there is something to render.
-    const NOT_RENDERABLE = new Set(["defaultInlineAnimConfig", "FOLDABLE_FROM"]);
+    const NOT_RENDERABLE = new Set(["defaultInlineAnimConfig", "defaultFoldMotion", "FOLDABLE_FROM"]);
     for (const name of EXPECTED_EXPORTS) {
       if (NOT_RENDERABLE.has(name)) continue;
       const value = kit[name as keyof typeof kit];

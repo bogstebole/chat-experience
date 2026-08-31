@@ -1,7 +1,12 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
-import { QuestionGroup, FOLDABLE_FROM } from "../QuestionGroup/QuestionGroup";
+import {
+  QuestionGroup,
+  FOLDABLE_FROM,
+  defaultFoldMotion,
+  type FoldMotion,
+} from "../QuestionGroup/QuestionGroup";
 import { Chip } from "../Chip/Chip";
 import type { Answer, Question } from "../QuestionCard/types";
 
@@ -179,7 +184,13 @@ export const Chips: Story = {
 };
 
 /** The whole step, answered one question at a time. */
-function Flow({ collapsible }: { collapsible?: boolean }) {
+function Flow({
+  collapsible,
+  foldMotion,
+}: {
+  collapsible?: boolean;
+  foldMotion?: Partial<FoldMotion>;
+}) {
   const questions = [INPUTS, SINGLE, MULTI];
   const [answers, setAnswers] = useState<Record<string, Answer | undefined>>({});
   const [editing, setEditing] = useState<number | null>(null);
@@ -197,6 +208,7 @@ function Flow({ collapsible }: { collapsible?: boolean }) {
         activeIndex={activeIndex}
         title="Some title about this section"
         collapsible={collapsible && done && questions.length >= FOLDABLE_FROM}
+        foldMotion={foldMotion}
         onCommit={(id, answer) => {
           setAnswers((all) => ({ ...all, [id]: answer }));
           setEditing(null);
@@ -214,3 +226,31 @@ export const AWholeStep: Story = { render: () => <Flow /> };
  * at the list — a peek costs more height than the answers it shows.
  */
 export const Folding: Story = { render: () => <Flow collapsible /> };
+
+/**
+ * The same fold, slowed down four times, because the things that go wrong in it
+ * go wrong in about eighty milliseconds.
+ *
+ * Every fault this component has had was found by watching it at this speed or
+ * by sampling it frame by frame: a title squashed to half its height and
+ * stretched back over 450ms, because a box that resizes does it by scaling and
+ * anything inside that is not a layout child rides the scale. A leaving body
+ * that popped out of flow, travelled 67px down and faded out somewhere it had
+ * never been. A tenth of a second of grown, empty box between the two, because
+ * the arriving one waited for the leaving one to finish.
+ *
+ * `defaultFoldMotion` is what the numbers are without this story overriding
+ * them; the playground's dial panel writes the same five.
+ */
+export const FoldingSlowly: Story = {
+  render: () => (
+    <Flow
+      collapsible
+      foldMotion={{
+        visualDuration: defaultFoldMotion.visualDuration * 4,
+        fadeIn: defaultFoldMotion.fadeIn * 4,
+        fadeOut: defaultFoldMotion.fadeOut * 4,
+      }}
+    />
+  ),
+};

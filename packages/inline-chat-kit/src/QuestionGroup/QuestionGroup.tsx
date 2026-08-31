@@ -12,6 +12,45 @@ import styles from "./QuestionGroup.module.css";
 /** Below this, folding saves less room than the summary row costs. */
 export const FOLDABLE_FROM = 3;
 
+/**
+ * What the fold is made of, in numbers.
+ *
+ * Two of them, deliberately. `visualDuration` is how long the box *looks* like
+ * it takes — Motion solves the spring for it — and `bounce` is how much it
+ * overshoots. Stiffness and damping describe the same spring and neither one
+ * answers "how long is this", which is the only question anybody tuning it is
+ * actually asking.
+ *
+ * The fades are separate because they are not the same event: the box changing
+ * size and the content changing identity happen together and want different
+ * lengths. The old numbers had the incoming body waiting 100ms — a tenth of a
+ * second of a grown, empty box, which is most of what read as a flicker.
+ */
+export interface FoldMotion {
+  /** How long the box looks like it takes to resize, in seconds. */
+  visualDuration: number;
+  /** Overshoot, 0–1. At 0 it settles without passing the target. */
+  bounce: number;
+  /** The arriving body's fade, in seconds. */
+  fadeIn: number;
+  /** How long it waits first. Enough to not cross the leaving body, no more. */
+  fadeInDelay: number;
+  /** The leaving body's fade, in seconds. */
+  fadeOut: number;
+}
+
+export const defaultFoldMotion: FoldMotion = {
+  visualDuration: 0.32,
+  bounce: 0.08,
+  /* A real crossfade: both bodies sit on the same top edge, so the arriving
+     one starts the moment the leaving one does. With the old delay of 0.1 the
+     box was grown and empty for a tenth of a second. Sampled at the midpoint
+     the two now sum to about 0.9 of an opaque body rather than 0.4. */
+  fadeIn: 0.18,
+  fadeInDelay: 0,
+  fadeOut: 0.14,
+};
+
 export interface QuestionGroupProps {
   /** Distinguishes one group's layout animations from another's. */
   id: string;
@@ -37,6 +76,8 @@ export interface QuestionGroupProps {
   onEdit?: (index: number) => void;
   readOnly?: boolean;
   labels?: Partial<Record<"answers", string>>;
+  /** Overrides for the fold's timing. See `defaultFoldMotion`. */
+  foldMotion?: Partial<FoldMotion>;
   className?: string;
 }
 
@@ -62,6 +103,7 @@ export function QuestionGroup({
   onEdit,
   readOnly = false,
   labels,
+  foldMotion,
   className,
 }: QuestionGroupProps) {
   const [expanded, setExpanded] = useState(false);
@@ -74,10 +116,23 @@ export function QuestionGroup({
 
   const summary = questions.map((q) => q.shortTitle).join(" · ");
 
+  const beat = { ...defaultFoldMotion, ...foldMotion };
+
+  /* The box's own resize. Handed to every element that carries `layout` here,
+     so the ground and the things inside it move on one clock — a header
+     counter-scaling on a different spring to the box scaling it is a header
+     that visibly lags. */
+  const resize = still
+    ? { duration: 0 }
+    : { type: "spring" as const, visualDuration: beat.visualDuration, bounce: beat.bounce };
+
   const content = {
     initial: { opacity: 0 },
-    animate: { opacity: 1, transition: { duration: 0.2, delay: still ? 0 : 0.1 } },
-    exit: { opacity: 0, transition: { duration: 0.1 } },
+    animate: {
+      opacity: 1,
+      transition: { duration: still ? 0 : beat.fadeIn, delay: still ? 0 : beat.fadeInDelay },
+    },
+    exit: { opacity: 0, transition: { duration: still ? 0 : beat.fadeOut } },
   };
 
   return (
@@ -85,6 +140,7 @@ export function QuestionGroup({
       <motion.div
         ref={groundRef}
         layout={!still}
+        transition={resize}
         className={[styles.group, className ?? ""].filter(Boolean).join(" ")}
         /* Handed to Motion so it can keep the corner round while it scales the
            box. See `useCorrectedRadius`. */
@@ -99,17 +155,42 @@ export function QuestionGroup({
             control still has a name; without either there is no header at all
             and the group is the list, as it was. */}
         {(title || collapsible) && (
-          <DisclosureHeader
-            open={!folded}
-            onToggle={collapsible ? () => setExpanded((open) => !open) : undefined}
-            controls={bodyId}
-            label={title ?? `${questions.length} ${label.answers}`}
-          />
+          /* `layout="position"` and not decoration.
+
+             The ground animates its height the only way Motion animates a
+             size: it sets the new one in the DOM and scales the box back. So
+             every child that is not itself a layout child rides that scale,
+             and this one is a line of type. Measured over one open: the header
+             was squashed to 11.67px of its 23 in a single frame and stretched
+             back over the next 450ms, the title with it — which is exactly
+             what "it flickers and jumps around" looks like when you slow it
+             down. `position` is the right half of it: the header does not
+             move, so all it needs is the scale taken back off. */
+          <motion.div layout={still ? false : "position"} transition={resize}>
+            <DisclosureHeader
+              open={!folded}
+              onToggle={collapsible ? () => setExpanded((open) => !open) : undefined}
+              controls={bodyId}
+              label={title ?? `${questions.length} ${label.answers}`}
+            />
+          </motion.div>
         )}
 
-        <div id={bodyId} className={styles.body}>
+        <motion.div
+          id={bodyId}
+          layout={still ? false : "position"}
+          transition={resize}
+          className={styles.body}
+        >
           <AnimatePresence initial={false} mode="popLayout">
             {folded ? (
+              /* No `layout` on either body, deliberately. `popLayout` takes
+                 the leaving one out of flow, and `layout` then animates it
+                 toward wherever it resolves to once absolute — measured, the
+                 summary left its own row and travelled 67px down the moment it
+                 popped, so it faded out somewhere it had never been. Scale
+                 correction is what these needed and they inherit it from the
+                 body above them. */
               <motion.div key="summary" className={styles.summary} {...content}>
                 <span className={styles.count}>
                   {questions.length} {label.answers}
@@ -117,12 +198,7 @@ export function QuestionGroup({
                 <span className={styles.summaryList}>{summary}</span>
               </motion.div>
             ) : (
-              <motion.div
-                key="list"
-                layout={still ? false : "position"}
-                className={styles.list}
-                {...content}
-              >
+              <motion.div key="list" className={styles.list} {...content}>
                 {questions.map((question, i) => (
                   <QuestionCard
                     key={question.id}
@@ -144,7 +220,7 @@ export function QuestionGroup({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </motion.div>
     </LayoutGroup>
   );

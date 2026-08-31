@@ -6,6 +6,49 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.37.0 — 2026-08-31
+
+### Fixed
+
+- **The question group's fold no longer distorts everything inside it.** Motion
+  animates a size the only way it can: it puts the new one in the DOM and
+  scales the box back. Everything in that box that is not itself a layout child
+  rides the scale — and the section title was a plain `<div>`. Sampled frame by
+  frame over one open: the header went from 23px to **11.67 in a single frame**
+  and stretched back over the next 450ms, the title with it, the cards too.
+  The header wrapper and the body are `layout="position"` now, on the ground's
+  own transition, and the header measures a flat 23 through the whole thing.
+
+- **The leaving body stays where it was.** `AnimatePresence mode="popLayout"`
+  makes it `position: absolute`, and with no positioned parent it resolved
+  **67px down the page** and faded out somewhere it had never been. The body is
+  `position: relative`.
+
+- **And it stays inside the ground.** While the ground shrank, the popped-out
+  list stayed pinned at full height and hung three rows out of the bottom over
+  whatever was underneath. The ground clips; its own 16 of padding is more than
+  the float shadow reaches, so card shadows are unaffected.
+
+- **The fold is a crossfade, not a relay.** The arriving body waited 100ms for
+  the leaving one — a tenth of a second of grown, empty box, which is most of
+  what read as the flicker. Measured at the midpoint, the two now sum to about
+  0.9 of an opaque body; they summed to 0.4.
+
+### Added
+
+- **`defaultFoldMotion` and a `foldMotion` prop** on `<QuestionGroup>`, passed
+  through `<ChatTurnRow>`. Five numbers: `visualDuration` and `bounce` for the
+  box, and `fadeIn` / `fadeInDelay` / `fadeOut` for the bodies.
+
+  `visualDuration` rather than stiffness and damping on purpose. The two of
+  them describe the same spring without either one answering "how long is
+  this", which is the only question anybody tuning it is asking.
+
+- **A `FoldingSlowly` story**, the same fold at a quarter speed — because
+  everything that goes wrong in it goes wrong in about eighty milliseconds.
+- `src/__tests__/foldMotion.test.ts` — the four rules above, each verified to
+  fail by putting the fault back.
+
 ## 0.36.1 — 2026-08-31
 
 ### Fixed

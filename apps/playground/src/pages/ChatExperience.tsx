@@ -8,6 +8,7 @@ import {
   ChatTurnRow,
   Context,
   Conversation,
+  defaultFoldMotion,
   EmptyState,
   ReplyThreadPopup,
   CustomCursor,
@@ -55,6 +56,22 @@ export function ChatExperience() {
     },
     "Chat Feed": {
       delay: [0.3, 0, 1.5],
+    },
+    /* The question group's fold. `visualDuration` is how long the box *looks*
+       like it takes — Motion solves the spring for it — and `bounce` is how
+       far it overshoots. Two numbers you can answer a question with, rather
+       than a stiffness and a damping that between them describe the same
+       spring without telling you how long it is.
+
+       The fades are separate because the box resizing and the body changing
+       identity are two events. They run against each other: the arriving body
+       comes up while the leaving one goes down, on the same top edge. */
+    "Question Fold": {
+      visualDuration: [defaultFoldMotion.visualDuration, 0.1, 1.2],
+      bounce: [defaultFoldMotion.bounce, 0, 0.8],
+      fadeIn: [defaultFoldMotion.fadeIn, 0, 0.6],
+      fadeInDelay: [defaultFoldMotion.fadeInDelay, 0, 0.4],
+      fadeOut: [defaultFoldMotion.fadeOut, 0, 0.6],
     },
   });
 
@@ -530,6 +547,7 @@ export function ChatExperience() {
                   entranceDelay={i === 0 ? dial["Chat Feed"].delay : 0}
                   selectionMode={selectionMode}
                   animationConfig={animConfig}
+                  foldMotion={dial["Question Fold"]}
                   placeholder="Ask me about particle physics…"
                   onDraft={setDraft}
                   onSubmit={handleSubmit}
