@@ -114,6 +114,9 @@ export function QuestionGroup({
   className,
 }: QuestionGroupProps) {
   const [expanded, setExpanded] = useState(false);
+  /* True for the length of one fold, and off again after. See the note over
+     `[data-moving]` in the stylesheet. */
+  const [moving, setMoving] = useState(false);
   const bodyId = useId();
   const groundRef = useRef<HTMLDivElement>(null);
   const groundRadius = useCorrectedRadius(groundRef);
@@ -174,10 +177,16 @@ export function QuestionGroup({
 
   const bodyMotion = {
     variants: bodyVariants,
-    initial: "hidden",
-    animate: "shown",
-    exit: "hidden",
-  } as const;
+    initial: "hidden" as const,
+    animate: "shown" as const,
+    exit: "hidden" as const,
+    /* The arriving body finishing is when the fold is over. Both bodies carry
+       this, and the leaving one finishes first — clearing on that took the
+       layers away at 165ms with the rows still travelling until 300. */
+    onAnimationComplete: (definition: unknown) => {
+      if (definition === "shown") setMoving(false);
+    },
+  };
 
   return (
     <LayoutGroup id={id}>
@@ -186,6 +195,7 @@ export function QuestionGroup({
         layout={!still}
         transition={resize}
         className={[styles.group, className ?? ""].filter(Boolean).join(" ")}
+        data-moving={moving || undefined}
         /* Handed to Motion so it can keep the corner round while it scales the
            box. See `useCorrectedRadius`. */
         style={{ borderRadius: groundRadius }}
@@ -213,7 +223,14 @@ export function QuestionGroup({
           <motion.div layout={still ? false : "position"} transition={resize}>
             <DisclosureHeader
               open={!folded}
-              onToggle={collapsible ? () => setExpanded((open) => !open) : undefined}
+              onToggle={
+              collapsible
+                ? () => {
+                    setMoving(true);
+                    setExpanded((open) => !open);
+                  }
+                : undefined
+            }
               controls={bodyId}
               label={title ?? `${questions.length} ${label.answers}`}
             />

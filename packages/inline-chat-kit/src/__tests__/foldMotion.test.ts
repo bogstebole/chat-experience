@@ -19,10 +19,13 @@ const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 const load = async (path: string) => (await import(/* @vite-ignore */ path)).default as string;
 
+/* Anchored to the start of a line: a plain `indexOf` finds `.body` inside a
+   descendant selector that merely ends with it. */
 const rule = (css: string, selector: string) => {
-  const at = strip(css).indexOf(`${selector} {`);
+  const sheet = strip(css);
+  const at = sheet.search(new RegExp(`^${selector.replace(/[.[\]]/g, "\\$&")} \\{`, "m"));
   expect(at, `${selector} is missing`).toBeGreaterThan(-1);
-  return strip(css).slice(at, strip(css).indexOf("}", at));
+  return sheet.slice(at, sheet.indexOf("}", at));
 };
 
 describe("the fold", () => {
@@ -136,5 +139,36 @@ describe("the fold", () => {
     /* A row travels, or the spring has nothing to describe. */
     const { defaultFoldMotion } = await import("../QuestionGroup/QuestionGroup");
     expect(Math.abs(defaultFoldMotion.rowOffset)).toBeGreaterThan(0);
+  });
+
+  /**
+   * A layer for the length of one fold, and not a moment longer.
+   *
+   * Motion animates `y` as an independent transform, and an independent
+   * transform does not promote the element on its own — sampled through a
+   * whole fold, every row read `will-change: auto`. Motion's own guidance is
+   * to name the properties being animated and then take the hint away, since a
+   * permanent one is a permanent layer.
+   *
+   * The taking-away is the part that was subtly wrong first time: both bodies
+   * carry `onAnimationComplete` and the leaving one finishes first, so the
+   * layers went at 165ms with the rows still travelling until 300.
+   */
+  it("promotes a row only while it is moving", async () => {
+    const css = await load("../QuestionGroup/QuestionGroup.module.css?raw");
+    const source = await load("../QuestionGroup/QuestionGroup.tsx?raw");
+
+    expect(strip(css)).toMatch(
+      /\.group\[data-moving\][^{]*\{[^}]*will-change:\s*transform,\s*opacity/
+    );
+    /* Nothing carries it unconditionally. */
+    expect(strip(css).replace(/\.group\[data-moving\][\s\S]*?\}/g, "")).not.toMatch(
+      /will-change/
+    );
+
+    /* On when the fold starts, off when the *arriving* body settles. */
+    expect(source).toMatch(/setMoving\(true\)/);
+    expect(source).toMatch(/definition === "shown"[\s\S]{0,60}setMoving\(false\)/);
+    expect(source).toMatch(/data-moving=\{moving \|\| undefined\}/);
   });
 });
