@@ -190,6 +190,47 @@ describe("columns", () => {
   });
 });
 
+describe("baselines", () => {
+  /**
+   * Text beside a badge takes the badge's line box.
+   *
+   * A badge is 24 tall with `line-height: 1`; text beside it inherits whatever
+   * line height its type gives it. Two line boxes of different heights, both
+   * centred in the same row, land half a pixel apart — measured with a `Range`
+   * over the actual text, the summary read 86.5 against the count's 87.
+   *
+   * The line box takes the badge's height rather than the badge taking a
+   * margin: a margin is a guess that has to be re-guessed whenever the type
+   * changes, and this way the two boxes are the same box. `.title` and
+   * `.optionTitle` had the rule already; three labels had not taken it.
+   */
+  it.each([
+    ["../QuestionCard/QuestionCard.module.css?raw", ".title"],
+    ["../QuestionCard/QuestionCard.module.css?raw", ".optionTitle"],
+    ["../QuestionCard/QuestionCard.module.css?raw", ".collapsedTitle"],
+    ["../QuestionCard/QuestionCard.module.css?raw", ".upcomingLabel"],
+    ["../QuestionGroup/QuestionGroup.module.css?raw", ".summaryList"],
+  ])("gives %s's %s the badge's line box", async (sheet, selector) => {
+    const css = await load(sheet);
+    expect(decl(css, selector, "line-height")).toBe("var(--ick-badge-size)");
+  });
+
+  /** And the badge itself, and the chip, fill that box with one line. */
+  it("centres a badge's own text in it", async () => {
+    const card = await load("../QuestionCard/QuestionCard.module.css?raw");
+    const chip = await load("../Chip/Chip.module.css?raw");
+    const group = await load("../QuestionGroup/QuestionGroup.module.css?raw");
+    for (const [css, selector] of [
+      [card, ".badge"],
+      [chip, ".chip"],
+      [group, ".count"],
+    ] as const) {
+      expect(decl(css, selector, "line-height"), selector).toBe("1");
+      expect(decl(css, selector, "align-items"), selector).toBe("center");
+    }
+  });
+});
+
 describe("badges", () => {
   /**
    * The count on a folded group is a badge — it stands in the badge column, on

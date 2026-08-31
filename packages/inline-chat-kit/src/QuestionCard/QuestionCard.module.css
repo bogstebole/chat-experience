@@ -51,8 +51,14 @@
 }
 
 
+/* The badge's own line box, which is the rule `.title` already states: a badge
+   is 24 tall with `line-height: 1`, and text beside it inherits whatever line
+   height the type gives it. Two line boxes of different heights, both centred,
+   land half a pixel apart — measured, the label sat at 86.5 against the badge's
+   87. Same box, same centre, and nothing to re-guess when the type changes. */
 .upcomingLabel {
   font-size: var(--ick-text-md);
+  line-height: var(--ick-badge-size);
   color: var(--ick-ink-soft);
 }
 
@@ -96,8 +102,10 @@
   min-width: 0;
 }
 
+/* The badge's line box. See the note over `.upcomingLabel`. */
 .collapsedTitle {
   font-size: var(--ick-text-md);
+  line-height: var(--ick-badge-size);
   color: var(--ick-ink);
   overflow: hidden;
   text-overflow: ellipsis;
