@@ -6,6 +6,50 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.40.0 — 2026-09-01
+
+### Fixed
+
+- **The two bodies are never drawn over each other.** Recorded and looked at
+  frame by frame, what read as a flicker was a superimposition: the folded row
+  and the first card are anchored to the same top edge, so they always want the
+  same 40px band, and crossfading them put
+
+  ```
+  3 answers   About them · Household · Support needed
+  1  About them        Milica Stevanović  84  +1
+  ```
+
+  on top of each other at half opacity each. No timing fixes that, because the
+  overlap **is** the crossfade — a dissolve between two different sentences is
+  mush whatever its duration.
+
+  The arriving body waits for the leaving one to be gone. Measured across both
+  directions: the two never carry ink at the same time. What carries the eye
+  across the handover is the box, which is growing throughout — so the pause
+  costs nothing, and there is no bare frame at real speed.
+
+### Added
+
+- **`FoldMotion.fadeInDelay`**, back with a job this time: it is what holds the
+  two bodies apart, not a stylistic pause. `fadeOut` is 0.08 and the delay
+  matches it. A guard requires `fadeInDelay >= fadeOut`.
+
+### Changed
+
+- **`FoldingSlowly` scales every number measured in seconds**, derived from
+  `defaultFoldMotion` rather than listed by hand. Listing them is how the story
+  started lying: it scaled the two fades and not the delay between them, so it
+  showed a long crossfade the component does not do. A slowed-down story that
+  shows something else is worse than none, because it is the one you trust to
+  see the detail — and it disagreed with the instrumented measurement, which is
+  how it was caught.
+
+- Two fold guards match loosely on the source instead of pinning the exact
+  spelling of a call. Both broke on a refactor that changed nothing about the
+  behaviour, which is a guard failing on a rename while it would pass on a
+  wrong number. The number they were standing in for is asserted directly now.
+
 ## 0.39.0 — 2026-09-01
 
 ### Changed

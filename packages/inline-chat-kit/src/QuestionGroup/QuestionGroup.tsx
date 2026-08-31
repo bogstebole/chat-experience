@@ -45,6 +45,17 @@ export interface FoldMotion {
   fadeIn: number;
   /** And the fade of one leaving. */
   fadeOut: number;
+  /**
+   * How long the arriving body waits, in seconds.
+   *
+   * Not a stylistic pause — it is what stops the two bodies from being in the
+   * same pixels at once. They are anchored to the same top edge, so the folded
+   * row and the first card always want that same band; crossfading them put
+   * two different sentences on top of each other at half opacity, which is
+   * mush rather than motion. At `fadeOut` the one is gone before the other
+   * starts, and the box growing underneath is what carries the eye across.
+   */
+  fadeInDelay: number;
 }
 
 export const defaultFoldMotion: FoldMotion = {
@@ -55,7 +66,8 @@ export const defaultFoldMotion: FoldMotion = {
   rowOffset: -10,
   stagger: 0.045,
   fadeIn: 0.16,
-  fadeOut: 0.1,
+  fadeOut: 0.08,
+  fadeInDelay: 0.08,
 };
 
 export interface QuestionGroupProps {
@@ -161,20 +173,25 @@ export function QuestionGroup({
   /* One spring, both directions. A row leaving used to be a plain tween while a
      row arriving was sprung, which made collapsing a different gesture from
      expanding rather than the same one run backwards. */
-  const travel = (fade: number) =>
+  const travel = (fade: number, delay = 0) =>
     still
       ? { duration: 0 }
       : {
           type: "spring" as const,
           visualDuration: beat.rowDuration,
           bounce: beat.rowBounce,
+          delay,
           /* Opacity is bounded, so it gets the tween. See `FoldMotion`. */
-          opacity: { duration: fade },
+          opacity: { duration: fade, delay },
         };
 
   const rowMotion = {
     hidden: { opacity: 0, y: still ? 0 : beat.rowOffset, transition: travel(beat.fadeOut) },
-    shown: { opacity: 1, y: 0, transition: travel(beat.fadeIn) },
+    shown: {
+      opacity: 1,
+      y: 0,
+      transition: travel(beat.fadeIn, still ? 0 : beat.fadeInDelay),
+    },
   };
 
   const bodyMotion = {

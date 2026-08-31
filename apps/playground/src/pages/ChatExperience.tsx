@@ -76,6 +76,7 @@ export function ChatExperience() {
       stagger: [defaultFoldMotion.stagger, 0, 0.25],
       fadeIn: [defaultFoldMotion.fadeIn, 0, 0.6],
       fadeOut: [defaultFoldMotion.fadeOut, 0, 0.6],
+      fadeInDelay: [defaultFoldMotion.fadeInDelay, 0, 0.4],
     },
   });
 

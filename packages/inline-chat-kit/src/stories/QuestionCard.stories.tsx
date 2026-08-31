@@ -242,15 +242,21 @@ export const Folding: Story = { render: () => <Flow collapsible /> };
  * `defaultFoldMotion` is what the numbers are without this story overriding
  * them; the playground's dial panel writes the same five.
  */
-export const FoldingSlowly: Story = {
-  render: () => (
-    <Flow
-      collapsible
-      foldMotion={{
-        visualDuration: defaultFoldMotion.visualDuration * 4,
-        fadeIn: defaultFoldMotion.fadeIn * 4,
-        fadeOut: defaultFoldMotion.fadeOut * 4,
-      }}
-    />
-  ),
-};
+const SLOWER = 4;
+
+/**
+ * Every number measured in seconds, scaled together.
+ *
+ * Listing them by hand is how this story started lying: it scaled the two
+ * fades and not the delay between them, so it showed a long crossfade the
+ * component does not do — and a slowed-down story that shows something else is
+ * worse than no story, because it is the one you trust to see the detail.
+ */
+const slowly = Object.fromEntries(
+  Object.entries(defaultFoldMotion).map(([key, value]) => [
+    key,
+    /^(visualDuration|rowDuration|stagger|fade)/.test(key) ? value * SLOWER : value,
+  ])
+) as FoldMotion;
+
+export const FoldingSlowly: Story = { render: () => <Flow collapsible foldMotion={slowly} /> };
