@@ -806,8 +806,19 @@
       0 1px 3px rgb(var(--ick-glass-shade-rgb) / 0.22);
     --ick-dark-recede: 0.32;
     --ick-dark-shadow-modal: 0 12px 31px -9px rgb(var(--ick-glass-shade-rgb) / 0.65);
-    --ick-dark-shadow-float: 0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.5),
-      0 1px 4px -1px rgb(var(--ick-glass-shade-rgb) / 0.35);
+    /* Softer than it was, and worth the arithmetic.
+       
+       It was 0.5 and 0.35 — six times the light theme's alpha, on the
+       reasoning that a shadow in the dark has to darken something already
+       dark. It overshot. The page is `18 18 18` and the card mixes to about
+       `38 38 38`; black at 50% takes the page down to **9**, which is half its
+       brightness. That is not a card lifted off a page, it is a card cut out
+       of one, and the ring around it was the first thing you saw.
+       
+       At 0.28 the core lands near 13 — four or five levels under the page,
+       which is the same *read* the light theme gets from 255 down to 235. */
+    --ick-dark-shadow-float: 0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.28),
+      0 1px 4px -1px rgb(var(--ick-glass-shade-rgb) / 0.18);
   }
 
   /* Three states, in the order the cascade needs them: the system preference
