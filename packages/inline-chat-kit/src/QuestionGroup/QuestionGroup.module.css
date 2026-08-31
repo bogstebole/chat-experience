@@ -11,6 +11,13 @@
   /* A section's name, not an aside's label. See `Sources` for the same note. */
   --ick-disclosure-label: var(--ick-ink);
   --ick-disclosure-weight: var(--ick-weight-medium);
+  /* And a name stands over the words it names, not over the cards' edges: the
+     title starts on the column the badges and the numbers start on, and the
+     chevron ends on the column the rows' pencils end on. */
+  --ick-disclosure-inset: var(--ick-question-pad);
+  /* No wash. It is a rounded box the width of the header, and there is no box
+     under it for that shape to agree with — it read as a stray highlight. */
+  --ick-disclosure-hover: transparent;
   width: 100%;
   padding: var(--ick-space-6);
   border-radius: var(--ick-question-radius-group);
@@ -47,7 +54,9 @@
   align-items: center;
   gap: var(--ick-space-4);
   width: 100%;
-  padding: var(--ick-space-4) var(--ick-space-5);
+  /* On the card's column, like every other row that is a card: the count rides
+     where a badge rides, and the line ends where a pencil ends. */
+  padding: var(--ick-space-4) var(--ick-question-pad);
   border-radius: var(--ick-question-radius-card);
   background: var(--ick-question-card);
   box-shadow: var(--ick-shadow-float);

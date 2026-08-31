@@ -6,6 +6,59 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.36.0 — 2026-08-31
+
+### Changed
+
+- **The dark theme's ground goes down now.** `--ick-ground` is a wash of ink,
+  and ink in the dark is white — so the recess a group of cards sits in came
+  out *lighter* than the page, with the card lighter again. Three surfaces
+  stacked on the same side of the page, and a card that read as a slightly
+  different patch of its own ground.
+
+  It never showed up as a number, because the number was fine: ground to card
+  measured 1.11 in the light and 1.115 in the dark, which is as matched as two
+  themes get. What the light has and the dark cannot is the shadow. A dark
+  shadow on a white ground is plainly visible and does half the work of lifting
+  a card; the same shadow on a near-black ground does almost nothing. So in the
+  dark the tone has to carry both jobs, and 1.11 is one job's worth.
+
+  New `--ick-dark-ground`, a shade rather than a wash of ink, which puts the
+  ground at 10 against the card's 38 and the pair at 1.32. Every ground in the
+  kit reads it — question groups, tool calls, approvals.
+
+- **A section title stands on the column its cards' words start on.** It was
+  sixteen pixels left of the numbers under it, and its chevron four pixels off
+  the pencils. New `--ick-disclosure-inset` moves a header's own content inward
+  from both ends at once; `<QuestionGroup>` sets it to `--ick-question-pad`.
+
+- **A disclosure header's box is its container's content column**, widened by
+  its own padding so only the hover wash reaches past it. It was `width: 100%`
+  pulled back on the left alone, which left the chevron six pixels shy of an
+  edge every other row in the kit sits on. Affects every header that folds —
+  `<Tool>`, `<Reasoning>`, `<ChainOfThought>`, `<TaskList>`, `<Sources>`.
+
+- **A question's folded rows are padded to the same column on both sides.** The
+  right was 8 against the left's 16, so the pencil sat half a column nearer its
+  edge than the badge sat to its own. New `--ick-question-pad` names that
+  column, and the rows, the summary and the title all read it.
+
+- **No wash under a section title on hover.** It is a rounded box the width of
+  the header and there is nothing under it for that shape to agree with, so it
+  read as a stray highlight off the card grid. The chevron lights up instead —
+  which every header now does, wash or no wash. New `--ick-disclosure-hover`,
+  set to `transparent` by `<QuestionGroup>`.
+
+### Added
+
+- `src/__tests__/alignment.test.ts` — the columns, with the browser's own
+  arithmetic done on them rather than a check that particular tokens were
+  spelled a particular way. Two rows can reach the same column through
+  different tokens and both be right.
+- A surfaces guard that composites the dark ground over the page, takes its
+  contrast against the card, and requires more of it than the light theme has —
+  because the light theme has a shadow helping and the dark does not.
+
 ## 0.35.0 — 2026-08-31
 
 ### Added

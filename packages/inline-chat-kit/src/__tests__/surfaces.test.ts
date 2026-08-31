@@ -43,6 +43,115 @@ describe("the surface stack", () => {
   });
 
   /**
+   * The ground goes **down**, in both themes.
+   *
+   * `--ick-ground` is a wash of ink, and ink in the dark is white — so the
+   * recess a group of cards sits in came out *lighter* than the page, with the
+   * card lighter again. Three surfaces stacked on the same side of the page.
+   *
+   * It did not show up as a number, because the number was fine: ground to
+   * card measured 1.11 in the light and 1.115 in the dark, which is as matched
+   * as two themes get. What the light has and the dark cannot is the shadow. A
+   * dark shadow on a white ground is plainly visible and does half the work of
+   * lifting a card off its ground; the same shadow on a near-black ground does
+   * almost nothing. So in the dark the tone carries both jobs, and one job's
+   * worth of tone is what 1.11 buys.
+   *
+   * Hence two rules, and the second is the one worth having: the dark's ground
+   * is a shade rather than a wash of ink, and its separation from the card is
+   * comfortably more than the light's, not equal to it.
+   */
+  it("cuts the dark ground into the page rather than lifting it off", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+
+    /* Ink in the dark is white; a ground washed with it is a raise. */
+    expect(tokens).toMatch(/--ick-dark-ground:\s*rgb\(var\(--ick-glass-shade-rgb\)/);
+    expect((tokens.match(/--ick-ground:\s*var\(--ick-dark-ground\)/g) ?? []).length).toBe(2);
+
+    /** A grey token's channel value, 0–255. Every surface here is neutral. */
+    const grey = (name: string): number => {
+      const raw = tokens.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1]?.trim() as string;
+      expect(raw, `${name} is defined nowhere`).toBeTruthy();
+      const triplet = raw.match(/^(\d+) \d+ \d+$/);
+      if (triplet) return Number(triplet[1]);
+      const alias = raw.match(/^var\((--[\w-]+)\)$/)?.[1];
+      if (alias) return grey(alias);
+      /* `rgb(var(--x) / 0.45)` — a wash, which needs what it is over. */
+      const wash = raw.match(/^rgb\(var\((--[\w-]+)\)\s*\/\s*([\d.]+)\)$/);
+      if (wash) return Number.NaN; // resolved by `over` below
+      /* `color-mix(in srgb, rgb(var(--a)) 91%, rgb(var(--b)))` */
+      const mix = raw.match(
+        /^color-mix\(\s*in srgb,\s*rgb\(var\((--[\w-]+)\)\)\s*([\d.]+)%,\s*rgb\(var\((--[\w-]+)\)\)\s*\)$/s
+      );
+      expect(mix, `cannot read ${name}: ${raw}`).toBeTruthy();
+      const [, a, share, b] = mix as RegExpMatchArray;
+      const w = Number(share) / 100;
+      return grey(a) * w + grey(b) * (1 - w);
+    };
+
+    /** A wash composited over what is under it. */
+    const over = (name: string, base: number): number => {
+      const raw = tokens.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1]?.trim() as string;
+      const wash = raw.match(/^rgb\(var\((--[\w-]+)\)\s*\/\s*([\d.]+)\)$/);
+      if (!wash) return grey(name);
+      const [, ink, alpha] = wash;
+      return base + Number(alpha) * (grey(ink) - base);
+    };
+
+    /** WCAG relative luminance of a neutral, and the ratio between two. */
+    const lum = (v: number) => {
+      const c = v / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const ratio = (a: number, b: number) => {
+      const [hi, lo] = [lum(a) + 0.05, lum(b) + 0.05].sort((x, y) => y - x);
+      return hi / lo;
+    };
+
+    const light = {
+      page: grey("--ick-paper-rgb"),
+      get ground() {
+        return over("--ick-ground", this.page);
+      },
+      card: grey("--ick-paper-rgb"),
+    };
+    const dark = {
+      page: grey("--ick-dark-paper-rgb"),
+      get ground() {
+        return over("--ick-dark-ground", this.page);
+      },
+      card: grey("--ick-dark-card"),
+    };
+
+    /* Down from the page in the light, and down from it in the dark too. */
+    expect(light.ground).toBeLessThan(light.page);
+    expect(dark.ground).toBeLessThan(dark.page);
+    /* And the card raised off it, which in the dark means lighter. */
+    expect(dark.card).toBeGreaterThan(dark.ground);
+
+    /* The one that matters: more tone in the dark, because there is no shadow
+       there to make up the difference. The pair was at parity — 1.11 against
+       1.11 — when this read as one surface in two shades.
+
+       A fraction rather than a bare comparison, because "more" is satisfied by
+       a hair — and most of the way there is bought by the direction alone.
+       Simply not lifting the ground takes the pair from 1.11 to 1.25; the
+       shade on top of that takes it to 1.32. So the floor has to sit above
+       what the direction gives for free.
+
+       There is not much room past it either: the page is 18 values off black,
+       so even a ground of pure black only reaches 1.40. */
+    const separation = {
+      light: ratio(light.ground, light.card),
+      dark: ratio(dark.ground, dark.card),
+    };
+    expect(separation.dark, JSON.stringify(separation)).toBeGreaterThan(separation.light * 1.15);
+
+    /* And a real shade, not a token one — a quarter off the page at least. */
+    expect(dark.ground).toBeLessThanOrEqual(dark.page * 0.75);
+  });
+
+  /**
    * And **opaque means opaque**, in both themes.
    *
    * The check above guarded the plumbing — that the card is wired to paper in

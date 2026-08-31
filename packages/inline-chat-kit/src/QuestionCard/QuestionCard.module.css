@@ -38,10 +38,13 @@
   display: flex;
   align-items: center;
   gap: var(--ick-space-4);
-  /* 16, because these rows are the card itself rather than rows inside one:
-     the badge has to reach the line the active card's rows sit on, and there
-     is no inner padding to make up the difference. */
-  padding: var(--ick-space-3) var(--ick-space-4) var(--ick-space-3) var(--ick-space-6);
+  /* The card's own column on both sides, because this row *is* the card rather
+     than a row inside one: there is no inner padding to make up the difference,
+     so the badge takes it here. It was 8 on the right against 16 on the left —
+     the pencil sat half a column nearer its edge than the badge sat to its
+     own, which is the sort of four-pixel thing that reads as wrong long before
+     anybody can say why. */
+  padding: var(--ick-space-3) var(--ick-question-pad);
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -65,7 +68,7 @@
   row-gap: var(--ick-space-4);
   gap: var(--ick-space-4);
   width: 100%;
-  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
+  padding: var(--ick-space-4) var(--ick-question-pad);
   font-family: var(--ick-font-sans);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
