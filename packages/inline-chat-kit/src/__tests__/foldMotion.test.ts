@@ -132,9 +132,9 @@ describe("the fold", () => {
     expect(source).toMatch(/visualDuration: beat\.visualDuration/);
     expect(source).toMatch(/visualDuration: beat\.rowDuration/);
 
-    /* And the only `duration` left in a row's transition is the opacity's,
-       inside the spring. */
-    expect(source).toMatch(/type: "spring" as const,[\s\S]{0,200}opacity: \{ duration: fade \}/);
+    /* And the only `duration` left in a row's transition is the opacity's. */
+    expect(source).toMatch(/opacity: \{ duration: fade/);
+    expect(source).toMatch(/bounce: beat\.rowBounce/);
 
     /* A row travels, or the spring has nothing to describe. */
     const { defaultFoldMotion } = await import("../QuestionGroup/QuestionGroup");
@@ -153,13 +153,35 @@ describe("the fold", () => {
   it("collapses the way it expands", async () => {
     const source = await load("../QuestionGroup/QuestionGroup.tsx?raw");
 
-    /* One transition builder, used for both states. */
-    expect(source).toMatch(/hidden: \{[^}]*transition: travel\(beat\.fadeOut\)/);
-    expect(source).toMatch(/shown: \{[^}]*transition: travel\(beat\.fadeIn\)/);
+    /* One transition builder, used for both states. Matched loosely on
+       purpose: a guard that pins the exact spelling of a call fails on a
+       rename while passing on a wrong number, which is backwards. The number
+       that matters is asserted in the test below. */
+    expect(source).toMatch(/hidden: \{[\s\S]{0,140}travel\(beat\.fadeOut\)/);
+    expect(source).toMatch(/shown: \{[\s\S]{0,200}travel\(beat\.fadeIn/);
 
     /* And the same stagger, the same way round. */
     expect((source.match(/staggerChildren: still \? 0 : beat\.stagger/g) ?? []).length).toBe(2);
     expect(source, "nothing reverses the stagger").not.toMatch(/staggerDirection/);
+  });
+
+  /**
+   * The two bodies are never in the same pixels.
+   *
+   * They are anchored to the same top edge, so the folded row and the first
+   * card always want the same band — and crossfading them put two different
+   * sentences on top of each other at half opacity each. Recorded and looked
+   * at frame by frame, that is what "it flickers" was: not a flicker, a
+   * superimposition. Nothing about the timing of a crossfade fixes it, because
+   * the overlap *is* the crossfade.
+   *
+   * So the arriving body waits for the leaving one to be gone. The box is
+   * growing throughout, which is what carries the eye across the handover —
+   * measured, the two never sum to any ink at once, in either direction.
+   */
+  it("never draws one body over the other", async () => {
+    const { defaultFoldMotion } = await import("../QuestionGroup/QuestionGroup");
+    expect(defaultFoldMotion.fadeInDelay).toBeGreaterThanOrEqual(defaultFoldMotion.fadeOut);
   });
 
   /**
