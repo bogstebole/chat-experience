@@ -7,12 +7,33 @@ import { announce } from "../announce/announce";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import { mergeParts, type TurnPart, type TurnPartUpdate } from "../turnParts/turnParts";
 
+/** One answer this turn has had. */
+export interface TurnVersion {
+  id: string;
+  ai: string;
+  parts: TurnPart[];
+}
+
 export interface ChatTurn {
   id: string;
   /** What the person asked. */
   user: string;
   /** What went with it. */
   attachments?: Attachment[];
+  /**
+   * Every answer this turn has had, oldest first.
+   *
+   * Regenerating used to overwrite the answer, which threw away the one being
+   * compared against — the reason anybody presses regenerate is to see whether
+   * a second attempt is better, and there is no "better" once the first is
+   * gone. Each attempt is kept and `versionIndex` says which is on screen.
+   *
+   * Empty until the first answer starts, and absent on a turn a host built by
+   * hand — the same tolerance `parts` has.
+   */
+  versions?: TurnVersion[];
+  /** Which of `versions` is in `ai` and `parts`. */
+  versionIndex?: number;
   /** What has arrived of the answer so far. */
   ai: string;
   /**
@@ -89,6 +110,12 @@ export interface UseChatTurnsResult {
   /** Report the person's editing of a turn's input. */
   setDraft: (id: string, value: string) => void;
   submit: (id: string, value?: string, attachments?: Attachment[]) => void;
+  /**
+   * Show another of a turn's answers. Out-of-range is ignored rather than
+   * clamped: a caller asking for version 7 of a turn that has three has a bug,
+   * and quietly showing them version 3 hides it.
+   */
+  showVersion: (id: string, index: number) => void;
   /** Abort the answer in flight and settle the turn where it stands. */
   stop: () => void;
   beginEdit: (id: string) => void;
@@ -113,7 +140,42 @@ const newId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2, 11);
 
-const emptyTurn = (): ChatTurn => ({ id: newId(), user: "", ai: "", parts: [], state: "idle" });
+const emptyTurn = (): ChatTurn => ({
+  id: newId(),
+  user: "",
+  ai: "",
+  parts: [],
+  versions: [],
+  versionIndex: 0,
+  state: "idle",
+});
+
+/**
+ * File the answer on screen under the version it belongs to.
+ *
+ * `ai` and `parts` are what is rendered; `versions[versionIndex]` is the same
+ * answer kept so an earlier one can come back. Two writers for one fact is how
+ * they drift, so this is the only place that copies between them — and both
+ * writers, the batched stream flush and `patchTurn`, go through it.
+ *
+ * Returns the turn unchanged when there is nothing filed yet or nothing has
+ * moved, so it never makes a new object for no reason.
+ */
+const fileAnswer = (turn: ChatTurn): ChatTurn => {
+  const versions = turn.versions;
+  if (!versions?.length) return turn;
+
+  const at = turn.versionIndex ?? 0;
+  const filed = versions[at];
+  if (!filed || (filed.ai === turn.ai && filed.parts === turn.parts)) return turn;
+
+  return {
+    ...turn,
+    versions: versions.map((version, i) =>
+      i === at ? { ...version, ai: turn.ai, parts: turn.parts } : version
+    ),
+  };
+};
 
 const isAsyncIterable = (value: unknown): value is AsyncIterable<string | TurnPartUpdate> =>
   typeof value === "object" && value !== null && Symbol.asyncIterator in value;
@@ -192,13 +254,27 @@ export function useChatTurns({
    * memoised row sees the same props and skips rendering entirely — which is
    * what keeps the cost of streaming flat as the conversation grows.
    */
+  /**
+   * The one writer, which is what keeps `ai`/`parts` and `versions` from
+   * disagreeing.
+   *
+   * `ai` and `parts` are the answer on screen; `versions[versionIndex]` is the
+   * same answer in the archive. Every patch that touches one writes through to
+   * the other — except a patch that moves `versionIndex`, which is a *switch*
+   * and carries both halves itself. Two writers for one fact is how they drift.
+   */
   const patchTurn = useCallback((id: string, patch: Partial<ChatTurn>) => {
     setTurns((current) => {
       let changed = false;
       const next = current.map((turn) => {
         if (turn.id !== id) return turn;
         changed = true;
-        return { ...turn, ...patch };
+        const merged = { ...turn, ...patch };
+        /* A patch that moves `versionIndex` or replaces `versions` is a
+           *switch* and carries both halves itself; anything else that touches
+           the answer gets filed. */
+        const isSwitch = "versionIndex" in patch || "versions" in patch;
+        return isSwitch ? merged : fileAnswer(merged);
       });
       if (!changed) return current;
       turnsRef.current = next;
@@ -223,11 +299,11 @@ export function useChatTurns({
         const incoming = partEntries.find(([id]) => id === turn.id)?.[1];
         if (text === undefined && !incoming) return turn;
 
-        return {
+        return fileAnswer({
           ...turn,
           ...(text === undefined ? null : { ai: text }),
           ...(incoming ? { parts: incoming.reduce(mergeParts, turn.parts) } : null),
-        };
+        });
       });
       turnsRef.current = next;
       return next;
@@ -351,9 +427,22 @@ export function useChatTurns({
       const controller = new AbortController();
       abortRef.current = controller;
       setIsStreaming(true);
-      // Parts go with the old answer: regenerating a turn should not leave
-      // the tool calls from the answer it replaced sitting above the new one.
-      patchTurn(id, { user: message, state: "responding", ai: "", parts: [] });
+      /* A new version rather than an overwrite. Parts go with it: the tool
+         calls that produced the old answer are not evidence for the new one,
+         and they stay filed with the answer they belong to. */
+      const before = turnsRef.current.find((t) => t.id === id);
+      const versions = [
+        ...(before?.versions ?? []),
+        { id: `${id}-v${(before?.versions?.length ?? 0) + 1}`, ai: "", parts: [] },
+      ];
+      patchTurn(id, {
+        user: message,
+        state: "responding",
+        ai: "",
+        parts: [],
+        versions,
+        versionIndex: versions.length - 1,
+      });
       speak("responding");
 
       // Held out here so the announcement can read it in `finally`, whether
@@ -420,6 +509,18 @@ export function useChatTurns({
     [run, patchTurn]
   );
 
+  const showVersion = useCallback(
+    (id: string, index: number) => {
+      const turn = turnsRef.current.find((t) => t.id === id);
+      const version = turn?.versions?.[index];
+      if (!version) return;
+      /* Carries both halves, which is what tells `patchTurn` this is a switch
+         and not an edit of the answer on screen. */
+      patchTurn(id, { versionIndex: index, ai: version.ai, parts: version.parts });
+    },
+    [patchTurn]
+  );
+
   const stop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -445,5 +546,15 @@ export function useChatTurns({
     [patchTurn]
   );
 
-  return { turns, setDraft, submit, stop, beginEdit, cancelEdit, isStreaming, updatePart };
+  return {
+    turns,
+    setDraft,
+    submit,
+    showVersion,
+    stop,
+    beginEdit,
+    cancelEdit,
+    isStreaming,
+    updatePart,
+  };
 }

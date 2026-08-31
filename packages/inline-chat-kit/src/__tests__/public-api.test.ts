@@ -19,6 +19,7 @@ const EXPECTED_EXPORTS = [
   "ChatTurnRow",
   "CodeBlock",
   "Attachments",
+  "Branch",
   "formatSize",
   "Context",
   "Conversation",

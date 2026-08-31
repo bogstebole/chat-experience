@@ -3,6 +3,7 @@
 import { memo, type Ref } from "react";
 import { motion } from "motion/react";
 import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
+import { Branch } from "../Branch/Branch";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
 import type { Attachment } from "../Attachments/Attachments";
 import { Loader } from "../Loader/Loader";
@@ -70,6 +71,9 @@ export interface ChatTurnRowProps {
    * copy a half-written answer, or to rate one, is offering the wrong thing.
    */
   onRegenerate?: (id: string) => void;
+  /** Show another of this turn's answers. Without it the control is inert, so
+      it is not drawn. */
+  onShowVersion?: (id: string, index: number) => void;
   onFeedback?: (id: string, verdict: Verdict | null) => void;
   feedback?: Verdict | null;
   /** Leave the row out entirely. */
@@ -137,6 +141,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onHighlight,
   onReplyInThread,
   onRegenerate,
+  onShowVersion,
   onFeedback,
   feedback = null,
   answerActions = true,
@@ -312,14 +317,22 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           />
 
           {answerActions && turn.state === "resting" && (
-            <AnswerActions
-              className={styles.actions}
-              text={turn.ai}
-              onCopy={onCopy}
-              onRegenerate={onRegenerate ? () => onRegenerate(turn.id) : undefined}
-              onFeedback={onFeedback ? (verdict) => onFeedback(turn.id, verdict) : undefined}
-              feedback={feedback}
-            />
+            <div className={styles.actions}>
+              {/* Draws nothing until there are two, so a turn answered once
+                  looks exactly as it did before there were versions at all. */}
+              <Branch
+                total={turn.versions?.length ?? 0}
+                index={turn.versionIndex ?? 0}
+                onSelect={(index) => onShowVersion?.(turn.id, index)}
+              />
+              <AnswerActions
+                text={turn.ai}
+                onCopy={onCopy}
+                onRegenerate={onRegenerate ? () => onRegenerate(turn.id) : undefined}
+                onFeedback={onFeedback ? (verdict) => onFeedback(turn.id, verdict) : undefined}
+                feedback={feedback}
+              />
+            </div>
           )}
         </div>
       )}

@@ -142,7 +142,8 @@ export function ChatExperience() {
   const feedRef = useRef<HTMLDivElement>(null);
   const animConfig = defaultInlineAnimConfig;
 
-  const { turns, setDraft, submit, stop, beginEdit, cancelEdit, updatePart } = useChatTurns({
+  const { turns, setDraft, submit, showVersion, stop, beginEdit, cancelEdit, updatePart } =
+    useChatTurns({
     onSend: scriptedApi,
   });
 
@@ -532,6 +533,7 @@ export function ChatExperience() {
                   onDraft={setDraft}
                   onSubmit={handleSubmit}
                   onRegenerate={handleRegenerate}
+                  onShowVersion={showVersion}
                   onFeedback={handleFeedback}
                   feedback={verdicts[turn.id] ?? null}
                   onStop={stop}

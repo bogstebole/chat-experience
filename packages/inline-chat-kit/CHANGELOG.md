@@ -6,6 +6,31 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.33.0 — 2026-08-31
+
+### Added
+
+- **`<Branch>`, and regenerating no longer throws the old answer away.**
+  Re-submitting a turn overwrote `ai` and `parts` — so the answer you were
+  comparing against was gone the moment the second one started, and comparing
+  is the only reason anybody presses regenerate.
+
+  - `ChatTurn.versions: TurnVersion[]` and `versionIndex`, both optional, so a
+    turn a host built by hand still renders.
+  - `useChatTurns` returns **`showVersion(id, index)`**. Out of range is
+    ignored rather than clamped: asking for version 7 of a turn with two is a
+    bug, and quietly showing the last one hides it.
+  - `<ChatTurnRow>` takes `onShowVersion` and draws the control beside the
+    answer actions.
+
+  `<Branch>` draws **nothing** below two answers. A control reading "1 of 1"
+  offers to take you nowhere, so a turn answered once looks exactly as it did.
+
+  `ai`/`parts` are still the answer on screen and stay equal to
+  `versions[versionIndex]` through one function that both writers — the batched
+  stream flush and the turn patcher — go through. The first version of this had
+  two, and the archive stayed empty while the screen filled.
+
 ## 0.32.2 — 2026-08-31
 
 ### Fixed

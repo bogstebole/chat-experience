@@ -464,6 +464,15 @@
     /* + the ground's padding around the card */
     --ick-tool-ground-radius: calc(var(--ick-tool-radius) + var(--ick-tool-ground-pad));
 
+    /* ═══ Branch ════════════════════════════════════════════════════════════
+       Which answer you are looking at. Sized and coloured like the answer
+       actions beside it — this is a way back to something, not an announcement
+       that there is something to go back to. */
+
+    --ick-branch-size: 22px;
+    --ick-branch-ink: var(--ick-ink-soft);
+    --ick-branch-ink-off: var(--ick-ink-faint);
+
     /* ═══ Attachments ═══════════════════════════════════════════════════════
        What goes along with a message. An image shows itself at the size of a
        thumbnail; everything else is a named row, the same inset panel an

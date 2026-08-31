@@ -466,6 +466,25 @@ const APP_SHOTS = [
     },
   },
   {
+    name: "demo-branch",
+    themes: ["light", "dark"],
+    clip: null,
+    /** Answered, regenerated, and back on the first — which is the whole point
+        of keeping them: there is no "better" once the first one is gone. */
+    act: async (page) => {
+      await page.getByRole("button", { name: /start experience/i }).click();
+      await page.locator("[contenteditable]").first().waitFor({ state: "visible" });
+      await page.getByRole("button", { name: /What does particle physics actually study/ }).click();
+      await page.waitForTimeout(6000);
+
+      await page.getByRole("button", { name: /Regenerate/i }).click();
+      await page.waitForTimeout(6000);
+
+      await page.getByRole("button", { name: "Previous answer" }).click();
+      await page.waitForTimeout(600);
+    },
+  },
+  {
     name: "demo-attachment-composing",
     themes: ["light", "dark"],
     clip: null,

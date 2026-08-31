@@ -1,0 +1,73 @@
+/* ─────────────────────────────────────────────
+   Branch
+
+   Which answer you are looking at, and how to reach the others. It sits in the
+   row of answer actions and is built like them — a quiet control that only
+   asks for attention when the pointer is on it.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.branch {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ick-space-1);
+  font-family: var(--ick-font-sans);
+}
+
+.step {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ick-branch-size);
+  height: var(--ick-branch-size);
+  border-radius: var(--ick-radius-sm);
+  color: var(--ick-branch-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--ick-duration-fast) ease,
+    color var(--ick-duration-fast) ease;
+}
+
+.step:hover:not(:disabled) {
+  background: var(--ick-surface-hover);
+  color: var(--ick-ink);
+}
+
+.step:active:not(:disabled) {
+  background: var(--ick-surface-active);
+}
+
+.step:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+/* At an end. Still drawn, so the control keeps its shape and the count does
+   not slide sideways as you walk to the last one. */
+.step:disabled {
+  cursor: default;
+  color: var(--ick-branch-ink-off);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  /* Tabular, so the count does not jog as the numbers change width. */
+  font-family: var(--ick-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--ick-text-xs);
+  color: var(--ick-branch-ink);
+  user-select: none;
+}
+
+.of {
+  color: var(--ick-branch-ink-off);
+}
