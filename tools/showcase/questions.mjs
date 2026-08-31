@@ -5,9 +5,8 @@
  *   npm run showcase:questions            light
  *   npm run showcase:questions -- dark    dark
  *
- * Square, because this is for a feed. A 16:9 frame of a chat column is two
- * thirds empty on a phone, and both LinkedIn and X give a square post more
- * vertical room than a landscape one.
+ * 16:9, because that is the shape both LinkedIn and X show whole rather than
+ * handing the viewer a crop to make.
  *
  * It drives the real playground rather than a mock, so the video cannot show
  * something the component does not do. The dev server must be on :5173.
@@ -31,23 +30,29 @@ import {
 const THEME = theme();
 
 /**
- * 840 square, captured at 2× and encoded down to 1080.
+ * 16:9, captured at 2× and encoded down to 1920 × 1080.
  *
- * Downscaling 1680 → 1080 is what makes the small text crisp; rendering at
- * 1080 directly would be softer for the same file.
+ * Landscape because that is the shape both LinkedIn and X show whole. A square
+ * is supported by both and still arrives in a feed as something the viewer has
+ * to be trusted to crop, which is a bet not worth taking on a post.
  *
- * 840 rather than 1120: the chat column is a fixed 720 at most, so a wider
- * frame does not make the card bigger — it only adds empty page down both
- * sides and pushes the same content into a smaller share of a square.
+ * **Height is the constraint, and 16:9 makes it expensive.** The tallest thing
+ * on screen is the third question — four options, an "other" row that grows
+ * when it is typed into, and a footer — sitting under a header, a message
+ * bubble and 100px of feed padding. At 720 its bottom fell out of frame twice,
+ * once when it opened and again when it grew.
  *
- * And not 760 either, which was the take before this one: the third question
- * has four options and a footer, and at 760 the last option and the button
- * under it fell off the bottom of the frame. A square is as short as it is
- * wide, so the width has to be chosen for the tallest thing on screen.
+ * So the height is chosen for that card and the width follows from the ratio.
+ * The chat column is a fixed 720 at most, so the 360px either side is empty
+ * page rather than a wider chat — the cost of a shape both platforms show
+ * whole, paid on purpose.
+ *
+ * Downscaling 2880 → 1920 is what makes the small text crisp; rendering at
+ * 1920 directly would be softer for the same file.
  */
-const VIEWPORT = { width: 840, height: 840 };
-const SIDE = 1080;
-const DOWNSCALE = ["-vf", `scale=${SIDE}:${SIDE}:flags=lanczos`];
+const VIEWPORT = { width: 1440, height: 810 };
+const OUTPUT = { width: 1920, height: 1080 };
+const DOWNSCALE = ["-vf", `scale=${OUTPUT.width}:${OUTPUT.height}:flags=lanczos`];
 
 /** The opener that routes to the question branch of the scripted agent. */
 const ASK = "Set up a double-slit experiment";
@@ -151,6 +156,9 @@ async function main() {
   await press(page, page.getByRole("button", { name: /Interference pattern/ }), 450);
   await press(page, page.getByRole("button", { name: /Wavefunction/ }), 700);
   await type(page, page.getByPlaceholder("Something else"), OTHER);
+  /* Again: typing into the "other" row grows the card, and the footer it
+     pushed down is the thing about to be pressed. */
+  await showCard(page);
   await beat(page, 500);
   await press(page, page.getByRole("button", { name: "Next" }), 2400);
 
@@ -163,7 +171,9 @@ async function main() {
   // ── Going back ────────────────────────────────────────────────────────
   /* An answered question is not a receipt either. The row is a control: it
      reopens with what was said still in it. */
-  await press(page, page.getByRole("button", { name: /Edit answer: The setup/ }), 900);
+  await press(page, page.getByRole("button", { name: /Edit answer: The setup/ }), 400);
+  await showCard(page);
+  await beat(page, 500);
   /* The pointer leaves, so the last frames are the thing rather than a cursor
      sitting on it. A social video loops, and this is the frame it pauses on. */
   await page.mouse.move(VIEWPORT.width / 2, VIEWPORT.height - 40, { steps: 18 });
