@@ -883,6 +883,40 @@ A component that watches scrolling cannot tell its own from theirs, and ends up
 either dragging them back down mid-sentence or never following at all. A wheel
 upwards, a page key, a drag away from the end: any of those and it lets go.
 
+### `<Branch>`
+
+Which answer you are looking at, and how to reach the others.
+
+```tsx
+<Branch total={turn.versions?.length ?? 0} index={turn.versionIndex ?? 0} onSelect={show} />
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `total` | `number` | How many answers this turn has had |
+| `index` | `number` | Which is on screen, from zero. Out of range is clamped |
+| `onSelect` | `(index: number) => void` | |
+| `labels` | `Partial<{ previous, next, position }>` | `position` fills in `{index}` and `{total}` |
+
+**It draws nothing at all when `total` is under two.** A control reading "1 of
+1" offers to take you nowhere, so a turn answered once looks exactly as it did
+before there were versions.
+
+**Regenerating keeps the old answer.** It used to overwrite `ai` and `parts`,
+which threw away the answer being compared against — and comparing is the only
+reason to press regenerate. A turn now carries `versions: TurnVersion[]` and
+`versionIndex`, `useChatTurns` returns **`showVersion(id, index)`**, and
+`<ChatTurnRow>` draws the control beside the answer actions when you give it
+`onShowVersion`.
+
+`ai` and `parts` stay what they were — the answer on screen. They are kept
+equal to `versions[versionIndex]` by one function that both writers (the
+batched stream flush and the turn patcher) go through; two writers for one fact
+is how they drift, and a test compares them after a stream.
+
+Both fields are optional, so a turn a host built by hand still renders — the
+same tolerance `parts` has.
+
 ### `<Attachments>`
 
 What goes along with a message.

@@ -52,7 +52,13 @@
 }
 
 /* Close under the last line, and clear of the next turn. */
+/* The row under an answer: which version you are on, then what you can do
+   with it. One row, because they are the same kind of thing — quiet controls
+   that belong to the answer above them. */
 .actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ick-space-4);
   margin-top: var(--ick-space-4);
 }
 

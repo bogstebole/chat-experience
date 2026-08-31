@@ -17,6 +17,12 @@ import type { Attachment, Question, Source, TurnPart } from "inline-chat-kit";
    paragraphs are left as plain prose on purpose: the showcase recording draws
    a marker from "Higgs" to "2012", and a stroke has to cross the boundary of
    a `**bold**` run to prove that it can. */
+/* Regenerating asks for *another* attempt, so the demo has to have another
+   one — two identical answers behind a "1 / 2" control teaches the wrong
+   thing about what the control is for. Counted per turn, because that is what
+   regenerating is: the same turn, answered again. */
+const attempts = new Map<string, number>();
+
 const AI_RESPONSE = [
   "Particle physics studies the most fundamental constituents of matter and the forces that act between them.",
   "The **Standard Model** organises them into three families:",
@@ -229,9 +235,22 @@ const LOOKED = [
   "This demo does not read the picture; there is no model behind it. A real one would get the file and the sentence in the same request.",
 ];
 
+const AGAIN = [
+  [
+    "Another way to put it: particle physics is the study of what is left when you stop dividing.",
+    "Everything in the Standard Model is there because dividing it further stopped producing anything smaller — twelve fermions, the bosons that carry the forces between them, and the Higgs.",
+    "The interesting part is not the list. It is that the list is *short*, and that nothing found since 1973 has needed adding to it.",
+  ],
+  [
+    "Once more, from the other end. Start with the four forces and ask what carries each one.",
+    "Electromagnetism has the photon. The strong force has gluons. The weak force has the W and Z. Gravity has no entry here at all — which is the honest shape of the field's biggest open problem.",
+    "Matter is what those forces act on: quarks, which feel the strong force, and leptons, which do not.",
+  ],
+];
+
 export async function* scriptedApi(
   message: string,
-  { attachments }: { attachments: Attachment[] }
+  { attachments, turnId }: { attachments: Attachment[]; turnId: string }
 ): AsyncGenerator<string | TurnPart> {
   /* Before the routing on words: something was sent along, and that is what
      the answer should be about. */
@@ -297,6 +316,19 @@ export async function* scriptedApi(
     ]);
     yield* toolCall("t");
     yield* prose(HIGGS_RESPONSE);
+    return;
+  }
+
+  /* The general answer, and a different one each time it is asked again. */
+  const attempt = (attempts.get(turnId) ?? 0) % (AGAIN.length + 1);
+  attempts.set(turnId, attempt + 1);
+
+  if (attempt > 0) {
+    yield* thinking("r", [
+      "Asked again, so the first answer did not land.",
+      "Same physics, different way in — repeating it in other words is not answering it again.",
+    ]);
+    yield* prose(AGAIN[attempt - 1]);
     return;
   }
 

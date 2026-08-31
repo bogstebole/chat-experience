@@ -126,6 +126,8 @@ export type { ConversationProps } from "./Conversation/Conversation";
 /* Fenced code inside an answer, and on its own */
 export { Attachments, formatSize } from "./Attachments/Attachments";
 export type { Attachment, AttachmentsProps } from "./Attachments/Attachments";
+export { Branch } from "./Branch/Branch";
+export type { BranchProps } from "./Branch/Branch";
 export { CodeBlock } from "./CodeBlock/CodeBlock";
 export type { CodeBlockProps } from "./CodeBlock/CodeBlock";
 /* The syntax grammars are a chunk behind a dynamic import, fetched by the
