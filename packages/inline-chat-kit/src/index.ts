@@ -36,6 +36,17 @@ export type {
   UseChatTurnsResult,
 } from "./useChatTurns/useChatTurns";
 
+/* The microphone, and everything about turning speech into text except the
+   part that is a service. The kit records; the host transcribes. */
+export { useVoiceInput } from "./voice/useVoiceInput";
+export type {
+  TranscribeContext,
+  TranscribeHandler,
+  UseVoiceInputOptions,
+  VoiceInput,
+  VoiceState,
+} from "./voice/useVoiceInput";
+
 /* Screen-reader announcements. `useChatTurns` speaks through this already;
    exported so a host app can announce its own errors into the same region
    rather than adding a competing one. */

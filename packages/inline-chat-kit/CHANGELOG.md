@@ -6,6 +6,42 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.48.0 — 2026-09-01
+
+### Added
+
+- **Dictation.** Pass `onTranscribe` to `<ChatInput>` or `<ChatTurnRow>` and
+  the composer offers a microphone beside its plus; leave it out and there is
+  no microphone at all.
+
+  The kit records — permission, `MediaRecorder`, the level of the incoming
+  signal — and hands over a `Blob`. What turns audio into words is a service,
+  and a kit that chose one for its consumers would be wrong for most of them,
+  so the handler is yours:
+
+  ```tsx
+  <ChatInput
+    onTranscribe={async function* (audio, { signal, mimeType }) {
+      const res = await fetch("/api/transcribe", { method: "POST", body: audio, signal });
+      for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) yield chunk;
+    }}
+  />
+  ```
+
+  A string, a promise of one, or an async iterable of deltas — the same three
+  shapes `onSend` takes. The transcript is inserted **at the caret**, so
+  dictating into a half-typed sentence finishes it rather than replacing it.
+
+  `useVoiceInput` is exported for a host building its own composer.
+
+  **`SpeechRecognition` is out of reach through this**, because it holds the
+  microphone itself and will not accept a recording. Stated here rather than
+  discovered: it is the only free transcriber there is.
+
+- **`--ick-voice-meter` and `--ick-voice-meter-spread`** — the ring around the
+  microphone while it listens, and how far it swells at full volume. A wash of
+  the marker rather than a colour of its own.
+
 ## 0.47.1 — 2026-09-01
 
 ### Changed

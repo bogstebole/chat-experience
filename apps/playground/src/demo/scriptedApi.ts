@@ -506,3 +506,32 @@ export async function* threadReply(): AsyncGenerator<string> {
     "That is the whole of the thread: the quote, one question, one answer.",
   ]);
 }
+
+/**
+ * A transcript, without a transcriber.
+ *
+ * The kit records for real — permission, `MediaRecorder`, the level ring all
+ * come from the microphone — and then hands the audio here, where there is
+ * nowhere to send it. This demo has no backend and the browser's own
+ * `SpeechRecognition` cannot be reached through `onTranscribe`, because it
+ * insists on holding the microphone itself rather than taking a recording.
+ *
+ * So the words are scripted, like every other answer in this demo, and the
+ * feature list says so. Everything around them is not: refuse the permission
+ * prompt and the refusal is real, talk louder and the ring is reading your
+ * room, press stop halfway and the abort signal fires.
+ *
+ * A real handler is this shape with a `fetch` in it.
+ */
+export async function* scriptedTranscript(
+  audio: Blob,
+  { signal }: { signal: AbortSignal }
+): AsyncGenerator<string> {
+  const seconds = Math.max(1, Math.round(audio.size / 12000));
+  const words = `this is a scripted transcript standing in for about ${seconds} seconds of speech`.split(" ");
+  for (const word of words) {
+    await new Promise((done) => setTimeout(done, 90));
+    if (signal.aborted) return;
+    yield `${word} `;
+  }
+}

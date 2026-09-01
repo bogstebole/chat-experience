@@ -73,3 +73,56 @@ export const AllStates: Story = {
     </div>
   ),
 };
+
+/**
+ * Dictation.
+ *
+ * `onTranscribe` is the whole switch: given, the composer offers a microphone
+ * where the send glyph would be while there is nothing to send; left out,
+ * there is no microphone at all.
+ *
+ * The handler here does what a real one does — takes the recording, takes its
+ * time, yields the words in pieces — without a service behind it, so the
+ * states are the real ones and the sentence is not. A real handler posts the
+ * blob somewhere and yields what comes back.
+ *
+ * Storybook cannot grant a microphone on your behalf, so pressing this asks
+ * the browser, and refusing is worth doing once: a refusal is the one state
+ * that has to say something in words, because a blocked microphone looks
+ * exactly like an idle one and the browser has stopped offering its prompt.
+ */
+function DictatedChatInput() {
+  const [value, setValue] = useState("");
+  const [state, setState] = useState<ChatInputState>("idle");
+
+  return (
+    <div style={{ width: 420 }}>
+      <ChatInput
+        state={state}
+        value={value}
+        placeholder="Say something, or type it"
+        onChange={(next) => {
+          setValue(next);
+          setState(next ? "typing" : "idle");
+        }}
+        onSubmit={() => {
+          setState("responding");
+          setTimeout(() => setState("resting"), 1200);
+        }}
+        onStop={() => setState("resting")}
+        onTranscribe={async function* (audio, { signal }) {
+          const words = `heard ${(audio.size / 1024).toFixed(1)} kB of audio, in pieces`.split(" ");
+          for (const word of words) {
+            await new Promise((done) => setTimeout(done, 220));
+            if (signal.aborted) return;
+            yield `${word} `;
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+export const Dictation: Story = {
+  render: () => <DictatedChatInput />,
+};
