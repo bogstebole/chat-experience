@@ -11,14 +11,36 @@
    host's page — so each rule has to say it.
    ───────────────────────────────────────────── */
 
-/* The ground. What the card stands on, so it has something to stand on. */
+/* The ground. What the card stands on, and what the header stands on above
+   it — the same two the question group has, in the same order. */
 .tool {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-5);
   width: 100%;
   padding: var(--ick-tool-ground-pad);
   border-radius: var(--ick-tool-ground-radius);
   background: var(--ick-tool-ground);
   font-family: var(--ick-font-sans);
+
+  /* An identifier, not prose — so the header's label is set as one. These live
+     on the ground rather than on the card now, because that is where the
+     header is. */
+  --ick-disclosure-font: var(--ick-font-mono);
+  --ick-disclosure-size: var(--ick-text-sm);
+  --ick-disclosure-label: var(--ick-tool-name);
+  --ick-disclosure-meta: var(--ick-tool-meta);
+  /* And the header's own content sits on the column the card's content sits
+     on: the glyph where a panel's label starts, the chevron where they end.
+     Measured against the card's edges instead, the chevron sat hard in the
+     corner with nothing under it agreeing. */
+  --ick-disclosure-inset: var(--ick-tool-pad);
+  /* And no wash, for the reason a question group has none: the hover is a
+     rounded box the width of the header, and on a ground there is nothing
+     under it for that shape to agree with. The chevron lighting up is the
+     response. */
+  --ick-disclosure-hover: transparent;
 }
 
 .card {
@@ -30,22 +52,25 @@
   /* Clips the body to the box while it is opening, so growing reads as a
      reveal rather than as content arriving before its container has. */
   overflow: hidden;
-
-  /* An identifier, not prose — so the header's label is set as one. And its
-     meta sits on paper here rather than on the page, so it takes the tool's
-     own faint rather than the page's. */
-  --ick-disclosure-font: var(--ick-font-mono);
-  --ick-disclosure-size: var(--ick-text-sm);
-  --ick-disclosure-label: var(--ick-tool-name);
-  --ick-disclosure-meta: var(--ick-tool-meta);
 }
 
-/* ── The row you click ──────────────────────────────────────────────────── */
+/* ── What the card says when it is shut ─────────────────────────────────── */
 
-.summary {
-  flex: 1;
-  min-width: 0;
+/* One row, on the card's own column — a folded question group's summary row in
+   everything but its contents. It stays when the call opens, which is where
+   this parts company with the question group: nothing swaps, so nothing can be
+   drawn over anything.
+
+   The line box takes the badge's height for the same reason every label beside
+   a badge does, and it is what makes this row 40 tall — a folded question's
+   height, so a stack of the two lines up. */
+.overview {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--ick-space-4) var(--ick-tool-pad);
   font-size: var(--ick-text-sm);
+  line-height: var(--ick-badge-size);
   color: var(--ick-tool-meta);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -59,6 +84,7 @@
   gap: var(--ick-space-5);
   width: 100%;
   padding: 0 var(--ick-tool-inner-gap) var(--ick-tool-inner-gap);
+  /* The overview above is the separation, so the body starts right under it. */
   /* No rule under the header.
 
      The question card separates things by **surface and gap** — a row is an

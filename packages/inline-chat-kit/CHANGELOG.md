@@ -6,6 +6,53 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.41.0 — 2026-09-01
+
+### Changed
+
+- **`<Tool>` is a question group's shape now: a header on the ground, a card
+  under it.** The header was the card's own top edge, which meant it had to
+  move whenever the card grew, and — the reason it was raised — that everything
+  in it was measured against the **card's edges**. That is what put the chevron
+  hard into the corner with nothing beneath it to agree with.
+
+  On the ground it takes `--ick-disclosure-inset`, so the glyph starts on the
+  column the card's panels start on and the chevron ends where they end.
+  Measured: glyph left 48 and chevron right 504, against a card at [32, 520] —
+  16 in from each edge, the same column a question card uses.
+
+- **The card says something when it is shut.** One row — the call's summary, or
+  the state in words when it has no summary — padded to the card's column and
+  40 tall, which is a folded question group's row exactly, so a stack of the
+  two lines up.
+
+  It stays when the call opens, and that is a deliberate difference from the
+  question group. There the two bodies swap, and because both are anchored to
+  the same top edge they want the same band and cannot be crossfaded without
+  drawing one over the other. Here nothing swaps: the summary is the card's
+  first row in both states and the detail opens underneath it. Same shape, one
+  fewer thing to go wrong.
+
+- **No hover wash on a tool's header**, for the reason a question group has
+  none: the wash is a rounded box the width of the header, and on a ground
+  there is nothing under it for that shape to agree with.
+
+### Removed
+
+- **`DisclosureHeader`'s `filled` variant.** `<Tool>` was its only consumer, so
+  moving the header onto the ground left the prop, two CSS rules and a guard
+  that "guarded" a variant nothing rendered. The guard now makes the same
+  claim — a tool shut is a folded question's row — against the row that
+  actually draws it.
+
+### Added
+
+- `--ick-tool-pad`, the column a tool card's content starts in, the same job
+  and the same number as `--ick-question-pad`. A guard computes it from how the
+  card actually reaches that column — its own padding plus a panel's — so if
+  either moves this fails rather than quietly meaning something else, and
+  requires it to equal the question card's. One rule, not two that agree.
+
 ## 0.40.0 — 2026-09-01
 
 ### Fixed

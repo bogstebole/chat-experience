@@ -174,6 +174,39 @@ describe("columns", () => {
   });
 
   /**
+   * A tool call follows the same rule as a question group, because it is the
+   * same rule: the header stands on the ground over the card, and its content
+   * sits on the column the card's content sits on.
+   *
+   * The header used to be the card's own top edge, measured against the card's
+   * *edges* — which is what put the chevron hard into the corner with nothing
+   * under it to agree with.
+   */
+  it("stands a tool's header on the column its card's panels start on", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const tool = await load("../Tool/Tool.module.css?raw");
+
+    const inset = px(tokens, decl(tool, ".tool", "--ick-disclosure-inset"));
+
+    /* How the card actually reaches that column: its own padding plus the
+       panel's. Computed rather than asserted as a number, so the day one of
+       them moves this fails instead of quietly meaning something else. */
+    const cardPad = px(tokens, split(decl(tool, ".bodyInner", "padding"))[1]);
+    const panelPad = px(tokens, decl(tool, ".bodyInner", "--ick-code-pad"));
+    expect(inset).toBe(cardPad + panelPad);
+
+    /* The overview row *is* the card, so it takes the column as a padding. */
+    const overview = padding(tokens, tool, ".overview");
+    expect({ left: overview.left, right: overview.right }).toEqual({
+      left: inset,
+      right: inset,
+    });
+
+    /* And it is the column a question uses. One rule, not two that agree. */
+    expect(inset).toBe(px(tokens, "var(--ick-question-pad)"));
+  });
+
+  /**
    * No wash under the title. It is a rounded box the width of the header and
    * there is no box under it for that shape to agree with, so on hover it read
    * as a stray highlight sitting off the card grid. The chevron lighting up is
@@ -185,6 +218,8 @@ describe("columns", () => {
     const css = await load("../disclosure/DisclosureHeader.module.css?raw");
 
     expect(decl(group, ".group", "--ick-disclosure-hover")).toBe("transparent");
+    const tool = await load("../Tool/Tool.module.css?raw");
+    expect(decl(tool, ".tool", "--ick-disclosure-hover")).toBe("transparent");
     expect(decl(css, ".header:hover", "background")).toBe("var(--ick-disclosure-hover)");
     expect(css).toMatch(/\.header:hover \.chevron\s*\{[^}]*color:\s*var\(--ick-ink\)/);
   });

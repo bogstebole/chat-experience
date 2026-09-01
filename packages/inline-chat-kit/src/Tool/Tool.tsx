@@ -161,28 +161,40 @@ export function Tool({
       data-state={state}
       {...rest}
     >
-      {/* The ground, then the card on it — the same two the question card has.
-          A card needs something to be a card *on*; on the page alone it was
-          only paper with a shadow. */}
+      {/* The name of the call, on the ground, above the card — which is where
+          a question group puts its section title, and for the same reason. A
+          header that is the card's top edge has to move when the card grows;
+          one on the ground does not, so opening the call is the body changing
+          under a row that stays put.
+
+          It also settles the alignment: on the ground the header takes
+          `--ick-disclosure-inset`, so the glyph starts on the column the card's
+          panels start on and the chevron ends where they end. Filled, it was
+          measured against the *card's* edges, which is what put the chevron
+          hard into the corner. */}
+      <DisclosureHeader
+        open={isOpen}
+        onToggle={toggle}
+        controls={bodyId}
+        disabled={!hasBody}
+        glyph={<StateGlyph state={state} />}
+        label={name}
+        meta={time || undefined}
+      >
+        {/* The glyph is a picture. This is the same thing in words, for
+            anybody the picture is not reaching. */}
+        <span className={styles.srOnly}>{label[state]}</span>
+      </DisclosureHeader>
+
+      {/* The card, and the overview stays in it whether or not the call is
+          open — which is where this deliberately parts company with the
+          question group. There the two bodies swap, and because both are
+          anchored to the same top edge they want the same band and cannot be
+          crossfaded without drawing one over the other. Here nothing swaps:
+          the summary is the card's first row in both states and the detail
+          opens underneath it. Same shape, one fewer thing to go wrong. */}
       <div className={styles.card}>
-        {/* `filled`, because here the header *is* the card's top edge rather
-            than a row on the page — corner to corner, the card's padding, and
-            the glyph riding in the box a question's badge sits in. */}
-        <DisclosureHeader
-          filled
-          open={isOpen}
-          onToggle={toggle}
-          controls={bodyId}
-          disabled={!hasBody}
-          glyph={<StateGlyph state={state} />}
-          label={name}
-          meta={time || undefined}
-        >
-          {/* The glyph is a picture. This is the same thing in words, for
-              anybody the picture is not reaching. */}
-          <span className={styles.srOnly}>{label[state]}</span>
-          {summary && <span className={styles.summary}>{summary}</span>}
-        </DisclosureHeader>
+        <p className={styles.overview}>{summary ?? label[state]}</p>
 
         <DisclosureBody
           id={bodyId}
