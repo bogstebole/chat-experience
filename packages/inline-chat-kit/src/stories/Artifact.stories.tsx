@@ -116,12 +116,14 @@ export const TheWholeThing: Story = {
     return (
       <div style={{ height: 480, display: "flex" }}>
         <ChatLayout
-          pane={({ narrow }) =>
+          pane={({ narrow, expanded, toggleExpanded }) =>
             artifacts.openId ? (
               <ArtifactPane
                 title="5k training plan"
                 meta="8 weeks · 4 runs a week"
                 modal={narrow}
+                expanded={expanded}
+                onToggleExpanded={toggleExpanded}
                 onClose={artifacts.close}
               >
                 <pre style={{ margin: 0, font: "inherit", whiteSpace: "pre-wrap" }}>{PLAN}</pre>

@@ -263,6 +263,32 @@ describe("columns", () => {
   });
 
   /**
+   * An artifact card stands on the turn's own edge, not on a ground.
+   *
+   * Every other ground in this kit carries something besides its card — a tool
+   * call's carries the header, a question group's the title, an approval's the
+   * asking and the answering. This one held a single card and nothing else,
+   * which is not a surface, it is an indent. And it read as one: the answer's
+   * prose ran along the turn's left edge while the card's words sat 32px
+   * inside it, so the two halves of one answer were two columns.
+   */
+  it("puts nothing under an artifact card", async () => {
+    const css = await load("../Artifact/ArtifactCard.module.css?raw");
+
+    /* One surface in the file, and it is the card. */
+    const surfaces = (css.match(/^\.(\w+)[^{]*\{[^}]*background:/gm) ?? []).map(
+      (rule) => rule.match(/^\.(\w+)/)?.[1]
+    );
+    expect(surfaces, "the ground is gone").not.toContain("artifact");
+    /* The card, and the three panels inset into it. Nothing under the card. */
+    expect(new Set(surfaces)).toEqual(new Set(["card", "title", "preview", "text", "waiting"]));
+
+    /* And the card is the root, so nothing insets it. */
+    const source = await load("../Artifact/ArtifactCard.tsx?raw");
+    expect(source).toMatch(/className: \[styles\.card, className/);
+  });
+
+  /**
    * No wash under the title. It is a rounded box the width of the header and
    * there is no box under it for that shape to agree with, so on hover it read
    * as a stray highlight sitting off the card grid. The chevron lighting up is

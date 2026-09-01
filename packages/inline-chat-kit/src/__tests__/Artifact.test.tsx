@@ -157,11 +157,46 @@ describe("ChatLayout", () => {
   });
 
   /* The pane is told how much room it has, which is the only thing it needs
-     from the layout — and the reason `modal` is a prop rather than a guess. */
-  it("tells the pane whether it is covering the conversation", () => {
+     from the layout — and the reason `modal` is a prop rather than a guess.
+     The widening goes the same way: the width belongs to the layout, the
+     button that changes it belongs in the pane's header. */
+  it("tells the pane how much room it has, and hands it the control", () => {
     const pane = vi.fn(() => null);
     render(<ChatLayout pane={pane}>chat</ChatLayout>);
-    expect(pane).toHaveBeenCalledWith({ narrow: expect.any(Boolean) });
+    expect(pane).toHaveBeenCalledWith({
+      narrow: expect.any(Boolean),
+      expanded: false,
+      toggleExpanded: expect.any(Function),
+    });
+  });
+
+  it("widens when the pane asks", () => {
+    const seen: boolean[] = [];
+    render(
+      <ChatLayout
+        pane={({ expanded, toggleExpanded }) => {
+          seen.push(expanded);
+          return (
+            <ArtifactPane
+              title="Plan"
+              expanded={expanded}
+              onToggleExpanded={toggleExpanded}
+            />
+          );
+        }}
+      >
+        chat
+      </ChatLayout>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Widen" }));
+    expect(seen.at(-1)).toBe(true);
+    expect(screen.getByRole("button", { name: "Narrow" })).toBeInTheDocument();
+  });
+
+  /* Nothing to widen into when it is already covering everything. */
+  it("offers no widening on a pane that covers the conversation", () => {
+    render(<ArtifactPane title="Plan" modal expanded={false} onToggleExpanded={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Widen" })).not.toBeInTheDocument();
   });
 
   it("puts the pane beside the conversation", () => {

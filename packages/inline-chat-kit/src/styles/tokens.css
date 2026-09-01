@@ -484,10 +484,21 @@
     --ick-artifact-pane-radius: var(--ick-nest-ground);
     --ick-artifact-pane-pad: var(--ick-nest-ground-pad);
     --ick-artifact-pane-gap: var(--ick-space-6);
-    /* Wide enough for a document to have a line length, narrow enough to leave
-       the conversation a readable one. Below `ChatLayout`'s breakpoint it is
-       ignored: the pane covers the conversation instead. */
-    --ick-artifact-pane-width: 420px;
+    /* A third of the room, not a fixed width — so it keeps its proportion on a
+       laptop and on a wide monitor instead of becoming a strip on one and half
+       the screen on the other. The floor is what a document needs before its
+       line length stops working; below `ChatLayout`'s breakpoint neither
+       applies, because the pane covers the conversation instead.
+
+       Expanded is two thirds: enough to read a long document in, and still not
+       the whole screen — the conversation it came out of stays on the left,
+       which is the point of a pane rather than a page. */
+    --ick-artifact-pane-width: max(360px, 33%);
+    --ick-artifact-pane-width-wide: max(520px, 66%);
+    /* The pane is a card, and a card that runs into the edges of the window is
+       not one. Its own gap from the layout's edges, which the covering variant
+       drops along with its corners. */
+    --ick-artifact-pane-inset: var(--ick-space-6);
     --ick-artifact-skeleton: var(--ick-inset);
 
     /* ═══ System message ════════════════════════════════════════════════════

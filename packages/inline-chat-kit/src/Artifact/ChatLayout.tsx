@@ -1,20 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import styles from "./ChatLayout.module.css";
 
 /** Below this the pane covers the conversation. Kept with the stylesheet. */
 const NARROW = 760;
 
+export interface PaneState {
+  /** The pane is covering the conversation rather than standing beside it. */
+  narrow: boolean;
+  /** It has been widened. Meaningless while `narrow`, which is already full. */
+  expanded: boolean;
+  toggleExpanded: () => void;
+}
+
 export interface ChatLayoutProps extends HTMLAttributes<HTMLDivElement> {
   /** The conversation, and whatever else belongs above and below it. */
   children: ReactNode;
   /**
-   * The pane, when one is open. Given `narrow`, so it can hold focus and
-   * answer Escape once it is covering the conversation rather than standing
-   * beside it — the one thing about a pane that is not a matter of taste.
+   * The pane, when one is open.
+   *
+   * Given `narrow`, so it can hold focus and answer Escape once it is covering
+   * the conversation rather than standing beside it — the one thing about a
+   * pane that is not a matter of taste. And given `expanded` with the control
+   * for it, because the *width* belongs to the layout while the button that
+   * changes it belongs in the pane's own header, where somebody can find it.
    */
-  pane?: (state: { narrow: boolean }) => ReactNode;
+  pane?: (state: PaneState) => ReactNode;
 }
 
 /**
@@ -32,6 +51,8 @@ export interface ChatLayoutProps extends HTMLAttributes<HTMLDivElement> {
 export function ChatLayout({ children, pane, className, ...rest }: ChatLayoutProps) {
   const root = useRef<HTMLDivElement>(null);
   const [narrow, setNarrow] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const toggleExpanded = useCallback(() => setExpanded((wide) => !wide), []);
 
   /* Measured off this element rather than the window, to agree with the
      container query in the stylesheet. A kit embedded in a narrow column
@@ -46,7 +67,7 @@ export function ChatLayout({ children, pane, className, ...rest }: ChatLayoutPro
     return () => watch.disconnect();
   }, []);
 
-  const shown = pane?.({ narrow });
+  const shown = pane?.({ narrow, expanded, toggleExpanded });
 
   return (
     <div
@@ -56,7 +77,11 @@ export function ChatLayout({ children, pane, className, ...rest }: ChatLayoutPro
       {...rest}
     >
       <div className={styles.chat}>{children}</div>
-      {shown && <div className={styles.pane}>{shown}</div>}
+      {shown && (
+        <div className={styles.pane} data-expanded={(expanded && !narrow) || undefined}>
+          {shown}
+        </div>
+      )}
     </div>
   );
 }

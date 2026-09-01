@@ -19,7 +19,10 @@ export type ArtifactKind = "code" | "text";
 export type ArtifactState = "writing" | "done";
 
 export interface ArtifactCardProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "content" | "onSelect"> {
+  extends Omit<
+    HTMLAttributes<HTMLElement>,
+    "title" | "content" | "onSelect"
+  > {
   /** What the pane opens. The card and the pane share nothing else. */
   id: string;
   title: ReactNode;
@@ -91,24 +94,40 @@ export function ArtifactCard({
     </div>
   );
 
-  return (
-    <div
-      className={[styles.artifact, className ?? ""].filter(Boolean).join(" ")}
-      data-state={state}
-      data-open={open || undefined}
-      {...rest}
+  /* The card *is* the root — there is no ground under it.
+  
+     Every other ground in the kit carries something besides its card: a tool
+     call's carries the header, a question group's carries the title, an
+     approval's carries the asking and the answering. This one carried a single
+     card and nothing else, which is not a ground, it is an indent. And the
+     indent showed: the answer's own prose ran along the turn's left edge while
+     the card's words sat 32px inside it, so the two halves of one answer read
+     as two columns. */
+  const inside = (
+    <>
+      <Head title={title} meta={meta} writing={writing} />
+      {body}
+    </>
+  );
+
+  const shared = {
+    className: [styles.card, className ?? ""].filter(Boolean).join(" "),
+    "data-state": state,
+    "data-open": open || undefined,
+  };
+
+  return onOpen ? (
+    <button
+      type="button"
+      {...(shared as HTMLAttributes<HTMLButtonElement>)}
+      onClick={() => onOpen(id)}
+      {...(rest as HTMLAttributes<HTMLButtonElement>)}
     >
-      {onOpen ? (
-        <button type="button" className={styles.card} onClick={() => onOpen(id)}>
-          <Head title={title} meta={meta} writing={writing} />
-          {body}
-        </button>
-      ) : (
-        <div className={styles.card}>
-          <Head title={title} meta={meta} writing={writing} />
-          {body}
-        </div>
-      )}
+      {inside}
+    </button>
+  ) : (
+    <div {...(shared as HTMLAttributes<HTMLDivElement>)} {...(rest as HTMLAttributes<HTMLDivElement>)}>
+      {inside}
     </div>
   );
 }

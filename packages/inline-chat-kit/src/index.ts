@@ -96,7 +96,7 @@ export type { ArtifactCardProps, ArtifactKind, ArtifactState } from "./Artifact/
 export { ArtifactPane } from "./Artifact/ArtifactPane";
 export type { ArtifactPaneProps } from "./Artifact/ArtifactPane";
 export { ChatLayout } from "./Artifact/ChatLayout";
-export type { ChatLayoutProps } from "./Artifact/ChatLayout";
+export type { ChatLayoutProps, PaneState } from "./Artifact/ChatLayout";
 export { useArtifacts } from "./Artifact/useArtifacts";
 export type { Artifacts } from "./Artifact/useArtifacts";
 export { SystemMessage } from "./SystemMessage/SystemMessage";
