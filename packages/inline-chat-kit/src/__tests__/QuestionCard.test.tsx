@@ -357,6 +357,10 @@ describe("the rules that only matter when painted", () => {
       for (let hop = 0; hop < 4; hop += 1) {
         if (at === "0") return 0;
         if (/^\d+px$/.test(at)) return Number.parseInt(at, 10);
+        /* `calc(var(--a) * 2)` — the column is stated as two of the nesting
+           gap rather than as its own number. */
+        const scaled = at.match(/^calc\(\s*var\((--[\w-]+)\)\s*\*\s*([\d.]+)\s*\)$/);
+        if (scaled) return px(`var(${scaled[1]})`) * Number(scaled[2]);
         const token = at.match(/^var\((--[\w-]+)\)$/)?.[1];
         expect(token, `not a token: ${at}`).toBeTruthy();
         const declared = tokens.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1];

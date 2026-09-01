@@ -211,6 +211,14 @@
     --ick-nest-row: calc(var(--ick-nest-inner) + var(--ick-nest-pad));
     --ick-nest-card: calc(var(--ick-nest-row) + var(--ick-nest-pad));
     --ick-nest-ground: calc(var(--ick-nest-card) + var(--ick-nest-ground-pad));
+    /* The column a card's content starts in, measured from the card's edge.
+       Three components now have to agree on it — a question's rows, a tool
+       call's panels, and an approval's title and buttons standing over one —
+       so it is one token they all read rather than three numbers that happen
+       to match. A card reaches it as its own gap plus a row's, which is the
+       two `--ick-nest-pad`s above; stated here as well because the things
+       standing *over* a card cannot compose it that way. */
+    --ick-nest-column: calc(var(--ick-nest-pad) * 2);
 
     /* ═══ Elevation ════════════════════════════════════════════════════════
        Named by how far off the page a thing sits, not by how it is drawn. */
@@ -403,7 +411,7 @@
        group's title sits on it too, because a section's name aligns with the
        words under it rather than with the cards' edges. Named because three
        stylesheets now have to agree on it. */
-    --ick-question-pad: var(--ick-space-6);
+    --ick-question-pad: var(--ick-nest-column);
     --ick-question-surface: var(--ick-ground);
     --ick-question-card: var(--ick-card);
     --ick-question-row: var(--ick-inset);
@@ -488,7 +496,7 @@
        the card takes it as `--ick-disclosure-inset`, so the glyph starts where
        a panel's label starts and the chevron ends where they end. The same
        number and the same job as `--ick-question-pad`. */
-    --ick-tool-pad: var(--ick-space-6);
+    --ick-tool-pad: var(--ick-nest-column);
     --ick-tool-inner-radius: var(--ick-nest-row);
     --ick-tool-radius: var(--ick-nest-card);
     /* + the ground's padding around the card */
@@ -557,6 +565,10 @@
     /* An approval *is* a ground, so it is padded like one — the same gap a
        question group leaves around its cards. */
     --ick-approval-pad: var(--ick-nest-ground-pad);
+    /* What the title and the buttons are inset by, standing on the ground over
+       the card between them: the card's own column, so the shield starts where
+       the subject's content starts and the buttons end where it ends. */
+    --ick-approval-column: var(--ick-nest-column);
     /* + whatever it holds, which is a tool row. */
     /* Ground = card + the gap around it, the kit's one chain. It used to be
        derived from the tool's corner, back when a tool call was the only thing

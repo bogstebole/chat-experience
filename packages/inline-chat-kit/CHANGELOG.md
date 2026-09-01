@@ -6,6 +6,48 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.42.0 — 2026-09-01
+
+### Changed
+
+- **`<Approval>` asks above the card and answers below it.** The title and the
+  buttons are on the ground; the card between them is the subject. They are not
+  part of the thing being approved — they are the asking and the answering.
+
+  The card is gone with them, because the subject already brings one. An
+  approval holding a tool call was a card inside a card: two papers, two
+  shadows, one thing. That is also why the tool no longer has to be flattened
+  into a row on it — an approval sets `--ick-tool-ground: transparent` and
+  nothing else, so a tool call inside one is a tool call.
+
+- **Everything lines up on the subject's own column.** The shield where the
+  tool's glyph is, the buttons ending where its panels end. Measured: shield
+  box, tool glyph and overview text all at 48, chevron and the primary button
+  both ending at 504, against a card at [32, 520].
+
+- **Deny is pulled back by its own padding.** A ghost button is *text* — what
+  you see is the word, not the invisible box around it — and the word sat 16px
+  inside the line the shield above it is on. The two that say yes are the other
+  way round: filled, so the box is the visible thing and its edge is what lines
+  up. A guard ties the pull-back to `Button`'s own padding rather than to a
+  number that happens to look right.
+
+### Added
+
+- **`--ick-nest-column`**, the column a card's content starts in, stated once.
+  Three components have to agree on it now — a question's rows, a tool call's
+  panels, and an approval's title and buttons standing over one — so
+  `--ick-question-pad`, `--ick-tool-pad` and `--ick-approval-column` all read
+  it rather than three numbers happening to match.
+- An approval repoints `--ick-code-pad` to that column, so a subject that is a
+  bare code block lands on it too. Its own 12 would have sat four pixels inside.
+
+### Removed
+
+- **The approval's own `.card`.** With it goes the nesting row that checked its
+  corner, and the guards that required a tool call inside one to be a row: both
+  described the arrangement that caused the doubled paper.
+
 ## 0.41.0 — 2026-09-01
 
 ### Changed
