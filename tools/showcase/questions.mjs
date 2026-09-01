@@ -30,28 +30,26 @@ import {
 const THEME = theme();
 
 /**
- * 16:9, captured at 2× and encoded down to 1920 × 1080.
+ * 1:1, captured at 2× and encoded down to 1080 × 1080.
  *
- * Landscape because that is the shape both LinkedIn and X show whole. A square
- * is supported by both and still arrives in a feed as something the viewer has
- * to be trusted to crop, which is a bet not worth taking on a post.
+ * **The subject is tall and 16:9 is wide**, which is the whole reason this
+ * changed. Measured at the tallest moment — the third question open, four
+ * options, an "other" row and a footer, under a header, a bubble and 100px of
+ * feed padding — the content runs to 750px. At 810 the footer sat on the frame's
+ * edge with the bottom fade over the last rows, and the composer was off screen
+ * entirely. Raising the height inside 16:9 means widening past 1440 for a chat
+ * column that is 720 at most, which buys nothing but empty page.
  *
- * **Height is the constraint, and 16:9 makes it expensive.** The tallest thing
- * on screen is the third question — four options, an "other" row that grows
- * when it is typed into, and a footer — sitting under a header, a message
- * bubble and 100px of feed padding. At 720 its bottom fell out of frame twice,
- * once when it opened and again when it grew.
+ * A square fits it: 750 of content in 1080, everything visible at once, and no
+ * scrolling in the middle of the recording. Both LinkedIn and X show 1:1 whole.
+ * 4:5 also fits and gives 300 more pixels of nothing, so it is not the tighter
+ * frame — change `OUTPUT` and `VIEWPORT` together if a portrait post is wanted.
  *
- * So the height is chosen for that card and the width follows from the ratio.
- * The chat column is a fixed 720 at most, so the 360px either side is empty
- * page rather than a wider chat — the cost of a shape both platforms show
- * whole, paid on purpose.
- *
- * Downscaling 2880 → 1920 is what makes the small text crisp; rendering at
- * 1920 directly would be softer for the same file.
+ * Downscaling 2160 → 1080 is what makes the small text crisp; rendering at 1080
+ * directly would be softer for the same file.
  */
-const VIEWPORT = { width: 1440, height: 810 };
-const OUTPUT = { width: 1920, height: 1080 };
+const VIEWPORT = { width: 1080, height: 1080 };
+const OUTPUT = { width: 1080, height: 1080 };
 const DOWNSCALE = ["-vf", `scale=${OUTPUT.width}:${OUTPUT.height}:flags=lanczos`];
 
 /** The opener that routes to the question branch of the scripted agent. */
@@ -63,18 +61,26 @@ const SEPARATION = "120 nm";
 const OTHER = "Detection rate over time";
 
 /**
- * Bring the open question fully into frame, footer and all.
+ * Bring the open question fully into frame, footer and all — but only if it is
+ * not already there.
  *
- * `scrollIntoViewIfNeeded` on the control being clicked is not enough: it
- * stops as soon as *that* is visible, which leaves the Next button under it
- * off the bottom. This scrolls the card.
+ * In the old 16:9 frame this scrolled on every call, because the card's footer
+ * was always off the bottom. In a square one it usually has nothing to do, and
+ * scrolling anyway would move the whole conversation for no reason: the frame
+ * is what changed, not the component. So it checks first.
  */
 const showCard = async (page) => {
-  await page.evaluate(() => {
+  const moved = await page.evaluate(() => {
     const card = document.querySelector('[class*="item"][data-card]');
-    card?.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (!card) return false;
+    const box = card.getBoundingClientRect();
+    /* Room for the composer under it, so the card is not merely on screen but
+       sitting in a conversation that still looks like one. */
+    if (box.top >= 0 && box.bottom <= window.innerHeight - 120) return false;
+    card.scrollIntoView({ block: "center", behavior: "smooth" });
+    return true;
   });
-  await page.waitForTimeout(500);
+  if (moved) await page.waitForTimeout(500);
 };
 
 /** Move like a hand: a straight jump to a control reads as a script. */
