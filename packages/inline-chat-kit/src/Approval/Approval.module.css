@@ -24,17 +24,25 @@
   background: var(--ick-approval-surface);
   font-family: var(--ick-font-sans);
 
-  /* An approval *is* the ground, so a tool call standing on it brings none of
-     its own — and nothing else. It used to be flattened into a row as well,
-     because the approval had a card of its own and a card inside a card is two
-     papers for one thing. The card is the tool's now, so the tool is a tool.
+  /* The subject brings the *contents* of the card; the approval draws the card
+     itself. So a tool call standing in one brings no surfaces of its own — not
+     its ground, not its card, not its shadow.
 
-     Everything below reads the same column the tool's card reads, which is how
-     the shield above and the buttons below line up with what is between
-     them. */
+     Two arrangements were tried before this. The approval's card wrapping all
+     three (title, subject, buttons) made an approval holding a tool call two
+     papers for one thing. Letting the tool bring its own card then left its
+     header stranded on the ground beside the title — two headers over one
+     card, and the second of them a stray row.
+
+     One card, and everything in it belongs to the subject. The title above and
+     the buttons below are on the ground, because they are the asking and the
+     answering rather than part of what is being approved. */
   --ick-tool-ground: transparent;
   --ick-tool-ground-pad: 0px;
-  /* And a subject that is not a tool call still lands on that column: a bare
+  --ick-tool-surface: transparent;
+  --ick-tool-shadow: none;
+  --ick-tool-radius: 0;
+  /* And a subject that is not a tool call still lands on the column: a bare
      code block's own padding is 12, which would sit four pixels inside it. */
   --ick-code-pad: var(--ick-approval-column);
 }
@@ -50,10 +58,8 @@
 
 .head {
   box-sizing: border-box;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ick-space-4);
   width: 100%;
+  min-width: 0;
   /* On the card's column, so the shield starts where the subject's own content
      starts. It used to be 8 plus the card's 8, which was the same arithmetic
      from inside the card; from out here there is no card padding to add to, so
@@ -61,28 +67,7 @@
   padding: var(--ick-space-2) 0 0 var(--ick-approval-column);
 }
 
-/* The badge's box, holding a shield instead of a number — so the title starts
-   on the line a question card's title starts on. See the same slot in the
-   shared disclosure header. */
-.glyph {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--ick-badge-size);
-  height: var(--ick-badge-size);
-  color: var(--ick-approval-glyph);
-}
 
-.approval[data-decision="denied"] .glyph {
-  color: var(--ick-ink-faint);
-}
-
-.headText {
-  box-sizing: border-box;
-  flex: 1;
-  min-width: 0;
-}
 
 .title {
   margin: 0;
@@ -98,13 +83,22 @@
   color: var(--ick-ink-soft);
 }
 
-/* The one thing on paper: what is actually being decided about. Whatever it
-   is brings its own surface — a tool call its card, a code block its panel —
-   so this adds nothing but a box to sit in. */
+/* The card, and the only thing on paper: what is actually being decided about.
+
+   No padding of its own, deliberately. Whatever is inside brings it — a tool
+   call's rows are padded to the column already, a code block's panel likewise
+   — and adding a gap here would push all of it eight pixels off the line the
+   title and the buttons stand on. */
 .subject {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  border-radius: var(--ick-nest-card);
+  background: var(--ick-card);
+  box-shadow: var(--ick-shadow-float);
+  /* Clips whatever is inside to the corner, since nothing in there knows it is
+     against the card's edge. */
+  overflow: hidden;
 }
 
 /* ── The decision ───────────────────────────────────────────────────────── */

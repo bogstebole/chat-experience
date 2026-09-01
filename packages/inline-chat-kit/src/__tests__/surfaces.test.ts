@@ -241,10 +241,12 @@ describe("the surface stack", () => {
     const css = await load("../Approval/Approval.module.css?raw");
     expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
     expect(css).toMatch(/--ick-tool-ground-pad:\s*0px/);
-    /* Its shadow stays. The approval used to take that away too, because it
-       had a card of its own and the tool was flattened into a row on it. The
-       card is the tool's now, so the tool is a tool. */
-    expect(css).not.toMatch(/--ick-tool-shadow/);
+    /* And none of its own surfaces either: the approval draws the card, the
+       tool brings what goes in it. A tool call bringing its own card left two
+       papers for one thing; bringing a card but no ground left its header
+       stranded beside the title, two headers over one card. */
+    expect(css).toMatch(/--ick-tool-surface:\s*transparent/);
+    expect(css).toMatch(/--ick-tool-shadow:\s*none/);
   });
 });
 
@@ -279,11 +281,19 @@ describe("an approval", () => {
     const tokens = await load("../styles/tokens.css?raw");
     expect(tokens).toMatch(/--ick-approval-surface:\s*var\(--ick-ground\)/);
 
-    /* Nothing else here draws a surface. The subject brings its own, and an
-       approval that painted one too would be a card inside a card. */
-    expect(css, "the approval's own card is gone").not.toMatch(/^\.card \{/m);
+    /* Exactly two surfaces: the ground, and the card around the subject. The
+       title and the buttons paint nothing, because they are on the ground —
+       and there is no third, which is what a card inside a card would be. */
+    expect(css, "the approval's old wrapping card is gone").not.toMatch(/^\.card \{/m);
     const surfaces = css.match(/^\.(\w+)[^{]*\{[^}]*background:/gm) ?? [];
-    expect(surfaces.map((m) => m.match(/^\.(\w+)/)?.[1])).toEqual(["approval"]);
+    expect(surfaces.map((m) => m.match(/^\.(\w+)/)?.[1])).toEqual(["approval", "subject"]);
+    expect(rule(".subject")).toMatch(/background:\s*var\(--ick-card\)/);
+    expect(rule(".subject")).toMatch(/box-shadow:\s*var\(--ick-shadow-float\)/);
+
+    /* And no padding on it: whatever is inside is padded to the column
+       already, so a gap here would push all of it off the line the title and
+       the buttons stand on. */
+    expect(rule(".subject"), "the subject pads nothing").not.toMatch(/padding:/);
   });
 
   /**
