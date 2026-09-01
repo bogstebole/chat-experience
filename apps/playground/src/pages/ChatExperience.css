@@ -2,6 +2,12 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Stated, because this is a flex item now and `margin: 0 auto` on one opts
+     it out of stretching — so it was sized by its content instead of by
+     `max-width`, and the column lost 96px the day `ChatLayout` went around it.
+     With a width to cap, `max-width` caps it and the auto margins centre it,
+     which is what they were always doing on a block. */
+  width: 100%;
   max-width: 720px;
   margin: 0 auto;
   padding: 0 32px;
@@ -233,8 +239,13 @@ div.opening {
    opening the pane slides the conversation across rather than squashing it. */
 .chatWorkspace {
   height: 100vh;
-  padding: 0 24px 0 0;
   box-sizing: border-box;
+}
+
+/* Room at the right edge, but only when there is something at it. With no pane
+   the padding was dead space that pushed the conversation 12px off centre. */
+.chatWorkspace[data-pane] {
+  padding-right: 24px;
 }
 
 /* The plan, which is the host's content and so the host's typography. The kit
