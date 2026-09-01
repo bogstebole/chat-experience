@@ -373,6 +373,7 @@ component that owns it.
 | `sources` | `<Sources>` | `sources`, `title`, `collapsible` |
 | `approval` | `<Approval>` | `title`, `description`, `tool`, `decision` |
 | `question` | `<QuestionGroup>` | `title`, `questions`, `answers`, `activeIndex`, `collapsible` |
+| `notice` | `<SystemMessage>` | `text`, `tone` |
 
 `reasoning` and `chain` are the same job at two grains — a block of prose, or
 steps that follow from one another. Sending both for one stretch of thinking
@@ -889,6 +890,37 @@ And it reads the reader's intent from the **input**, not from the scroll event.
 A component that watches scrolling cannot tell its own from theirs, and ends up
 either dragging them back down mid-sentence or never following at all. A wheel
 upwards, a page key, a drag away from the end: any of those and it lets go.
+
+### `<SystemMessage>`
+
+The conversation saying something about itself — not the reader, not the agent.
+
+```tsx
+<SystemMessage>The oldest messages are dropping out of the window.</SystemMessage>
+<SystemMessage tone="danger">Lost the connection. Nothing since your last message was saved.</SystemMessage>
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `children` | `ReactNode` | The sentence. Say what happens next, not that a state changed |
+| `tone` | `"notice" \| "danger"` | Two, because `<Context>` already settled that three is one too many |
+
+Reachable from a stream as well, as a part of kind `notice`, which is the only
+way anything gets into a conversation without the host placing it by hand.
+
+**It has no icon**, and that is the component rather than an omission from it.
+Every picture in this kit carries a state the words beside it also carry —
+queued, running, failed, allowed — so a reader the picture does not reach loses
+nothing. An icon here would say "something is being announced" beside a
+sentence announcing it.
+
+**No dismiss and no action.** It is a line of the transcript, not a toast:
+dismissing one would be editing what happened. A host that wants a button under
+it composes one, which costs them a line and costs this component an API.
+
+**No live region.** The kit has one — see `announce` — written to on a later
+tick. A second one says everything twice, which is the fault that region exists
+to have fixed. A host streaming a `notice` should announce it.
 
 ### `<Branch>`
 

@@ -19,6 +19,7 @@ import { TaskList } from "../TaskList/TaskList";
 import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { Approval } from "../Approval/Approval";
 import { Context } from "../Context/Context";
+import { SystemMessage } from "../SystemMessage/SystemMessage";
 import { Sources } from "../Sources/Sources";
 import { InlineCitation } from "../InlineCitation/InlineCitation";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
@@ -62,6 +63,15 @@ const AXE_OPTIONS = {
 const check = async (container: HTMLElement) => {
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 };
+
+describe("axe — the conversation talking", () => {
+  it.each(["notice", "danger"] as const)("passes for a %s", async (tone) => {
+    const { container } = render(
+      <SystemMessage tone={tone}>The oldest messages are dropping out of the window.</SystemMessage>
+    );
+    await check(container);
+  });
+});
 
 describe("axe — buttons", () => {
   it("passes for a button with a visible label", async () => {

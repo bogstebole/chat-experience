@@ -42,6 +42,7 @@ const EXPECTED_EXPORTS = [
   "HoverActionsRow",
   "MorphGlyph",
   "ReplyThreadPopup",
+  "SystemMessage",
   "TaskList",
   "TextHighlighter",
   "Tool",

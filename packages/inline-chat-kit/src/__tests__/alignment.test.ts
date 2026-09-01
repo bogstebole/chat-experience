@@ -236,6 +236,33 @@ describe("columns", () => {
   });
 
   /**
+   * A note between turns stands where a ground stands, so its words need the
+   * ground's own padding *plus* the column to land where a card's words land.
+   *
+   * With only the column it measured 32 against a tool call's 48 — lined up
+   * with the cards' edges instead of with the words in them, which is the one
+   * alignment rule this kit has, stated backwards.
+   */
+  it("stands a system message's words on the column a card's words start on", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const css = await load("../SystemMessage/SystemMessage.module.css?raw");
+
+    const pad = padding(tokens, css, ".message");
+    const column = px(tokens, "var(--ick-nest-ground-pad)") + px(tokens, "var(--ick-nest-column)");
+    expect({ left: pad.left, right: pad.right }).toEqual({ left: column, right: column });
+
+    /* The same breathing a folded row has, so a one-liner sits at about its
+       height. Not the same *line box*: the badge's box is for a label standing
+       beside a badge, and nothing stands beside this — taking it anyway put
+       1.85 of leading on every note that wraps. */
+    const card = await load("../QuestionCard/QuestionCard.module.css?raw");
+    expect(pad.top).toBe(padding(tokens, card, ".collapsed").top);
+    expect(decl(css, ".message", "line-height"), "prose, not a badge's box").not.toMatch(
+      /badge-size/
+    );
+  });
+
+  /**
    * No wash under the title. It is a rounded box the width of the header and
    * there is no box under it for that shape to agree with, so on hover it read
    * as a stray highlight sitting off the card grid. The chevron lighting up is

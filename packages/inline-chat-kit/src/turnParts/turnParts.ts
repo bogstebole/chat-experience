@@ -5,6 +5,7 @@ import type { Task } from "../TaskList/TaskList";
 import type { ToolState } from "../Tool/Tool";
 import type { Decision } from "../Approval/Approval";
 import type { Answer, Question } from "../QuestionCard/types";
+import type { SystemTone } from "../SystemMessage/SystemMessage";
 
 /**
  * The parts of a turn that are not the answer's prose.
@@ -101,6 +102,19 @@ export type TurnPart =
       activeIndex?: number | null;
       collapsible?: boolean;
       readOnly?: boolean;
+    }
+  | {
+      /**
+       * Something that happened to the conversation rather than in it — the
+       * window filling, the model changing partway through, a connection
+       * going. A part rather than a component the host drops between rows,
+       * because those are the two ways anything reaches a conversation here
+       * and only one of them can be sent down a stream.
+       */
+      kind: "notice";
+      id: string;
+      text: string;
+      tone?: SystemTone;
     };
 
 /**

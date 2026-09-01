@@ -1,0 +1,47 @@
+/* ─────────────────────────────────────────────
+   SystemMessage
+
+   A recessed row in the transcript: the surface talking, rather than either of
+   the two people in the conversation. It takes the **ground** for that reason
+   — a ground is what things sit on, and a note about the conversation is not a
+   thing in it.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.message {
+  box-sizing: border-box;
+  width: 100%;
+  /* The column every card's *content* starts on — which from out here is the
+     ground's own padding plus that column, because this row stands where a
+     ground stands rather than where a card does. Measured with only the column
+     it read 32 against a tool call's 48: a note lined up with the cards' edges
+     instead of with the words in them, which is the one alignment rule this
+     kit has. */
+  padding: var(--ick-space-4)
+    calc(var(--ick-nest-ground-pad) + var(--ick-nest-column));
+  border-radius: var(--ick-system-radius);
+  background: var(--ick-system-surface);
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-sm);
+  /* Prose spacing, not the badge's line box.
+  
+     The badge's box is the rule for a label standing *beside* a badge, so that
+     the two centre on one line. Nothing stands beside this. Taking it anyway
+     bought a one-line note the height of a folded row and cost every note that
+     wraps — 24 over 13px type is 1.85, which on three lines reads as a poster
+     rather than a sentence. A note is prose and wraps like prose; the eight
+     above and below is what keeps a one-liner close to a folded row. */
+  line-height: 1.5;
+  color: var(--ick-system-ink);
+}
+
+/* Something went wrong. The tint is the whole signal, and the sentence beside
+   it is what anybody can act on — see the note in the component about why
+   there is no icon. */
+.message[data-tone="danger"] {
+  background: var(--ick-system-surface-danger);
+  color: var(--ick-system-ink-danger);
+}
