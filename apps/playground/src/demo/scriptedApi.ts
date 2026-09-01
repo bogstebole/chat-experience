@@ -1,10 +1,12 @@
-import type { Attachment, Question, Source, TurnPart } from "inline-chat-kit";
+import type { Attachment, Question, Source, TurnPart, TurnPartUpdate } from "inline-chat-kit";
 
 /**
  * The demo pretending to be a model, and now pretending to be an agent.
  *
  * A `SendHandler` may stream two kinds of thing: strings, which are deltas of
- * the answer's prose, and `TurnPart`s, which are merged into the turn by id.
+ * the answer's prose, and `TurnPartUpdate`s, which are merged into the turn by
+ * id — an update rather than a whole part, because a stream's second word
+ * about a thing should be able to be only what changed.
  * Everything the agent tier draws arrives through the second kind — so this is
  * where reasoning, tool calls, a plan and a question get into the conversation
  * at all, rather than only into Storybook.
@@ -374,7 +376,7 @@ Miss a week and repeat it rather than skipping ahead to catch up.`;
 export async function* scriptedApi(
   message: string,
   { attachments, turnId }: { attachments: Attachment[]; turnId: string }
-): AsyncGenerator<string | TurnPart> {
+): AsyncGenerator<string | TurnPartUpdate> {
   /* Before the routing on words: something was sent along, and that is what
      the answer should be about. */
   if (attachments.length > 0) {

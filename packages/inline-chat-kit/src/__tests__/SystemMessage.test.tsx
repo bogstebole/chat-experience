@@ -8,6 +8,8 @@ const turn = (over: Partial<ChatTurn> = {}): ChatTurn => ({
   id: "t1",
   user: "",
   ai: "",
+  /* Required, not optional — a turn always has a list, even an empty one. */
+  parts: [],
   state: "idle",
   ...over,
 });

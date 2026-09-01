@@ -15,6 +15,7 @@
     "lint": "eslint .",
     "pack:kit": "npm run build:kit && npm pack --workspace packages/inline-chat-kit --pack-destination packages/inline-chat-kit && mv packages/inline-chat-kit/inline-chat-kit-*.tgz packages/inline-chat-kit/inline-chat-kit.tgz",
     "test": "npm run test --workspace packages/inline-chat-kit",
+    "verify": "npm run lint && npm run test && npm run build && npm run build-storybook --workspace packages/inline-chat-kit && npm pack --workspace packages/inline-chat-kit --dry-run",
     "test:watch": "npm run test:watch --workspace packages/inline-chat-kit",
     "showcase": "node tools/showcase/record.mjs",
     "showcase:questions": "node tools/showcase/questions.mjs",

@@ -66,6 +66,14 @@ writing the animations.
 
 ## Scripts
 
+`npm run verify` is **everything CI runs**, in CI's order: lint, tests, both
+builds, Storybook, and a dry-run pack. Run it before pushing.
+
+It exists because `tsc --noEmit -p apps/playground/tsconfig.json` is not the
+same check as the `tsc -b` in the playground's own build — the second follows
+project references into the kit's sources and typechecks the tests as well. Two
+type errors reached `main` through that gap on the same afternoon.
+
 | Command | Does |
 | --- | --- |
 | `npm run dev` | Playground on :5173 |
