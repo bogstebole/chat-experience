@@ -55,13 +55,12 @@
 /* Which one the pane is showing. The card stays where it is and says so,
    rather than the pane being the only thing that knows.
 
-   On the leading edge, and see the token for why: this is the third thing
-   tried and the first that is not more accent than anything else in the kit
-   uses. `inset` rather than a border, because a border is part of the box and
-   would move everything in it three pixels. */
+   A ring all the way round, in ink — see the token for why it is not the
+   accent. `inset` rather than a border, because a border is part of the box
+   and would move everything inside it two pixels. */
 .artifact[data-open] .card {
   box-shadow: var(--ick-shadow-float),
-    inset var(--ick-artifact-open-edge-width) 0 0 var(--ick-artifact-open-edge);
+    inset 0 0 0 var(--ick-artifact-open-edge-width) var(--ick-artifact-open-edge);
 }
 
 .head {

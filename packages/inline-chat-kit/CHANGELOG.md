@@ -6,6 +6,18 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.47.1 — 2026-09-01
+
+### Changed
+
+- **The card whose pane is open wears a neutral ring, not the accent.** The
+  marker means "this one *chosen*" — a picked option, a badge, a citation — and
+  an artifact being shown beside the conversation is not a choice anybody made
+  about it, it is where the reader is. A ring all the way round instead of an
+  edge on one side, in ink at 45% so it inverts: `--ick-border-bright` is
+  literally `rgb(paper)`, a visible edge on a dark card and nothing at all on a
+  white one.
+
 ## 0.47.0 — 2026-09-01
 
 ### Changed
