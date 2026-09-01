@@ -6,6 +6,17 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.46.1 — 2026-09-01
+
+### Fixed
+
+- **The pane has 24 of padding everywhere**, inside and out. It is the only
+  surface in the kit that holds a whole document rather than rows of a
+  component, and a document wants a margin — the nesting chain's 16 is a card's
+  gap around its rows, which is a different job at a different size. It was
+  also running into the top and bottom of the viewport, and a card that runs
+  into the window is not one. Measured: 24 from every edge.
+
 ## 0.46.0 — 2026-09-01
 
 ### Changed
