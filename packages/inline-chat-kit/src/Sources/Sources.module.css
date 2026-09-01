@@ -13,6 +13,10 @@
 .sources {
   box-sizing: border-box;
   width: 100%;
+  /* It carries no surface of its own — no ground, no card — so it sits in the
+     answer's flow, and everything in that flow starts on the answer's column.
+     See `--ick-answer-column`. */
+  padding-left: var(--ick-answer-column);
   font-family: var(--ick-font-sans);
 
   /* A title, not a label: this heads a list rather than describing an aside,

@@ -20,7 +20,7 @@ export type ArtifactState = "writing" | "done";
 
 export interface ArtifactCardProps
   extends Omit<
-    HTMLAttributes<HTMLElement>,
+    HTMLAttributes<HTMLDivElement>,
     "title" | "content" | "onSelect"
   > {
   /** What the pane opens. The card and the pane share nothing else. */
@@ -94,15 +94,15 @@ export function ArtifactCard({
     </div>
   );
 
-  /* The card *is* the root — there is no ground under it.
-  
-     Every other ground in the kit carries something besides its card: a tool
-     call's carries the header, a question group's carries the title, an
-     approval's carries the asking and the answering. This one carried a single
-     card and nothing else, which is not a ground, it is an indent. And the
-     indent showed: the answer's own prose ran along the turn's left edge while
-     the card's words sat 32px inside it, so the two halves of one answer read
-     as two columns. */
+  /* A ground under the card after all, and the reason is the answer's column
+     rather than this component.
+
+     It was taken away when the prose still began at the turn's own edge: a
+     ground under a single card was 32px of indent that put the card's words on
+     a different line from the answer's. Now everything in an answer begins on
+     one column and the boxes bleed wider than it — so the ground is what puts
+     this card's words *on* that column, the same way a tool call's does. See
+     `--ick-answer-column`. */
   const inside = (
     <>
       <Head title={title} meta={meta} writing={writing} />
@@ -110,24 +110,22 @@ export function ArtifactCard({
     </>
   );
 
-  const shared = {
-    className: [styles.card, className ?? ""].filter(Boolean).join(" "),
-    "data-state": state,
-    "data-open": open || undefined,
-  };
+  const shared = { className: styles.card };
 
-  return onOpen ? (
-    <button
-      type="button"
-      {...(shared as HTMLAttributes<HTMLButtonElement>)}
-      onClick={() => onOpen(id)}
-      {...(rest as HTMLAttributes<HTMLButtonElement>)}
+  return (
+    <div
+      className={[styles.artifact, className ?? ""].filter(Boolean).join(" ")}
+      data-state={state}
+      data-open={open || undefined}
+      {...(rest as HTMLAttributes<HTMLDivElement>)}
     >
-      {inside}
-    </button>
-  ) : (
-    <div {...(shared as HTMLAttributes<HTMLDivElement>)} {...(rest as HTMLAttributes<HTMLDivElement>)}>
-      {inside}
+      {onOpen ? (
+        <button type="button" {...shared} onClick={() => onOpen(id)}>
+          {inside}
+        </button>
+      ) : (
+        <div {...shared}>{inside}</div>
+      )}
     </div>
   );
 }

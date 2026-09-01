@@ -263,7 +263,57 @@ describe("columns", () => {
   });
 
   /**
-   * An artifact card stands on the turn's own edge, not on a ground.
+   * One column down an answer.
+   *
+   * An answer had two families and each was consistent with itself: things in
+   * its flow — the prose, the actions row, and the four quiet disclosures that
+   * carry no surface at all — began at the turn's own edge, while anything in
+   * a box began at its ground plus its card's column. Two families 32px apart
+   * down one answer, which is what "the text does not line up with the card"
+   * turned out to be.
+   *
+   * The boxes keep their full width and bleed past the column; everything that
+   * draws begins on it.
+   */
+  it("starts everything in an answer on one column", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const column = px(tokens, "var(--ick-answer-column)");
+
+    /* The value the boxed family already reached, so the two most complicated
+       components did not have to move: a ground's padding plus a card's. */
+    expect(column).toBe(
+      px(tokens, "var(--ick-nest-ground-pad)") + px(tokens, "var(--ick-nest-column)")
+    );
+
+    /* The prose. The actions row is inside it and needs none of its own —
+       giving it one put the icons at 64, an indent applied twice. */
+    const turn = await load("../ChatTurnRow/ChatTurnRow.module.css?raw");
+    expect(px(tokens, decl(turn, ".answer", "margin-left"))).toBe(column);
+    expect(
+      turn.slice(turn.indexOf(".actions {"), turn.indexOf("}", turn.indexOf(".actions {"))),
+      "the actions row is already on the column, inside .answer"
+    ).not.toMatch(/margin-left/);
+
+    /* And the four that carry no surface, so they sit in the flow with it. */
+    for (const [file, selector] of [
+      ["../Reasoning/Reasoning.module.css?raw", ".reasoning"],
+      ["../ChainOfThought/ChainOfThought.module.css?raw", ".chain"],
+      ["../TaskList/TaskList.module.css?raw", ".tasks"],
+      ["../Sources/Sources.module.css?raw", ".sources"],
+    ] as const) {
+      const css = await load(file);
+      expect(px(tokens, decl(css, selector, "padding-left")), selector).toBe(column);
+      /* They really do carry none — the moment one grows a ground it belongs
+         to the other family and this rule stops applying to it. */
+      expect(
+        css.slice(css.indexOf(`${selector} {`), css.indexOf("}", css.indexOf(`${selector} {`))),
+        `${selector} has grown a surface`
+      ).not.toMatch(/background:/);
+    }
+  });
+
+  /**
+   * And an artifact card is in the other family.
    *
    * Every other ground in this kit carries something besides its card — a tool
    * call's carries the header, a question group's the title, an approval's the
@@ -272,20 +322,18 @@ describe("columns", () => {
    * prose ran along the turn's left edge while the card's words sat 32px
    * inside it, so the two halves of one answer were two columns.
    */
-  it("puts nothing under an artifact card", async () => {
+  it("reaches the column through a ground, like every other box", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
     const css = await load("../Artifact/ArtifactCard.module.css?raw");
 
-    /* One surface in the file, and it is the card. */
-    const surfaces = (css.match(/^\.(\w+)[^{]*\{[^}]*background:/gm) ?? []).map(
-      (rule) => rule.match(/^\.(\w+)/)?.[1]
-    );
-    expect(surfaces, "the ground is gone").not.toContain("artifact");
-    /* The card, and the three panels inset into it. Nothing under the card. */
-    expect(new Set(surfaces)).toEqual(new Set(["card", "title", "preview", "text", "waiting"]));
-
-    /* And the card is the root, so nothing insets it. */
-    const source = await load("../Artifact/ArtifactCard.tsx?raw");
-    expect(source).toMatch(/className: \[styles\.card, className/);
+    /* Ground, card, and what the card holds. The ground was taken away while
+       the prose still began at the turn's edge — there it was 32px of indent
+       putting the card's words on a different line from the answer's. With one
+       column it is what puts them *on* it. */
+    const ground = px(tokens, decl(css, ".artifact", "padding"));
+    const cardPad = px(tokens, decl(css, ".card", "padding"));
+    const headPad = px(tokens, split(decl(css, ".head", "padding"))[1]);
+    expect(ground + cardPad + headPad).toBe(px(tokens, "var(--ick-answer-column)"));
   });
 
   /**
