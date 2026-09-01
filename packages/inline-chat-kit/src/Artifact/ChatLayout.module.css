@@ -45,6 +45,22 @@
   flex-shrink: 0;
   width: var(--ick-artifact-pane-width);
   min-height: 0;
+  /* The pane's room at the layout's edges. On the slot rather than on the pane
+     itself, because how far a card sits from the edge of the window is a fact
+     about the layout — and the covering variant drops it. */
+  padding: var(--ick-artifact-pane-inset) var(--ick-artifact-pane-inset)
+    var(--ick-artifact-pane-inset) 0;
+  transition: width var(--ick-duration-slow) var(--ick-ease);
+}
+
+.pane[data-expanded] {
+  width: var(--ick-artifact-pane-width-wide);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane {
+    transition: none;
+  }
 }
 
 /* Narrow: the pane covers the conversation instead of standing beside it.
@@ -55,7 +71,13 @@
     position: absolute;
     inset: 0;
     width: auto;
+    padding: 0;
     z-index: 1;
+  }
+
+  /* Nothing to expand into. */
+  .pane[data-expanded] {
+    width: auto;
   }
 
   /* Full-bleed, so no corners. A rounded sheet covering everything shows the

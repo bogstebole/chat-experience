@@ -242,11 +242,8 @@ div.opening {
   box-sizing: border-box;
 }
 
-/* Room at the right edge, but only when there is something at it. With no pane
-   the padding was dead space that pushed the conversation 12px off centre. */
-.chatWorkspace[data-pane] {
-  padding-right: 24px;
-}
+/* The pane brings its own room from the layout's edges now — see
+   `--ick-artifact-pane-inset`. Adding more here would be counting it twice. */
 
 /* The plan, which is the host's content and so the host's typography. The kit
    draws the pane; what is in it is not its business. */

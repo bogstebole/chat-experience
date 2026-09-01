@@ -6,6 +6,38 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.46.0 — 2026-09-01
+
+### Changed
+
+- **The pane takes a third of the room and can be widened to two thirds.** A
+  fixed 420px was a strip on a wide monitor and half the screen on a laptop;
+  a proportion keeps its proportion. There is a floor either way — a document
+  needs a line length before anything else.
+
+  The control is in the pane's header and the width is `<ChatLayout>`'s, which
+  is the same split as everything else here: how much room the pane takes is a
+  fact about the layout, and the button that changes it has to be somewhere
+  somebody can find it. `pane` is handed `expanded` and `toggleExpanded`
+  alongside `narrow`. There is no widening while it is covering the
+  conversation, because there is nothing left to take.
+
+- **The pane sits away from the edges.** New `--ick-artifact-pane-inset`, on
+  the layout's slot rather than on the pane — how far a card is from the edge
+  of the window is a fact about the layout. It ran into the top and bottom of
+  the viewport, and a card that runs into the window is not one. The covering
+  variant drops it along with its corners.
+
+### Removed
+
+- **An artifact card's ground.** Every other ground in this kit carries
+  something besides its card — a tool call's carries the header, a question
+  group's the title, an approval's the asking and the answering. This one held
+  a single card and nothing else, which is not a surface but an indent, and it
+  read as one: the answer's own prose ran along the turn's left edge while the
+  card's words sat 32px inside it, so the two halves of one answer were two
+  columns. Measured after: card, prose and the actions row all at 312.
+
 ## 0.45.1 — 2026-09-01
 
 ### Fixed

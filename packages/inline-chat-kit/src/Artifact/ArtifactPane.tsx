@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type HTMLAttributes, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "../Button/Button";
 import styles from "./ArtifactPane.module.css";
 
@@ -29,7 +29,15 @@ export interface ArtifactPaneProps extends Omit<HTMLAttributes<HTMLDivElement>, 
    * placing the pane without one.
    */
   modal?: boolean;
+  /**
+   * Widened. The pane draws the control; `ChatLayout` owns the width, because
+   * how much room the pane takes is a fact about the layout.
+   */
+  expanded?: boolean;
+  onToggleExpanded?: () => void;
   closeLabel?: string;
+  expandLabel?: string;
+  collapseLabel?: string;
 }
 
 /**
@@ -52,7 +60,11 @@ export function ArtifactPane({
   children,
   onClose,
   modal = false,
+  expanded = false,
+  onToggleExpanded,
   closeLabel = "Close",
+  expandLabel = "Widen",
+  collapseLabel = "Narrow",
   className,
   ...rest
 }: ArtifactPaneProps) {
@@ -125,6 +137,20 @@ export function ArtifactPane({
           </h2>
           {meta && <p className={styles.meta}>{meta}</p>}
         </div>
+        {/* Widening is meaningless while it is covering the conversation:
+            there is nothing left to take. */}
+        {onToggleExpanded && !modal && (
+          <Button
+            variant="ghost"
+            size="s"
+            icon={
+              expanded ? <Minimize2 size={15} aria-hidden /> : <Maximize2 size={15} aria-hidden />
+            }
+            aria-label={expanded ? collapseLabel : expandLabel}
+            aria-pressed={expanded}
+            onClick={onToggleExpanded}
+          />
+        )}
         {onClose && (
           <Button
             variant="ghost"

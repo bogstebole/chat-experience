@@ -1,28 +1,26 @@
 /* ─────────────────────────────────────────────
    ArtifactCard
 
-   The kit's shape, again: a ground, a card on it, and what the card holds
-   inset into that. Same as a tool call, same as a question group — an artifact
-   is another thing an answer produced, and it should not look like a fourth
-   idea.
+   A card, and what it holds inset into it. Not a ground under a card: the
+   grounds elsewhere in this kit each carry something besides their card — a
+   tool call's carries the header, a question group's the title, an approval's
+   the asking and the answering — and one holding a single card is an indent
+   rather than a surface. It showed as one, too: the answer's prose ran along
+   the turn's left edge while the card's words sat 32px inside it.
 
    `box-sizing` is stated on every box here that has padding and a width. The
    package has no global reset — one written inside a CSS module leaks into the
    host's page — so each rule has to say it.
    ───────────────────────────────────────────── */
 
-.artifact {
-  box-sizing: border-box;
-  width: 100%;
-  padding: var(--ick-artifact-ground-pad);
-  border-radius: var(--ick-artifact-ground-radius);
-  background: var(--ick-artifact-ground);
-  font-family: var(--ick-font-sans);
-}
 
-/* The whole card is the control, because the whole card is the affordance:
-   a window onto something with a way in, rather than a panel with a button
-   somewhere on it. */
+/* The whole card is the control, because the whole card is the affordance: a
+   window onto something with a way in, rather than a panel with a button
+   somewhere on it.
+
+   And it is the root. There is no ground under it — see the note in the
+   component: every other ground in this kit carries something besides its
+   card, and one holding a single card is an indent rather than a surface. */
 .card {
   all: unset;
   box-sizing: border-box;
@@ -41,7 +39,7 @@
   transition: background var(--ick-duration-fast) ease;
 }
 
-.artifact:not([data-open]) .card:hover {
+.card:not([data-open]):hover {
   background: var(--ick-artifact-surface-hover);
 }
 
@@ -57,7 +55,7 @@
    tried and the first that is not more accent than anything else in the kit
    uses. `inset` rather than a border, because a border is part of the box and
    would move everything in it three pixels. */
-.artifact[data-open] .card {
+.card[data-open] {
   box-shadow: var(--ick-shadow-float),
     inset var(--ick-artifact-open-edge-width) 0 0 var(--ick-artifact-open-edge);
 }

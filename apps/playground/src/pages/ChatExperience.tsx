@@ -439,12 +439,14 @@ export function ChatExperience() {
         <ChatLayout
           key="chat"
           className="chatWorkspace"
-          pane={({ narrow }) =>
+          pane={({ narrow, expanded, toggleExpanded }) =>
             artifacts.openId ? (
               <ArtifactPane
                 title="5k training plan"
                 meta="8 weeks · 4 sessions a week"
                 modal={narrow}
+                expanded={expanded}
+                onToggleExpanded={toggleExpanded}
                 onClose={artifacts.close}
               >
                 {/* The host's, not the kit's. A plan here, a document or a
