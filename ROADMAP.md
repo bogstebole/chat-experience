@@ -4,6 +4,10 @@ What is done, what is being worked on, what is left. Updated as work lands.
 
 `[x]` done and verified · `[~]` in progress · `[ ]` not started
 
+A section named **Now** has open items in it; everything else is **Shipped**.
+Three sections were called Now with nothing open in them, which is how a
+roadmap stops being read.
+
 ---
 
 ## Shipped
@@ -32,11 +36,12 @@ tokens carry no inline styles at rest (pinned by a test).
 
 ---
 
-## Now — accessibility
+## Shipped — accessibility
 
-The component is mouse-only. For a library other people install, this is the
-largest remaining gap. Phases are ordered cheapest-and-most-valuable first; each
-is independently shippable.
+The component was mouse-only, which for a library other people install was the
+largest gap in it. The phases below were ordered cheapest-and-most-valuable
+first and each shipped on its own; all of them have landed, including a manual
+pass with VoiceOver.
 
 ### A1 · Announce answers to screen readers — done
 Today an answer arrives with no announcement at all.
@@ -225,7 +230,7 @@ shorter hint trades a known instruction for a discoverable one.
 
 ---
 
-## Now — the design system
+## Shipped — the design system
 
 An audit before starting: 11 tokens existed, against roughly 290 hardcoded
 colour values. The architecture was right — CSS Modules, and a named cascade
@@ -524,7 +529,7 @@ next line and pushed the whole line a character right. Two of six lines.
 - [x] Two tests: that the spaces are marked, and that a rule keeps them inline.
       The second reads the stylesheet and fails if `inline-block` comes back.
 
-## Now — components
+## Shipped — components
 
 ### E1 · ChatHeader — done
 
@@ -583,10 +588,14 @@ appearing. Surface nobody asked for is surface somebody later has to support.
       carries a green and an amber for one dot
 - [x] `.srOnly` went too — it existed to name the dot and nothing else
 
-## Next — what a chat still needs
+## Now — what a chat still needs
 
 Surveyed against AI Elements (Vercel), prompt-kit, assistant-ui, shadcn's own
 chat components and the Claude Code desktop app, 2026-08-27.
+
+**The only section with open items.** F and G are finished, H1 and H2 with
+them; H3 to H6 are what is left, and the shape pass that follows H is written
+up there rather than as a tier because it was not planned work.
 
 **What we have:** `ChatInput` (+ `AddCardsOverlay`, `HoverActionsRow`,
 `MorphGlyph`), `ChatHeader`, `TextHighlighter`, `ReplyThreadPopup`,
@@ -929,15 +938,114 @@ This is the "thinking, reasoning" the brief asks for.
 
 ### H · Worth having, not urgent
 
-- [ ] **H1 · `Attachment`.** Chips with previews for image and PDF, drag and
-      drop, remove. AI Elements spends nine components on this; two would do.
-- [ ] **H2 · `Branch`.** Edit a question and the answer forks: `‹ 2/3 ›`.
-      `useChatTurns` already regenerates in place — this is the UI for it.
+- [x] **H1 · `<Attachments>` — done.** What you attach now survives the send.
+
+      The composer had been holding files and dropping them: `onSubmit` took a
+      string, so the tray emptied on send and nothing downstream ever saw one.
+      `SendContext` and `ChatTurn` carry them now, and `<Attachments>` draws
+      them — an image with a `url` shows itself, everything else gets a glyph,
+      a name and a size.
+
+      `onRemove` is the whole difference between a control and a record: with
+      it the tray is something you are still editing, without it the turn is
+      something that happened. One component covering both, which is why two
+      were enough where AI Elements spends nine.
+
+      Two faults came out of review rather than out of tests. The tray had been
+      a section above the composer and I quietly changed it to a row — put
+      back. And the object URLs were never revoked: leaked on remove, on
+      replace and on unmount.
+
+      18 tests, 3 stories, 4 tokens. `0.32.0`, with `0.32.1` and `0.32.2`.
+- [x] **H2 · `<Branch>` — done.** `‹ 2/3 ›`, and regenerating keeps what it is
+      being compared against.
+
+      The UI was the easy half. The half worth having was `useChatTurns`:
+      regenerating overwrote the answer in place, so there was never a second
+      version to page between. Versions are filed by one writer — `fileAnswer`
+      — and a test compares what is shown against what is filed after a stream,
+      which is how the second writer turned up: the rAF flush wrote `ai` and
+      `parts` directly and the archive stayed empty while a comment claimed
+      there was only one path in.
+
+      It draws **nothing** below two answers. A control reading "1 of 1" is a
+      control with nothing to do, and the ends disable rather than wrap —
+      wrapping from the last to the first is a page turn nobody asked for.
+
+      12 tests, 3 stories, 3 tokens. `0.33.0`.
 - [ ] **H3 · `Artifact` / preview pane.** Rendering what the answer produced.
 - [ ] **H4 · `SystemMessage` banner.** `InlineChatBanner` exists in the demo
       and could move up.
 - [ ] **H5 · `ThreadList`.** Only once conversations are persisted anywhere.
 - [ ] **H6 · Voice input.**
+
+### The shape pass — 0.34 to 0.43.1
+
+None of this was planned. It came out of looking at screenshots together, and
+it is written down because the parts that survived are rules rather than
+fixes.
+
+- [x] **One column, named once.** Three components have to agree on where a
+      card's content starts — a question's rows, a tool call's panels, and an
+      approval's title and buttons standing over one. It was three numbers that
+      happened to match, then two tokens with a guard asserting they were
+      equal, and it is `--ick-nest-column` now, which the other three read.
+
+      The rule it serves is the one to keep: **things line up with the content
+      inside a card, not with the card's edges.** A section title sat 16px left
+      of the numbers under it and a tool call's chevron sat hard in a corner,
+      both because they were measured against the box rather than against what
+      was in it.
+
+- [x] **The dark theme's ground was going the wrong way.** `--ick-ground` is a
+      wash of ink, and ink in the dark is white, so the recess a group of cards
+      sits in came out *lighter* than the page with the card lighter again.
+
+      The contrast was not the tell: 1.11 in the light against 1.115 in the
+      dark, as matched as two themes get. The tell is that the light has a
+      shadow doing half the lifting and the dark cannot — the same shadow on a
+      near-black ground is invisible. `--ick-dark-ground` is a shade, which
+      puts the pair at 1.32.
+
+- [x] **`<Tool>` and `<Approval>` became the shape a question group is.** A
+      header on the ground, a card under it. The tool's header used to *be* the
+      card's top edge, which is what measured it against the card's edges; the
+      approval went through three arrangements before landing, and the two that
+      failed are worth remembering — its card wrapping all three made a card
+      inside a card, and letting the tool bring its own card left two headers
+      over one.
+
+      `DisclosureHeader`'s `filled` variant went with the first, and the
+      approval's shield with the second. Both were dead the moment the shape
+      changed, and a guard was standing over each.
+
+- [x] **The fold, four times.** Every fault in it was found by sampling frames
+      in a real browser and none of them is visible in a still: a title
+      squashed to half its height because a box that resizes does it by
+      scaling; a leaving body that travelled 67px because `popLayout` had no
+      positioned parent; three rows hanging out of the bottom of a shrinking
+      ground; and finally two different sentences crossfading through each
+      other in the same 40px band, which is what "it flickers" turned out to
+      mean.
+
+      Springs for what travels, tweens for opacity — opacity is bounded at 0
+      and 1, so a spring on it overshoots into a clamp and spends the overshoot
+      sitting still.
+
+- [x] **Motion's own AI kit is committed** — `.claude/skills/motion/` and
+      `.mcp.json`, installed by `npx motion-ai`. It earned it on the first
+      read: their guidance says to promote independently-transformed elements,
+      sampling showed every folding row at `will-change: auto`, and that is now
+      fixed and guarded. The comments here quote those rules, and a citation
+      whose source is not in the repo points at nothing.
+
+**What it cost, and the lesson.** Three faults in a row reached review by eye
+rather than by measurement — a glyph drawn at 24 against everything else's 14,
+a header stranded beside a title, a header flush against a card's top edge
+after the column it was measured on was fixed. Every one was visible in a
+screenshot that had already been taken and looked at. Measuring one axis is
+not measuring, and a guard that pins a value catches less than one that states
+the rule in both directions.
 
 ### Deliberately not ours
 
@@ -948,36 +1056,38 @@ pretend to know what a hunk is.
 
 ### Suggested order
 
-~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ → ~~G2~~ → ~~G5~~ → ~~G6~~ → ~~G7~~ → **H**.
+~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ →
+~~G2~~ → ~~G5~~ → ~~G6~~ → ~~G7~~ → ~~H1~~ → ~~H2~~ → **H4** → H3 → H6 → H5.
 
-The floor is finished, and the two disclosures in the agent tier with it —
-`Reasoning` did turn out to be a special case of the tool row, and the part
-they share is now `useDisclosure` rather than the same twenty lines twice.
+The floor and the agent tier are both finished, and `<Attachments>` and
+`<Branch>` with them. What is left is H3 to H6, none of it load-bearing.
 
-`ChainOfThought` is next, and the open question is whether it is a component
-at all or a `TaskList` with prose under each step. Worth answering before
-building it.
+**H4 next**, because `InlineChatBanner` already exists in the playground's demo
+and the work is mostly deciding what belongs in the kit and what stays a demo's
+own. H3 after it, since a preview pane is the one that needs a decision about
+scope before any code. H6 needs a permission prompt and a transcript surface
+and is a component only in the loosest sense. **H5 is blocked** and should stay
+blocked: a thread list over conversations nothing persists is a list of one.
 
-**The agent tier is finished.** Seven components, and the two questions worth
-having asked were both about what *not* to build: whether `ChainOfThought` was
-a `TaskList` with prose (it was not, and the reason is one word) and whether
-`Reasoning` needed its own disclosure logic (it did not — four components share
-`useDisclosure` and three share `StateGlyph`).
+The two questions worth having asked in the tiers behind us were both about
+what *not* to build — whether `ChainOfThought` was a `TaskList` with prose (it
+was not) and whether `Reasoning` needed its own disclosure logic (it did not;
+four components share `useDisclosure` and three share `StateGlyph`). H3 is the
+next one of those: an artifact pane may well be a `CodeBlock` in a card with a
+tab strip, and finding that out is cheaper than building a pane.
 
-What is left is the H tier, none of which is load-bearing.
-
-The agent tier is reachable from the demo now. A turn carries `parts`
-alongside its prose and a `SendHandler` streams them, which is what was
+**Everything the kit draws is reachable from the demo.** A turn carries `parts`
+alongside its prose and a `SendHandler` streams them, which is what had been
 missing — the components all worked and nothing carried one into a
-conversation. Four openers on the empty state route to four branches of the
-scripted API, so everything the kit draws can be reached by pressing something
-rather than by knowing what to type. `0.16.0`.
+conversation. Openers on the empty state route to branches of the scripted API,
+so anything can be reached by pressing something rather than by knowing what to
+type.
 
-F1 first because everything else renders inside it. F2 next because it is the
-one that collides with `TextHighlighter`, and finding that out late would be
-expensive — the marker has to survive rich text, which means markdown has to
-render *inside* the highlighter rather than around it. G3 before G1 because a
-tool call is the harder shape and reasoning is close to a special case of it.
+**Known and not done.** The showcase recordings under `Videos/showcase/`
+predate the whole shape pass and show a question card that no longer exists;
+re-running `npm run showcase:questions` is the fix. And MotionScore's one
+finding stands: two forced recalculations at mount, from `useCorrectedRadius`
+reading `getComputedStyle` in a layout effect after writes.
 
 ### E4 · Structured questions, from NANA — done
 
