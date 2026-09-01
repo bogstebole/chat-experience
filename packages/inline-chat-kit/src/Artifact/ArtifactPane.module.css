@@ -1,0 +1,104 @@
+/* ─────────────────────────────────────────────
+   ArtifactPane
+
+   A card, at the size of a column. It takes the card surface rather than the
+   ground for the reason a tool call's card does: this is the thing itself, and
+   the conversation beside it is what it stands on.
+
+   It sets no width and no position — `ChatLayout` owns those, because where
+   the pane goes is a fact about the layout and not about the pane. What it
+   does own is the geometry inside it: a head that stays and a body that
+   scrolls.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.pane {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border-radius: var(--ick-artifact-pane-radius);
+  background: var(--ick-artifact-pane-surface);
+  box-shadow: var(--ick-shadow-float);
+  font-family: var(--ick-font-sans);
+  overflow: hidden;
+}
+
+/* Stays while the body moves. A title that scrolls away takes with it the only
+   thing saying what is being read. */
+.head {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ick-space-4);
+  flex-shrink: 0;
+  padding: var(--ick-artifact-pane-pad) var(--ick-artifact-pane-pad) var(--ick-space-5);
+}
+
+.headText {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--ick-text-lg);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+}
+
+/* Focused on open, so a keyboard reader is put down on what the pane is rather
+   than left behind in the conversation — and given no ring for it, because
+   nobody pressed anything. */
+.title:focus {
+  outline: none;
+}
+
+.meta {
+  margin: var(--ick-space-1) 0 0;
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink-soft);
+}
+
+.body {
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  padding: 0 var(--ick-artifact-pane-pad) var(--ick-artifact-pane-pad);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--ick-ink);
+}
+
+/* ── Before there is anything to read ───────────────────────────────────── */
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-5);
+  padding-top: var(--ick-space-2);
+}
+
+.line {
+  height: var(--ick-space-5);
+  border-radius: var(--ick-radius-sm);
+  background: var(--ick-artifact-skeleton);
+  animation: artifact-pulse 1.6s ease-in-out infinite;
+}
+
+.line:nth-child(2n) { animation-delay: 0.12s; }
+.line:nth-child(3n) { animation-delay: 0.24s; }
+
+@keyframes artifact-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line { animation: none; }
+}

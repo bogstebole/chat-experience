@@ -223,3 +223,27 @@
 div.opening {
   padding-bottom: 0;
 }
+
+/* ── The pane beside the conversation ────────────────────────────────────
+   `ChatLayout` is a flex row inside the column the header and the feed already
+   share, so it has to be told it is the part that grows. The kit does not set
+   a height on it: how tall a chat is belongs to the page around it. */
+/* The page, once there is a pane. `ChatLayout` is the row; the chat column
+   inside it keeps its own max-width and centres in whatever room is left, so
+   opening the pane slides the conversation across rather than squashing it. */
+.chatWorkspace {
+  height: 100vh;
+  padding: 0 24px 0 0;
+  box-sizing: border-box;
+}
+
+/* The plan, which is the host's content and so the host's typography. The kit
+   draws the pane; what is in it is not its business. */
+.planText {
+  margin: 0;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-sm);
+  line-height: 1.65;
+  color: var(--ick-ink-soft);
+  white-space: pre-wrap;
+}

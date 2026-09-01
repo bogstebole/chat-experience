@@ -6,6 +6,7 @@ import type { ToolState } from "../Tool/Tool";
 import type { Decision } from "../Approval/Approval";
 import type { Answer, Question } from "../QuestionCard/types";
 import type { SystemTone } from "../SystemMessage/SystemMessage";
+import type { ArtifactKind, ArtifactState } from "../Artifact/ArtifactCard";
 
 /**
  * The parts of a turn that are not the answer's prose.
@@ -115,6 +116,26 @@ export type TurnPart =
       id: string;
       text: string;
       tone?: SystemTone;
+    }
+  | {
+      /**
+       * Something the answer produced that is bigger than the answer — a plan,
+       * a document, a file. The card in the transcript is a window onto it;
+       * pressing that card is what opens the pane.
+       *
+       * `content` is absent while it is being written, which is the usual way
+       * one arrives: the title comes first and the card shimmers it.
+       */
+      kind: "artifact";
+      id: string;
+      title: string;
+      /** What it is, in a word or two — "8 weeks", "Python". */
+      meta?: string;
+      /** How the preview is drawn. Defaults to code. */
+      preview?: ArtifactKind;
+      lang?: string;
+      content?: string;
+      state?: ArtifactState;
     };
 
 /**

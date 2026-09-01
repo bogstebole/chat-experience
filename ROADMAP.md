@@ -973,7 +973,53 @@ This is the "thinking, reasoning" the brief asks for.
       wrapping from the last to the first is a page turn nobody asked for.
 
       12 tests, 3 stories, 3 tokens. `0.33.0`.
-- [ ] **H3 · `Artifact` / preview pane.** Rendering what the answer produced.
+- [x] **H3 · The artifact pane — done.** What the answer produced, when it is
+      bigger than the answer.
+
+      The question this was meant to answer first was whether a pane belonged
+      in a kit at all, since where it opens is a fact about an application's
+      layout. The answer came back the other way and it was the right one: a
+      preview pane is now one of the few patterns every AI chat has, and the
+      worth of a pattern is that it is **the same every time**. Ask for a plan,
+      get a card, press it, the plan opens on the right. A kit that let each
+      host place it would ship four chats that behave differently and call it
+      flexibility.
+
+      So the kit decides the layout and does not decide the content.
+      `<ChatLayout>` puts the pane on the right and gives the conversation the
+      rest; `<ArtifactPane>` takes **children**, because a plan, a table and a
+      diagram are the part that actually differs between products.
+
+      Four pieces, and one of them is the reason the rest are worth shipping.
+      `<ArtifactCard>` is the window in the transcript — clipped to eight lines
+      with a fade at the cut, since an artifact poured out in full is not an
+      artifact but a long message. `useArtifacts` holds which one is open,
+      because the card and the pane are in different parts of the tree and both
+      need the answer. `<ChatLayout>` is the row. And `<ArtifactPane>` is the
+      part a host would get wrong: **on open, focus moves to its heading — not
+      into its first control, which would skip what the thing is — and it is
+      not trapped unless the pane is covering the conversation.** Trapping it
+      beside the chat locks a reader out of what they are still reading. That
+      is `modal`, the one prop that changes behaviour, and `<ChatLayout>` sets
+      it from its own width.
+
+      A container query, not a media query: the pane answers to the width it
+      has, not the window's. A kit inside a 480px column on a wide page would
+      otherwise put a 420px pane beside a 60px conversation.
+
+      Three things the axe pass and the browser caught that reading did not.
+      `role="dialog"` is not allowed on `<aside>`, and a `<header>` inside a
+      landmark is a second banner claiming to be the page's. And the card's
+      "this one is open" marker took three tries — a 2px ring was more accent
+      than anything else in the kit uses, the tint a chosen option row wears
+      came out olive across 350px of card, and a leading edge is about two
+      badges' worth and covers nothing.
+
+      What is still not built: a live HTML preview (a sandbox decision a kit
+      cannot make for a host), editing, tabs, and versions. This division does
+      not lock any of them out.
+
+      28 tests, 3 axe cases, 5 stories, 15 tokens. `0.45.0`.
 - [x] **H4 · `<SystemMessage>` — done.** The conversation saying something
       about itself.
 
