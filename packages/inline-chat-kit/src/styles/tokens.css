@@ -482,7 +482,11 @@
 
     --ick-artifact-pane-surface: var(--ick-card);
     --ick-artifact-pane-radius: var(--ick-nest-ground);
-    --ick-artifact-pane-pad: var(--ick-nest-ground-pad);
+    /* 24, not the nesting chain's 16. This is the only surface in the kit that
+       holds a whole document rather than rows of a component, and a document
+       wants a margin — 16 is a card's gap around its rows, which is a
+       different job at a different size. */
+    --ick-artifact-pane-pad: var(--ick-space-7);
     --ick-artifact-pane-gap: var(--ick-space-6);
     /* A third of the room, not a fixed width — so it keeps its proportion on a
        laptop and on a wide monitor instead of becoming a strip on one and half
@@ -497,8 +501,9 @@
     --ick-artifact-pane-width-wide: max(520px, 66%);
     /* The pane is a card, and a card that runs into the edges of the window is
        not one. Its own gap from the layout's edges, which the covering variant
-       drops along with its corners. */
-    --ick-artifact-pane-inset: var(--ick-space-6);
+       drops along with its corners. The same 24 it uses inside itself, so the
+       ring of space around the words is even the whole way out. */
+    --ick-artifact-pane-inset: var(--ick-space-7);
     --ick-artifact-skeleton: var(--ick-inset);
 
     /* ═══ System message ════════════════════════════════════════════════════
