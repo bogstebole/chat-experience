@@ -120,8 +120,27 @@ Not an oversight in either case:
   content the kit does not control. It keeps a light body and a dark outline in
   both themes for the same reason road signs do — it has to stay legible
   against anything.
-- **Text on the marker** (`--ick-marker-ink`). The marker is the same colour in
-  the dark, so words sitting on it stay dark or they stop being readable.
+- **Text on the marker** (`--ick-marker-ink`). Where the marker is a surface —
+  a badge, a chosen row, a citation chip — it is the same colour in both
+  themes, so the words on it stay dark or they stop being readable.
+
+One thing does change, and it is the exception worth knowing about. The
+**stroke drawn across an answer** (`--ick-marker-stroke`, `--ick-marker-blend`,
+`--ick-marker-active-ink`) is the only place the marker composites with live
+text rather than sitting behind it, and the two themes need opposite physics.
+
+Light multiplies: the stroke keeps its hue and the words come through
+darkened. That works because the page's ink is darker than the marker. In the
+dark theme it is not, and the blend inverts figure and ground — measured in
+Chrome, the band came out `rgb(169 198 19)` with the words on it
+`rgb(217 245 73)`, the text *brighter* than the stroke, at 1.59:1 where AA
+wants 4.5.
+
+So dark stops multiplying and lays a tint down instead, and the words keep the
+page's own ink: 5.26:1 for the text on the stroke, 3.23:1 for the stroke
+against the bare page. Move `--ick-marker-rgb` far enough and both of those
+move with it — the alpha that holds them is pinned to a measured range by a
+test, and the way to change it is to measure again rather than to guess.
 
 One value that is not a colour but does change: `--ick-recede`, how far the
 rest of a paragraph falls back while one highlight has the floor. It is `0.15`

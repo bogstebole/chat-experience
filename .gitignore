@@ -31,3 +31,9 @@ packages/*/dist
 # Recordings. 35MB of them and growing, and git keeps every version forever.
 # Anchored for the same reason as `/Shots/` above.
 /Videos/
+
+# Copies the filesystem makes beside a file being edited — "name 2.ts",
+# "CONTRIBUTING 3.md". Two of them reached a commit before this line existed:
+# one was a stale snapshot that disagreed with the file it shadowed, the other
+# a byte-identical test that would have run twice.
+* [0-9].*
