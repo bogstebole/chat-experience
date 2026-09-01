@@ -12,9 +12,19 @@ answer, and reply-in-thread popups.
 
 ## Install
 
+**Not on npm yet.** Build the tarball out of the repo and install that:
+
 ```bash
-npm install inline-chat-kit motion lucide-react
+git clone git@github.com:bogstebole/chat-experience.git
+cd chat-experience && npm install && npm run pack:kit
 ```
+
+```bash
+npm install /path/to/chat-experience/packages/inline-chat-kit/inline-chat-kit.tgz motion lucide-react
+```
+
+Once it is published the first command goes away and the second becomes
+`npm install inline-chat-kit motion lucide-react`. Nothing else changes.
 
 `react`, `react-dom`, `motion` and `lucide-react` are peer dependencies — the
 kit uses whatever copy your app already has.
@@ -1372,12 +1382,14 @@ argument:
 
 ## Contributing
 
+The dev environment, the tooling and the release live in
+[CONTRIBUTING.md](../../CONTRIBUTING.md) at the root of the repo. What follows
+is what is peculiar about *this package's* tests.
+
 ```bash
 npm install
-npm test              # 167 tests, jsdom
-npm run lint
-npm run build
-npm run storybook --workspace packages/inline-chat-kit
+npm test
+npm run verify        # everything CI runs
 ```
 
 **Storybook is the source of truth for what this looks like.** A component
