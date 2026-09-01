@@ -165,8 +165,13 @@ async function main() {
   // ── The whole step, folded ────────────────────────────────────────────
   /* With every question answered the group folds itself into one row. Three
      answered cards is a receipt taking up half the screen; one row saying
-     what was covered is the same information at the size it deserves. */
-  await press(page, page.getByRole("button", { name: /The setup · Detector/ }), 1800);
+     what was covered is the same information at the size it deserves.
+
+     The control is the section's header, which is the point of it being there:
+     it does not move when the body under it changes. It used to be the summary
+     row itself — a card when folded and a pill when open, one control in two
+     places — and this line broke the day that stopped being a `<button>`. */
+  await press(page, page.getByRole("button", { name: /Setting up the run/ }), 1800);
 
   // ── Going back ────────────────────────────────────────────────────────
   /* An answered question is not a receipt either. The row is a control: it
