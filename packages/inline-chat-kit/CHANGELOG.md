@@ -6,6 +6,37 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.47.0 — 2026-09-01
+
+### Changed
+
+- **One column down an answer.** New `--ick-answer-column`: everything that
+  draws in a turn starts on it, and only the boxes bleed wider.
+
+  An answer had two families, each consistent with itself. Things in its flow
+  began at the turn's own edge — the prose, the actions row, and the four
+  disclosures that carry no surface at all (`<Reasoning>`,
+  `<ChainOfThought>`, `<TaskList>`, `<Sources>`). Anything in a box began at
+  its ground's padding plus its card's column. Two families 32px apart down one
+  answer, which is what "the text does not line up with the card" was.
+
+  The column is the value the boxed family already reached — a ground's padding
+  plus a card's — so `<Tool>`, `<QuestionGroup>`, `<Approval>` and
+  `<SystemMessage>` did not move at all. Measured after: all nine components,
+  the prose and the actions row on 32.
+
+- **`<ArtifactCard>` has its ground back.** It was taken away in 0.46.0 while
+  the prose still began at the turn's edge, where a ground under a single card
+  was 32px of indent putting the card's words on a different line from the
+  answer's. With one column it is the opposite: the ground is what puts them
+  *on* it, the same way a tool call's does.
+
+### Fixed
+
+- The actions row is inside `.answer`, so giving it a column of its own put the
+  icons at 64 — an indent applied twice. Guarded, since nothing about the
+  stylesheet says which of the two is the parent.
+
 ## 0.46.1 — 2026-09-01
 
 ### Fixed

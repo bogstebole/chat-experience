@@ -220,6 +220,20 @@
        standing *over* a card cannot compose it that way. */
     --ick-nest-column: calc(var(--ick-nest-pad) * 2);
 
+    /* Where every first thing in an answer starts.
+    
+       An answer had two families and each was consistent with itself: things
+       in its flow — the prose, the actions row, and the four quiet disclosures
+       that carry no surface at all — began at the turn's own edge, while
+       anything in a box began at the box's ground plus its card's column. Two
+       families, 32px apart, down one answer.
+
+       One column instead. The boxes keep their full width and bleed past it —
+       a card is allowed to be wider than the words about it — and everything
+       that draws begins here. It is the same 32 the boxed family already
+       reached, so the two most complicated components do not move. */
+    --ick-answer-column: calc(var(--ick-nest-ground-pad) + var(--ick-nest-column));
+
     /* ═══ Elevation ════════════════════════════════════════════════════════
        Named by how far off the page a thing sits, not by how it is drawn. */
 
