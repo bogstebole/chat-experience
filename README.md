@@ -1,117 +1,172 @@
-# AI Chat Experience
+# inline-chat-kit
 
-Home of **[inline-chat-kit](packages/inline-chat-kit)** — a drop-in inline AI
-chat component for React — and the playground it's designed in.
+An inline AI chat interface for React.
 
-```
-packages/inline-chat-kit/   the shippable library
-apps/playground/            Vite dev environment + demo
-```
+The input **is** the message. The pill you type into morphs into the bubble that
+holds your text, and the answer streams in underneath it — no separate
+composer, no jump cut between what you wrote and what got sent.
 
-This repo is the single source of truth for the chat feature. The personal
-website consumes the built package; it holds no copy of the source.
+Around that it ships the rest of what a chat with a model turns out to need:
+streaming answers you can draw on with a marker, tool calls, reasoning, plans
+that open in a side pane, structured questions the model asks you, approvals,
+attachments, code blocks, and a scroll container that keeps up with an answer
+and lets go when you scroll back.
 
-## Develop
+MIT. React 18 or 19.
+
+---
+
+## Install
+
+**Not on npm yet.** Build the tarball out of this repo and install that:
 
 ```bash
-npm install
-npm run dev
+git clone git@github.com:bogstebole/chat-experience.git
+cd chat-experience && npm install && npm run pack:kit
 ```
 
-The playground aliases `inline-chat-kit` straight to the package source, so
-editing a component hot-reloads immediately — no rebuild step while iterating.
+That writes `packages/inline-chat-kit/inline-chat-kit.tgz`. In your own project:
 
-### Dev chrome
-
-`npm run dev -- --open '/?dev'`, or add `?dev` to the URL, and the playground
-puts two panels on screen: a **DialKit** panel for live-tweaking the entrance
-springs, stagger and blur, and a **perf HUD**. Numbers you settle on in the dial
-go into `defaultInlineAnimConfig` in
-`packages/inline-chat-kit/src/ChatInput/ChatInput.tsx` — the panel persists
-nothing.
-
-Both are **the playground's, not the kit's**. `dialkit` is a dependency of
-`apps/playground` and of nothing else; no file under `packages/inline-chat-kit`
-imports it, it is not in the package's `dependencies` or `peerDependencies`, and
-none of it reaches the tarball the website installs. A test asserts all of that,
-because a dev tool that quietly becomes a runtime dependency is the kind of
-thing nobody notices until somebody else installs the package.
-
-### The Motion AI Kit
-
-`.claude/skills/motion/` and `.claude/agents/motion-reviewer.md` are Motion's
-own animation guidance, installed by `npx motion-ai` and **committed on
-purpose**. The comments and guards around the question group's fold cite those
-rules directly — "Motion's own guidance is to set `will-change` and remove it
-once the animation finishes" is a quotation, not a paraphrase — and a citation
-whose source is not in the repo points at nothing. Committed, the advice the
-code was written against is pinned, and `npx motion-ai@latest` shows in a diff
-what changed about it.
-
-`.mcp.json` registers Motion's two hosted MCP servers. The open one needs
-nothing; `motion-plus` needs a sign-in from the editor's MCP settings and
-unlocks the MotionScore audit methodology and example source. Neither is
-required to read the skill, which is self-contained — it is what found that
-Motion does not set `will-change` for independent transforms, and that we
-therefore had to.
-
-The runtime audit needs no account at all:
-
-```
-npx motionscore http://localhost:6006/iframe.html?id=components-questioncard--folding --agent
+```bash
+npm install /path/to/chat-experience/packages/inline-chat-kit/inline-chat-kit.tgz motion lucide-react
 ```
 
-Like DialKit, none of this reaches the package. It is guidance for whoever is
-writing the animations.
+`react`, `react-dom`, `motion` and `lucide-react` are peer dependencies — the
+kit uses the copy your app already has. Its own runtime dependencies are two,
+both for syntax highlighting in a code block.
 
-## Scripts
+## Quick start
 
-`npm run verify` is **everything CI runs**, in CI's order: lint, tests, both
-builds, Storybook, and a dry-run pack. Run it before pushing.
+A working chat is the hook, a scroll container and a row per turn.
 
-It exists because `tsc --noEmit -p apps/playground/tsconfig.json` is not the
-same check as the `tsc -b` in the playground's own build — the second follows
-project references into the kit's sources and typechecks the tests as well. Two
-type errors reached `main` through that gap on the same afternoon.
+```tsx
+import { useChatTurns, Conversation, ChatTurnRow } from "inline-chat-kit";
+import "inline-chat-kit/styles.css";
 
-| Command | Does |
+export function Chat() {
+  const { turns, setDraft, submit, stop, beginEdit, cancelEdit } = useChatTurns({
+    onSend: async function* (message, { signal }) {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({ message }),
+        signal,
+      });
+      const stream = res.body!.pipeThrough(new TextDecoderStream());
+      for await (const chunk of stream) yield chunk;
+    },
+  });
+
+  return (
+    <Conversation>
+      {turns.map((turn, i) => (
+        <ChatTurnRow
+          key={turn.id}
+          turn={turn}
+          isActiveInput={
+            i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing")
+          }
+          onDraft={setDraft}
+          onSubmit={submit}
+          onStop={stop}
+          onEdit={beginEdit}
+          onCancelEdit={cancelEdit}
+        />
+      ))}
+    </Conversation>
+  );
+}
+```
+
+The stylesheet import is required. The components are CSS Modules and the
+bundled sheet carries every class they reference.
+
+Pass the hook's own callbacks straight through rather than wrapping them in
+arrows. `ChatTurnRow` is memoised and that memo is load-bearing: a fresh arrow
+per render defeats it, and every turn then re-renders on every frame of every
+answer.
+
+### What `onSend` may return
+
+A string, a promise of one, or an async iterable of deltas. Return a string and
+the kit reveals it at a readable pace; yield deltas and it shows them as they
+land. `signal` aborts when the reader presses stop.
+
+The kit never invents an answer. There is no canned fallback anywhere in the
+package — if your handler returns nothing, nothing is what appears.
+
+## What's in the box
+
+Everything is a named export from the package root.
+
+**The conversation**
+`ChatInput` · `ChatTurnRow` · `Conversation` · `ChatHeader` · `EmptyState` ·
+`Loader` · `AnswerActions` · `Branch` · `Attachments` · `useChatTurns`
+
+**What the model did on the way to the answer**
+`Reasoning` · `Tool` · `TaskList` · `ChainOfThought` · `Sources` ·
+`InlineCitation` · `Context`
+
+**What it needs back from the reader**
+`Approval` — "it wants to run this, is that all right?"
+`QuestionCard` and `QuestionGroup` — structured questions, answered inline,
+each one folding into the answer it became
+
+**What it produced**
+`ArtifactCard` · `ArtifactPane` · `ChatLayout` · `useArtifacts` — a plan or a
+document too big for the transcript gets a card, and pressing the card opens it
+in a pane beside the conversation
+
+**The surface**
+`TextHighlighter` — draw a marker across an answer with the pointer or the
+keyboard
+`ReplyThreadPopup` — ask about the passage you marked, with it quoted
+`CodeBlock` · `SystemMessage` · `Chip` · `Button`
+
+A turn carries `parts` alongside its prose, and a `SendHandler` streams those
+in with the text — which is how the reasoning, tools and questions above reach
+the screen without a second channel.
+
+## Theming
+
+Every colour, radius, duration and space is a CSS custom property under
+`--ick-`. Rebranding is overriding a handful of them, not forking a stylesheet:
+
+```css
+:root {
+  --ick-marker-rgb: 255 90 0;
+  --ick-radius-pill: 12px;
+  --ick-font-sans: "Your Face", system-ui, sans-serif;
+}
+```
+
+Dark mode is a token swap — set `data-theme="dark"` on any ancestor and the
+whole tree repaints from two channel triplets. `theming.md` in the package has
+the full list and the three tiers behind it.
+
+## Accessibility
+
+Not a pass that happened at the end. Answers are announced to screen readers,
+`prefers-reduced-motion` is honoured everywhere, every highlight is reachable
+and removable from the keyboard, the marker menu is a real menu and the thread
+popup a real dialog. There is an automated axe pass in the test suite, and a
+manual one was done with VoiceOver.
+
+## Documentation
+
+| | |
 | --- | --- |
-| `npm run dev` | Playground on :5173 |
-| `npm run dev:kit` | Rebuild the package on every change |
-| `npm run build` | Build package, then playground |
-| `npm run build:kit` | Build the package only |
-| `npm run pack:kit` | Build **and** repack `inline-chat-kit.tgz` for the website |
+| [Full API reference](packages/inline-chat-kit/README.md) | every component, every prop, and why each one is shaped the way it is |
+| [`theming.md`](packages/inline-chat-kit/theming.md) | the token system |
+| [`CHANGELOG.md`](packages/inline-chat-kit/CHANGELOG.md) | breaking changes and what to do about each |
+| [`ROADMAP.md`](ROADMAP.md) | what is built, what is not, and what was deliberately left out |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | the monorepo, the dev environment and the release |
 
-## Shipping a change to the website
-
-The website depends on a packed tarball rather than a symlink — Turbopack
-refuses to resolve a linked package living outside its project root, and
-widening that root makes it scan every sibling project.
+Storybook is the source of truth for how anything looks:
 
 ```bash
-npm run pack:kit
+npm run storybook --workspace packages/inline-chat-kit
 ```
 
-Then, in the website repo:
+## License
 
-```bash
-npm install
-```
-
-Both steps are needed: the first rebuilds and repacks, the second unpacks the
-new tarball into the website's `node_modules`. The tarball filename is stable,
-so the website's `package.json` never has to change.
-
-## What lives where
-
-Anything reusable by a third party belongs in the package. Anything specific to
-this playground — the logo, the feature-status banner, the canned particle
-physics answers, the intro landing — stays in `apps/playground/src/demo` and
-`apps/playground/src/pages`.
-
-**Tooling is playground-side, always.** DialKit and the perf HUD exist to build
-the kit, not to ship with it. The package's runtime dependencies are two, both
-for the same job — `lowlight` and `highlight.js`, syntax highlighting in a code
-block — plus four peers a host app already has: `react`, `react-dom`, `motion`,
-`lucide-react`. Adding a third is a decision, not a convenience, and the test
-that pins the list is where you make it.
+MIT.
