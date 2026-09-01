@@ -241,28 +241,33 @@ describe("the surface stack", () => {
     const css = await load("../Approval/Approval.module.css?raw");
     expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
     expect(css).toMatch(/--ick-tool-ground-pad:\s*0px/);
-    expect(css).toMatch(/--ick-tool-shadow:\s*none/);
+    /* Its shadow stays. The approval used to take that away too, because it
+       had a card of its own and the tool was flattened into a row on it. The
+       card is the tool's now, so the tool is a tool. */
+    expect(css).not.toMatch(/--ick-tool-shadow/);
   });
 });
 
 /**
- * An approval is the same object a question is: a ground holding a card
- * holding rows.
+ * An approval is the same object a question group is: a ground, with what asks
+ * above the card and what answers below it.
  *
- * It was not. The tint was the ground and the *only* thing on paper was the
- * tool call — so the title and the buttons sat directly on the ground, which
- * is a card in a box rather than a box with a card in it. Beside a question
- * card, where the header and the Next button are both on the card, it read as
- * a different arrangement of the same three surfaces.
+ * It has been both wrong ways round. First the tint was the ground and only
+ * the tool call was on paper, with the title and the buttons loose. Then the
+ * card wrapped all three — which put an approval holding a tool call at two
+ * papers and two shadows for one thing, a card inside a card.
+ *
+ * The subject brings the card. The asking and the answering are not part of
+ * the thing being approved, so they stand on the ground either side of it.
  */
 describe("an approval", () => {
   const load = async (path: string) =>
     ((await import(/* @vite-ignore */ path)).default as string).replace(/\/\*[\s\S]*?\*\//g, "");
 
-  it("is a ground with a card on it", async () => {
+  it("is a ground, and paints nothing else", async () => {
     const css = await load("../Approval/Approval.module.css?raw");
     const rule = (selector: string) => {
-      const at = css.indexOf(`${selector} {`);
+      const at = css.search(new RegExp(`^\\${selector} \\{`, "m"));
       expect(at, `${selector} is missing`).toBeGreaterThan(-1);
       return css.slice(at, css.indexOf("}", at));
     };
@@ -273,21 +278,38 @@ describe("an approval", () => {
        second job for the one accent. */
     const tokens = await load("../styles/tokens.css?raw");
     expect(tokens).toMatch(/--ick-approval-surface:\s*var\(--ick-ground\)/);
-    expect(rule(".card")).toMatch(/background:\s*var\(--ick-card\)/);
-    expect(rule(".card")).toMatch(/box-shadow:\s*var\(--ick-shadow-float\)/);
+
+    /* Nothing else here draws a surface. The subject brings its own, and an
+       approval that painted one too would be a card inside a card. */
+    expect(css, "the approval's own card is gone").not.toMatch(/^\.card \{/m);
+    const surfaces = css.match(/^\.(\w+)[^{]*\{[^}]*background:/gm) ?? [];
+    expect(surfaces.map((m) => m.match(/^\.(\w+)/)?.[1])).toEqual(["approval"]);
   });
 
   /**
-   * And the tool call on that card is a **row**, not a second card. Two cards
-   * stacked is one surface more than there is depth for — the same fault as
-   * two grounds, from the other end.
+   * And what asks and what answers stand on the column the subject's own
+   * content stands on — the shield where the tool's glyph is, the buttons
+   * ending where its panels end.
    */
-  it("makes the tool call a row on it rather than a card", async () => {
+  it("puts the asking and the answering on the subject's column", async () => {
     const css = await load("../Approval/Approval.module.css?raw");
-    expect(css).toMatch(/--ick-tool-surface:\s*var\(--ick-inset\)/);
-    expect(css).toMatch(/--ick-tool-radius:\s*var\(--ick-nest-row\)/);
-    expect(css).toMatch(/--ick-tool-shadow:\s*none/);
-    expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
+    const tokens = await load("../styles/tokens.css?raw");
+
+    /* One column, read by all three, rather than three numbers that match. */
+    for (const name of ["--ick-question-pad", "--ick-tool-pad", "--ick-approval-column"]) {
+      expect(tokens, name).toMatch(new RegExp(`${name}:\\s*var\\(--ick-nest-column\\)`));
+    }
+    for (const selector of [".head", ".actions", ".settled"]) {
+      const at = css.search(new RegExp(`^\\${selector} \\{`, "m"));
+      expect(at, `${selector} is missing`).toBeGreaterThan(-1);
+      expect(
+        css.slice(at, css.indexOf("}", at)),
+        `${selector} is off the column`
+      ).toMatch(/padding:[^;]*var\(--ick-approval-column\)/);
+    }
+
+    /* And a subject that is not a tool call is pulled onto it too. */
+    expect(css).toMatch(/--ick-code-pad:\s*var\(--ick-approval-column\)/);
   });
 });
 

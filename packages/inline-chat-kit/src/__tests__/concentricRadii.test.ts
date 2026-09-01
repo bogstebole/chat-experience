@@ -30,10 +30,14 @@ const px = (tokens: string, name: string, seen = new Set<string>()): number => {
   if (sum) {
     return sum
       .split("+")
-      .map((part) => {
-        const token = part.trim().match(/^var\((--[\w-]+)\)$/)?.[1];
-        expect(token, `not a token: ${part.trim()}`).toBeTruthy();
-        return px(tokens, token as string, new Set(seen));
+      .map((term) => {
+        /* `var(--a)` and `var(--a) * 2` — the column is stated as two of the
+           nesting gap rather than as its own number, so a term can carry a
+           factor. */
+        const [ref, times] = term.split("*");
+        const token = ref.trim().match(/^var\((--[\w-]+)\)$/)?.[1];
+        expect(token, `not a token: ${ref.trim()}`).toBeTruthy();
+        return px(tokens, token as string, new Set(seen)) * (times ? Number(times.trim()) : 1);
       })
       .reduce((a, b) => a + b, 0);
   }
@@ -84,12 +88,10 @@ const NESTINGS = [
     inner: "--ick-nest-card",
     gap: "--ick-approval-pad",
   },
-  {
-    what: "a tool call in an approval's card",
-    outer: ["Approval/Approval.module.css", ".card"],
-    inner: "--ick-nest-row",
-    gap: "--ick-nest-pad",
-  },
+  /* An approval used to have a card of its own, with the tool call flattened
+     into a row inside it — a card in a card, two papers for one thing. The
+     subject brings the card now, so the nesting to check is the tool's own,
+     which is already the first row of this table. */
 ] as const;
 
 describe("corners nest", () => {

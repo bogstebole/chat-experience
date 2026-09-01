@@ -78,7 +78,7 @@ const split = (value: string) => {
  * rule when it wanted the padding one.
  */
 const ruleAt = (css: string, selector: string) => {
-  const at = css.search(new RegExp(`^${selector.replace(/[.[\]]/g, "\\$&")} \\{`, "m"));
+  const at = css.search(new RegExp(`^${selector.replace(/[.[\]]/g, "\\$&")}\\s*\\{`, "m"));
   expect(at, `${selector} is missing`).toBeGreaterThan(-1);
   return at;
 };
@@ -204,6 +204,35 @@ describe("columns", () => {
 
     /* And it is the column a question uses. One rule, not two that agree. */
     expect(inset).toBe(px(tokens, "var(--ick-question-pad)"));
+  });
+
+  /**
+   * An approval asks above the card and answers below it, both on the column
+   * the subject's own content stands on.
+   *
+   * And Deny is pulled back by its own padding, because a ghost button is
+   * *text*: what you see is the word, and the invisible box around it is not
+   * what belongs on a column. Measured, the word sat 16px inside the line the
+   * shield above it is on. The two that say yes are the other way round —
+   * filled, so the box is the visible thing and its edge is what lines up.
+   */
+  it("puts an approval's asking and answering on its subject's column", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const css = await load("../Approval/Approval.module.css?raw");
+
+    const column = px(tokens, "var(--ick-approval-column)");
+    expect(column).toBe(px(tokens, "var(--ick-tool-pad)"));
+
+    for (const selector of [".head", ".actions", ".settled"]) {
+      expect(padding(tokens, css, selector).left, selector).toBe(column);
+    }
+
+    /* The pull-back, and that it is exactly the button's own padding — not a
+       number that happens to look right. `size="m"` is `--ick-space-6`. */
+    const pull = px(tokens, decl(css, ".deny", "margin-left"));
+    const button = await load("../Button/Button.module.css?raw");
+    const buttonPad = split(decl(button, ".hasText.m", "padding"))[1];
+    expect(pull).toBe(-px(tokens, buttonPad));
   });
 
   /**

@@ -86,64 +86,65 @@ export function Approval({
       aria-labelledby={titleId}
       {...rest}
     >
-      {/* The ground, then the card on it, then what the card holds — the same
-          three a question card is built from, in the same order. Before this
-          the title and the buttons sat directly on the tinted ground and only
-          the tool call got paper, which is a card in a box rather than a box
-          with a card in it. */}
-      <div className={styles.card}>
-        <div className={styles.head}>
-          <ShieldCheck className={styles.glyph} size={15} aria-hidden />
-          <div className={styles.headText}>
-            <p className={styles.title} id={titleId}>
-              {title}
-            </p>
-            {description && <p className={styles.description}>{description}</p>}
-          </div>
-        </div>
+      {/* Ground, then what is being asked over the card, then the answer under
+          it — a question group's three, in a question group's order.
 
-        {/* What is actually being asked for. */}
-        {children && <div className={styles.subject}>{children}</div>}
-
-        {settled ? (
-          /* A record, not a control. Live buttons under a decision already made
-             invite a second one that contradicts the first. */
-          <p className={styles.settled} data-decision={decision}>
-            {decision === "denied" ? (
-              <X size={13} aria-hidden />
-            ) : (
-              <Check size={13} aria-hidden />
-            )}
-            {label[SETTLED[decision]]}
+          The title and the buttons are *on the ground*, not on the card. They
+          are not part of the thing being approved; they are the asking and the
+          answering, and the card between them is the subject. It used to wrap
+          all three, which meant an approval holding a tool call was a card
+          inside a card — two papers, two shadows, one thing. */}
+      <div className={styles.head}>
+        <ShieldCheck className={styles.glyph} size={15} aria-hidden />
+        <div className={styles.headText}>
+          <p className={styles.title} id={titleId}>
+            {title}
           </p>
-        ) : (
-          /* Three weights for three answers, in the order they should be reached
-             for: filled for the narrow yes, outlined for the standing one, flat
-             for no. Two outlined buttons beside each other said the last two were
-             equals, which they are not.
-
-             Deny stays first in the DOM, so a keyboard lands on the safe answer
-             without tabbing past two that say yes. */
-          !readOnly && (
-            <div className={styles.actions}>
-              <Button
-                variant="ghost"
-                size="m"
-                className={styles.deny}
-                onClick={() => onDecide?.("denied")}
-              >
-                {label.deny}
-              </Button>
-              <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
-                {label.always}
-              </Button>
-              <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
-                {label.once}
-              </Button>
-            </div>
-          )
-        )}
+          {description && <p className={styles.description}>{description}</p>}
+        </div>
       </div>
+
+      {/* What is actually being asked for, and the only thing on paper. */}
+      {children && <div className={styles.subject}>{children}</div>}
+
+      {settled ? (
+        /* A record, not a control. Live buttons under a decision already made
+           invite a second one that contradicts the first. */
+        <p className={styles.settled} data-decision={decision}>
+          {decision === "denied" ? (
+            <X size={13} aria-hidden />
+          ) : (
+            <Check size={13} aria-hidden />
+          )}
+          {label[SETTLED[decision]]}
+        </p>
+      ) : (
+        /* Three weights for three answers, in the order they should be reached
+           for: filled for the narrow yes, outlined for the standing one, flat
+           for no. Two outlined buttons beside each other said the last two were
+           equals, which they are not.
+
+           Deny stays first in the DOM, so a keyboard lands on the safe answer
+           without tabbing past two that say yes. */
+        !readOnly && (
+          <div className={styles.actions}>
+            <Button
+              variant="ghost"
+              size="m"
+              className={styles.deny}
+              onClick={() => onDecide?.("denied")}
+            >
+              {label.deny}
+            </Button>
+            <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
+              {label.always}
+            </Button>
+            <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
+              {label.once}
+            </Button>
+          </div>
+        )
+      )}
     </section>
   );
 }
