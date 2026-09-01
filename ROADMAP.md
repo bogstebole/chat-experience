@@ -974,8 +974,37 @@ This is the "thinking, reasoning" the brief asks for.
 
       12 tests, 3 stories, 3 tokens. `0.33.0`.
 - [ ] **H3 · `Artifact` / preview pane.** Rendering what the answer produced.
-- [ ] **H4 · `SystemMessage` banner.** `InlineChatBanner` exists in the demo
-      and could move up.
+- [x] **H4 · `<SystemMessage>` — done.** The conversation saying something
+      about itself.
+
+      The gap was already named in G7: `Context` warns from 80% that the oldest
+      messages will start dropping out, and then goes quiet at the moment they
+      do. A window filling in silence makes the model look forgetful rather
+      than the window look full.
+
+      Three things it does not do, and each of them is the component rather
+      than a corner cut. **No icon** — every picture in this kit carries a state
+      the words beside it also carry, so a reader the picture does not reach
+      loses nothing; one here would say "something is being announced" beside a
+      sentence announcing it. **No dismiss and no action** — it is a line of the
+      transcript, not a toast, and dismissing one would be editing what
+      happened. **No live region** — the kit has one, and a second says
+      everything twice, which is the fault that region exists to have fixed.
+
+      Two tones, because G7 settled that three is one too many.
+
+      The demo's `InlineChatBanner` did **not** move up. It is a title, a body
+      and three columns of feature status: the columns are the demo's own
+      subject and the rest is this component, so what moved was the idea.
+
+      Two faults, both caught by measuring rather than by looking. Its words sat
+      at 32 against a tool call's 48 — lined up with the cards' edges instead of
+      with the words in them, which is this kit's one alignment rule stated
+      backwards. And it had taken the badge's line box, which is the rule for a
+      label standing *beside* a badge: nothing stands beside this, and 24 over
+      13px type put 1.85 of leading on every note that wraps.
+
+      9 tests, 2 axe cases, 3 stories, 5 tokens. `0.44.0`.
 - [ ] **H5 · `ThreadList`.** Only once conversations are persisted anywhere.
 - [ ] **H6 · Voice input.**
 

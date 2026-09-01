@@ -449,6 +449,17 @@
     --ick-chip-fill: var(--ick-surface-active);
     --ick-chip-max: 180px;
 
+    /* ═══ System message ════════════════════════════════════════════════════
+       The conversation saying something about itself. A ground, because a
+       ground is what things sit on and a note about the conversation is not a
+       thing in it — and the row corner, so a note stacked beside a folded tool
+       call or a folded question is the same object. */
+    --ick-system-surface: var(--ick-ground);
+    --ick-system-ink: var(--ick-ink-soft);
+    --ick-system-radius: var(--ick-nest-row);
+    --ick-system-surface-danger: var(--ick-danger-tint);
+    --ick-system-ink-danger: var(--ick-danger);
+
     /* ═══ Tool ══════════════════════════════════════════════════════════════
        One tool call, folded shut. It sits inside an answer rather than beside
        it, so it is inset into the page rather than raised off it — a card

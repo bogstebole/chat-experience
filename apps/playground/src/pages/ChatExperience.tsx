@@ -7,10 +7,12 @@ import {
   ChatHeader,
   ChatTurnRow,
   Context,
+  announce,
   Conversation,
   defaultFoldMotion,
   EmptyState,
   ReplyThreadPopup,
+  SystemMessage,
   CustomCursor,
   defaultInlineAnimConfig,
   useChatTurns,
@@ -287,6 +289,27 @@ export function ChatExperience() {
         0
       ) / 4
     );
+
+  /* And when it actually fills, something says so.
+
+     The meter warns from 80% and then goes quiet at the moment it matters:
+     the oldest messages start dropping out and nothing in the conversation
+     mentions it, which makes the model look forgetful rather than the window
+     look full. A host places this by hand — the other way in is a `notice`
+     part off a stream, and nothing here streams one. */
+  const windowFull = contextUsed >= CONTEXT_TOTAL;
+  const announcedFull = useRef(false);
+  useEffect(() => {
+    if (!windowFull) {
+      announcedFull.current = false;
+      return;
+    }
+    if (announcedFull.current) return;
+    announcedFull.current = true;
+    /* Through the kit's own region. The component deliberately opens none of
+       its own — two live regions say everything twice. */
+    announce("The oldest messages are dropping out of the window.");
+  }, [windowFull]);
 
   /* Kept per turn rather than as one value, or rating a second answer would
      silently un-rate the first. */
@@ -571,6 +594,11 @@ export function ChatExperience() {
                 />
               ))}
             </AnimatePresence>
+            {windowFull && (
+              <SystemMessage>
+                The oldest messages are dropping out of the window.
+              </SystemMessage>
+            )}
           </Conversation>
           <div className="bottomBlur" />
         </motion.div>

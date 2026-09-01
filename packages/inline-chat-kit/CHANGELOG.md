@@ -6,6 +6,32 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.44.0 — 2026-09-01
+
+### Added
+
+- **`<SystemMessage>`** — the conversation saying something about itself, and a
+  `notice` part so a stream can send one. `<Context>` warns from 80% that the
+  oldest messages will start dropping out and then goes quiet at the moment
+  they do; this is what says so.
+
+  Three absences, each of them the component rather than a corner cut. **No
+  icon**: every picture in this kit carries a state the words beside it also
+  carry, so one here would say "something is being announced" beside a sentence
+  announcing it. **No dismiss and no action**: it is a line of the transcript,
+  not a toast. **No live region**: the kit has one, written to on a later tick,
+  and a second says everything twice.
+
+  Two tones — `notice` and `danger` — because `<Context>` already settled that
+  an amber in the middle makes somebody learn a scale to read a state they can
+  read in words.
+
+  Five tokens, all pointing at the stack: the ground it sits on, the row corner,
+  the danger tint the tool's error section already uses.
+
+- The playground says it when the window actually fills, and announces it
+  through `announce` — which is what a host streaming a `notice` should do.
+
 ## 0.43.1 — 2026-09-01
 
 ### Fixed

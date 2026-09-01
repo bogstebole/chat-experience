@@ -91,6 +91,8 @@ export type {
   QuestionOption,
   QuestionState,
 } from "./QuestionCard/types";
+export { SystemMessage } from "./SystemMessage/SystemMessage";
+export type { SystemMessageProps, SystemTone } from "./SystemMessage/SystemMessage";
 export { QuestionGroup, FOLDABLE_FROM, defaultFoldMotion } from "./QuestionGroup/QuestionGroup";
 export type { QuestionGroupProps, FoldMotion } from "./QuestionGroup/QuestionGroup";
 

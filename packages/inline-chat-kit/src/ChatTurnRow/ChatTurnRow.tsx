@@ -14,6 +14,7 @@ import { TaskList } from "../TaskList/TaskList";
 import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { Sources } from "../Sources/Sources";
 import { QuestionGroup, type FoldMotion } from "../QuestionGroup/QuestionGroup";
+import { SystemMessage } from "../SystemMessage/SystemMessage";
 import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
@@ -276,6 +277,12 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                     />
                   )}
                 </Approval>
+              );
+            case "notice":
+              return (
+                <SystemMessage key={part.id} tone={part.tone}>
+                  {part.text}
+                </SystemMessage>
               );
             case "question":
               return (
