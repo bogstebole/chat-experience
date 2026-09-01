@@ -6,6 +6,17 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.45.1 — 2026-09-01
+
+### Fixed
+
+- **The conversation lost 96px of width the day `ChatLayout` went around it.**
+  `.chat` is a flex column, and a child with `margin: 0 auto` is a flex item
+  that has opted out of stretching — so the playground's centred page was sized
+  by its content instead of by its `max-width`, 624px against 720. Documented
+  on `ChatLayout` as well, since any host wrapping an existing centred page
+  will meet it.
+
 ## 0.45.0 — 2026-09-01
 
 ### Added

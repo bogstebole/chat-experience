@@ -24,7 +24,13 @@
 
 /* The conversation. `min-width: 0` because a flex child's default is its
    content, and a long unbroken line in an answer would push the pane off the
-   end rather than scroll inside itself. */
+   end rather than scroll inside itself.
+
+   A column, so a `Conversation` inside it fills the height. Worth knowing if
+   you are wrapping an existing centred page in this: a child with
+   `margin: 0 auto` is a flex item that has opted out of stretching, so it will
+   be sized by its content rather than by its `max-width` until it is given a
+   `width` to cap. */
 .chat {
   box-sizing: border-box;
   display: flex;
