@@ -54,13 +54,19 @@ describe("what a token animates under an open menu", () => {
     expect(focused).toMatch(/(^|[\s,;:])color\s+\d+ms/);
   });
 
-  it("keeps the marker's ink on the words the menu belongs to", async () => {
-    // Where that colour comes from. Colouring every marked word at rest was
-    // tried instead and reverted: a stroke is drawn by hand and does not stop
-    // at word boundaries — it entered "Higgs" three letters in, leaving the
-    // first three marker-ink on the page's own background rather than on the
-    // stroke. Ink cannot follow a stroke; only the stroke can.
+  it("takes the ink the theme says a word on a stroke should have", async () => {
+    // Where that colour comes from. It used to name `--ick-marker-ink`
+    // directly, which is black, and that is right only while the stroke is
+    // lighter than the page's ink. It is not, in the dark theme — see
+    // `markerContrast.test.ts` — so the choice moved behind a token the theme
+    // sets, and light still resolves it to the same black.
+    //
+    // Colouring every marked word at rest was tried instead and reverted: a
+    // stroke is drawn by hand and does not stop at word boundaries — it
+    // entered "Higgs" three letters in, leaving the first three marker-ink on
+    // the page's own background rather than on the stroke. Ink cannot follow a
+    // stroke; only the stroke can.
     const active = rule(await highlighter(), '.tokens[data-focus="true"] .token[data-active="true"]');
-    expect(active).toMatch(/color:\s*var\(--ick-marker-ink\)/);
+    expect(active).toMatch(/color:\s*var\(--ick-marker-active-ink\)/);
   });
 });

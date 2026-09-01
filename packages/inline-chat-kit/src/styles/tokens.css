@@ -82,6 +82,26 @@
        being readable. */
     --ick-marker-ink: rgb(var(--ick-glass-shade-rgb));
     --ick-marker-sheen: rgb(var(--ick-glass-rim-rgb));
+
+    /* The stroke drawn across an answer, which is the one place the marker
+       composites with live text rather than sitting behind it.
+
+       `multiply` is what makes a highlighter look like a highlighter: the
+       stroke keeps its hue and the words underneath come through darkened.
+       It works because it assumes the page's ink is darker than the marker.
+       In the dark theme that assumption is false, and the blend inverts the
+       figure and the ground — measured on screen, the band read
+       `rgb(169 198 19)` and the words on it `rgb(217 245 73)`, the text
+       *brighter* than the stroke, at 1.59:1. The same words in light measured
+       16.91:1.
+
+       So dark stops multiplying and lays a low tint down instead: the words
+       keep the page's ink and the stroke is dark enough to read them on. The
+       three below are the whole difference; `--ick-marker` itself is a badge
+       background in five other components and does not move. */
+    --ick-marker-stroke: var(--ick-marker);
+    --ick-marker-blend: multiply;
+    --ick-marker-active-ink: var(--ick-marker-ink);
     /* The marker taken towards ink, for something that has to separate from a
        surface already wearing the marker — a badge on a chosen row, where the
        accent at full strength is a shade off the tint under it and paper is
@@ -885,6 +905,24 @@
        Still a wash, for the same reason the light one is: the ground is the
        bottom of the stack and has only the host's page under it. */
     --ick-dark-ground: rgb(var(--ick-glass-shade-rgb) / 0.45);
+
+    /* The marker's stroke, which is the one thing in the kit that composites
+       with live text. See the note beside `--ick-marker-stroke` for why
+       `multiply` cannot come along into the dark: it assumes the page's ink
+       is darker than the marker, and here it is nearly white.
+
+       A plain tint instead, at the alpha where both readings hold. The words
+       keep the page's own ink, so nothing has to line up with the edges of a
+       stroke drawn by hand — which is what sank the first attempt at this,
+       where a stroke that entered a word three letters in left those three
+       letters in the marker's ink on the page's own background. */
+    --ick-dark-marker-stroke: rgb(var(--ick-marker-rgb) / 0.22);
+    --ick-dark-marker-blend: normal;
+    /* And with the stroke now darker than the ink, a word under an open menu
+       stops being repainted: black on this tint is a fifth of the contrast
+       the page's ink already has on it. */
+    --ick-dark-marker-active-ink: var(--ick-ink);
+
     /* The light red is nearly black on a near-black page. Lifted until it
        reads as red rather than as a dark patch. */
     --ick-dark-danger-rgb: 248 113 113;
@@ -1022,6 +1060,9 @@
       --ick-header-bg: var(--ick-dark-header-bg);
       --ick-ground: var(--ick-dark-ground);
     --ick-card: var(--ick-dark-card);
+    --ick-marker-stroke: var(--ick-dark-marker-stroke);
+    --ick-marker-blend: var(--ick-dark-marker-blend);
+    --ick-marker-active-ink: var(--ick-dark-marker-active-ink);
       --ick-danger-rgb: var(--ick-dark-danger-rgb);
       --ick-ink-glass: var(--ick-dark-ink-glass);
       --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
@@ -1058,6 +1099,9 @@
     --ick-header-bg: var(--ick-dark-header-bg);
     --ick-ground: var(--ick-dark-ground);
     --ick-card: var(--ick-dark-card);
+    --ick-marker-stroke: var(--ick-dark-marker-stroke);
+    --ick-marker-blend: var(--ick-dark-marker-blend);
+    --ick-marker-active-ink: var(--ick-dark-marker-active-ink);
     --ick-danger-rgb: var(--ick-dark-danger-rgb);
     --ick-ink-glass: var(--ick-dark-ink-glass);
     --ick-ink-glass-strong: var(--ick-dark-ink-glass-strong);
