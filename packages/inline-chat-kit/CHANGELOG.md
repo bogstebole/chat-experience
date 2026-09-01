@@ -6,6 +6,44 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.43.0 — 2026-09-01
+
+### Removed
+
+- **The shield.** It said "this is about permission" in a picture, beside a
+  title that says it in words, above a card showing the thing and three buttons
+  that are visibly a decision. Every other glyph in the kit carries *state* —
+  queued, running, failed, allowed, denied — and pairs with a word for anybody
+  the picture is not reaching. This one carried a category nothing else could be
+  mistaken for.
+
+  It was also drawn at **24 against everything else's 14**: `.glyph` set the
+  badge's width and height on the icon itself rather than on a box around it,
+  so the `size={15}` in the component was never what the browser used. Which is
+  how it came up at all — it looked too big, and the answer to "how big should
+  it be" turned out to be that it should not be there.
+
+  `--ick-approval-glyph` goes with it, and the title now starts on the column
+  directly rather than after a badge slot.
+
+### Changed
+
+- **The approval draws the card; the subject brings what goes in it.** A tool
+  call inside one brings no surfaces of its own — not its ground, not its card,
+  not its shadow.
+
+  This is the third arrangement and the reason is worth writing down. The
+  approval's card wrapping all three (title, subject, buttons) made an approval
+  holding a tool call two papers for one thing. Letting the tool bring its own
+  card instead left its header stranded on the ground beside the title — two
+  headers over one card, and the second of them a stray row. One card, holding
+  everything that belongs to the subject.
+
+  `.subject` takes no padding, deliberately: what is inside is padded to the
+  column already, so a gap there would push all of it eight pixels off the line
+  the title and the buttons stand on. Measured: title, tool glyph and overview
+  all at 48; chevron and the primary button both ending at 504.
+
 ## 0.42.0 — 2026-09-01
 
 ### Changed

@@ -592,7 +592,6 @@
        the palette does not have. What actually says "this is unanswered" is
        that the box has **buttons in it**, and nothing else in a turn does. */
     --ick-approval-surface: var(--ick-ground);
-    --ick-approval-glyph: var(--ick-ink-soft);
 
     /* ═══ Citations ═════════════════════════════════════════════════════════
        A numbered marker in the text and the list under it. The marker wears

@@ -113,4 +113,36 @@ describe("as a part of a turn", () => {
     fireEvent.click(screen.getByRole("button", { name: "Deny" }));
     expect(onDecideApproval).toHaveBeenCalledWith("t1", "ask", "denied");
   });
+
+  /**
+   * Every glyph in this kit carries state and pairs with a word for anybody the
+   * picture is not reaching — queued, running, failed, allowed, denied. The
+   * shield carried a *category*, next to a title that says it in words, above a
+   * card that shows the thing and three buttons that are visibly a decision.
+   *
+   * It was also drawn at 24 against everything else's 14, because the badge box
+   * it was meant to sit *in* had been applied to the icon itself. Which is how
+   * it came up: it looked too big, and the answer to "how big should it be" was
+   * that it should not be there.
+   */
+  it("draws nothing in the head but the words", () => {
+    const { container } = render(
+      <Approval title="Run a command in your shell" description="Nothing else is touched." />
+    );
+    const head = container.querySelector("[class*='head']");
+    expect(head, "the head is missing").toBeTruthy();
+    expect(head?.querySelectorAll("svg")).toHaveLength(0);
+  });
+
+  /** The one that stays, because it says which way it went. */
+  it("keeps the glyph that carries the decision", () => {
+    for (const decision of ["once", "always", "denied"] as const) {
+      const { container, unmount } = render(
+        <Approval title="Run a command" decision={decision} />
+      );
+      const settled = container.querySelector("[class*='settled']");
+      expect(settled?.querySelectorAll("svg"), decision).toHaveLength(1);
+      unmount();
+    }
+  });
 });

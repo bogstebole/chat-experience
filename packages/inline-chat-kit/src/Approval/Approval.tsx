@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, type HTMLAttributes, type ReactNode } from "react";
-import { Check, ShieldCheck, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "../Button/Button";
 import styles from "./Approval.module.css";
 
@@ -94,14 +94,20 @@ export function Approval({
           answering, and the card between them is the subject. It used to wrap
           all three, which meant an approval holding a tool call was a card
           inside a card — two papers, two shadows, one thing. */}
+      {/* No shield. It said "this is about permission" in a picture, next to a
+          title that says it in words, above a card that shows the thing and
+          three buttons that are visibly a decision. Every other glyph in the
+          kit carries *state* — queued, running, failed, allowed, denied — and
+          pairs with a word for anybody the picture is not reaching. This one
+          carried a category nothing else could be mistaken for.
+
+          It was also drawn at 24 against everything else's 14, because the
+          badge box it was meant to sit *in* was applied to the icon itself. */}
       <div className={styles.head}>
-        <ShieldCheck className={styles.glyph} size={15} aria-hidden />
-        <div className={styles.headText}>
-          <p className={styles.title} id={titleId}>
-            {title}
-          </p>
-          {description && <p className={styles.description}>{description}</p>}
-        </div>
+        <p className={styles.title} id={titleId}>
+          {title}
+        </p>
+        {description && <p className={styles.description}>{description}</p>}
       </div>
 
       {/* What is actually being asked for, and the only thing on paper. */}
