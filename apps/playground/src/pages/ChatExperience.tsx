@@ -28,7 +28,7 @@ import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
 import { requestedTheme } from "../demo/showcase";
-import { QUESTIONS, RUNNING_PLAN, scriptedApi, threadReply } from "../demo/scriptedApi";
+import { QUESTIONS, RUNNING_PLAN, scriptedApi, threadReply, scriptedTranscript} from "../demo/scriptedApi";
 import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
 
@@ -598,6 +598,9 @@ export function ChatExperience() {
                      its way — it is the box under the openers, and it lines up
                      with them. */
                   questionAlign={isEmpty && i === 0 ? "stretch" : "end"}
+                  /* Recording is the kit's; the words are this demo's, and
+                     scripted like every other answer here. */
+                  onTranscribe={scriptedTranscript}
                   className={isEmpty && i === 0 ? "opening" : undefined}
                   isActiveInput={
                     i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing")

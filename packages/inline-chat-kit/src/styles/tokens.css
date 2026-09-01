@@ -99,6 +99,13 @@
        keep the page's ink and the stroke is dark enough to read them on. The
        three below are the whole difference; `--ick-marker` itself is a badge
        background in five other components and does not move. */
+    /* Dictation. The ring around the microphone while it is listening, and
+       how far it swells at full volume. A wash of the marker rather than a
+       colour of its own: the accent is already what this kit uses to mean
+       "this is live", and a second one would be a second thing to rebrand. */
+    --ick-voice-meter: var(--ick-marker-tint);
+    --ick-voice-meter-spread: 0.55;
+
     --ick-marker-stroke: var(--ick-marker);
     --ick-marker-blend: multiply;
     --ick-marker-active-ink: var(--ick-marker-ink);

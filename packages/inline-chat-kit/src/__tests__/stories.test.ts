@@ -19,6 +19,8 @@ const SRC = join(import.meta.dirname, "..");
  */
 const NOT_COMPONENTS: Record<string, string> = {
   useChatTurns: "a hook; its behaviour is covered by tests, not by looking",
+  useVoiceInput:
+    "a hook, and the only one here with a face: everything it draws is the ChatInput's microphone, whose states have their own story there",
   announce: "a function that writes to a live region; there is nothing to see",
   defaultInlineAnimConfig: "a configuration object",
   GlassButton: "deprecated wrapper around Button, which has the stories",

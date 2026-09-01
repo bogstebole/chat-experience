@@ -6,6 +6,7 @@ import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { Branch } from "../Branch/Branch";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
 import type { Attachment } from "../Attachments/Attachments";
+import type { TranscribeHandler } from "../voice/useVoiceInput";
 import { Loader } from "../Loader/Loader";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { Tool } from "../Tool/Tool";
@@ -41,6 +42,12 @@ export interface ChatTurnRowProps {
   entranceDelay?: number;
   /** Passed through to the highlighter over the answer. */
   selectionMode?: "marker" | "precise";
+
+  /**
+   * Passed through to the composer. Given, this row's live input offers a
+   * microphone; left out, it does not. See `ChatInput`.
+   */
+  onTranscribe?: TranscribeHandler;
 
   /**
    * Where the composer sits in the row.
@@ -162,6 +169,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onEditQuestion,
   onDecideApproval,
   className,
+  onTranscribe,
 }: ChatTurnRowProps) {
   // A row arriving is travel, and this reader has asked for less of it. The
   // fade stays: without it a turn would appear with no transition at all,
@@ -205,6 +213,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
              sent message is a record. */
           attachments={turn.attachments}
           onStop={onStop}
+          onTranscribe={onTranscribe}
           onCopy={onCopy}
           onEdit={() => onEdit?.(turn.id)}
           onCancelEdit={() => onCancelEdit?.(turn.id)}

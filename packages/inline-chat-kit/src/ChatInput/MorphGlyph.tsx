@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { Check, CornerDownLeft, Square } from "lucide-react";
+import { Check, CornerDownLeft, Mic, Square } from "lucide-react";
 
 /**
  * Glyph slot for the send/stop/check action. Static Lucide icons swap
@@ -10,7 +10,7 @@ import { Check, CornerDownLeft, Square } from "lucide-react";
  */
 
 export interface MorphGlyphProps {
-  mode: "send" | "stop" | "check";
+  mode: "send" | "stop" | "check" | "mic";
   /** Icon colour. Inherits from whatever contains it unless set. */
   color?: string;
   /** Slide duration in seconds. */
@@ -56,6 +56,14 @@ export function MorphGlyph({
         >
           {mode === "send" ? (
             <CornerDownLeft
+              size={size}
+              color={color}
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ) : mode === "mic" ? (
+            <Mic
               size={size}
               color={color}
               strokeWidth={1.8}

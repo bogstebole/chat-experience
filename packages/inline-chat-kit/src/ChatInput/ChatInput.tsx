@@ -18,6 +18,43 @@ function placeCursorAtEnd(el: HTMLElement) {
   sel?.removeAllRanges();
   sel?.addRange(range);
 }
+
+/**
+ * How many characters sit before the caret, or the whole length when the caret
+ * is somewhere else on the page.
+ *
+ * Dictation goes in where the cursor was, which is the difference between
+ * finishing a half-typed sentence out loud and losing it. Measured by the
+ * length of a range rather than by a node offset: the editor holds one text
+ * node most of the time and several after a paste, and only the first of those
+ * makes an offset mean anything.
+ */
+function caretOffset(el: HTMLElement): number {
+  const sel = window.getSelection();
+  const text = el.textContent ?? "";
+  if (!sel || sel.rangeCount === 0) return text.length;
+  const range = sel.getRangeAt(0);
+  if (!el.contains(range.endContainer)) return text.length;
+  const upTo = range.cloneRange();
+  upTo.selectNodeContents(el);
+  upTo.setEnd(range.endContainer, range.endOffset);
+  return upTo.toString().length;
+}
+
+/** Put the caret `offset` characters into `el`, clamped to what is there. */
+function placeCursorAt(el: HTMLElement, offset: number) {
+  const node = el.firstChild;
+  if (!node || node.nodeType !== Node.TEXT_NODE) {
+    placeCursorAtEnd(el);
+    return;
+  }
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.setStart(node, Math.max(0, Math.min(offset, node.textContent?.length ?? 0)));
+  range.collapse(true);
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+}
 import { AnimatePresence, LayoutGroup, MotionConfig, animate, motion, useAnimationControls, type Transition } from "motion/react";
 import { Plus, X } from "lucide-react";
 import { Attachments, type Attachment } from "../Attachments/Attachments";
@@ -25,6 +62,7 @@ import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
 import { AddCardsOverlay } from "./AddCardsOverlay";
+import { useVoiceInput, type TranscribeHandler } from "../voice/useVoiceInput";
 import styles from "./ChatInput.module.css";
 
 
@@ -93,6 +131,15 @@ export interface ChatInputProps {
   accept?: string;
   /** More than one at a time. Off by default. */
   multiple?: boolean;
+  /**
+   * Audio in, words out. Given, the composer offers a microphone where the
+   * send glyph would be while there is nothing to send; left out, there is no
+   * microphone at all — the same rule `onRemove` follows on `<Attachments>`.
+   *
+   * The kit records and hands over a `Blob`; what it does with the audio is
+   * the half a host owns. See `useVoiceInput`.
+   */
+  onTranscribe?: TranscribeHandler;
   onCopy?: (value: string) => void;
   onEdit?: (value: string) => void;
   onCancelEdit?: () => void;
@@ -158,6 +205,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onRemoveAttachment,
       accept = "image/*",
       multiple = false,
+      onTranscribe,
       onCopy,
       onEdit,
       onCancelEdit,
@@ -291,6 +339,72 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       getValue: () => value,
     }), [onChange, value]);
 
+    /**
+     * Dictation.
+     *
+     * The microphone takes the send glyph's slot, and it can, because that slot
+     * is empty exactly when it is wanted: `showSend` is content-gated, so an
+     * empty composer draws nothing there. One control that means "say it" until
+     * there is something to send and "send it" afterwards, rather than a third
+     * button pushed into a pill that has room for two.
+     */
+    const meterRef = useRef<HTMLSpanElement>(null);
+    /** Where the transcript goes, fixed when recording starts. */
+    const dictation = useRef<{ base: string; at: number } | null>(null);
+    /**
+     * Where the caret last was inside the editor, or null if it has never been
+     * there.
+     *
+     * Read when recording starts rather than measured then, because by then it
+     * is gone: pressing the microphone moves focus to a button, and a
+     * contenteditable's selection does not survive that. Reading it in the
+     * click handler put every transcript at the end of the field — which is
+     * the behaviour "insert at the caret" exists to avoid, and it was a test
+     * that noticed rather than a screenshot.
+     */
+    const lastCaret = useRef<number | null>(null);
+
+    useEffect(() => {
+      if (!onTranscribe) return;
+      const el = editorRef.current;
+      if (!el) return;
+      const remember = () => {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        if (!el.contains(sel.getRangeAt(0).endContainer)) return;
+        lastCaret.current = caretOffset(el);
+      };
+      // On the document, because that is where the event is: a selection
+      // inside a contenteditable does not raise one on the element.
+      document.addEventListener("selectionchange", remember);
+      return () => document.removeEventListener("selectionchange", remember);
+    }, [onTranscribe]);
+
+    const putTranscript = useCallback(
+      (text: string) => {
+        const where = dictation.current;
+        const el = editorRef.current;
+        if (!where || !el) return;
+        // The whole run every time rather than the last delta, so a partial
+        // transcript that grows replaces itself instead of stacking up.
+        const next = where.base.slice(0, where.at) + text + where.base.slice(where.at);
+        el.textContent = next;
+        placeCursorAt(el, where.at + text.length);
+        onChange(next);
+      },
+      [onChange]
+    );
+
+    const voice = useVoiceInput({
+      onTranscribe,
+      onTranscript: putTranscript,
+      onDone: () => {
+        dictation.current = null;
+        editorRef.current?.focus();
+      },
+      meterRef,
+    });
+
     const isGlass = state === "responding" || state === "resting";
     const isReadOnly = isGlass;
     const hasContent = value.trim().length > 0 || attached.length > 0;
@@ -300,6 +414,27 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const isRestingHovered = state === "resting" && hovered;
     const showActions = isRestingHovered;
     const showReadMore = state === "resting" && isOverflowing;
+    const voiceBusy = voice.state === "listening" || voice.state === "requesting" || voice.state === "transcribing";
+    /**
+     * The microphone stands beside the plus, not in the send glyph's slot.
+     *
+     * The slot was the first idea and it was wrong for a reason a test found
+     * rather than a screenshot: that slot is empty exactly while the composer
+     * is, so the microphone would disappear the moment anything was in the
+     * field — including the moment the first dictated word landed. Dictating
+     * into a half-typed sentence is the case that made "insert at the caret"
+     * worth building, and it needs a control that is still there once there is
+     * something to insert into.
+     *
+     * Beside the plus it also reads better: both are ways of putting something
+     * into the message that is not typing.
+     *
+     * A refusal keeps it on screen, disabled. The browser will not raise its
+     * prompt a second time, so a control that vanished at that moment would
+     * leave nothing to explain why — and no way back once the reader has
+     * changed it in site settings.
+     */
+    const showMic = !!onTranscribe && voice.supported && !isEditing;
     const showInlineGlyph = showSend || showStop;
 
     const ac = animationConfig;
@@ -617,6 +752,91 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               </div>
 
               <div className={styles.buttonGroup}>
+                {/* Outside the group's `AnimatePresence`, and outside Motion.
+
+                    Two reasons, and the second is the one that decided it.
+
+                    The microphone is the first control in this row that stays
+                    put while its meaning changes: every other one swaps key
+                    when it changes — plus becomes cancel, send becomes stop —
+                    so each remounts and none has ever had to update in place.
+                    Inside the presence, this one did not: a refusal
+                    re-rendered the component with `denied`, the paragraph
+                    below said the microphone was blocked, and the button in
+                    the same commit was still labelled "Dictate a message" and
+                    still enabled. Measured rather than guessed — a probe
+                    outside every wrapper read `denied` in the same instant the
+                    button's own attribute read `idle`.
+
+                    And it does not need what a presence is for. It appears
+                    when a host passes `onTranscribe` and stays for the life of
+                    the composer; there is no exit worth choreographing. A CSS
+                    transition covers the one entrance, which is the same trade
+                    the highlighter's hover made when it left React. */}
+                {!isGlass && showMic && (
+                  <div className={styles.micSlot}>
+                    <Button
+                      variant="ghost"
+                      data-voice={voice.state}
+                      icon={
+                        <>
+                          {/* The level of the incoming signal. `useVoiceInput`
+                              writes `--ick-voice-level` here once a frame and
+                              nothing reads it but CSS — a number this
+                              component re-rendered on would be sixty renders a
+                              second for a decoration. */}
+                          <span
+                            ref={meterRef}
+                            className={styles.voiceMeter}
+                            data-live={voice.state === "listening" || undefined}
+                            aria-hidden
+                          />
+                          {/* A square means "press to stop what is running".
+                              Nothing is running while the browser's prompt is
+                              up, so `requesting` keeps the microphone and says
+                              it is busy instead — a stop button over a
+                              permission dialog claims a recording that has not
+                              started. */}
+                          <MorphGlyph
+                            mode={voice.state === "listening" || voice.state === "transcribing" ? "stop" : "mic"}
+                            size={14}
+                          />
+                        </>
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (voice.state === "denied") return;
+                        if (!voiceBusy) {
+                          // Fixed here rather than read when the transcript
+                          // arrives: by then focus has been on a button for
+                          // however long somebody spoke, and the caret is
+                          // wherever that left it.
+                          // Never seen a caret in the editor means nobody
+                          // has been typing in it, and the end is where a
+                          // first sentence belongs.
+                          const at = Math.min(lastCaret.current ?? value.length, value.length);
+                          dictation.current = { base: value, at };
+                        }
+                        voice.toggle();
+                      }}
+                      aria-busy={voice.state === "requesting" || voice.state === "transcribing"}
+                      aria-pressed={voice.state === "listening"}
+                      disabled={voice.state === "denied"}
+                      aria-label={
+                        voice.state === "listening"
+                          ? "Stop listening"
+                          : voice.state === "requesting"
+                          ? "Waiting for microphone access"
+                          : voice.state === "transcribing"
+                            ? "Cancel transcription"
+                            : voice.state === "denied"
+                              ? "Microphone blocked"
+                              : "Dictate a message"
+                      }
+                      style={{ width: "100%", height: "100%", position: "relative" }}
+                    />
+                  </div>
+                )}
                 <AnimatePresence
                   initial={false}
                   onExitComplete={() => {
@@ -772,6 +992,20 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             value={value}
             ac={ac}
           />
+
+          {/* A refusal is the one voice state that has to say something in
+              words. Every other one is legible from the button: a microphone
+              means "not yet", a square means "recording, press to stop". A
+              blocked microphone looks exactly like an idle one, and the
+              browser has already stopped offering its prompt, so without this
+              line the reader presses a dead control and learns nothing. */}
+          {showMic && (voice.state === "denied" || voice.state === "failed") && (
+            <p className={styles.voiceNote} data-tone={voice.state}>
+              {voice.state === "denied"
+                ? "Microphone access is blocked. Allow it for this site in your browser settings, then reload."
+                : (voice.error ?? "The microphone could not be opened.")}
+            </p>
+          )}
         </div>
       </LayoutGroup>
       </MotionConfig>

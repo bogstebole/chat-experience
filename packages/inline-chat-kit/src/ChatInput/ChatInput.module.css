@@ -206,9 +206,21 @@
 /* The hover wrapper holds the bubble + an absolutely positioned actions row
    so that revealing the actions does NOT push the bubble upward. */
 .wrap {
+  /* Where the words inside the pill start, so anything drawn under the pill
+     can line up with them rather than with its edge — this kit's one alignment
+     rule. Read from the surface's own padding. */
+  --ick-input-text-inset: var(--ick-space-4);
+
   position: relative;
   display: inline-flex;
   justify-content: flex-end;
+  /* So a second item can drop below the pill instead of standing beside it.
+     The only one there has ever been is the microphone's refusal note, which
+     landed in a column to the right of the composer the first time it was
+     photographed — the row was the whole layout and nothing had needed a
+     second line before. The two overlays here are absolutely positioned and
+     are not items at all, so this changes nothing that already existed. */
+  flex-wrap: wrap;
 }
 
 .wrap::after {
@@ -319,4 +331,86 @@
   cursor: pointer;
   pointer-events: auto;
   transition: background-color 150ms ease;
+}
+
+/* ── Dictation ──────────────────────────────────────────────────────────────
+   The microphone sits in the send glyph's slot, so it needs nothing of its
+   own except the ring that shows the level of what it is hearing. */
+
+/* Driven by `useVoiceInput`, which writes `--ick-voice-level` here once a
+   frame and never through React. A number this component re-rendered on would
+   be sixty renders a second for a decoration — the same arithmetic that took
+   the highlighter's hover out of React after it cost 28 mutations a crossing.
+
+   `scale` and `opacity` only: both are composited, so the ring costs no
+   layout and no paint however loudly somebody talks. */
+.voiceMeter {
+  --ick-voice-level: 0;
+
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--ick-voice-meter);
+  transform: scale(calc(1 + var(--ick-voice-level) * var(--ick-voice-meter-spread)));
+  opacity: 0;
+  transition: opacity var(--ick-duration-fast) var(--ick-ease);
+}
+
+.voiceMeter[data-live] {
+  opacity: calc(0.35 + var(--ick-voice-level) * 0.65);
+}
+
+/* Under reduced motion the level is never written, so the ring would sit at
+   its resting scale and read as nothing at all. A steady halo instead: the
+   state is still visible, it just does not move. */
+@media (prefers-reduced-motion: reduce) {
+  .voiceMeter[data-live] {
+    transform: scale(calc(1 + var(--ick-voice-meter-spread) * 0.5));
+    opacity: 0.6;
+  }
+}
+
+/* Lined up with the words in the composer rather than with its edge — the
+   kit's one alignment rule, stated the same way everywhere. */
+.voiceNote {
+  /* Its own line, the full width of the composer. */
+  flex: 0 0 100%;
+  /* `margin-right: auto` because the wrap justifies to the end: without it a
+     capped width is pushed to the right edge and the note reads as belonging
+     to nothing. */
+  margin: var(--ick-space-2) auto 0 0;
+  padding-inline: var(--ick-input-text-inset);
+  max-width: 46ch;
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-ink-soft);
+}
+
+.voiceNote[data-tone="denied"] {
+  color: var(--ick-danger);
+}
+
+/* The microphone's slot. Sized like the other two controls in the row, and
+   faded in rather than sprung: it arrives once, when a host passes
+   `onTranscribe`, and then it stays. */
+.micSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  width: 28px;
+  height: 28px;
+  margin-left: 2px;
+  animation: mic-in var(--ick-duration-base) var(--ick-ease) both;
+}
+
+@keyframes mic-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .micSlot { animation: none; }
 }

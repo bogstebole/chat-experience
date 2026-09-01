@@ -1052,7 +1052,53 @@ This is the "thinking, reasoning" the brief asks for.
 
       9 tests, 2 axe cases, 3 stories, 5 tokens. `0.44.0`.
 - [ ] **H5 · `ThreadList`.** Only once conversations are persisted anywhere.
-- [ ] **H6 · Voice input.**
+- [x] **H6 · Voice input — done.** The kit records; the host transcribes.
+
+      Same division the pane settled, and the same reason: permission, the
+      recorder, the level of the incoming signal and the states between them
+      are identical wherever this ships — sixty lines every host would write
+      again, slightly differently. Turning audio into words is a choice
+      between Whisper, Deepgram, a local model and somebody's own endpoint,
+      and picking one for a consumer would be wrong for most of them. So
+      `onTranscribe` takes a `Blob` and returns text, in the same three shapes
+      `onSend` takes. No handler, no microphone.
+
+      **What that costs, said out loud:** the browser's own `SpeechRecognition`
+      is unreachable through this, because it insists on holding the microphone
+      itself and will not take a recording. It is the only free transcriber
+      there is. The demo's transcript is therefore scripted, like every other
+      answer in that demo, and the feature list says so — everything around the
+      words is real, including a real refusal.
+
+      **Three faults, all found by measuring rather than by looking.**
+
+      The microphone first took the send glyph's slot, which is empty exactly
+      while the composer is — so it vanished the moment anything was typed,
+      *including the first dictated word*. It stands beside the plus now, where
+      both mean "put something in this message that is not typing".
+
+      The caret was read in the click handler, which is too late: pressing a
+      button takes focus off a contenteditable and the selection with it, so
+      every transcript landed at the end. It is remembered from
+      `selectionchange` while the editor has focus instead.
+
+      And inside the row's shared `AnimatePresence` the button did not update
+      at all. Every other control there changes *key* when it changes meaning —
+      plus becomes cancel, send becomes stop — so each remounts and none had
+      ever had to update in place. This one persists while its state changes,
+      and a refusal left a button still labelled "Dictate a message", still
+      enabled, beside a paragraph saying the microphone was blocked. A probe
+      outside every wrapper read `denied` in the same instant the button's own
+      attribute read `idle`. It is outside Motion now, with a CSS entrance —
+      the same trade the highlighter's hover made.
+
+      A refusal is the one state that needs words: the browser will not raise
+      its prompt again, so a blocked microphone looks exactly like an idle one.
+      `requesting` keeps the microphone glyph rather than the stop square,
+      because a stop button over a permission dialog claims a recording that
+      has not started.
+
+      11 tests, 1 story, 2 tokens. `0.48.0`.
 
 ### The shape pass — 0.34 to 0.43.1
 
@@ -1132,7 +1178,7 @@ pretend to know what a hunk is.
 ### Suggested order
 
 ~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ →
-~~G2~~ → ~~G5~~ → ~~G6~~ → ~~G7~~ → ~~H1~~ → ~~H2~~ → **H4** → H3 → H6 → H5.
+~~G2~~ → ~~G5~~ → ~~G6~~ → ~~G7~~ → ~~H1~~ → ~~H2~~ → ~~H4~~ → ~~H3~~ → ~~H6~~ → H5.
 
 The floor and the agent tier are both finished, and `<Attachments>` and
 `<Branch>` with them. What is left is H3 to H6, none of it load-bearing.
