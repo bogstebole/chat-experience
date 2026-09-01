@@ -54,16 +54,6 @@
   margin-right: 0;
 }
 
-/* Inside a card, where the row *is* the card's top edge — so it goes corner to
-   corner, takes the card's padding, and pulls back nothing. */
-.header[data-filled] {
-  padding: var(--ick-space-4) var(--ick-space-4) var(--ick-space-4) var(--ick-space-6);
-  /* It *is* the card's top edge, so it runs corner to corner and pulls back
-     nothing — the padding here is the card's own. */
-  width: calc(100% + var(--ick-space-3) * 2);
-  margin-inline: 0;
-  border-radius: 0;
-}
 
 .header:hover {
   background: var(--ick-disclosure-hover);
@@ -109,13 +99,6 @@
   color: var(--ick-disclosure-glyph);
 }
 
-/* The badge's box, for a header standing beside rows that carry one — so the
-   glyph rides where a badge rides and the label starts on the badge's line. */
-.header[data-filled] .glyph {
-  justify-content: center;
-  width: var(--ick-badge-size);
-  height: var(--ick-badge-size);
-}
 
 /* Set from tokens rather than overridden by a class the caller passes in:
    two `.label`s from two stylesheets have the same specificity, so which one

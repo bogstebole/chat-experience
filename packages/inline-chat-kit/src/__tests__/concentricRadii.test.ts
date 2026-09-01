@@ -198,21 +198,21 @@ describe("corners nest", () => {
       const [a, b = a, c = a, d = b] = parts;
       return { top: a, right: b, bottom: c, left: d };
     };
-    /* The header is shared now, and a tool call's is the `filled` one — the
-       variant whose row *is* a card's top edge. */
+    /* A tool call shut is one row on a card, and so is a question group folded.
+       This used to compare the header's `filled` variant against `.collapsed`,
+       because the header *was* the card's top edge; it is on the ground above
+       the card now, and the row on the card is the overview. Same claim, on
+       whatever is currently drawing the row. */
     const head = await load("../disclosure/DisclosureHeader.module.css?raw");
     const question = await load("../QuestionCard/QuestionCard.module.css?raw");
-    const tool = pad(head, ".header[data-filled]");
+    const toolCss = await load("../Tool/Tool.module.css?raw");
+    const overview = pad(toolCss, ".overview");
     const folded = pad(question, ".collapsed");
-    expect(tool.top).toBe(folded.top);
-    expect(tool.bottom).toBe(folded.bottom);
-    /* And the same column, so a glyph starts where a badge starts. */
-    expect(tool.left).toBe(folded.left);
-
-    /* And the glyph rides in the badge's box rather than at its own size. */
-    expect(head).toMatch(
-      /\.header\[data-filled\] \.glyph\s*\{[^}]*width:\s*var\(--ick-badge-size\)/
-    );
+    expect(overview.top).toBe(folded.top);
+    expect(overview.bottom).toBe(folded.bottom);
+    /* And the same column, so a tool's words start where a badge starts. */
+    expect(overview.left).toBe(folded.left);
+    expect(overview.right).toBe(folded.right);
 
     /* Trailing element hard right, the way a collapsed question keeps its
        pencil there — even on a row carrying neither summary nor duration. */

@@ -14,8 +14,6 @@ export interface DisclosureHeaderProps {
    * right edge 500px away floats alone in white space with nothing beside it.
    */
   fit?: "band" | "inline";
-  /** The row *is* a card's top edge: corner to corner, the card's padding. */
-  filled?: boolean;
   open: boolean;
   /** Leave it out and this is a heading rather than a control — no chevron,
       no `aria-expanded`, nothing to press. */
@@ -51,7 +49,6 @@ const join = (...names: (string | undefined | false)[]) => names.filter(Boolean)
  */
 export function DisclosureHeader({
   fit = "band",
-  filled,
   open,
   onToggle,
   controls,
@@ -78,7 +75,6 @@ export function DisclosureHeader({
   const shared = {
     className: join(styles.header, className),
     "data-fit": fit,
-    "data-filled": filled || undefined,
   };
 
   if (!onToggle) {

@@ -482,6 +482,13 @@
     --ick-tool-ground-pad: var(--ick-nest-ground-pad);
     --ick-tool-shadow: var(--ick-shadow-float);
     --ick-tool-inner-gap: var(--ick-nest-pad);
+    /* The column the card's content starts in, measured from the card's edge.
+       The card reaches it as its own 8 plus a panel's 8; the overview row,
+       which *is* the card, takes it as a padding; and the header standing over
+       the card takes it as `--ick-disclosure-inset`, so the glyph starts where
+       a panel's label starts and the chevron ends where they end. The same
+       number and the same job as `--ick-question-pad`. */
+    --ick-tool-pad: var(--ick-space-6);
     --ick-tool-inner-radius: var(--ick-nest-row);
     --ick-tool-radius: var(--ick-nest-card);
     /* + the ground's padding around the card */
