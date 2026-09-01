@@ -480,16 +480,19 @@
       var(--ick-artifact-radius) + var(--ick-artifact-ground-pad)
     );
     --ick-artifact-preview-fill: var(--ick-inset);
-    /* Which card the pane is showing: the marker, on the leading edge.
+    /* Which card the pane is showing: a ring, in ink.
     
-       Measured by how much accent it is, because that is what went wrong
-       twice. A selected badge is 576px² of the marker at full strength. A ring
-       around the whole card was a thousand pixels of perimeter, and the tint a
-       chosen option row wears — right on a 56px row — came out olive across
-       350px of card, which is the same eight percent over ten times the area.
-       An edge is about two badges' worth, and it covers nothing. */
-    --ick-artifact-open-edge: var(--ick-marker);
-    --ick-artifact-open-edge-width: 3px;
+       Not the marker. The accent means "this one *chosen*" — a picked option,
+       a badge, a citation — and an artifact being shown in the pane beside the
+       conversation is not a choice anybody made about it, it is where the
+       reader is. A neutral edge says that without spending the one colour the
+       kit reserves for meaning.
+
+       Ink rather than white, so it inverts: `--ick-border-bright` is literally
+       `rgb(paper)`, which is a visible edge on a dark card and nothing at all
+       on a white one. */
+    --ick-artifact-open-edge: rgb(var(--ick-ink-rgb) / 0.45);
+    --ick-artifact-open-edge-width: 2px;
     /* The cut at the bottom of a preview. Tall enough to read as "it goes on"
        and short enough to leave the last line legible. */
     --ick-artifact-fade: 32px;
