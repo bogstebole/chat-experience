@@ -6,6 +6,24 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.43.1 — 2026-09-01
+
+### Fixed
+
+- **A tool call inside an approval had no room above its header.** Zeroing
+  `--ick-tool-ground-pad` put the header's glyph on the column the title and
+  the buttons stand on, and put the header flush against the card's top edge.
+  One axis was measured and the other was not.
+
+  It is `var(--ick-nest-pad) 0 0` now: nothing sideways, so the column holds;
+  8 above, so the header has room; nothing below, because the tool's body ends
+  in its own gap already. Measured in both states — open and collapsed — the
+  card gives 8 above the header and 8 below whatever it ends with.
+
+  The guard reads the shorthand and states the rule in both directions rather
+  than pinning the value: sideways must be nothing, above must not be. Verified
+  to fail each way.
+
 ## 0.43.0 — 2026-09-01
 
 ### Removed

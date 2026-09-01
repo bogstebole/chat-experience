@@ -38,7 +38,12 @@
      the buttons below are on the ground, because they are the asking and the
      answering rather than part of what is being approved. */
   --ick-tool-ground: transparent;
-  --ick-tool-ground-pad: 0px;
+  /* Vertical only. Sideways it has to be nothing, or the tool's header is
+     pushed off the column the title and the buttons stand on; downwards and
+     upwards it is what keeps the header off the card's top edge — which is
+     what zeroing all four sides did, and it showed. The bottom is the tool
+     body's own, so this side gives nothing back. */
+  --ick-tool-ground-pad: var(--ick-nest-pad) 0 0;
   --ick-tool-surface: transparent;
   --ick-tool-shadow: none;
   --ick-tool-radius: 0;

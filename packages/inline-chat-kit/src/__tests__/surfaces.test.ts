@@ -240,7 +240,18 @@ describe("the surface stack", () => {
   it("stops a tool call bringing a second ground into an approval", async () => {
     const css = await load("../Approval/Approval.module.css?raw");
     expect(css).toMatch(/--ick-tool-ground:\s*transparent/);
-    expect(css).toMatch(/--ick-tool-ground-pad:\s*0px/);
+    /* Sideways nothing, so the tool's header stays on the column the title and
+       the buttons stand on. Vertically *something*, or the header sits flush
+       against the card's top edge — which is what zeroing all four sides did,
+       and it was visible before it was measured. */
+    const pad = css.match(/--ick-tool-ground-pad:\s*([^;]+);/)?.[1]?.trim();
+    expect(pad, "the approval does not set the tool's ground padding").toBeTruthy();
+    const [top, sides = top, bottom = top] = (pad as string).split(/\s+/);
+    expect(sides, "sideways must be nothing").toMatch(/^0(px)?$/);
+    expect(top, "there must be room above the header").not.toMatch(/^0(px)?$/);
+    /* And nothing underneath, because the tool's body already ends in its own
+       gap — measured, 8 above the header and 8 below the last panel. */
+    expect(bottom, "the body's own gap is the one below").toMatch(/^0(px)?$/);
     /* And none of its own surfaces either: the approval draws the card, the
        tool brings what goes in it. A tool call bringing its own card left two
        papers for one thing; bringing a card but no ground left its header
