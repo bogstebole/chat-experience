@@ -1,0 +1,61 @@
+/* ─────────────────────────────────────────────
+   ChatLayout
+
+   The conversation, and the pane beside it. The kit decides that the pane is
+   on the right and that the conversation makes room — a chat where the pane
+   arrives somewhere different each time is a chat nobody learns.
+
+   A **container** query rather than a media query, deliberately: the pane
+   should answer to the width it actually has, not to the width of the window.
+   A kit embedded in a 480px column inside a wide page would otherwise put a
+   420px pane beside a 60px conversation, which is the fault a media query
+   cannot see.
+   ───────────────────────────────────────────── */
+
+.layout {
+  container-type: inline-size;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  gap: var(--ick-artifact-pane-gap);
+}
+
+/* The conversation. `min-width: 0` because a flex child's default is its
+   content, and a long unbroken line in an answer would push the pane off the
+   end rather than scroll inside itself. */
+.chat {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+
+.pane {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: var(--ick-artifact-pane-width);
+  min-height: 0;
+}
+
+/* Narrow: the pane covers the conversation instead of standing beside it.
+   Which is not a different component — it is the same pane, told that it is
+   now modal, so it holds focus and answers Escape. See `ArtifactPane`. */
+@container (max-width: 760px) {
+  .pane {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    z-index: 1;
+  }
+
+  /* Full-bleed, so no corners. A rounded sheet covering everything shows the
+     page through four little notches at the edges of the screen, which reads
+     as a mistake rather than as a card. */
+  .pane > * {
+    border-radius: 0;
+  }
+}

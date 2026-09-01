@@ -6,6 +6,43 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.45.0 — 2026-09-01
+
+### Added
+
+- **The artifact pane** — `<ArtifactCard>`, `<ArtifactPane>`, `<ChatLayout>`,
+  `useArtifacts`, and an `artifact` part so a stream can send one.
+
+  **The kit decides the layout.** On the right, with the conversation making
+  room; below `<ChatLayout>`'s own width it covers the conversation instead. A
+  preview pane is one of the few patterns every AI chat now has, and the worth
+  of a pattern is that it is the same every time.
+
+  **The kit does not decide the content.** `<ArtifactPane>` takes children,
+  because a plan, a table and a diagram are the part that differs between
+  products — and the only part.
+
+  The card is a window: eight lines with a fade at the cut, because an artifact
+  poured out in full is a long message rather than an artifact. It arrives
+  before its content does, which is how one really arrives, and shimmers its
+  own name while it is being written.
+
+  `modal` is the one prop that changes behaviour, and it is not about position.
+  On open, focus moves to the pane's heading — not into its first control,
+  which would skip what the thing is — and it is **not** trapped unless the
+  pane is covering the conversation, where trapping it would lock a reader out
+  of the chat they are still reading. `<ChatLayout>` sets it from its width.
+
+  A container query rather than a media query: the pane answers to the width it
+  has. A kit inside a 480px column on a wide page would otherwise put a 420px
+  pane beside a 60px conversation.
+
+### Fixed
+
+- Two things the axe pass caught in the pane and reading did not:
+  `role="dialog"` is not allowed on an `<aside>`, and a `<header>` inside a
+  landmark is a banner landmark claiming to be the page's.
+
 ## 0.44.0 — 2026-09-01
 
 ### Added

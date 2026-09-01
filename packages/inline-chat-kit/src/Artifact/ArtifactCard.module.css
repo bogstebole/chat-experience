@@ -1,0 +1,177 @@
+/* ─────────────────────────────────────────────
+   ArtifactCard
+
+   The kit's shape, again: a ground, a card on it, and what the card holds
+   inset into that. Same as a tool call, same as a question group — an artifact
+   is another thing an answer produced, and it should not look like a fourth
+   idea.
+
+   `box-sizing` is stated on every box here that has padding and a width. The
+   package has no global reset — one written inside a CSS module leaks into the
+   host's page — so each rule has to say it.
+   ───────────────────────────────────────────── */
+
+.artifact {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--ick-artifact-ground-pad);
+  border-radius: var(--ick-artifact-ground-radius);
+  background: var(--ick-artifact-ground);
+  font-family: var(--ick-font-sans);
+}
+
+/* The whole card is the control, because the whole card is the affordance:
+   a window onto something with a way in, rather than a panel with a button
+   somewhere on it. */
+.card {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ick-space-4);
+  width: 100%;
+  padding: var(--ick-nest-pad);
+  border-radius: var(--ick-artifact-radius);
+  background: var(--ick-artifact-surface);
+  box-shadow: var(--ick-shadow-float);
+  /* Clips the preview at the cut, which is what makes it a preview. */
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--ick-duration-fast) ease;
+}
+
+.artifact:not([data-open]) .card:hover {
+  background: var(--ick-artifact-surface-hover);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Which one the pane is showing. The card stays where it is and says so,
+   rather than the pane being the only thing that knows.
+
+   On the leading edge, and see the token for why: this is the third thing
+   tried and the first that is not more accent than anything else in the kit
+   uses. `inset` rather than a border, because a border is part of the box and
+   would move everything in it three pixels. */
+.artifact[data-open] .card {
+  box-shadow: var(--ick-shadow-float),
+    inset var(--ick-artifact-open-edge-width) 0 0 var(--ick-artifact-open-edge);
+}
+
+.head {
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: var(--ick-space-4);
+  width: 100%;
+  min-width: 0;
+  /* The column, reached from inside the card the way every row here reaches
+     it: the card's own gap plus a row's. */
+  padding: var(--ick-space-2) var(--ick-nest-pad) 0;
+}
+
+.title {
+  font-size: var(--ick-text-md);
+  font-weight: var(--ick-weight-medium);
+  color: var(--ick-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Still being written. The same shimmer a disclosure header's pending label
+   uses, and for the same reason: the word is the name of the thing, so it
+   cannot be hidden or replaced by a spinner. */
+.title[data-writing] {
+  background: linear-gradient(
+    90deg,
+    var(--ick-ink) 0%,
+    var(--ick-ink) 40%,
+    var(--ick-ink-faint) 50%,
+    var(--ick-ink) 60%,
+    var(--ick-ink) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: artifact-sweep 1.8s linear infinite;
+}
+
+@keyframes artifact-sweep {
+  from { background-position: 110% 0; }
+  to { background-position: -10% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title[data-writing] {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+.meta {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink-faint);
+}
+
+/* ── The window ─────────────────────────────────────────────────────────── */
+
+.preview {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  /* Repointed rather than restyled, the way a tool call moves the code block's
+     surface: the preview is a row inset into this card. */
+  --ick-md-code-fill: var(--ick-artifact-preview-fill);
+  --ick-code-radius: var(--ick-nest-row);
+  --ick-code-pad: var(--ick-nest-pad);
+}
+
+/* The cut. A hard edge says the file ends there; a fade says it goes on, which
+   is the one thing the card has to get across. */
+.preview[data-more]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--ick-artifact-fade);
+  border-end-start-radius: var(--ick-nest-row);
+  border-end-end-radius: var(--ick-nest-row);
+  background: linear-gradient(to bottom, transparent, var(--ick-artifact-preview-fill));
+  pointer-events: none;
+}
+
+.text {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--ick-nest-pad) var(--ick-code-pad);
+  border-radius: var(--ick-nest-row);
+  background: var(--ick-artifact-preview-fill);
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-ink-soft);
+  /* What was written keeps its own line breaks; it is a document, not a
+     paragraph somebody typed into a box. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Nothing to show yet, which is not the same as nothing to say: the title is
+   already there and shimmering. */
+.waiting {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: var(--ick-nest-pad) var(--ick-code-pad);
+  border-radius: var(--ick-nest-row);
+  background: var(--ick-artifact-preview-fill);
+}

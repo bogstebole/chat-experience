@@ -449,6 +449,47 @@
     --ick-chip-fill: var(--ick-surface-active);
     --ick-chip-max: 180px;
 
+    /* ═══ Artifact ══════════════════════════════════════════════════════════
+       What the answer produced: a card in the transcript that is a window onto
+       it, and the pane that holds the whole of it.
+
+       The card is the kit's usual three surfaces — ground, card, inset — so an
+       artifact does not read as a fourth idea beside a tool call and a
+       question. The pane is a card at the size of a column: it *is* the thing,
+       and the conversation beside it is what it stands on. */
+    --ick-artifact-ground: var(--ick-ground);
+    --ick-artifact-ground-pad: var(--ick-nest-ground-pad);
+    --ick-artifact-surface: var(--ick-card);
+    --ick-artifact-surface-hover: var(--ick-inset);
+    --ick-artifact-radius: var(--ick-nest-card);
+    --ick-artifact-ground-radius: calc(
+      var(--ick-artifact-radius) + var(--ick-artifact-ground-pad)
+    );
+    --ick-artifact-preview-fill: var(--ick-inset);
+    /* Which card the pane is showing: the marker, on the leading edge.
+    
+       Measured by how much accent it is, because that is what went wrong
+       twice. A selected badge is 576px² of the marker at full strength. A ring
+       around the whole card was a thousand pixels of perimeter, and the tint a
+       chosen option row wears — right on a 56px row — came out olive across
+       350px of card, which is the same eight percent over ten times the area.
+       An edge is about two badges' worth, and it covers nothing. */
+    --ick-artifact-open-edge: var(--ick-marker);
+    --ick-artifact-open-edge-width: 3px;
+    /* The cut at the bottom of a preview. Tall enough to read as "it goes on"
+       and short enough to leave the last line legible. */
+    --ick-artifact-fade: 32px;
+
+    --ick-artifact-pane-surface: var(--ick-card);
+    --ick-artifact-pane-radius: var(--ick-nest-ground);
+    --ick-artifact-pane-pad: var(--ick-nest-ground-pad);
+    --ick-artifact-pane-gap: var(--ick-space-6);
+    /* Wide enough for a document to have a line length, narrow enough to leave
+       the conversation a readable one. Below `ChatLayout`'s breakpoint it is
+       ignored: the pane covers the conversation instead. */
+    --ick-artifact-pane-width: 420px;
+    --ick-artifact-skeleton: var(--ick-inset);
+
     /* ═══ System message ════════════════════════════════════════════════════
        The conversation saying something about itself. A ground, because a
        ground is what things sit on and a note about the conversation is not a

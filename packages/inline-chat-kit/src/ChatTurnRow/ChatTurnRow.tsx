@@ -15,6 +15,7 @@ import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { Sources } from "../Sources/Sources";
 import { QuestionGroup, type FoldMotion } from "../QuestionGroup/QuestionGroup";
 import { SystemMessage } from "../SystemMessage/SystemMessage";
+import { ArtifactCard } from "../Artifact/ArtifactCard";
 import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
@@ -30,6 +31,12 @@ export interface ChatTurnRowProps {
   animationConfig?: InlineAnimConfig;
   /** Overrides for a question group's fold timing. See `defaultFoldMotion`. */
   foldMotion?: Partial<FoldMotion>;
+  /**
+   * Which artifact the pane is showing, so the card that opened it can say so.
+   * Held by `useArtifacts`, above both of them.
+   */
+  openArtifactId?: string | null;
+  onOpenArtifact?: (turnId: string, artifactId: string) => void;
   /** Stagger for the entrance, in seconds. */
   entranceDelay?: number;
   /** Passed through to the highlighter over the answer. */
@@ -133,6 +140,8 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   placeholder,
   animationConfig,
   foldMotion,
+  openArtifactId = null,
+  onOpenArtifact,
   entranceDelay = 0,
   selectionMode = "marker",
   questionAlign = "end",
@@ -277,6 +286,23 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                     />
                   )}
                 </Approval>
+              );
+            case "artifact":
+              return (
+                <ArtifactCard
+                  key={part.id}
+                  id={part.id}
+                  title={part.title}
+                  meta={part.meta}
+                  kind={part.preview}
+                  lang={part.lang}
+                  content={part.content}
+                  state={part.state}
+                  open={openArtifactId === part.id}
+                  onOpen={
+                    onOpenArtifact ? (id) => onOpenArtifact(turn.id, id) : undefined
+                  }
+                />
               );
             case "notice":
               return (

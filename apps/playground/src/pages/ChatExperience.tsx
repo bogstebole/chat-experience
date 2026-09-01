@@ -8,6 +8,8 @@ import {
   ChatTurnRow,
   Context,
   announce,
+  ArtifactPane,
+  ChatLayout,
   Conversation,
   defaultFoldMotion,
   EmptyState,
@@ -15,6 +17,7 @@ import {
   SystemMessage,
   CustomCursor,
   defaultInlineAnimConfig,
+  useArtifacts,
   useChatTurns,
   type Answer,
   type Attachment,
@@ -25,7 +28,7 @@ import { Logo } from "../demo/Logo";
 import { InlineChatBanner } from "../demo/InlineChatBanner";
 import { INLINE_CHAT_FEATURE_STATUS } from "../demo/featureStatus";
 import { requestedTheme } from "../demo/showcase";
-import { QUESTIONS, scriptedApi, threadReply } from "../demo/scriptedApi";
+import { QUESTIONS, RUNNING_PLAN, scriptedApi, threadReply } from "../demo/scriptedApi";
 import introStyles from "./IntroChatLanding.module.css";
 import "./ChatExperience.css";
 
@@ -290,6 +293,11 @@ export function ChatExperience() {
       ) / 4
     );
 
+  /* Which artifact the pane is showing. Held here rather than in either the
+     card or the pane, because they are in different parts of the tree and both
+     need the answer. */
+  const artifacts = useArtifacts();
+
   /* And when it actually fills, something says so.
 
      The meter warns from 80% and then goes quiet at the moment it matters:
@@ -422,8 +430,32 @@ export function ChatExperience() {
           </div>
         </motion.div>
       ) : (
-        <motion.div
+        /* The pane is a page-level thing: it stands beside the chat column,
+           not inside it. Wrapped around `.chatPage` instead, `ChatLayout` was
+           656px wide — under its own breakpoint — so the pane went modal and
+           covered a conversation it was meant to sit next to. Measured, not
+           guessed; it is the sort of thing that looks right in a component's
+           own story and wrong the moment it is in a page. */
+        <ChatLayout
           key="chat"
+          className="chatWorkspace"
+          pane={({ narrow }) =>
+            artifacts.openId ? (
+              <ArtifactPane
+                title="5k training plan"
+                meta="8 weeks · 4 sessions a week"
+                modal={narrow}
+                onClose={artifacts.close}
+              >
+                {/* The host's, not the kit's. A plan here, a document or a
+                    table somewhere else — which is the whole reason the pane
+                    takes children rather than content. */}
+                <pre className="planText">{RUNNING_PLAN}</pre>
+              </ArtifactPane>
+            ) : null
+          }
+        >
+        <motion.div
           className="chatPage"
           initial={{ opacity: 0 }}
           animate={{
@@ -542,6 +574,7 @@ export function ChatExperience() {
                 suggestions={[
                   "What does particle physics actually study?",
                   "How big is the Higgs boson?",
+                  "Write me a plan for running a 5k",
                   "How do you know — show me your sources",
                   "What would you do first — give me a plan",
                   "Set up a double-slit experiment",
@@ -576,6 +609,8 @@ export function ChatExperience() {
                   selectionMode={selectionMode}
                   animationConfig={animConfig}
                   foldMotion={dial["Question Fold"]}
+                  openArtifactId={artifacts.openId}
+                  onOpenArtifact={(_turnId, id) => artifacts.toggle(id)}
                   placeholder="Ask me about particle physics…"
                   onDraft={setDraft}
                   onSubmit={handleSubmit}
@@ -602,6 +637,7 @@ export function ChatExperience() {
           </Conversation>
           <div className="bottomBlur" />
         </motion.div>
+        </ChatLayout>
       )}
       </AnimatePresence>
 

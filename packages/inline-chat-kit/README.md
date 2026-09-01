@@ -374,6 +374,7 @@ component that owns it.
 | `approval` | `<Approval>` | `title`, `description`, `tool`, `decision` |
 | `question` | `<QuestionGroup>` | `title`, `questions`, `answers`, `activeIndex`, `collapsible` |
 | `notice` | `<SystemMessage>` | `text`, `tone` |
+| `artifact` | `<ArtifactCard>` | `title`, `meta`, `preview`, `lang`, `content`, `state` |
 
 `reasoning` and `chain` are the same job at two grains — a block of prose, or
 steps that follow from one another. Sending both for one stretch of thinking
@@ -890,6 +891,64 @@ And it reads the reader's intent from the **input**, not from the scroll event.
 A component that watches scrolling cannot tell its own from theirs, and ends up
 either dragging them back down mid-sentence or never following at all. A wheel
 upwards, a page key, a drag away from the end: any of those and it lets go.
+
+### `<ArtifactCard>`, `<ArtifactPane>`, `<ChatLayout>`, `useArtifacts`
+
+What the answer produced, when it is bigger than the answer — a plan, a
+document, a file. Three pieces and one decision.
+
+```tsx
+const artifacts = useArtifacts();
+
+<ChatLayout
+  pane={({ narrow }) =>
+    artifacts.openId ? (
+      <ArtifactPane title="5k training plan" meta="8 weeks" modal={narrow} onClose={artifacts.close}>
+        <YourPlan />
+      </ArtifactPane>
+    ) : null
+  }
+>
+  <Conversation>
+    <ChatTurnRow turn={turn} openArtifactId={artifacts.openId} onOpenArtifact={(_, id) => artifacts.toggle(id)} />
+  </Conversation>
+</ChatLayout>
+```
+
+**The kit decides where the pane goes.** On the right, with the conversation
+making room; below `<ChatLayout>`'s width it covers the conversation instead. A
+preview pane is one of the few patterns every AI chat now has, and the worth of
+a pattern is that it is the same every time — ask for a plan, get a card, press
+it, the plan opens on the right. A kit that let each host place it would be
+shipping four chats that behave differently and calling it flexibility.
+
+**The kit does not decide what is in it.** `<ArtifactPane>` takes children: a
+plan, a table, a document, a diagram. That is the part that actually differs
+between products, and the only part.
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `<ArtifactCard>` `id` | `string` | What the pane opens. The card and the pane share nothing else |
+| `title`, `meta` | `ReactNode` | |
+| `kind` | `"code" \| "text"` | How the preview is drawn |
+| `content` | `string` | Absent while it is being written, which is how one usually arrives |
+| `lines` | `number` | How much shows before the cut. Default 8 |
+| `open` | `boolean` | True while its pane is the one on screen |
+| `onOpen` | `(id: string) => void` | Without one the card is a record, not a control |
+| `<ArtifactPane>` `modal` | `boolean` | See below |
+| `<ChatLayout>` `pane` | `({ narrow }) => ReactNode` | |
+
+**`modal` is the one prop that changes behaviour, and it is not about
+position.** Covering the conversation changes what the pane *is*: focus has to
+be held inside it and Escape has to close it, because there is nothing usable
+behind it. Beside the conversation both would be wrong — trapping focus would
+lock a reader out of the chat they are still reading. `<ChatLayout>` sets it
+from its own width, so you only pass it yourself if you are placing the pane
+without one.
+
+That is the part worth having in a library rather than the box. On open, focus
+moves to the pane's heading — not into its first control, which would skip what
+the thing is — and it is **not** trapped unless the pane is covering the chat.
 
 ### `<SystemMessage>`
 

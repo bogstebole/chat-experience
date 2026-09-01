@@ -287,6 +287,90 @@ const AGAIN = [
   ],
 ];
 
+/**
+ * A plan, written out. The demo's artifact.
+ *
+ * Long enough that pouring it into the answer would bury the answer, which is
+ * the whole argument for a pane: the card in the transcript is a window and
+ * this is what is behind it.
+ */
+export const RUNNING_PLAN = `Week 1 — base
+Mon   rest
+Tue   4 km easy, conversational pace
+Wed   cross-train, 30 min
+Thu   5 × 400 m at 5k effort, 90 s jog between
+Fri   rest
+Sat   6 km easy
+Sun   20 min walk
+
+Week 2 — base
+Mon   rest
+Tue   5 km easy
+Wed   cross-train, 35 min
+Thu   6 × 400 m, 90 s jog between
+Fri   rest
+Sat   7 km easy, last kilometre at pace
+Sun   20 min walk
+
+Week 3 — build
+Mon   rest
+Tue   5 km easy
+Wed   cross-train, 35 min
+Thu   4 × 800 m at 5k effort, 2 min jog between
+Fri   rest
+Sat   8 km easy
+Sun   20 min walk
+
+Week 4 — cut back
+Mon   rest
+Tue   4 km easy
+Wed   cross-train, 30 min
+Thu   5 × 400 m, 90 s jog between
+Fri   rest
+Sat   5 km easy
+Sun   rest
+
+Week 5 — build
+Mon   rest
+Tue   6 km easy
+Wed   cross-train, 40 min
+Thu   5 × 800 m, 2 min jog between
+Fri   rest
+Sat   9 km easy
+Sun   20 min walk
+
+Week 6 — sharpen
+Mon   rest
+Tue   6 km with 3 km at target pace
+Wed   cross-train, 30 min
+Thu   8 × 400 m, 60 s jog between
+Fri   rest
+Sat   8 km easy
+Sun   20 min walk
+
+Week 7 — sharpen
+Mon   rest
+Tue   5 km with 4 km at target pace
+Wed   cross-train, 30 min
+Thu   6 × 400 m, 60 s jog between
+Fri   rest
+Sat   6 km easy
+Sun   rest
+
+Week 8 — taper and race
+Mon   rest
+Tue   4 km easy with 4 × 100 m strides
+Wed   rest
+Thu   3 km easy
+Fri   rest
+Sat   race, 5 km
+Sun   20 min walk
+
+Notes
+Easy means you can hold a conversation. If you cannot, it is not easy.
+Every hard day is followed by a rest day; that is where the fitness is made.
+Miss a week and repeat it rather than skipping ahead to catch up.`;
+
 export async function* scriptedApi(
   message: string,
   { attachments, turnId }: { attachments: Attachment[]; turnId: string }
@@ -299,6 +383,29 @@ export async function* scriptedApi(
       "Say what arrived, and be honest that nothing here is looking at it.",
     ]);
     yield* prose(LOOKED);
+    return;
+  }
+
+  /* What a pane is for: something the answer produced that is bigger than the
+     answer. The card arrives before the content, which is how one really
+     arrives — the title first, shimmering, then the plan behind it. */
+  if (asks(message, "plan", "training", "5k", "run ", "running", "trening", "trčanj", "trcanj")) {
+    yield* thinking("r", [
+      "Eight weeks is the shortest honest 5k build for somebody starting from a base.",
+      "The plan is long. Put it behind a card rather than into the answer — an answer nobody can read past is not an answer.",
+    ]);
+    yield { kind: "artifact", id: "plan", title: "5k training plan", state: "writing" };
+    yield "Here is an eight-week plan. Four sessions a week, one of them hard, and a cut-back week in the middle so the fourth week does not become the one you quit in.";
+    await wait(900);
+    yield {
+      kind: "artifact",
+      id: "plan",
+      meta: "8 weeks · 4 sessions a week",
+      preview: "text",
+      content: RUNNING_PLAN,
+      state: "done",
+    };
+    yield " Open it to see the weeks.";
     return;
   }
 

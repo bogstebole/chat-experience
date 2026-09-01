@@ -20,6 +20,8 @@ import { ChainOfThought } from "../ChainOfThought/ChainOfThought";
 import { Approval } from "../Approval/Approval";
 import { Context } from "../Context/Context";
 import { SystemMessage } from "../SystemMessage/SystemMessage";
+import { ArtifactCard } from "../Artifact/ArtifactCard";
+import { ArtifactPane } from "../Artifact/ArtifactPane";
 import { Sources } from "../Sources/Sources";
 import { InlineCitation } from "../InlineCitation/InlineCitation";
 import { QuestionCard } from "../QuestionCard/QuestionCard";
@@ -63,6 +65,39 @@ const AXE_OPTIONS = {
 const check = async (container: HTMLElement) => {
   expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 };
+
+describe("axe — what the answer produced", () => {
+  it("passes for a card that can be opened", async () => {
+    const { container } = render(
+      <ArtifactCard
+        id="plan"
+        title="5k training plan"
+        meta="8 weeks"
+        kind="text"
+        content={"Week 1\nMon rest"}
+        onOpen={() => {}}
+      />
+    );
+    await check(container);
+  });
+
+  it("passes for a pane beside the conversation, and for one covering it", async () => {
+    for (const modal of [false, true]) {
+      const { container, unmount } = render(
+        <ArtifactPane title="5k training plan" meta="8 weeks" modal={modal} onClose={() => {}}>
+          <p>Week 1 — base</p>
+        </ArtifactPane>
+      );
+      await check(container);
+      unmount();
+    }
+  });
+
+  it("passes for a pane that has nothing in it yet", async () => {
+    const { container } = render(<ArtifactPane title="5k training plan" />);
+    await check(container);
+  });
+});
 
 describe("axe — the conversation talking", () => {
   it.each(["notice", "danger"] as const)("passes for a %s", async (tone) => {
