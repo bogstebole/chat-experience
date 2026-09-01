@@ -279,6 +279,33 @@
      non-replaced inline box. Filters work either way. */
   display: inline-block;
   white-space: pre-wrap;
+  /* No `color` here. A token sets no colour of its own at rest — it inherits
+     the page's — so transitioning the property meant transitioning whatever
+     the host changed it to. On a theme swap the ink inverts, and 320ms of
+     travel between the two inks goes straight through the background it is
+     sitting on: every word of every answer disappeared for nine frames.
+     Measured at 11.96% ink coverage before the swap, 3.56% one frame after,
+     back at 13.98% ten frames later. The bullets stayed, because `::marker`
+     takes no transition from here, which is what gave it away. */
+  transition:
+    filter 320ms var(--token-ease),
+    opacity 320ms var(--token-ease),
+    text-shadow 320ms var(--token-ease),
+    transform 240ms var(--token-ease-press);
+}
+
+/* Colour is animated only where a token actually sets one — under an open
+   menu — so the property cannot be dragged around by a change to what the
+   token inherits. Scoping it here rather than on `.token` is the whole fix
+   for the theme swap: the rule does not match at rest, so a swap repaints in
+   one frame.
+
+   Colouring a marked word at rest was tried and reverted. A stroke is drawn
+   by hand and does not stop at word boundaries — it entered "Higgs" three
+   letters in — so a token painted marker-ink is legible on the part the
+   stroke covers and invisible on the part it misses. Ink cannot follow a
+   stroke; only the stroke can. */
+.tokens[data-focus="true"] .token {
   transition:
     filter 320ms var(--token-ease),
     opacity 320ms var(--token-ease),
