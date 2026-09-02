@@ -142,8 +142,14 @@
   padding: 3px;
   border-radius: 99px;
   /* A tray, not a hover wash: it has to read as one against the page in both
-     themes, and the thumb has to read as sitting in it. */
-  background: var(--demo-tray);
+     themes, and the thumb has to read as sitting in it.
+
+     Written from the kit's own ink channel rather than from a `--demo-`
+     variable. Those live in the playground's `index.css`, so the control had
+     no background at all anywhere else — which is exactly what happened when
+     this page was ported to the website. Anything the kit's stylesheet brings
+     is available wherever the kit is. */
+  background: rgb(var(--ick-ink-rgb) / 0.08);
 }
 
 .selectModeToggle button {
@@ -164,7 +170,7 @@
 }
 
 .selectModeToggle button[data-active="true"] {
-  background: var(--demo-chip);
+  background: var(--ick-card);
   color: var(--ick-ink);
   box-shadow: var(--ick-shadow-1);
 }

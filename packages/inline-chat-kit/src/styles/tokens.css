@@ -416,6 +416,10 @@
     --ick-header-height-l: 56px;
     --ick-header-pad: var(--ick-space-6);
     --ick-header-gap: var(--ick-space-4);
+    /* Between the controls on the right. Wider than the header's own gap: at
+       4px a ring, a segmented toggle and two icon buttons ran together into
+       one shape. */
+    --ick-header-action-gap: var(--ick-space-5);
     /* Translucent, because a header sits over the conversation rather than
        beside it — the blur behind it is the point. */
     --ick-header-bg: rgb(var(--ick-paper-rgb) / 0.72);
