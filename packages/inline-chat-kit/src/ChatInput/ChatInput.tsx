@@ -79,6 +79,15 @@ export interface InlineAnimConfig {
     exitThreshold: number;
     preExpandHeight: number;
     slideInDelay: number;
+    /**
+     * How long the controls take to leave when the composer grows into a
+     * second line, in seconds.
+     *
+     * It was a literal `0.15` in three places, which is why the exit could not
+     * be tuned while everything around it could: the dial reached the springs
+     * that bring the row back and nothing that takes it away.
+     */
+    exitDuration: number;
   };
   actions: { staggerDelay: number; duration: number; stiffness: number; damping: number };
   addCards: { staggerDelay: number; stiffness: number; damping: number; inputScale: number; inputBlur: number; angle1: number; angle2: number; angle3: number; hoverPull: number };
@@ -90,7 +99,7 @@ export const defaultInlineAnimConfig: InlineAnimConfig = {
   addButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.2 },
   enterButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.3 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
-  wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120 },
+  wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120, exitDuration: 0.15 },
   actions: { staggerDelay: 0.07, duration: 0.12, stiffness: 400, damping: 22 },
   addCards: { staggerDelay: 0.06, stiffness: 800, damping: 41, inputScale: 0.95, inputBlur: 2, angle1: 0, angle2: -25, angle3: -50, hoverPull: 12 },
 };
@@ -774,7 +783,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       exit={{
                         opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0,
                         transition: pendingExpansion.current
-                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: (ac?.button?.staggerExit ?? 0.055) * 2 }
+                          ? { type: "tween", duration: ac?.wrap?.exitDuration ?? 0.15, ease: "easeOut", delay: (ac?.button?.staggerExit ?? 0.055) * 2 }
                           : undefined
                       }}
                       transition={{
@@ -872,7 +881,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       exit={{
                         opacity: 0, scale: 0, width: 0, height: 0,
                         transition: pendingExpansion.current
-                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
+                          ? { type: "tween", duration: ac?.wrap?.exitDuration ?? 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
                           : undefined
                       }}
                       transition={{
@@ -943,7 +952,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         height: 0,
                         marginLeft: 0,
                         transition: pendingExpansion.current
-                          ? { type: "tween", duration: 0.15, ease: "easeOut" }
+                          ? { type: "tween", duration: ac?.wrap?.exitDuration ?? 0.15, ease: "easeOut" }
                           : {
                             type: "spring",
                             visualDuration: ac?.enterButton?.visualDuration ?? 0.18,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo} from "react";
 import { motion, AnimatePresence, type Variants } from "motion/react";
 import { useDialKit } from "dialkit";
 import { Bookmark, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
@@ -72,6 +72,41 @@ export function ChatExperience() {
        the next, each a little above its place and settling into it. `fadeIn`
        and `fadeOut` are tweens on purpose — opacity is bounded, so a spring on
        it overshoots into a clamp and spends the overshoot sitting still. */
+    /* The composer's three controls — the microphone, the plus and the send
+       glyph — as they leave for a second line and come back.
+
+       `exitDuration` is the one that was unreachable: the leaving tween was a
+       literal 0.15 in three places, so the dial could tune everything that
+       brings the row back and nothing that takes it away.
+
+       The staggers are one beat each, applied right to left: the send glyph
+       waits none, the plus one, the microphone two. Move `staggerEnter` and
+       all three move together. */
+    /* The pill itself, and with it the text inside — the editor rides this
+       same spring by way of a `layout="position"`.
+
+       Two things are visible here and neither is new. The height overshoots:
+       measured through an entrance, the pill goes 44 to 45.28 and back to 44,
+       which is the spring being underdamped, and everything centred in it bobs
+       by that pixel. And the text arrives late — up to 26px below its place
+       mid-flight — because a spring on a layout *delta* and a spring on the
+       parent's own transform do not lock together while the parent is itself
+       moving. Raising `damping` settles both. */
+    "Composer Bubble": {
+      stiffness: [defaultInlineAnimConfig.bubble.stiffness, 50, 900],
+      damping: [defaultInlineAnimConfig.bubble.damping, 5, 100],
+      mass: [defaultInlineAnimConfig.bubble.mass, 0.05, 2],
+    },
+    "Composer Buttons": {
+      exitDuration: [defaultInlineAnimConfig.wrap.exitDuration, 0, 1],
+      staggerExit: [defaultInlineAnimConfig.button.staggerExit, 0, 0.4],
+      staggerEnter: [defaultInlineAnimConfig.button.staggerEnter, 0, 0.4],
+      addVisualDuration: [defaultInlineAnimConfig.addButton.visualDuration, 0.05, 1.2],
+      addBounce: [defaultInlineAnimConfig.addButton.bounce, 0, 0.9],
+      sendVisualDuration: [defaultInlineAnimConfig.enterButton.visualDuration, 0.05, 1.2],
+      sendBounce: [defaultInlineAnimConfig.enterButton.bounce, 0, 0.9],
+      slideInDelay: [defaultInlineAnimConfig.wrap.slideInDelay, 0, 600],
+    },
     "Question Fold": {
       visualDuration: [defaultFoldMotion.visualDuration, 0.1, 1.2],
       bounce: [defaultFoldMotion.bounce, 0, 0.8],
@@ -167,7 +202,55 @@ export function ChatExperience() {
   const [selectionMode, setSelectionMode] = useState<"marker" | "precise">("marker");
   const activeInputRef = useRef<ChatInputHandle>(null);
   const feedRef = useRef<HTMLDivElement>(null);
-  const animConfig = defaultInlineAnimConfig;
+  /* Built from the dial rather than taken as a constant, which is what makes
+     the panel able to move the composer at all — it had been handed the
+     frozen defaults, so every number in it was read-only in practice. */
+  const composer = dial["Composer Buttons"];
+  const bubble = dial["Composer Bubble"];
+  const animConfig = useMemo(
+    () => ({
+      ...defaultInlineAnimConfig,
+      bubble: {
+        ...defaultInlineAnimConfig.bubble,
+        stiffness: bubble.stiffness,
+        damping: bubble.damping,
+        mass: bubble.mass,
+      },
+      button: {
+        ...defaultInlineAnimConfig.button,
+        staggerEnter: composer.staggerEnter,
+        staggerExit: composer.staggerExit,
+      },
+      addButton: {
+        ...defaultInlineAnimConfig.addButton,
+        visualDuration: composer.addVisualDuration,
+        bounce: composer.addBounce,
+      },
+      enterButton: {
+        ...defaultInlineAnimConfig.enterButton,
+        visualDuration: composer.sendVisualDuration,
+        bounce: composer.sendBounce,
+      },
+      wrap: {
+        ...defaultInlineAnimConfig.wrap,
+        exitDuration: composer.exitDuration,
+        slideInDelay: composer.slideInDelay,
+      },
+    }),
+    [
+      bubble.stiffness,
+      bubble.damping,
+      bubble.mass,
+      composer.staggerEnter,
+      composer.staggerExit,
+      composer.addVisualDuration,
+      composer.addBounce,
+      composer.sendVisualDuration,
+      composer.sendBounce,
+      composer.exitDuration,
+      composer.slideInDelay,
+    ]
+  );
 
   const { turns, setDraft, submit, showVersion, stop, beginEdit, cancelEdit, updatePart } =
     useChatTurns({
