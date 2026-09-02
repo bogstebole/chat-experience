@@ -22,5 +22,19 @@
   "include": ["src"],
   // Tests are typechecked by the test run, not shipped. Without this they
   // emit declarations into dist and end up inside the published tarball.
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/__tests__", "src/stories"]
+  //
+  // The last pattern is for the copies the filesystem makes beside a file
+  // being edited — "useVoiceInput 2.ts". They were in `.gitignore` already,
+  // which kept them out of commits and, it turned out, out of sight: they went
+  // on compiling, and two of them were in the tarball of the first publish
+  // that was attempted. Ignored by git is not the same as excluded from the
+  // build; `strays.test.ts` fails on them so they are deleted rather than
+  // quietly skipped.
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/__tests__",
+    "src/stories",
+    "src/**/* [0-9].*"
+  ]
 }
