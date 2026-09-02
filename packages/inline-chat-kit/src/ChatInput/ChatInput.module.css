@@ -403,8 +403,49 @@
   width: 28px;
   height: 28px;
   margin-left: 2px;
-  animation: mic-in var(--ick-duration-base) var(--ick-ease) both;
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: right center;
+  animation: mic-in var(--ick-duration-base) var(--ick-ease) var(--ick-mic-delay-in, 0s) both;
+
+  /* The same four properties the plus and the send glyph animate, so the three
+     leave and return as one row rather than as one row and a bystander. */
+  transition:
+    width var(--ick-duration-base) var(--ick-ease) var(--ick-mic-delay-in, 0s),
+    margin-left var(--ick-duration-base) var(--ick-ease) var(--ick-mic-delay-in, 0s),
+    opacity var(--ick-duration-fast) var(--ick-ease) var(--ick-mic-delay-in, 0s),
+    transform var(--ick-duration-base) var(--ick-ease) var(--ick-mic-delay-in, 0s);
 }
+
+/* Out of the way while the composer grows into a second line.
+   Tucked, not unmounted: the other two controls are `AnimatePresence`
+   children and can be taken out of the tree to animate, and this one cannot —
+   inside that presence its props stopped reaching the DOM, so a refusal left
+   a button still labelled "Dictate a message" beside a note saying the
+   microphone was blocked. Kept mounted and driven by CSS, it gets the same
+   entrance and exit without that. */
+.micSlot[data-tucked] {
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  transform: scale(0);
+  /* Leaving is its own beat, and it leaves last. */
+  transition-delay: var(--ick-mic-delay-out, 0s);
+}
+
+/* Deliberately NOT `visibility: hidden`.
+
+   Hiding it takes the button out of the accessibility tree, and the flag this
+   rides on — `showButtons` — is restored from an `onExitComplete`, which is a
+   Motion callback and not a guarantee. A control that is unreachable until an
+   animation callback fires is a control that can be lost. The choreography is
+   for the eye; a reader who is not looking at it keeps the button throughout.
+
+   `pointer-events: none` was here for the same reason and came out for the
+   same one: a tucked slot is zero-wide, so there is nothing for a pointer to
+   hit, and the rule only added a way for the button to be alive on the page
+   and dead to the pointer if that callback never came.
+*/
 
 @keyframes mic-in {
   from { opacity: 0; transform: scale(0.6); }
@@ -412,5 +453,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .micSlot { animation: none; }
+  .micSlot {
+    animation: none;
+    transition: none;
+  }
 }

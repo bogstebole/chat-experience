@@ -774,7 +774,26 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     transition covers the one entrance, which is the same trade
                     the highlighter's hover made when it left React. */}
                 {!isGlass && showMic && (
-                  <div className={styles.micSlot}>
+                  <div
+                    className={styles.micSlot}
+                    /* Tucked rather than unmounted, which is what lets this
+                       join the row's choreography without going back inside
+                       the presence it cannot live in. `showButtons` is the
+                       same flag the plus and the send glyph leave on when the
+                       composer grows into a second line. */
+                    data-tucked={!showButtons || undefined}
+                    style={
+                      {
+                        /* The row assembles right to left — the send glyph has
+                           no delay, the plus waits one stagger — so the
+                           microphone, being leftmost, waits two. Read from the
+                           same config the others use, so a number changed in
+                           DialKit still moves all three together. */
+                        "--ick-mic-delay-in": `${(ac?.button?.staggerEnter ?? 0.055) * 2}s`,
+                        "--ick-mic-delay-out": `${(ac?.button?.staggerExit ?? 0.055) * 2}s`,
+                      } as React.CSSProperties
+                    }
+                  >
                     <Button
                       variant="ghost"
                       data-voice={voice.state}
