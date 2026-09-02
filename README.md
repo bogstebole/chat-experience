@@ -134,6 +134,20 @@ Dark mode is a token swap — set `data-theme="dark"` on any ancestor and the
 whole tree repaints from two channel triplets. `theming.md` in the package has
 the full list and the three tiers behind it.
 
+> **If your app is light-only, say so.** Left alone the kit follows
+> `prefers-color-scheme`, so a visitor whose system is set to dark gets the
+> dark palette — near-white ink — even if your page is painting white behind
+> it. White on white: everything renders and nothing is visible.
+>
+> One attribute prevents it, on the kit's subtree or on `<html>`:
+>
+> ```html
+> <div class="ick-theme" data-theme="light">…</div>
+> ```
+>
+> The same goes for `data-theme="dark"` in a dark-only app. Pin whichever one
+> your app actually paints; only leave it off if you follow the system too.
+
 ## Accessibility
 
 Not a pass that happened at the end. Answers are announced to screen readers,

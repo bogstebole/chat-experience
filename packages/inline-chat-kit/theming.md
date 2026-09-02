@@ -147,6 +147,25 @@ rest of a paragraph falls back while one highlight has the floor. It is `0.15`
 in light and `0.32` in dark, because 15% of near-black on white is a legible
 grey and 15% of near-white on black is very nearly nothing.
 
+## Which theme, and whose
+
+Left alone the kit reads `prefers-color-scheme`. That is right for an app that
+follows the system, and **wrong and invisible for one that does not**: a
+light-only page on a machine set to dark gets `--ick-ink-rgb: 245 245 245`
+over its own white background, and every word the kit draws disappears. It is
+not a subtle degradation — the component renders perfectly and cannot be seen.
+
+Pin it to whatever your app actually paints:
+
+```html
+<div class="ick-theme" data-theme="light">…</div>
+```
+
+`light` and `dark` are both honoured, on `<html>` or on any ancestor of the
+kit, and the dark rules exclude `[data-theme="light"]` explicitly so the pin
+holds under the media query. Leave it off only if your app follows the system
+as well.
+
 ## Per component
 
 Each component names its own handful, defaulting to the semantic layer. Change
