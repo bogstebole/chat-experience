@@ -26,8 +26,8 @@ export function InlineChatBanner({ status }: InlineChatBannerProps) {
         <div className={styles.headerText}>
           <span className={styles.title}>Quick heads up</span>
           <span className={styles.body}>
-            Chat runs on predefined responses for now, full AI is on the way. A few things work, a
-            few don&apos;t yet.
+            The answers are scripted — there is no model behind this page. Everything else is
+            the real component, so the list below is what you can actually try.
           </span>
         </div>
       </div>
@@ -45,11 +45,17 @@ function Column({ label, items }: { label: string; items: string[] }) {
   return (
     <div className={styles.column}>
       <span className={styles.columnLabel}>{label}</span>
-      {items.map((item) => (
-        <span key={item} className={styles.item}>
-          {item}
-        </span>
-      ))}
+      {/* The items get a box of their own so a long list can flow into two
+          sub-columns. "Works" is fifteen lines and the other two are two and
+          four; without this the card is mostly empty space to the right of a
+          single tall list. */}
+      <div className={styles.items}>
+        {items.map((item) => (
+          <span key={item} className={styles.item}>
+            {item}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
