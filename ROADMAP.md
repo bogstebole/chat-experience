@@ -1100,6 +1100,97 @@ This is the "thinking, reasoning" the brief asks for.
 
       11 tests, 1 story, 2 tokens. `0.48.0`.
 
+### I · What the kit is missing to be finished
+
+Written down on 2 September 2026, after the package went to npm and the
+website was ported onto it. Five of these are the author's, in his order;
+the sixth is the one this week kept charging for.
+
+- [ ] **I1 · Mobile has to work, all of it.** Not "degrade acceptably" —
+      work.
+
+      Some of it is already there and has never been checked on a phone: the
+      artifact pane goes modal under its own 760px container query, the header
+      collapses its actions into a menu at `collapseActionsAt`, and the
+      highlighter's touch handling was fixed properly (`pan-y`, and a
+      `pointercancel` that discards rather than commits). What has never been
+      looked at is the composer with a software keyboard over it, `100vh`
+      against `100dvh`, the safe areas on a notched phone, and whether a
+      question card with four options is reachable with a thumb.
+
+      The honest first step is a device, not a narrow window. A resized
+      desktop browser does not have a keyboard that steals half the viewport.
+
+- [ ] **I2 · A fixed composer at the bottom, as an alternative to the
+      inline one.** The whole kit is built on the input *being* the message.
+      That is the argument it makes, and some products will not want it.
+
+      Almost everything survives the switch: `useChatTurns`, every part a turn
+      carries, the pane, the highlighter. What changes is where the composer
+      lives and whether it morphs — so this is a second layout rather than a
+      second kit, and it has to be **one prop**, not a fork. Somebody trying
+      both should be able to change a word and see it.
+
+      The thing to get right is what a sent message becomes when the composer
+      is not it. Today the bubble *is* the input, read-only. In the classic
+      shape it is a bubble the composer produced, and edit has to keep working
+      without the morph doing the explaining.
+
+- [ ] **I3 · Queue a message while an answer is still arriving.** Today the
+      composer waits for the stream to finish. That is the kit imposing its
+      own turn-taking on a reader who has already decided what to say next.
+
+      Not a UI problem first — a `useChatTurns` one. Decisions before code:
+      does a queued message send itself when the answer settles, or wait for a
+      press? Can it be edited or dropped while it waits? Does a second one
+      stack behind the first? And what does the transcript look like while it
+      holds — a bubble that is there but not yet said needs a state of its own,
+      because a bubble that looks sent and is not is worse than no queue.
+
+- [ ] **I4 · Pressing the microphone has to feel like something started.**
+
+      What exists is a ring that swells with the room's volume. It is honest
+      and it is nearly invisible: nothing marks the moment recording begins,
+      and the browser's permission prompt puts a silent gap in front of it the
+      first time. A reader presses, nothing appears to happen, and presses
+      again.
+
+      Worth a real interaction rather than a louder ring — the composer
+      becoming a listening surface, a waveform where the placeholder was, an
+      elapsed count, something that says *this is live and here is what it is
+      hearing*. Whatever it is, it must survive `prefers-reduced-motion` and
+      it must not claim a recording during `requesting`, which is the fault
+      already fixed once in the glyph.
+
+- [ ] **I5 · Visual QA, automated.** Small things drift out of alignment —
+      something not centred horizontally, something a pixel off vertically —
+      and they are found by eye, late, one at a time.
+
+      Everything needed already exists in one-off form: this repo has spent
+      weeks writing probes that drive a real browser and measure ink against
+      boxes, frames against each other, painted pixels rather than declared
+      values. What it does not have is a suite. Turning those into a pass that
+      runs on every change is the difference between catching this class of
+      fault and continuing to be told about it.
+
+      **Two lessons from writing those probes belong in the suite itself.**
+      Assert against what is painted, not what is computed — with alpha in
+      play `getComputedStyle` reports what was written and calls two different
+      greys identical. And name what each term of a measurement is; the
+      readings that wasted the most time were the ones where "the ink" turned
+      out to be the background.
+
+- [ ] **I6 · One demo, not two.** The playground and the website hold
+      hand-written copies of the same page and the same stylesheet.
+
+      It cost three separate faults in a single week: the website sat a year
+      behind the kit and nobody could see it, a segmented control lost its
+      background because the variables it used lived in only one of the two,
+      and every fix since has been made twice. The website is a showcase — its
+      whole job is to show what the kit currently is — and a copy cannot do
+      that job.
+
+
 ### The shape pass — 0.34 to 0.43.1
 
 None of this was planned. It came out of looking at screenshots together, and
@@ -1179,6 +1270,9 @@ pretend to know what a hunk is.
 
 ~~F1~~ → ~~F2~~ → ~~F3~~ → ~~F4~~ → ~~F5~~ → ~~F6~~ → ~~G3~~ → ~~G1~~ → ~~G4~~ →
 ~~G2~~ → ~~G5~~ → ~~G6~~ → ~~G7~~ → ~~H1~~ → ~~H2~~ → ~~H4~~ → ~~H3~~ → ~~H6~~ → H5.
+
+And then tier I, which is where the work goes next: **I5 first**, because it
+pays for itself on everything after it, then I1, then the rest.
 
 The floor and the agent tier are both finished, and `<Attachments>` and
 `<Branch>` with them. What is left is H3 to H6, none of it load-bearing.
