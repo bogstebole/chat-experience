@@ -55,6 +55,7 @@ const EXPECTED_EXPORTS = [
   "canHighlight",
   "defaultInlineAnimConfig",
   "defaultFoldMotion",
+  "headerIconSize",
   "useArtifacts",
   "useChatTurns",
   "useVoiceInput",
@@ -76,7 +77,7 @@ describe("public API", () => {
   it("ships components as functions, not accidental objects", () => {
     // Values, not components. Each is exported because a consumer needs the
     // number or the function, not because there is something to render.
-    const NOT_RENDERABLE = new Set(["defaultInlineAnimConfig", "defaultFoldMotion", "FOLDABLE_FROM", "useArtifacts", "useVoiceInput"]);
+    const NOT_RENDERABLE = new Set(["defaultInlineAnimConfig", "defaultFoldMotion", "FOLDABLE_FROM", "useArtifacts", "useVoiceInput", "headerIconSize"]);
     for (const name of EXPECTED_EXPORTS) {
       if (NOT_RENDERABLE.has(name)) continue;
       const value = kit[name as keyof typeof kit];

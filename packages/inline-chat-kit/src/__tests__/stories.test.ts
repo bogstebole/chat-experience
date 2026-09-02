@@ -25,6 +25,8 @@ const NOT_COMPONENTS: Record<string, string> = {
   defaultInlineAnimConfig: "a configuration object",
   GlassButton: "deprecated wrapper around Button, which has the stories",
   FOLDABLE_FROM: "a number: the length above which a group offers to fold",
+  headerIconSize:
+    "three numbers, one per header size — what an action's icon should be, so a caller does not guess it; the ChatHeader stories show the result",
   answerChips: "a function that shortens an answer for its summary row",
   mergeParts:
     "a function that folds a part into a turn's list; what it produces is what the ChatTurnRow stories show",

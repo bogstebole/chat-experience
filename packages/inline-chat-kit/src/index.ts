@@ -54,7 +54,7 @@ export { announce } from "./announce/announce";
 export type { Politeness } from "./announce/announce";
 
 /* The chrome above the conversation */
-export { ChatHeader } from "./ChatHeader/ChatHeader";
+export { ChatHeader, headerIconSize } from "./ChatHeader/ChatHeader";
 export type {
   ChatHeaderAction,
   ChatHeaderProps,
