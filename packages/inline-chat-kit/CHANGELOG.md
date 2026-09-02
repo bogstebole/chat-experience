@@ -6,6 +6,28 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.52.0 — 2026-09-02
+
+### Added
+
+- **`--ick-tray` and `--ick-tray-thumb`** — a segmented control's recessed
+  track and the raised thumb in it. Every chat has one somewhere, and until now
+  the demo carried the colours in variables of its own, so the control had no
+  background anywhere else.
+
+  The thumb has to be **lighter than its tray in both themes**, and the two get
+  there from opposite ends: in light it goes all the way to paper, in dark pure
+  white is too loud so it is a wash of ink instead. Stated per theme rather
+  than mixed, because a mix cannot reverse.
+
+  Measured from painted pixels rather than declared values — with alpha
+  involved, `getComputedStyle` reports what was written, not what was drawn:
+
+  | | tray | thumb | |
+  | --- | --- | --- | --- |
+  | light | `rgb(236)` | `rgb(253)` | 1.16:1 |
+  | dark | `rgb(36)` | `rgb(72)` | 1.70:1 |
+
 ## 0.51.0 — 2026-09-02
 
 ### Added
