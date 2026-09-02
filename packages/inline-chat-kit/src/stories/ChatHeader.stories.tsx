@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Bookmark, Share2, Sun, Moon, Highlighter, TextCursor, Settings, Download } from "lucide-react";
 import {
   ChatHeader,
+  headerIconSize,
   type ChatHeaderAction,
   type ChatHeaderSize,
   type ChatHeaderVariant,
@@ -287,7 +288,7 @@ function SelectionToggle() {
             background: mode === value ? "var(--ick-surface-raised)" : "transparent",
           }}
         >
-          <Icon size={15} aria-hidden />
+          <Icon size={headerIconSize.m} aria-hidden />
         </button>
       ))}
     </div>

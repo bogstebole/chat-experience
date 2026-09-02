@@ -624,7 +624,7 @@ export function ChatExperience() {
                 aria-label="Freeform marker"
                 title="Freeform marker"
               >
-                <Highlighter size={15} />
+                <Highlighter size={16} />
               </button>
               <button
                 type="button"
@@ -633,7 +633,7 @@ export function ChatExperience() {
                 aria-label="Precise text selection"
                 title="Precise text selection"
               >
-                <TextCursor size={15} />
+                <TextCursor size={16} />
               </button>
             </div>
           </ChatHeader>

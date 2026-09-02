@@ -6,6 +6,23 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.51.0 — 2026-09-02
+
+### Added
+
+- **`headerIconSize`** — how big an icon in a `<ChatHeader>` should be, one
+  number per header size (`s` 14, `m` 16, `l` 18).
+
+  The header draws its own back button and overflow menu from these; every
+  other icon in the row is a `ReactNode` the caller made at whatever size they
+  guessed. In the demo a segmented toggle came out at 15 against everything
+  else's 16 — one pixel, and visible, because the row is four icons in a line
+  and one of them was smaller. Now it can be asked for:
+
+  ```tsx
+  <Highlighter size={headerIconSize.m} />
+  ```
+
 ## 0.50.0 — 2026-09-02
 
 ### Added

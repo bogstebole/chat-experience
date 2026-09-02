@@ -110,7 +110,22 @@ export interface ChatHeaderProps
 }
 
 const BUTTON_SIZE: Record<ChatHeaderSize, ButtonSize> = { s: "s", m: "m", l: "l" };
-const ICON_SIZE: Record<ChatHeaderSize, number> = { s: 14, m: 16, l: 18 };
+/**
+ * How big an icon in this header should be, per header size.
+ *
+ * Exported because the actions are the caller's: the header draws its own back
+ * button and overflow menu from this, and everything beside them is a
+ * `ReactNode` somebody else made at whatever size they guessed. A segmented
+ * toggle in the demo came out at 15 against everything else's 16 — a pixel,
+ * and visible, because the row is four icons in a line and one of them was
+ * smaller.
+ *
+ * `<Highlighter size={headerIconSize.m} />` rather than a number, and the row
+ * stays even when the header's size changes.
+ */
+export const headerIconSize: Record<ChatHeaderSize, number> = { s: 14, m: 16, l: 18 };
+
+const ICON_SIZE = headerIconSize;
 
 const sizeClass: Record<ChatHeaderSize, string> = {
   s: styles.s,
