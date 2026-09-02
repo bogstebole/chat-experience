@@ -67,6 +67,7 @@ into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 | `npm run showcase` | Re-record the showcase video (dev server must be up) |
 | `npm run showcase:questions` | Re-record the question-card showcase |
 | `npm run shots` | Re-capture the stills |
+| `node tools/voice/check.mjs` | The microphone button's states, in a real browser |
 
 Recordings land in `Videos/` and `Shots/`, both gitignored — they are outputs,
 not sources.
