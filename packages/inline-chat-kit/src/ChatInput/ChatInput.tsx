@@ -752,110 +752,105 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               </div>
 
               <div className={styles.buttonGroup}>
-                {/* Outside the group's `AnimatePresence`, and outside Motion.
+                  {/* A keyed child of the row's own presence, like the other two.
 
-                    Two reasons, and the second is the one that decided it.
+                      It was outside Motion for a while, because inside this
+                      presence its props appeared to stop reaching the DOM. That
+                      was measured in jsdom, where Motion's animations never
+                      complete — an exit that never finishes leaves
+                      `AnimatePresence` rendering its stored children forever.
+                      In a real browser the exits do finish, and the props do
+                      land; verified before moving it back.
 
-                    The microphone is the first control in this row that stays
-                    put while its meaning changes: every other one swaps key
-                    when it changes — plus becomes cancel, send becomes stop —
-                    so each remounts and none has ever had to update in place.
-                    Inside the presence, this one did not: a refusal
-                    re-rendered the component with `denied`, the paragraph
-                    below said the microphone was blocked, and the button in
-                    the same commit was still labelled "Dictate a message" and
-                    still enabled. Measured rather than guessed — a probe
-                    outside every wrapper read `denied` in the same instant the
-                    button's own attribute read `idle`.
-
-                    And it does not need what a presence is for. It appears
-                    when a host passes `onTranscribe` and stays for the life of
-                    the composer; there is no exit worth choreographing. A CSS
-                    transition covers the one entrance, which is the same trade
-                    the highlighter's hover made when it left React. */}
-                {!isGlass && showMic && (
-                  <div
-                    className={styles.micSlot}
-                    /* Tucked rather than unmounted, which is what lets this
-                       join the row's choreography without going back inside
-                       the presence it cannot live in. `showButtons` is the
-                       same flag the plus and the send glyph leave on when the
-                       composer grows into a second line. */
-                    data-tucked={!showButtons || undefined}
-                    style={
-                      {
-                        /* The row assembles right to left — the send glyph has
-                           no delay, the plus waits one stagger — so the
-                           microphone, being leftmost, waits two. Read from the
-                           same config the others use, so a number changed in
-                           DialKit still moves all three together. */
-                        "--ick-mic-delay-in": `${(ac?.button?.staggerEnter ?? 0.055) * 2}s`,
-                        "--ick-mic-delay-out": `${(ac?.button?.staggerExit ?? 0.055) * 2}s`,
-                      } as React.CSSProperties
-                    }
-                  >
-                    <Button
-                      variant="ghost"
-                      data-voice={voice.state}
-                      icon={
-                        <>
-                          {/* The level of the incoming signal. `useVoiceInput`
-                              writes `--ick-voice-level` here once a frame and
-                              nothing reads it but CSS — a number this
-                              component re-rendered on would be sixty renders a
-                              second for a decoration. */}
-                          <span
-                            ref={meterRef}
-                            className={styles.voiceMeter}
-                            data-live={voice.state === "listening" || undefined}
-                            aria-hidden
-                          />
-                          {/* A square means "press to stop what is running".
-                              Nothing is running while the browser's prompt is
-                              up, so `requesting` keeps the microphone and says
-                              it is busy instead — a stop button over a
-                              permission dialog claims a recording that has not
-                              started. */}
-                          <MorphGlyph
-                            mode={voice.state === "listening" || voice.state === "transcribing" ? "stop" : "mic"}
-                            size={14}
-                          />
-                        </>
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (voice.state === "denied") return;
-                        if (!voiceBusy) {
-                          // Fixed here rather than read when the transcript
-                          // arrives: by then focus has been on a button for
-                          // however long somebody spoke, and the caret is
-                          // wherever that left it.
-                          // Never seen a caret in the editor means nobody
-                          // has been typing in it, and the end is where a
-                          // first sentence belongs.
-                          const at = Math.min(lastCaret.current ?? value.length, value.length);
-                          dictation.current = { base: value, at };
-                        }
-                        voice.toggle();
+                      Outside, it could not leave: the other two unmount for the
+                      wrap, so the layout cannot drag them anywhere, while this
+                      one stayed mounted and got carried into the second line
+                      with the text. */}
+                  {!isGlass && showButtons && showMic && (
+                    <motion.div
+                      key="mic"
+                      initial={{ opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28, height: 28, marginLeft: 2 }}
+                      exit={{
+                        opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0,
+                        transition: pendingExpansion.current
+                          ? { type: "tween", duration: 0.15, ease: "easeOut", delay: (ac?.button?.staggerExit ?? 0.055) * 2 }
+                          : undefined
                       }}
-                      aria-busy={voice.state === "requesting" || voice.state === "transcribing"}
-                      aria-pressed={voice.state === "listening"}
-                      disabled={voice.state === "denied"}
-                      aria-label={
-                        voice.state === "listening"
-                          ? "Stop listening"
-                          : voice.state === "requesting"
-                          ? "Waiting for microphone access"
-                          : voice.state === "transcribing"
-                            ? "Cancel transcription"
-                            : voice.state === "denied"
-                              ? "Microphone blocked"
-                              : "Dictate a message"
-                      }
-                      style={{ width: "100%", height: "100%", position: "relative" }}
-                    />
-                  </div>
-                )}
+                      transition={{
+                        type: "spring",
+                        visualDuration: ac?.addButton?.visualDuration ?? 0.4,
+                        bounce: ac?.addButton?.bounce ?? 0.5,
+                        /* The row assembles right to left — the send glyph has
+                           no delay and the plus waits one stagger — so the
+                           microphone, leftmost, waits two. */
+                        delay: (ac?.button?.staggerEnter ?? 0.055) * 2,
+                        opacity: { type: "tween", duration: 0.15 }
+                      }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative" }}
+                    >
+                      <Button
+                        variant="ghost"
+                        data-voice={voice.state}
+                        icon={
+                          <>
+                            {/* The level of the incoming signal. `useVoiceInput`
+                                writes `--ick-voice-level` here once a frame and
+                                nothing reads it but CSS — a number this
+                                component re-rendered on would be sixty renders a
+                                second for a decoration. */}
+                            <span
+                              ref={meterRef}
+                              className={styles.voiceMeter}
+                              data-live={voice.state === "listening" || undefined}
+                              aria-hidden
+                            />
+                            {/* A square means "press to stop what is running".
+                                Nothing is running while the browser's prompt is
+                                up, so `requesting` keeps the microphone and says
+                                it is busy instead — a stop button over a
+                                permission dialog claims a recording that has not
+                                started. */}
+                            <MorphGlyph
+                              mode={voice.state === "listening" || voice.state === "transcribing" ? "stop" : "mic"}
+                              size={14}
+                            />
+                          </>
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (voice.state === "denied") return;
+                          if (!voiceBusy) {
+                            // Fixed here rather than read when the transcript
+                            // arrives: by then focus has been on a button for
+                            // however long somebody spoke, and the caret is
+                            // wherever that left it.
+                            // Never seen a caret in the editor means nobody
+                            // has been typing in it, and the end is where a
+                            // first sentence belongs.
+                            const at = Math.min(lastCaret.current ?? value.length, value.length);
+                            dictation.current = { base: value, at };
+                          }
+                          voice.toggle();
+                        }}
+                        aria-busy={voice.state === "requesting" || voice.state === "transcribing"}
+                        aria-pressed={voice.state === "listening"}
+                        disabled={voice.state === "denied"}
+                        aria-label={
+                          voice.state === "listening"
+                            ? "Stop listening"
+                            : voice.state === "requesting"
+                            ? "Waiting for microphone access"
+                            : voice.state === "transcribing"
+                              ? "Cancel transcription"
+                              : voice.state === "denied"
+                                ? "Microphone blocked"
+                                : "Dictate a message"
+                        }
+                        style={{ width: "100%", height: "100%", position: "relative" }}
+                      />
+                    </motion.div>
+                  )}
                 <AnimatePresence
                   initial={false}
                   onExitComplete={() => {
