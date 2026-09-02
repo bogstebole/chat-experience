@@ -39,6 +39,13 @@ the entrance springs, stagger and blur, plus a **perf HUD**. Numbers you settle
 on go into `defaultInlineAnimConfig` in `ChatInput.tsx`; the panel persists
 nothing.
 
+Two of its groups drive the composer: **Composer Buttons** (how the
+microphone, the plus and the send glyph leave for a second line and come back)
+and **Composer Bubble** (the pill's spring, which the text rides by way of a
+`layout="position"`). Both were unreachable until the demo stopped handing the
+composer a frozen `defaultInlineAnimConfig` — the panel could move everything
+around the input and nothing in it.
+
 Both belong to the playground. A test asserts `dialkit` never becomes a
 dependency of the package.
 
