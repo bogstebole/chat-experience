@@ -6,6 +6,35 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.49.0 — 2026-09-02
+
+### Changed
+
+- **New defaults for the composer's motion**, settled on the dial rather than
+  argued about. Four numbers moved:
+
+  | | was | now |
+  | --- | --- | --- |
+  | `bubble.damping` | 21.5 | 22 |
+  | `bubble.mass` | 0.2 | 0.3 |
+  | `button.staggerEnter` | 0.12 | 0.06 |
+  | `enterButton.bounce` | 0.3 | 0.2 |
+
+  A heavier, better-damped pill and a tighter row: the controls now return
+  half a beat apart rather than a whole one, and the send glyph arrives with
+  less overshoot.
+
+  Nothing about the API changed. A host passing its own `animationConfig` is
+  unaffected; one relying on `defaultInlineAnimConfig` gets the new feel and
+  can pin the old values by passing them.
+
+### Added
+
+- **`wrap.exitDuration`** on `InlineAnimConfig` — how long the controls take
+  to leave when the composer grows onto a second line. It had been a literal
+  `0.15` in three places, which made it the one part of the choreography no
+  configuration could reach.
+
 ## 0.48.0 — 2026-09-01
 
 ### Added

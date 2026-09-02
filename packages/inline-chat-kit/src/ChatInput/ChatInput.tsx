@@ -94,10 +94,10 @@ export interface InlineAnimConfig {
 }
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
-  bubble: { stiffness: 600, damping: 21.5, mass: 0.2 },
-  button: { stiffness: 500, damping: 50, mass: 0.2, staggerEnter: 0.12, staggerExit: 0.06 },
-  addButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.2 },
-  enterButton: { duration: 0.2, visualDuration: 0.18, bounce: 0.3 },
+  bubble: { stiffness: 600, damping: 22, mass: 0.3 },
+  button: { stiffness: 500, damping: 50, mass: 0.2, staggerEnter: 0.06, staggerExit: 0.06 },
+  addButton: { duration: 0.2, visualDuration: 0.2, bounce: 0.2 },
+  enterButton: { duration: 0.2, visualDuration: 0.2, bounce: 0.2 },
   ripple: { scaleX: 1.000, duration: 0.19, pulseDuration: 140 },
   wrap: { nearThreshold: 0.92, exitThreshold: 0.75, preExpandHeight: 16, slideInDelay: 120, exitDuration: 0.15 },
   actions: { staggerDelay: 0.07, duration: 0.12, stiffness: 400, damping: 22 },
