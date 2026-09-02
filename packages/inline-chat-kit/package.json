@@ -1,8 +1,31 @@
 {
   "name": "inline-chat-kit",
   "version": "0.49.0",
-  "description": "A drop-in inline AI chat experience — morphing input, hover actions, text highlighting and reply threads.",
+  "description": "An inline AI chat experience for React. The input is the message: it morphs into the bubble, the answer streams beneath it, and the parts around it — tool calls, reasoning, questions, artifacts, dictation — come with it.",
+  "keywords": [
+    "react",
+    "chat",
+    "ai",
+    "chatbot",
+    "chat-ui",
+    "llm",
+    "streaming",
+    "assistant",
+    "component-library",
+    "design-system",
+    "accessible"
+  ],
   "license": "MIT",
+  "author": "bogstebole",
+  "homepage": "https://github.com/bogstebole/chat-experience#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bogstebole/chat-experience.git",
+    "directory": "packages/inline-chat-kit"
+  },
+  "bugs": {
+    "url": "https://github.com/bogstebole/chat-experience/issues"
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -22,6 +45,9 @@
     },
     "./styles.css": "./dist/inline-chat-kit.css",
     "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -b && vite build",
