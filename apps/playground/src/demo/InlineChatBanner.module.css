@@ -54,9 +54,19 @@
 }
 
 .columns {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
+  /* A grid rather than three equal flex columns: the three groups are not the
+     same length and never will be — "Works" is the whole component and the
+     other two are what is left. Equal widths wrapped its longest item onto a
+     second line while two thirds of the card sat empty. */
+  display: grid;
+  /* Sized to their contents, with the slack going to the gaps between them.
+     Shares do not work here: the three groups have very different longest
+     items, so any fixed ratio wraps one of them — equal columns broke
+     "Approve or deny a tool call" and 2fr/1fr/1fr broke "A composer fixed at
+     the bottom". */
+  grid-template-columns: repeat(3, auto);
+  justify-content: space-between;
+  align-items: start;
   background-color: var(--ick-surface);
   border-radius: var(--ick-radius-lg);
   padding: var(--ick-space-4) 20px;
@@ -71,11 +81,26 @@
 }
 
 .column {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-2);
   padding: var(--ick-space-4);
+  min-width: 0;
+}
+
+/* Flows into as many columns as fit at 150px, so a two-item list stays one
+   column and a fifteen-item list becomes two or three. `break-inside` because
+   a wrapped item split across a column break reads as two entries. */
+.items {
+  /* The column's `gap` cannot reach inside a multi-column box. */
+  line-height: 1.9;
+  columns: 150px auto;
+  column-gap: var(--ick-space-5);
+}
+
+.items > .item {
+  display: block;
+  break-inside: avoid;
 }
 
 .columnLabel {
@@ -94,7 +119,7 @@
 
 @media (max-width: 540px) {
   .columns {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     padding: var(--ick-space-2) 20px;
   }
 
