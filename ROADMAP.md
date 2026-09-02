@@ -1204,11 +1204,17 @@ conversation. Openers on the empty state route to branches of the scripted API,
 so anything can be reached by pressing something rather than by knowing what to
 type.
 
-**Known and not done.** The showcase recordings under `Videos/showcase/`
-predate the whole shape pass and show a question card that no longer exists;
-re-running `npm run showcase:questions` is the fix. And MotionScore's one
-finding stands: two forced recalculations at mount, from `useCorrectedRadius`
-reading `getComputedStyle` in a layout effect after writes.
+**Known and not done.** MotionScore's one finding stands: two forced
+recalculations at mount, from `useCorrectedRadius` reading `getComputedStyle`
+in a layout effect after writes.
+
+And the package is **not on a registry**. Everything above is a component
+somebody could install, and nobody can — the README describes the tarball
+route because that is the true one. The manifest is ready for the day that
+changes; `manifest.test.ts` pins what a published package has to carry.
+
+*(The showcase recordings were the other thing listed here. They have been
+re-recorded and now show what the kit actually is.)*
 
 ### E4 · Structured questions, from NANA — done
 
