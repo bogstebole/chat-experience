@@ -18,17 +18,8 @@ MIT. React 18 or 19.
 
 ## Install
 
-**Not on npm yet.** Build the tarball out of this repo and install that:
-
 ```bash
-git clone git@github.com:bogstebole/chat-experience.git
-cd chat-experience && npm install && npm run pack:kit
-```
-
-That writes `packages/inline-chat-kit/inline-chat-kit.tgz`. In your own project:
-
-```bash
-npm install /path/to/chat-experience/packages/inline-chat-kit/inline-chat-kit.tgz motion lucide-react
+npm install inline-chat-kit motion lucide-react
 ```
 
 `react`, `react-dom`, `motion` and `lucide-react` are peer dependencies — the

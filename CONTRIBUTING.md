@@ -105,5 +105,15 @@ Before 1.0 a breaking change bumps the minor. `CHANGELOG.md` records what broke
 and what to do about it; `theming.md` and the changelog both ship in the
 tarball.
 
-The package is **not published to npm yet**. Until it is, consumers install the
-packed tarball — which is what the README tells them to do.
+The package is on npm as [`inline-chat-kit`](https://www.npmjs.com/package/inline-chat-kit).
+Publishing needs a granular access token with 2FA bypass — the account's 2FA is
+a security key, and a security key cannot produce the OTP `npm publish` asks
+for:
+
+```bash
+npm publish --workspace packages/inline-chat-kit
+```
+
+`prepare` builds first, so what goes out is always fresh. Check the dry run
+before a real one — it is what caught two stray filesystem copies sitting in
+`dist`.
