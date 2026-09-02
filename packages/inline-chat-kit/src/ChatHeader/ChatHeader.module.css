@@ -96,7 +96,10 @@
 .end {
   display: flex;
   align-items: center;
-  gap: var(--ick-space-2);
+  /* Its own token rather than the header's, because the two sides are not the
+     same problem: the left is a logo beside a title, the right is a row of
+     square controls that read as one lump when they are 4px apart. */
+  gap: var(--ick-header-action-gap);
   flex-shrink: 0;
 }
 

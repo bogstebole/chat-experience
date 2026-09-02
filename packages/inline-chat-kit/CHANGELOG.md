@@ -6,6 +6,18 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.50.0 — 2026-09-02
+
+### Added
+
+- **`--ick-header-action-gap`** — the space between the controls on the
+  header's right side, now its own token and wider (12px, was 4px).
+
+  The two sides of a header are not the same problem. The left is a logo
+  beside a title and wants the header's own rhythm; the right is a row of
+  square controls, and at 4px a context ring, a segmented toggle and two icon
+  buttons ran together into one shape.
+
 ## 0.49.0 — 2026-09-02
 
 ### Changed
