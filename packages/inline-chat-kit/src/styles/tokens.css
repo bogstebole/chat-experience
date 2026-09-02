@@ -420,6 +420,19 @@
        4px a ring, a segmented toggle and two icon buttons ran together into
        one shape. */
     --ick-header-action-gap: var(--ick-space-5);
+
+    /* A segmented control: a recessed tray with a raised thumb in it.
+       Every chat has one somewhere — a selection mode, a model picker — and
+       until now the demo carried it in variables of its own, so the control
+       had no background anywhere else and, once that was "fixed" with
+       `--ick-card`, no visible thumb in the dark.
+
+       The thumb has to be *lighter than its tray in both themes*, and the two
+       get there from opposite ends: in light it can go all the way to paper,
+       in dark pure white is too loud, so it is a wash of ink instead. Stated
+       per theme rather than mixed, because a mix cannot reverse. */
+    --ick-tray: rgb(var(--ick-ink-rgb) / 0.08);
+    --ick-tray-thumb: rgb(var(--ick-paper-rgb));
     /* Translucent, because a header sits over the conversation rather than
        beside it — the blur behind it is the point. */
     --ick-header-bg: rgb(var(--ick-paper-rgb) / 0.72);
@@ -927,6 +940,7 @@
        stroke drawn by hand — which is what sank the first attempt at this,
        where a stroke that entered a word three letters in left those three
        letters in the marker's ink on the page's own background. */
+    --ick-dark-tray-thumb: rgb(var(--ick-ink-rgb) / 0.2);
     --ick-dark-marker-stroke: rgb(var(--ick-marker-rgb) / 0.22);
     --ick-dark-marker-blend: normal;
     /* And with the stroke now darker than the ink, a word under an open menu
@@ -1071,6 +1085,7 @@
       --ick-header-bg: var(--ick-dark-header-bg);
       --ick-ground: var(--ick-dark-ground);
     --ick-card: var(--ick-dark-card);
+    --ick-tray-thumb: var(--ick-dark-tray-thumb);
     --ick-marker-stroke: var(--ick-dark-marker-stroke);
     --ick-marker-blend: var(--ick-dark-marker-blend);
     --ick-marker-active-ink: var(--ick-dark-marker-active-ink);
@@ -1110,6 +1125,7 @@
     --ick-header-bg: var(--ick-dark-header-bg);
     --ick-ground: var(--ick-dark-ground);
     --ick-card: var(--ick-dark-card);
+    --ick-tray-thumb: var(--ick-dark-tray-thumb);
     --ick-marker-stroke: var(--ick-dark-marker-stroke);
     --ick-marker-blend: var(--ick-dark-marker-blend);
     --ick-marker-active-ink: var(--ick-dark-marker-active-ink);
