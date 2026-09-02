@@ -255,3 +255,17 @@ div.opening {
   color: var(--ick-ink-soft);
   white-space: pre-wrap;
 }
+
+/* The custom cursor above the dev panel.
+
+   `--ick-z-cursor` is 400, which clears everything the kit itself draws; the
+   DialKit panel is a dev tool at 9999 and the kit has no business knowing that
+   number. So the playground, which is the only place the two ever meet, lifts
+   the cursor over it — otherwise the cursor slides underneath the panel the
+   moment you reach for a slider, which is exactly when you are watching it. */
+/* On the root, not on `.chatPage`: the cursor is rendered as a sibling of the
+   page, above the phase switch, so a variable set on the page never reaches
+   it. */
+:root {
+  --ick-z-cursor: 10000;
+}
