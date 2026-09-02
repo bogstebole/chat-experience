@@ -1208,10 +1208,9 @@ type.
 recalculations at mount, from `useCorrectedRadius` reading `getComputedStyle`
 in a layout effect after writes.
 
-And the package is **not on a registry**. Everything above is a component
-somebody could install, and nobody can — the README describes the tarball
-route because that is the true one. The manifest is ready for the day that
-changes; `manifest.test.ts` pins what a published package has to carry.
+The package is **on npm** as of `0.49.0` — `npm install inline-chat-kit`. That
+was the last thing standing between everything above and somebody else being
+able to use it.
 
 *(The showcase recordings were the other thing listed here. They have been
 re-recorded and now show what the kit actually is.)*

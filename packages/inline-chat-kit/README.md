@@ -12,19 +12,9 @@ answer, and reply-in-thread popups.
 
 ## Install
 
-**Not on npm yet.** Build the tarball out of the repo and install that:
-
 ```bash
-git clone git@github.com:bogstebole/chat-experience.git
-cd chat-experience && npm install && npm run pack:kit
+npm install inline-chat-kit motion lucide-react
 ```
-
-```bash
-npm install /path/to/chat-experience/packages/inline-chat-kit/inline-chat-kit.tgz motion lucide-react
-```
-
-Once it is published the first command goes away and the second becomes
-`npm install inline-chat-kit motion lucide-react`. Nothing else changes.
 
 `react`, `react-dom`, `motion` and `lucide-react` are peer dependencies — the
 kit uses whatever copy your app already has.
