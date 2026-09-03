@@ -54,7 +54,15 @@ const CODE = `def pace(distance_km: float, target: str) -> float:
 if __name__ == "__main__":
     print(pace(5, "25:00"))`;
 
-/** The card on its own: a window, and a way in. */
+/**
+ * The card on its own: a window, and a way in.
+ *
+ * Point at one. It lifts — two pixels and a shadow thrown further — and goes
+ * down under the press. The surface itself never changes colour: the card sits
+ * on a ground that is already a tint of ink, and the grey hover fill this used
+ * to have slid the card *towards* the thing it is meant to be lifted off, so
+ * pointing at it made it look smudged rather than raised.
+ */
 export const Card: Story = {
   render: () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 520 }}>
@@ -105,9 +113,25 @@ export const PaneSkeleton: Story = {
  * The whole pattern: press the card, the plan opens on the right, press it
  * again and it closes.
  *
+ * Watch what moves. The room opens flat — `width`, because a transform cannot
+ * push a sibling and the conversation has to make way — and the pane arrives
+ * just behind it with a spring in it. The split is deliberate: a bounce on the
+ * width would re-wrap every line of the answer twice on the way past. Closing
+ * runs quicker and in the other order, the pane first and the room behind it.
+ *
+ * The document inside is laid out **once**, at the width it ends up at, and
+ * the slot uncovers it. Nothing in the pane re-wraps while it opens.
+ *
+ * Note what does *not* happen to the card: it takes no ring, no fill, no
+ * marker. A whole pane holding the same document is already the answer to
+ * "which one is open", and the card said it a second time in a two-pixel edge
+ * that read as a selected row in a list. What is left is that it stops lifting
+ * under the pointer — there is nowhere for it to go — and `aria-expanded`,
+ * which says it to anybody not using one.
+ *
  * Narrow the Storybook viewport past 760px of *this container* and the pane
  * covers the conversation instead — same component, told it is modal, so it
- * holds focus and answers Escape.
+ * holds focus and answers Escape. Same entrance, at the width of everything.
  */
 export const TheWholeThing: Story = {
   render: function TheWholeThing() {

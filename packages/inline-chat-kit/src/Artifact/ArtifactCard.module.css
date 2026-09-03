@@ -40,11 +40,46 @@
   overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background var(--ick-duration-fast) ease;
+  transition:
+    transform var(--ick-duration-fast) var(--ick-ease),
+    box-shadow var(--ick-duration-fast) var(--ick-ease);
 }
 
+/* ── Pointed at, and pressed ────────────────────────────────────────────────
+
+   The card moves; its surface does not.
+
+   It used to take a grey fill on hover, and the fill was the problem. The card
+   sits on a ground that is itself ink at 5%, and the hover fill was ink at
+   about 4% of the card — so pointing at it slid the card *towards* the colour
+   of the thing it is meant to be lifted off. The nearer it got to being
+   pressed, the more it looked merged. A card is a physical metaphor and the
+   physical answer is the right one: nearer the reader on hover, down under the
+   finger on press, and the surface left alone.
+
+   Two pixels, not one. One is the right amount of travel for a button in a
+   row; a card the width of the answer needs the shadow to carry it, and the
+   shadow only reads if the gap under the card actually opens. */
 .artifact:not([data-open]) .card:hover {
-  background: var(--ick-artifact-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--ick-shadow-float-lift);
+}
+
+/* Pressed, including the open one — pressing that closes the pane, so it has
+   to answer. Faster than the lift, because a press is not a journey.
+
+   Written out twice, and it has to be. A press only ever happens under a
+   pointer that is already hovering, so this rule is in a fight with the one
+   above it and has to win: `.card:active` alone loses on specificity, four
+   to two, and the card stayed lifted under the finger. It measured `-2` where
+   it should have measured `+1` — caught by `npm run showcase:artifact`, not by
+   looking, because a press that does nothing looks exactly like a press
+   arriving a frame late. */
+.artifact:not([data-open]) .card:active,
+.artifact[data-open] .card:active {
+  transform: translateY(1px) scale(0.997);
+  box-shadow: var(--ick-shadow-float-press);
+  transition-duration: var(--ick-duration-press);
 }
 
 .card:focus-visible {
@@ -52,15 +87,25 @@
   outline-offset: -2px;
 }
 
-/* Which one the pane is showing. The card stays where it is and says so,
-   rather than the pane being the only thing that knows.
+/* Which one the pane is showing — and it is drawn with nothing.
 
-   A ring all the way round, in ink — see the token for why it is not the
-   accent. `inset` rather than a border, because a border is part of the box
-   and would move everything inside it two pixels. */
-.artifact[data-open] .card {
-  box-shadow: var(--ick-shadow-float),
-    inset 0 0 0 var(--ick-artifact-open-edge-width) var(--ick-artifact-open-edge);
+   It had a two-pixel ink ring. Beside a whole pane holding the same document,
+   a ring on the card was a second answer to a question already answered, and
+   it read as a selected list row rather than as an open one. What says it now
+   is the absence above: every other card lifts under the pointer, this one
+   stays put, because there is nowhere for it to go. The fact itself is not
+   left to the eye — the button carries `aria-expanded`, which is the reading
+   the ring was never giving anybody. */
+
+/* The reader has asked for less movement, so the card stops moving. The
+   shadow still deepens: it is a change of state, not a journey. */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .artifact:not([data-open]) .card:active,
+  .artifact[data-open] .card:active,
+  .artifact:not([data-open]) .card:hover {
+    transform: none;
+  }
 }
 
 .head {

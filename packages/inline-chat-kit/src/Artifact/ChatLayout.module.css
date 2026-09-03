@@ -10,6 +10,22 @@
    A kit embedded in a 480px column inside a wide page would otherwise put a
    420px pane beside a 60px conversation, which is the fault a media query
    cannot see.
+
+   ── The shape of the opening ────────────────────────────────────────────────
+
+   Two boxes, and which one is which is the whole trick.
+
+   `.slot` is the room the pane takes. Its width is the only thing that
+   animates, and animating it is what moves the conversation — a transform
+   cannot push a sibling, so the property has to be the one the layout is made
+   of. `.card` is what the host rendered, and it is held at a width the
+   animation never touches, so the document inside it is laid out once instead
+   of re-wrapping on every frame of its own entrance.
+
+   The slot clips. So as it widens, it uncovers a card that is already the
+   right size and already in its final place: the pane appears rather than
+   inflating. All the spacing lives on the card for the same reason — padding
+   on the slot would be a floor under a width that has to reach zero.
    ───────────────────────────────────────────── */
 
 .layout {
@@ -19,7 +35,6 @@
   display: flex;
   min-height: 0;
   flex: 1;
-  gap: var(--ick-artifact-pane-gap);
 }
 
 /* The conversation. `min-width: 0` because a flex child's default is its
@@ -40,50 +55,79 @@
   flex: 1;
 }
 
-.pane {
+/* The room. Nothing is drawn here — no padding, no background, no gap — so
+   that its width can be animated to and from zero and mean it. */
+.slot {
   box-sizing: border-box;
+  display: flex;
+  /* Glued right, so the slot uncovers the card from its left edge inwards:
+     the pane comes in from the side it lives on. */
+  justify-content: flex-end;
   flex-shrink: 0;
-  width: var(--ick-artifact-pane-width);
   min-height: 0;
-  /* The pane's room at the layout's edges. On the slot rather than on the pane
-     itself, because how far a card sits from the edge of the window is a fact
-     about the layout — and the covering variant drops it. */
-  padding: var(--ick-artifact-pane-inset) var(--ick-artifact-pane-inset)
-    var(--ick-artifact-pane-inset) 0;
+  overflow: hidden;
+}
+
+/* What the host rendered, at a width the animation never touches.
+
+   The margins are the layout's spacing, moved here off the slot: the gap from
+   the conversation on the left, the card's clearance from the window on the
+   other three sides. Which means the slot's natural width — what it animates
+   *to* — is already the whole of the room the pane needs. */
+.card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-height: 0;
+  width: var(--ick-artifact-pane-width);
+  margin: var(--ick-artifact-pane-inset) var(--ick-artifact-pane-inset)
+    var(--ick-artifact-pane-inset) var(--ick-artifact-pane-gap);
+  /* Widening is a resize, not an entrance: the document *should* re-wrap, so
+     this one animates the card itself and the slot's `auto` follows it. */
   transition: width var(--ick-duration-slow) var(--ick-ease);
 }
 
-.pane[data-expanded] {
+.card[data-expanded] {
   width: var(--ick-artifact-pane-width-wide);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pane {
+  .card {
     transition: none;
   }
 }
 
 /* Narrow: the pane covers the conversation instead of standing beside it.
    Which is not a different component — it is the same pane, told that it is
-   now modal, so it holds focus and answers Escape. See `ArtifactPane`. */
+   now modal, so it holds focus and answers Escape. See `ArtifactPane`.
+
+   `left: auto` matters. The slot is still the thing whose width animates, and
+   a box pinned on both sides would ignore that width; pinned on the right
+   only, it grows leftwards out of the edge it belongs to — the same entrance
+   as the wide case, at the size of the whole layout. */
 @container (max-width: 760px) {
-  .pane {
+  .slot {
     position: absolute;
-    inset: 0;
-    width: auto;
-    padding: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
     z-index: 1;
   }
 
-  /* Nothing to expand into. */
-  .pane[data-expanded] {
-    width: auto;
+  .card,
+  .card[data-expanded] {
+    /* The layout's own width, not the slot's — the slot's is mid-animation.
+       Nothing to expand into, either: it is already covering everything. */
+    width: 100cqi;
+    margin: 0;
   }
 
   /* Full-bleed, so no corners. A rounded sheet covering everything shows the
      page through four little notches at the edges of the screen, which reads
      as a mistake rather than as a card. */
-  .pane > * {
+  .card > * {
     border-radius: 0;
   }
 }

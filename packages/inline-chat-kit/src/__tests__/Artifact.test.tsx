@@ -53,6 +53,27 @@ describe("ArtifactCard", () => {
     expect(container.querySelector("[data-open]")).toBeInTheDocument();
   });
 
+  /* Nothing is drawn for the open state any more — the ring around it was a
+     second answer beside a pane already holding the document. Which makes this
+     the *only* place the state is stated, rather than a nicety on top of a
+     visual one: without it, a reader not using a pointer cannot tell an open
+     card from a closed one at all. */
+  it("says out loud which one is open, now that nothing is drawn for it", () => {
+    const { rerender } = render(
+      <ArtifactCard id="a" title="Plan" content="x" onOpen={() => {}} open={false} />
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "false");
+    rerender(<ArtifactCard id="a" title="Plan" content="x" onOpen={() => {}} open />);
+    expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "true");
+  });
+
+  /* A host that is not tracking which is open should not have a button
+     claiming to expand something. Absent beats a confident `false`. */
+  it("claims to expand nothing when the host is not tracking it", () => {
+    render(<ArtifactCard id="a" title="Plan" content="x" onOpen={() => {}} />);
+    expect(screen.getByRole("button")).not.toHaveAttribute("aria-expanded");
+  });
+
   it("shimmers the name while it is still being written", () => {
     const { container } = render(<ArtifactCard id="a" title="Plan" state="writing" />);
     expect(container.querySelector("[data-writing]")).toBeInTheDocument();

@@ -19,6 +19,7 @@
     "test:watch": "npm run test:watch --workspace packages/inline-chat-kit",
     "showcase": "node tools/showcase/record.mjs",
     "showcase:questions": "node tools/showcase/questions.mjs",
+    "showcase:artifact": "node tools/showcase/artifact.mjs",
     "shots": "node tools/shots/capture.mjs",
     "visual-qa": "node tools/visual-qa/run.mjs",
     "visual-qa:dark": "node tools/visual-qa/run.mjs --theme dark",

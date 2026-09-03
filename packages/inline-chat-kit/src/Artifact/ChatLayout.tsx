@@ -3,11 +3,13 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type HTMLAttributes,
   type ReactNode,
 } from "react";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import styles from "./ChatLayout.module.css";
 
 /** Below this the pane covers the conversation. Kept with the stylesheet. */
@@ -37,6 +39,48 @@ export interface ChatLayoutProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /**
+ * How the pane arrives, in two parts that are deliberately not the same.
+ *
+ * The room opens flat and the pane arrives with a little life in it. That
+ * split is the whole design: `width` is what the conversation is laid out
+ * against, so any overshoot there re-wraps every line of the answer twice on
+ * the way past — a bounce nobody asked for, paid for in text. Transform and
+ * opacity cost the layout nothing, so that is where the spring goes.
+ *
+ * Leaving is quicker than arriving, and in the other order: the pane goes
+ * first and the room closes behind it. A thing that leaves as slowly as it
+ * came reads as reluctant.
+ */
+const room: Variants = {
+  closed: {
+    width: 0,
+    transition: { type: "spring", visualDuration: 0.26, bounce: 0, delay: 0.05 },
+  },
+  open: {
+    width: "auto",
+    transition: { type: "spring", visualDuration: 0.42, bounce: 0 },
+  },
+};
+
+const arriving: Variants = {
+  /* Held inside the slot's right margin, so what slides is the pane and not
+     the clip: it comes from the edge it lives on. */
+  closed: { opacity: 0, x: 24, transition: { duration: 0.16, ease: "easeIn" } },
+  open: {
+    opacity: 1,
+    x: 0,
+    transition: { type: "spring", visualDuration: 0.36, bounce: 0.2, delay: 0.06 },
+  },
+};
+
+/** The same choreography with the time taken out. */
+const AT_ONCE = { transition: { duration: 0 } };
+const still = (variants: Variants): Variants => ({
+  closed: { ...(variants.closed as object), ...AT_ONCE },
+  open: { ...(variants.open as object), ...AT_ONCE },
+});
+
+/**
  * Where the pane goes, decided once.
  *
  * The kit takes this decision rather than handing over a slot. A preview pane
@@ -53,6 +97,17 @@ export function ChatLayout({ children, pane, className, ...rest }: ChatLayoutPro
   const [narrow, setNarrow] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = useCallback(() => setExpanded((wide) => !wide), []);
+
+  /* Read here rather than through `<MotionConfig reducedMotion="user">`, which
+     is what the rest of the kit uses and would not be enough on its own: it
+     drops transforms and layout animations, and the slot's `width` is neither.
+     A pane that still took four hundred milliseconds to unfold would be the
+     one animation on the page ignoring the request. */
+  const reduce = useReducedMotion();
+  const [slot, card] = useMemo(
+    () => (reduce ? [still(room), still(arriving)] : [room, arriving]),
+    [reduce]
+  );
 
   /* Measured off this element rather than the window, to agree with the
      container query in the stylesheet. A kit embedded in a narrow column
@@ -77,11 +132,31 @@ export function ChatLayout({ children, pane, className, ...rest }: ChatLayoutPro
       {...rest}
     >
       <div className={styles.chat}>{children}</div>
-      {shown && (
-        <div className={styles.pane} data-expanded={(expanded && !narrow) || undefined}>
-          {shown}
-        </div>
-      )}
+      {/* `initial={false}`: a layout that mounts with a pane already open did
+          not just open one. Anything opened afterwards animates. */}
+      <AnimatePresence initial={false}>
+        {shown && (
+          <motion.div
+            key="pane"
+            className={styles.slot}
+            variants={slot}
+            initial="closed"
+            animate="open"
+            exit="closed"
+          >
+            {/* Variants rather than props on each element: named states are
+                what Motion propagates down a tree, so the pane leaving is one
+                decision here instead of two that have to agree. */}
+            <motion.div
+              className={styles.card}
+              data-expanded={(expanded && !narrow) || undefined}
+              variants={card}
+            >
+              {shown}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

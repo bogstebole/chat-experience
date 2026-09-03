@@ -6,6 +6,76 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.53.0 — 2026-09-03
+
+### Changed
+
+- **The artifact card moves instead of changing colour.** Pointing at it lifted
+  nothing and washed it grey — `--ick-inset`, ink at about 4% — while the card
+  sits on a ground that is ink at 5%. So the hover slid the card *towards* the
+  colour of the thing it is meant to be raised off, and it read as smudged
+  rather than raised. It now travels 2px up under the pointer with the shadow
+  thrown further, and 1px down under the press, and its surface never changes.
+
+  Measured, in both themes: rest 0, hover −2, press +1, with the shadow's total
+  throw going 28 → 47 → 9 and the background one value throughout. The press
+  did not work in the first cut — `.card:active` lost to
+  `.artifact:not([data-open]) .card:hover` four specificity points to two, so
+  the card stayed lifted under the finger. A press that does nothing looks like
+  a press arriving a frame late, which is why this was found by the
+  measurement and not by looking.
+
+- **Nothing is drawn for the open card any more.** It had a 2px ink ring. Next
+  to a whole pane holding the same document, that was a second answer to a
+  question already answered, and on its own it read as a selected row in a
+  list. What marks it now is that it stops lifting under the pointer — there is
+  nowhere for it to go — and `aria-expanded`, which says it outright to anybody
+  not using one. The card is the only `aria-expanded` in the kit without an
+  `aria-controls` beside it, because what it opens is not its to render.
+
+- **The pane opens and closes instead of appearing.** `ChatLayout` rendered the
+  pane the instant it had one: the conversation jumped narrower, the pane was
+  simply there, and closing it was the same in reverse. Both now animate, and
+  the two halves are deliberately not the same — the room opens flat and the
+  pane arrives with a spring in it, because `width` is what the conversation is
+  laid out against and any overshoot there re-wraps every line of the answer
+  twice on the way past. Leaving is quicker and in the other order.
+
+  The document inside is laid out **once**, at the width it ends up at, and the
+  slot uncovers it: measured at 369.59px held across every frame of an entrance
+  in which the room travelled 409px and the conversation followed it.
+
+### Added
+
+- **`--ick-shadow-float-lift` and `--ick-shadow-float-press`** — the same card
+  pointed at, and pressed. Stated per theme like `--ick-shadow-float`, and for
+  the same reason: a dark shadow has more work to do on a near-black page and
+  still must not cut the card out of it.
+
+- **`npm run showcase:artifact`** — records the card and the pane, and measures
+  what the recording is meant to show. The numbers are the half that is not
+  visible at speed.
+
+### Breaking
+
+- **`--ick-artifact-surface-hover`, `--ick-artifact-open-edge` and
+  `--ick-artifact-open-edge-width` are gone.** They were the grey hover fill
+  and the open card's ring, neither of which is drawn any more. If you were
+  overriding them, there is nothing to override; the hover is now
+  `--ick-shadow-float-lift` and the open state draws nothing.
+
+- **`--ick-artifact-pane-width` and `--ick-artifact-pane-width-wide` are in
+  `cqi`, not `%`.** `max(360px, 33cqi)` rather than `max(360px, 33%)`. The
+  slot's own width is what animates, so a percentage of it would be a
+  percentage of a number moving from zero — the pane would re-wrap its text on
+  every frame of its own entrance. Container units are measured off
+  `ChatLayout`, which is not moving. Same numbers in the same places: measured
+  at 370px in a 1120px layout and 475px in a 1440px one, unchanged from before.
+
+  If you place an `ArtifactPane` **without** `ChatLayout`, give its parent
+  `container-type: inline-size` — outside a container, `cqi` falls back to the
+  viewport.
+
 ## 0.52.1 — 2026-09-03
 
 ### Fixed

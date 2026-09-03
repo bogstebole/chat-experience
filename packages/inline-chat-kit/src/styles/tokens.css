@@ -285,6 +285,20 @@
     --ick-shadow-float:
       0 4px 16px -2px rgb(var(--ick-ink-rgb) / 0.08),
       0 1px 4px -1px rgb(var(--ick-ink-rgb) / 0.04);
+    /* The same card, pointed at, and the same card pressed.
+
+       A card that can be opened says so by moving, not by changing colour. A
+       grey wash on hover is the cheapest way to say "this is a control" and
+       the worst: it fights whatever the card is already made of, and on a
+       ground that is itself a tint the two greys settle into each other until
+       the card looks smudged rather than lifted. A shadow thrown further and
+       a pixel of travel say the same thing without touching the surface. */
+    --ick-shadow-float-lift:
+      0 10px 24px -4px rgb(var(--ick-ink-rgb) / 0.12),
+      0 2px 6px -1px rgb(var(--ick-ink-rgb) / 0.06);
+    --ick-shadow-float-press:
+      0 1px 3px -1px rgb(var(--ick-ink-rgb) / 0.1),
+      0 1px 2px -1px rgb(var(--ick-ink-rgb) / 0.05);
     /* A wash over content, to put something on top of it. */
     --ick-scrim: rgb(var(--ick-glass-shade-rgb) / 0.2);
 
@@ -518,25 +532,21 @@
     --ick-artifact-ground: var(--ick-ground);
     --ick-artifact-ground-pad: var(--ick-nest-ground-pad);
     --ick-artifact-surface: var(--ick-card);
-    --ick-artifact-surface-hover: var(--ick-inset);
     --ick-artifact-radius: var(--ick-nest-card);
     --ick-artifact-ground-radius: calc(
       var(--ick-artifact-radius) + var(--ick-artifact-ground-pad)
     );
     --ick-artifact-preview-fill: var(--ick-inset);
-    /* Which card the pane is showing: a ring, in ink.
-    
-       Not the marker. The accent means "this one *chosen*" — a picked option,
-       a badge, a citation — and an artifact being shown in the pane beside the
-       conversation is not a choice anybody made about it, it is where the
-       reader is. A neutral edge says that without spending the one colour the
-       kit reserves for meaning.
+    /* There is no token for "the card whose pane is open", and that is the
+       decision rather than an omission.
 
-       Ink rather than white, so it inverts: `--ick-border-bright` is literally
-       `rgb(paper)`, which is a visible edge on a dark card and nothing at all
-       on a white one. */
-    --ick-artifact-open-edge: rgb(var(--ick-ink-rgb) / 0.45);
-    --ick-artifact-open-edge-width: 2px;
+       It had a ring, in ink, two pixels, inset. On its own it read as a
+       selected row in a list — a fifth kind of edge in a kit that already has
+       a focus ring, a border and a marker — and it competed with the pane
+       standing right beside it, which is a whole column saying the same
+       thing. What is left is quieter and costs no paint: every other card
+       lifts when it is pointed at, and this one does not, because it is
+       already open. See `ArtifactCard.module.css`. */
     /* The cut at the bottom of a preview. Tall enough to read as "it goes on"
        and short enough to leave the last line legible. */
     --ick-artifact-fade: 32px;
@@ -557,9 +567,22 @@
 
        Expanded is two thirds: enough to read a long document in, and still not
        the whole screen — the conversation it came out of stays on the left,
-       which is the point of a pane rather than a page. */
-    --ick-artifact-pane-width: max(360px, 33%);
-    --ick-artifact-pane-width-wide: max(520px, 66%);
+       which is the point of a pane rather than a page.
+
+       `cqi` rather than `%`, and the reason is the opening animation. The
+       slot's own width is what animates, so a percentage of *it* would be a
+       percentage of a number moving from zero — the pane would re-wrap its
+       text on every frame of its own entrance. A container unit is measured
+       off `ChatLayout`, which is not moving, so the document is laid out once
+       at the width it will end up at and the slot simply uncovers it.
+
+       They resolve against the nearest ancestor with a `container-type`, which
+       `ChatLayout` sets. Used outside one they fall back to the viewport,
+       which is the right shape of answer and the wrong number — so if you are
+       placing a pane without the layout, give the parent
+       `container-type: inline-size`. */
+    --ick-artifact-pane-width: max(360px, 33cqi);
+    --ick-artifact-pane-width-wide: max(520px, 66cqi);
     /* The pane is a card, and a card that runs into the edges of the window is
        not one. Its own gap from the layout's edges, which the covering variant
        drops along with its corners. The same 24 it uses inside itself, so the
@@ -1070,6 +1093,14 @@
        which is the same *read* the light theme gets from 255 down to 235. */
     --ick-dark-shadow-float: 0 4px 16px -2px rgb(var(--ick-glass-shade-rgb) / 0.28),
       0 1px 4px -1px rgb(var(--ick-glass-shade-rgb) / 0.18);
+    /* Lift and press, carrying the light theme's ratio rather than its
+       numbers: light goes 0.08 → 0.12 on hover, three and a half times over
+       is 0.28 → 0.40. A dark shadow has more work to do and still must not
+       cut the card out of the page — see the note above. */
+    --ick-dark-shadow-float-lift: 0 10px 24px -4px rgb(var(--ick-glass-shade-rgb) / 0.4),
+      0 2px 6px -1px rgb(var(--ick-glass-shade-rgb) / 0.26);
+    --ick-dark-shadow-float-press: 0 1px 3px -1px rgb(var(--ick-glass-shade-rgb) / 0.3),
+      0 1px 2px -1px rgb(var(--ick-glass-shade-rgb) / 0.2);
   }
 
   /* Three states, in the order the cascade needs them: the system preference
@@ -1109,6 +1140,8 @@
       --ick-recede: var(--ick-dark-recede);
       --ick-shadow-modal: var(--ick-dark-shadow-modal);
       --ick-shadow-float: var(--ick-dark-shadow-float);
+      --ick-shadow-float-lift: var(--ick-dark-shadow-float-lift);
+      --ick-shadow-float-press: var(--ick-dark-shadow-float-press);
       --ick-shadow-1: var(--ick-dark-shadow-1);
       --ick-shadow-2: var(--ick-dark-shadow-2);
       --ick-shadow-inset: var(--ick-dark-shadow-inset);
@@ -1149,6 +1182,8 @@
     --ick-recede: var(--ick-dark-recede);
     --ick-shadow-modal: var(--ick-dark-shadow-modal);
     --ick-shadow-float: var(--ick-dark-shadow-float);
+    --ick-shadow-float-lift: var(--ick-dark-shadow-float-lift);
+    --ick-shadow-float-press: var(--ick-dark-shadow-float-press);
   }
 
 
