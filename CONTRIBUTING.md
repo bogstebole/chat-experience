@@ -75,9 +75,33 @@ into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 | `npm run showcase:questions` | Re-record the question-card showcase |
 | `npm run shots` | Re-capture the stills |
 | `node tools/voice/check.mjs` | The microphone button's states, in a real browser |
+| `npm run visual-qa` | Geometry rules over every story, in a real browser |
+| `npm run visual-qa:dark` | The same, in the dark theme |
+| `npm run visual-qa:self-test` | Proves the rules can still fail |
 
 Recordings land in `Videos/` and `Shots/`, both gitignored — they are outputs,
 not sources.
+
+## Visual QA
+
+```bash
+npm run build-storybook --workspace packages/inline-chat-kit
+npm run visual-qa
+```
+
+Rules, not screenshots. A pixel snapshot fails on every intentional change and
+on a different font renderer, and all it can say is that something moved; a
+rule says which rule broke and by how much. Three so far — a box that declares
+it centres its content and does not, a row of icon buttons at two sizes, and a
+child clipped by the box around it.
+
+Every rule reads the author's own CSS before it measures, so it can only fire
+where the intent was declared. That is why the list is short enough to read.
+
+`npm run visual-qa:self-test` runs the rules against three deliberately broken
+layouts and one correct one. A pass reporting nothing is worth nothing until it
+has been seen reporting something, and a geometry rule that silently matches
+nothing looks exactly like a clean bill of health.
 
 ## Consuming the tarball
 
