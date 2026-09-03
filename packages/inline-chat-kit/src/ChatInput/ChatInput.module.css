@@ -174,6 +174,13 @@
 
 /* ── Editor area (contenteditable div) ── */
 .editor {
+  /* This kit has no global `box-sizing` reset — a reset inside a CSS module
+     leaks into the host page — so every padded box states its own. This one
+     did not: `width: 100%` plus 8px of padding either side made its border box
+     16px wider than the wrapper that clips it, and the right edge of the text
+     was cut off. Found by the visual QA pass, which reported it as
+     "runs 16px past the right of a box that clips" on 25 stories. */
+  box-sizing: border-box;
   width: 100%;
   outline: none;
   font: inherit;

@@ -6,6 +6,23 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.52.1 — 2026-09-03
+
+### Fixed
+
+- **The composer's editor was 16px wider than the box that clips it.**
+  `.editor` had `width: 100%` and 8px of padding either side with no
+  `box-sizing`, so its border box overflowed `.editorWrap` — which clips —
+  and the right edge of the text was cut. `scrollWidth` 292 against
+  `clientWidth` 276 on a 276px composer.
+
+  This kit has no global `box-sizing` reset on purpose, because a reset inside
+  a CSS module leaks into the host page; the rule is that every padded box
+  states its own. This one had not, and it had been that way unnoticed.
+
+  Found by the new visual QA pass on its first run, which reported it on 25
+  separate stories.
+
 ## 0.52.0 — 2026-09-02
 
 ### Added
