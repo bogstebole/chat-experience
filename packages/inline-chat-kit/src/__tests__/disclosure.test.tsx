@@ -120,6 +120,20 @@ describe("nothing writes its own", () => {
    */
   const MORPHS = ["../QuestionGroup/QuestionGroup.tsx"];
 
+  /**
+   * `ArtifactCard` expands something too, and it is a third thing again: what
+   * it opens is not underneath it and is not its to render. The pane is placed
+   * by `ChatLayout`, in a different part of the tree, and may not be in the
+   * document at all while the card is shut.
+   *
+   * Which is also why it is the only `aria-expanded` in the kit with no
+   * `aria-controls` beside it — there is no id here to point at. That absence
+   * is the exemption's honesty check below: the day the card renders what it
+   * expands, it is a disclosure like the others and owes an answer for not
+   * using the shared header.
+   */
+  const PANES = ["../Artifact/ArtifactCard.tsx"];
+
   it("declares aria-expanded in one place", async () => {
     const files = import.meta.glob("../**/*.tsx", { query: "?raw", import: "default" });
     for (const [name, read] of Object.entries(files)) {
@@ -137,6 +151,16 @@ describe("nothing writes its own", () => {
         /* Same: still a morph, and the moment it stops being one it owes an
            answer for why it is not using the shared header. */
         expect(src, `${name} is exempt as a morph and is no longer one`).toContain("LayoutGroup");
+        continue;
+      }
+      if (PANES.includes(name)) {
+        /* Still expanding something it does not render, so still unable to
+           name it. An `aria-controls` here means it can — which means the
+           thing it opens is local, which means this is a fold. */
+        expect(
+          src,
+          `${name} is exempt because it cannot name what it opens, and now it can`
+        ).not.toContain("aria-controls");
         continue;
       }
       expect(src.includes("aria-expanded"), `${name} builds its own header`).toBe(false);

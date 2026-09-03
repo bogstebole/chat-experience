@@ -44,7 +44,14 @@ export interface ArtifactCardProps
   lines?: number;
   /** Open it. Without one the card is a record rather than a control. */
   onOpen?: (id: string) => void;
-  /** True while its pane is the one on screen. */
+  /**
+   * True while its pane is the one on screen.
+   *
+   * Nothing is drawn for it. The pane standing beside the conversation is
+   * already the answer, and a ring on the card was a second one — so what
+   * marks it is that it no longer lifts under the pointer, and
+   * `aria-expanded`, which says it outright to anybody not using a pointer.
+   */
   open?: boolean;
 }
 
@@ -120,7 +127,15 @@ export function ArtifactCard({
       {...(rest as HTMLAttributes<HTMLDivElement>)}
     >
       {onOpen ? (
-        <button type="button" {...shared} onClick={() => onOpen(id)}>
+        <button
+          type="button"
+          {...shared}
+          /* The state the ring used to draw, said properly. Omitted rather
+             than `false` when the host is not tracking which is open: a
+             button that claims to expand nothing is worse than a plain one. */
+          aria-expanded={open}
+          onClick={() => onOpen(id)}
+        >
           {inside}
         </button>
       ) : (

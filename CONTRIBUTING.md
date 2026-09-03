@@ -73,6 +73,7 @@ into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 | `npm run verify` | Everything CI runs |
 | `npm run showcase` | Re-record the showcase video (dev server must be up) |
 | `npm run showcase:questions` | Re-record the question-card showcase |
+| `npm run showcase:artifact` | Re-record the artifact pane, and measure what it shows |
 | `npm run shots` | Re-capture the stills |
 | `node tools/voice/check.mjs` | The microphone button's states, in a real browser |
 | `npm run visual-qa` | Geometry rules over every story, in a real browser |
