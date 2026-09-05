@@ -1,0 +1,42 @@
+/* ─────────────────────────────────────────────
+   The 44px rule, in one place.
+
+   Every control in this kit is sized for a pointer — 28px icon buttons, 24px
+   disclosure rows — and a pointer is a few pixels wide while a fingertip is
+   about forty. Apple's guidance and WCAG 2.5.5 both land on 44.
+
+   **The look does not change.** What grows is an invisible box centred on the
+   control, so a 28px button still draws at 28px and still sits where it sat,
+   and the press lands from 8px further out on every side. Growing the controls
+   themselves was the alternative and it makes the phone a visibly different
+   product from the desktop; this way there is one design.
+
+   Only under `pointer: coarse`. On a mouse the extra box would swallow presses
+   meant for whatever is next to it, for no gain.
+
+   **The catch, and it is a real one:** these boxes are invisible, so two
+   controls 4px apart end up with hit areas that overlap and the wrong one
+   answers. Nothing about that is visible in a screenshot. The `tap-overlap`
+   rule in the visual QA pass exists for it — see `tools/visual-qa/rules.mjs`
+   — and rows of controls have their gaps widened to suit.
+
+   Used with `composes`, which is what CSS Modules has for exactly this. The
+   element needs a positioned box of its own, stated in the component's own
+   stylesheet: without it the box centres on some ancestor instead.
+
+   `Button` is the one exception and does this itself. Its `::after` is spent
+   on the glass material's rim highlight, so it hangs the box off its first
+   child instead — same box, different anchor. See `Button.module.css`.
+   ───────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  .target::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--ick-touch-target));
+    height: max(100%, var(--ick-touch-target));
+    transform: translate(-50%, -50%);
+  }
+}

@@ -309,6 +309,20 @@
     --ick-ease-overshoot: cubic-bezier(0.34, 1.35, 0.64, 1);
     --ick-ease-overshoot-strong: cubic-bezier(0.34, 1.6, 0.64, 1);
 
+    /* What a finger needs, where a pointer needed 28. Apple's number and
+       WCAG 2.5.5's; nothing in the kit is drawn at it, because what grows is
+       an invisible box centred on the control. See `touch.module.css`. */
+    --ick-touch-target: 44px;
+    /* And what has to sit between two of them.
+
+       Two 28px controls reaching 44px each collide unless their centres are
+       44px apart, so the gap has to make up the difference: 28 + 16. Without
+       it the invisible boxes overlap and a press in the strip between two
+       buttons goes to whichever the browser painted last — which is the one
+       fault in this approach, and the one nothing on screen would show you.
+       Applied only under `pointer: coarse`; see `touch.module.css`. */
+    --ick-touch-gap: var(--ick-space-6);
+
     --ick-duration-press: 70ms;
     --ick-duration-fast: 160ms;
     --ick-duration-base: 200ms;

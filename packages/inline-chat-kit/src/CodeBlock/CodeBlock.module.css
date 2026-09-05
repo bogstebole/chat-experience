@@ -46,6 +46,9 @@
 
 .copy {
   all: unset;
+  composes: target from "../styles/touch.module.css";
+  /* A positioned box for it to centre on. */
+  position: relative;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;

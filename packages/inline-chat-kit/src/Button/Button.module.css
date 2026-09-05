@@ -20,7 +20,6 @@
   flex-shrink: 0;
   border-radius: var(--ick-radius-pill);
   cursor: pointer;
-  overflow: hidden;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
   font-family: var(--ick-font-sans);
@@ -37,6 +36,33 @@
 .btn:focus-visible {
   outline: 2px solid var(--ick-focus-ring);
   outline-offset: var(--ick-space-1);
+}
+
+/* The 44px rule, hung off the first child rather than the button.
+
+   `overflow: hidden` used to sit on `.btn` and was the whole obstacle: a
+   clipping box clips hit-testing too, so any box reaching past the button's
+   edge was unreachable. Nothing needed it — everything absolutely positioned
+   in here is inset within the button — except a label too long for its
+   button, and that belongs to the label. It is on `.label` now, with an
+   ellipsis, which is a better answer to that case anyway.
+
+   The second obstacle is that `::after` is taken: the glass material draws its
+   rim highlight with it. Every button renders at least one of `.icon` or
+   `.label`, and an absolute box inside one of those still resolves against
+   `.btn` — so `> :first-child` gives the same box from an anchor that is free.
+
+   See `styles/touch.module.css` for what this is and what it costs. */
+@media (pointer: coarse) {
+  .btn > :first-child::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--ick-touch-target));
+    height: max(100%, var(--ick-touch-target));
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ── Sizes ──────────────────────────────────────────────────────────────────
@@ -64,9 +90,14 @@
   flex-shrink: 0;
 }
 
+/* The clipping that used to be on the button, on the only thing that can
+   spill — and as an ellipsis rather than a hard cut, which is what a label too
+   long for its button should have been doing all along. */
 .label {
   position: relative;
   z-index: var(--ick-z-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Primary: glassy at rest ────────────────────────────────────────────── */

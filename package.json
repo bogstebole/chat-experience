@@ -23,6 +23,7 @@
     "shots": "node tools/shots/capture.mjs",
     "visual-qa": "node tools/visual-qa/run.mjs",
     "visual-qa:dark": "node tools/visual-qa/run.mjs --theme dark",
+    "visual-qa:phone": "node tools/visual-qa/run.mjs --phone",
     "visual-qa:self-test": "node tools/visual-qa/self-test.mjs"
   },
   "devDependencies": {

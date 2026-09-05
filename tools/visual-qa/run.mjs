@@ -39,6 +39,15 @@ const flag = (name, fallback) => {
 };
 const THEME = flag("theme", "light");
 const ONLY = flag("story", null);
+/**
+ * `--phone` swaps the desktop viewport for an iPhone's and turns on the two
+ * rules that only make sense there: nothing wider than the screen, and nothing
+ * pressable under 44px. A real device is still the honest test — no emulator
+ * has a software keyboard that eats half the viewport — but this catches
+ * everything that is wrong before the keyboard is even up.
+ */
+const PHONE = args.includes("--phone");
+const VIEWPORT = PHONE ? { width: 390, height: 844 } : { width: 1000, height: 800 };
 
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript",
@@ -78,8 +87,10 @@ const stories = Object.values(index.entries)
 
 const browser = await chromium.launch();
 const context = await browser.newContext({
-  viewport: { width: 1000, height: 800 },
-  deviceScaleFactor: 2,
+  viewport: VIEWPORT,
+  deviceScaleFactor: PHONE ? 3 : 2,
+  isMobile: PHONE,
+  hasTouch: PHONE,
   colorScheme: THEME,
   // A rule about geometry should measure where things come to rest, not where
   // an entrance animation had them when the page was read.
@@ -100,12 +111,12 @@ for (const story of stories) {
   await page.evaluate(() => document.fonts?.ready);
 
   const violations = await page.evaluate(
-    ([source, tolerance]) => {
+    ([source, tolerance, phone]) => {
       // eslint-disable-next-line no-eval
       (0, eval)(source);
-      return window.__visualQa(tolerance);
+      return window.__visualQa(tolerance, { phone });
     },
-    [RULES_SOURCE, TOLERANCE]
+    [RULES_SOURCE, TOLERANCE, PHONE]
   );
   checked += 1;
   for (const v of violations) found.push({ ...v, story: story.id });
@@ -116,7 +127,10 @@ server.close();
 
 const byRule = found.reduce((acc, v) => ({ ...acc, [v.rule]: (acc[v.rule] ?? 0) + 1 }), {});
 
-console.log(`\n  ${checked} stories, ${THEME} theme, tolerance ${TOLERANCE}px\n`);
+console.log(
+  `\n  ${checked} stories, ${THEME} theme, ${VIEWPORT.width}\u00d7${VIEWPORT.height}` +
+    `${PHONE ? " phone" : ""}, tolerance ${TOLERANCE}px\n`
+);
 if (!found.length) {
   console.log("  nothing out of place\n");
 } else {

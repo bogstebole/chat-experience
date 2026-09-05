@@ -170,6 +170,7 @@
 
 .back {
   box-sizing: border-box;
+  composes: target from "../styles/touch.module.css";
   display: inline-flex;
   align-items: center;
   justify-content: center;
