@@ -322,6 +322,18 @@
        fault in this approach, and the one nothing on screen would show you.
        Applied only under `pointer: coarse`; see `touch.module.css`. */
     --ick-touch-gap: var(--ick-space-6);
+    /* And what the composer's text has to measure on a phone.
+
+       Not a design decision — a browser one. Focus a field whose text is under
+       16px and mobile Safari zooms the page in to it, then leaves it zoomed:
+       the composer was 12, so tapping it threw the whole conversation out of
+       frame. The other way out is `maximum-scale=1` in the viewport meta,
+       which switches off pinch-zoom for everybody and which Safari has ignored
+       since iOS 10 anyway.
+
+       So the text grows, and only where a browser would otherwise take the
+       decision itself. */
+    --ick-composer-size: var(--ick-text-sm);
 
     --ick-duration-press: 70ms;
     --ick-duration-fast: 160ms;
@@ -1160,6 +1172,13 @@
       --ick-shadow-2: var(--ick-dark-shadow-2);
       --ick-shadow-inset: var(--ick-dark-shadow-inset);
       --ick-shadow-3: var(--ick-dark-shadow-3);
+    }
+  }
+
+  @media (pointer: coarse) {
+    :root,
+    .ick-theme {
+      --ick-composer-size: 1rem;
     }
   }
 

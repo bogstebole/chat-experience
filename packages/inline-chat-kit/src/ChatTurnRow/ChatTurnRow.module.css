@@ -41,9 +41,18 @@
 
 .answer {
   margin: 0;
-  /* On the answer's column. Everything that draws in a turn starts here; only
-     the boxes bleed wider. See `--ick-answer-column`. */
+  /* On the answer's column, at both ends. Everything that draws in a turn
+     starts here; only the boxes bleed wider. See `--ick-answer-column`.
+
+     The right margin was missing, and on a wide screen nothing showed it: the
+     measure below runs out first, so the line ends where the measure says and
+     the column never comes into it. On a phone the measure is wider than the
+     screen, so the prose ran to the container's edge — measured at 390px, the
+     text ended at 374 while the card's own words ended at 342, and the answer
+     looked ragged against the card above it. Mirroring the column puts it back
+     on 342, which is the same 48 in from the other side. */
   margin-left: var(--ick-answer-column);
+  margin-right: var(--ick-answer-column);
   font-family: var(--ick-font-sans);
   font-size: var(--ick-answer-size);
   line-height: var(--ick-answer-leading);
