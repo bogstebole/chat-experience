@@ -80,6 +80,7 @@ into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 | `npm run visual-qa:dark` | The same, in the dark theme |
 | `npm run visual-qa:phone` | The same at 390×844 with touch, plus the mobile-only rules |
 | `npm run zoom-check` | Whether a phone still zooms when a field is focused — **WebKit** |
+| `npm run follow-check` | Whether the view keeps up with an answer, and a sent message still goes to the top |
 | `npm run visual-qa:self-test` | Proves the rules can still fail |
 
 Recordings land in `Videos/` and `Shots/`, both gitignored — they are outputs,

@@ -103,22 +103,46 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
   const content = useRef<HTMLDivElement | null>(null);
   const [following, setFollowing] = useState(true);
 
-  /** Where the last pixel of content sits flush with the bottom edge. */
+  /**
+   * Where the last pixel of the last *turn* sits flush with the bottom edge.
+   *
+   * The last child rather than the wrapper, because the wrapper carries the
+   * tail — the empty room under the conversation that lets a turn reach the
+   * top. Measuring the wrapper would count that room as content and park the
+   * reader a screen below the thing they are reading.
+   */
   const endOfContent = useCallback(() => {
     const view = viewport.current;
     const inner = content.current;
     if (!view || !inner) return 0;
-    return Math.max(0, inner.offsetTop + inner.offsetHeight - view.clientHeight);
+    const last = inner.lastElementChild as HTMLElement | null;
+    const bottom = last
+      ? inner.offsetTop + last.offsetTop + last.offsetHeight
+      : inner.offsetTop + inner.offsetHeight;
+    return Math.max(0, bottom - view.clientHeight);
   }, []);
 
   /**
-   * Where the view wants to be: the anchor's top when there is one, otherwise
-   * the end of the content.
+   * Where the view wants to be: the anchor's top — unless holding it there
+   * would push the anchored turn's own bottom off the screen.
    *
-   * Clamped to what the container can actually scroll. An anchor near the
-   * bottom cannot be brought to the top of a container that ends just below
-   * it — the answer is then "as far as it goes", and the padding under the
-   * conversation is what makes "as far as it goes" far enough.
+   * The second half is what this was missing. An anchor pins the turn you sent
+   * to the top and holds it there while the answer is written underneath,
+   * which is right and is the whole point of anchoring. It stops being right
+   * the moment the turn is longer than the screen: the anchor does not move,
+   * so the target does not move, and every line after the first screenful is
+   * written below the fold with nothing to bring it back.
+   *
+   * So the anchor holds the top only while its own end is still in view, and
+   * gives way to that end when it is not. The handover lands exactly where it
+   * should, because the two are the same number at the moment the turn grows
+   * to the height of the viewport.
+   *
+   * Note what this is **not**: the end of the *conversation*. Taking that
+   * would follow whatever came after the anchored turn, and anchoring an older
+   * turn — a jump to a message further up — would snap straight back to the
+   * bottom. Only the anchored turn's own bottom is allowed to overrule its
+   * top.
    */
   const target = useCallback(() => {
     const view = viewport.current;
@@ -128,7 +152,10 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       const el = view.querySelector<HTMLElement>(`[id="${CSS.escape(anchorId)}"]`);
       if (el) {
         const max = Math.max(0, view.scrollHeight - view.clientHeight);
-        return Math.max(0, Math.min(el.offsetTop - anchorOffset, max));
+        const top = el.offsetTop - anchorOffset;
+        // Where the anchored turn's last pixel sits flush with the bottom.
+        const tail = el.offsetTop + el.offsetHeight - view.clientHeight;
+        return Math.max(0, Math.min(Math.max(top, tail), max));
       }
     }
     return endOfContent();

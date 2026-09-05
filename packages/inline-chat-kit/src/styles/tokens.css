@@ -870,6 +870,13 @@
     --ick-reasoning-leading: 1.6;
     --ick-empty-pad: var(--ick-space-8);
     --ick-conversation-pad-block: var(--ick-space-7);
+    /* Empty room under the last turn. Nothing by default — a conversation
+       that ends where its content ends is the right shape for a box embedded
+       in a page. Set it to something near a screen height and a turn brought
+       to the top can get there, which is what the demo wants and what
+       `anchorId` is for. See the note in `Conversation.module.css` for why it
+       is not the viewport's own padding. */
+    --ick-conversation-tail: 0px;
     --ick-conversation-pad-inline: var(--ick-space-7);
     --ick-answer-size: 0.75rem;
     --ick-answer-leading: 1.7;

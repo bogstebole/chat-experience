@@ -25,6 +25,7 @@
     "visual-qa:dark": "node tools/visual-qa/run.mjs --theme dark",
     "visual-qa:phone": "node tools/visual-qa/run.mjs --phone",
     "zoom-check": "node tools/mobile/zoom-check.mjs",
+    "follow-check": "node tools/conversation/follow-check.mjs",
     "visual-qa:self-test": "node tools/visual-qa/self-test.mjs"
   },
   "devDependencies": {

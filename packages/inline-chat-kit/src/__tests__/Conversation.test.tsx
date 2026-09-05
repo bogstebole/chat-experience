@@ -290,6 +290,16 @@ describe("holding a turn at the top", () => {
       value: 900,
       configurable: true,
     });
+    /* Turns need a height of their own, because "the end of the content" is
+       measured from the last turn rather than from the wrapper around them —
+       the wrapper carries the tail, the empty room that lets a turn reach the
+       top, and counting that as content parks the reader a screen below the
+       thing they are reading. jsdom gives every element a height of zero, so
+       a fixture that does not say leaves the measurement reading the tail. */
+    Object.defineProperty(container.querySelector("#turn-b")!, "offsetHeight", {
+      value: 100,
+      configurable: true,
+    });
     return { viewport, content };
   };
 
@@ -351,6 +361,34 @@ describe("holding a turn at the top", () => {
     Object.defineProperty(viewport, "scrollHeight", { value: 1200, configurable: true });
     grow();
     expect(viewport.scrollTop).toBe(600); // 1200 - 600, not 900
+  });
+
+  /**
+   * The other half of anchoring, and the one it was missing.
+   *
+   * A turn taller than the viewport cannot have both its top at the top and
+   * its end on screen. Its end wins — otherwise every line written after the
+   * first screenful goes below the fold and nothing brings it back, which is
+   * what an answer longer than a screen did: measured in a real browser, the
+   * newest line was under the fold on 852 frames of 1467, by up to 49px.
+   *
+   * Only the anchored turn's own end counts. The end of the *conversation*
+   * would drag the view past an older anchored turn to whatever follows it.
+   */
+  it("gives the top up once the anchored turn outgrows the view", () => {
+    const { container } = withTurns("turn-b");
+    const { viewport } = place(container);
+    grow();
+    expect(viewport.scrollTop, "short turn: held at the top").toBe(900);
+
+    // 900 + 1000 - 600 = 1300, past its own top.
+    Object.defineProperty(container.querySelector("#turn-b")!, "offsetHeight", {
+      value: 1000,
+      configurable: true,
+    });
+    Object.defineProperty(viewport, "scrollHeight", { value: 3000, configurable: true });
+    grow();
+    expect(viewport.scrollTop, "grown past a screen: its end is held instead").toBe(1300);
   });
 
   it("falls back to the end when the anchor is not on the page", () => {
