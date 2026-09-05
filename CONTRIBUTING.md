@@ -78,6 +78,8 @@ into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 | `node tools/voice/check.mjs` | The microphone button's states, in a real browser |
 | `npm run visual-qa` | Geometry rules over every story, in a real browser |
 | `npm run visual-qa:dark` | The same, in the dark theme |
+| `npm run visual-qa:phone` | The same at 390×844 with touch, plus the mobile-only rules |
+| `npm run zoom-check` | Whether a phone still zooms when a field is focused — **WebKit** |
 | `npm run visual-qa:self-test` | Proves the rules can still fail |
 
 Recordings land in `Videos/` and `Shots/`, both gitignored — they are outputs,
@@ -98,6 +100,15 @@ child clipped by the box around it.
 
 Every rule reads the author's own CSS before it measures, so it can only fire
 where the intent was declared. That is why the list is short enough to read.
+
+### WebKit, not only Chromium
+
+`npx playwright install webkit` once, and then `npm run zoom-check` runs there.
+Two faults in one week were invisible to Chromium and plain in Safari: the
+overflow menu's focus ring, where the two engines disagree about what
+`:focus-visible` means for programmatic focus, and the zoom lock, whose
+ordering only matters on the engine that zooms. A pass that is green in one
+engine is a pass in one engine.
 
 `npm run visual-qa:self-test` runs the rules against three deliberately broken
 layouts and one correct one. A pass reporting nothing is worth nothing until it

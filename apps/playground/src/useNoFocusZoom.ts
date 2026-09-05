@@ -29,8 +29,8 @@ import { useEffect } from "react";
  * ## What it does not do
  *
  * Not verified on real hardware from here — no emulator implements focus zoom
- * at all, so nothing in this repo can prove it works. It is written from the
- * documented behaviour and has to be checked on a phone.
+ * at all, so nothing in this repo can prove the zoom is gone. What it can
+ * prove is the ordering, which is what the first version got wrong.
  *
  * And it stands aside for anybody who has zoomed in themselves: locking the
  * scale below where they put it would snap them back out, which is a worse
@@ -49,26 +49,57 @@ export function useNoFocusZoom(): void {
       ? released.replace(/maximum-scale\s*=\s*[\d.]+/, "maximum-scale=1")
       : `${released}, maximum-scale=1`;
 
-    const editable = (node: EventTarget | null): boolean =>
+    const field = (node: unknown): boolean =>
       node instanceof HTMLElement &&
       (node.isContentEditable ||
         node instanceof HTMLTextAreaElement ||
         (node instanceof HTMLInputElement &&
           !["button", "submit", "checkbox", "radio", "file", "range", "hidden"].includes(node.type)));
 
-    const lock = (event: FocusEvent) => {
-      if (!editable(event.target)) return;
+    /**
+     * Locked on `pointerdown`, not on `focusin`, and that is the whole fix.
+     *
+     * The first version locked when a field took focus, which is too late by
+     * one step. Safari decides whether to zoom *as* focus lands, so a lock
+     * applied in the focus handler arrives after the decision. It looked like
+     * it worked when you tapped straight into the composer and did not when
+     * you went through the attachment fan, because the fan's card focuses the
+     * editor programmatically from inside its own tap handler — measured: the
+     * meta read inside `focusin` had no `maximum-scale`, and the same meta
+     * read a frame later did.
+     *
+     * `pointerdown` runs before focus, before the tap has decided what it is
+     * for. So the lock is always in place before anything can be focused.
+     */
+    const lock = () => {
       // Someone who pinched to zoom meant it. Leave them where they are.
       if ((window.visualViewport?.scale ?? 1) > 1.01) return;
       meta.setAttribute("content", locked);
     };
-    const release = () => meta.setAttribute("content", released);
 
-    document.addEventListener("focusin", lock);
-    document.addEventListener("focusout", release);
+    /**
+     * And released again unless the tap actually put focus in a field.
+     *
+     * Checked a frame later because focus lands after the gesture ends, and
+     * `focusout` fires before the next element has it. Without this a single
+     * tap anywhere would take pinch-zoom away for the rest of the session,
+     * which is the thing this hook exists not to do.
+     */
+    const settle = () => {
+      requestAnimationFrame(() => {
+        if (!field(document.activeElement)) meta.setAttribute("content", released);
+      });
+    };
+
+    document.addEventListener("pointerdown", lock, true);
+    document.addEventListener("pointerup", settle, true);
+    document.addEventListener("pointercancel", settle, true);
+    document.addEventListener("focusout", settle, true);
     return () => {
-      document.removeEventListener("focusin", lock);
-      document.removeEventListener("focusout", release);
+      document.removeEventListener("pointerdown", lock, true);
+      document.removeEventListener("pointerup", settle, true);
+      document.removeEventListener("pointercancel", settle, true);
+      document.removeEventListener("focusout", settle, true);
       meta.setAttribute("content", released);
     };
   }, []);
