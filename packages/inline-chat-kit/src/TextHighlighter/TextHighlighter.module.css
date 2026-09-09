@@ -385,10 +385,23 @@
   z-index: var(--ick-z-sticky);
 }
 
-/* Widens the pointer's catch area by 20px without moving anything. */
+/* Widens the pointer's catch area without moving anything.
+
+   Up and down only. It used to bleed 20px on all four sides, and the two
+   sideways ones were the only part that could hurt: an answer that fills its
+   column — which on a phone is the whole screen — put this 20px past the right
+   edge and gave the **host's page** a horizontal scrollbar. A component that
+   can make a page scroll sideways is a defect wherever it is embedded, not
+   only on a phone.
+
+   Nothing is lost. The slop that matters is vertical: lines are ~24px apart
+   and a stroke is aimed between them, while horizontally the text already runs
+   to the surface's own edge, so a drag starting further out starts in the
+   margin and snaps to the first word regardless. */
 .hitbox {
   position: absolute;
-  inset: -20px;
+  inset-block: -20px;
+  inset-inline: 0;
   z-index: 0;
 }
 

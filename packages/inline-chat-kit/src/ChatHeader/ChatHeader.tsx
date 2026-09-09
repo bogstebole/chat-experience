@@ -370,6 +370,25 @@ function OverflowMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+  /**
+   * Whether the reader is working this menu by keyboard, which decides whether
+   * the focused item wears a ring.
+   *
+   * `:focus-visible` was supposed to decide it and cannot, because the two
+   * engines disagree about what it means. A menu moves focus to an item the
+   * moment it opens — that is the pattern, and it is what lets an arrow key
+   * take over. Chromium sees programmatic focus after a tap and correctly
+   * shows no ring; WebKit shows one. Measured in both: on a tap Chromium says
+   * `:focus-visible` does not match and Safari says it does, so on a phone the
+   * first item of every menu opened with a thumb came up ringed as though it
+   * had been chosen.
+   *
+   * So the question is answered here rather than guessed at by the engine. It
+   * is also the more honest question: what the ring is for is *"an arrow key
+   * will move this"*, and only this component knows whether an arrow key is
+   * in play.
+   */
+  const [byKeyboard, setByKeyboard] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
@@ -402,6 +421,10 @@ function OverflowMenu({
       close(true);
       return;
     }
+    /* Any of the keys below means the reader has taken the keyboard, whatever
+       opened the menu — so the ring appears from here on even if a thumb
+       opened it. */
+    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) setByKeyboard(true);
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setIndex((i) => (i + 1) % actions.length);
@@ -434,7 +457,13 @@ function OverflowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        onClick={() => {
+        onClick={(event) => {
+          /* `detail` is the click count, and a click synthesised from Enter or
+             Space reports 0. Which makes it the one reliable way to tell how a
+             button was pressed from inside its own handler — a keydown
+             listener would have to duplicate what the browser already does
+             with activation behaviour. */
+          setByKeyboard(event.detail === 0);
           setIndex(0);
           setOpen((v) => !v);
         }}
@@ -446,6 +475,7 @@ function OverflowMenu({
           role="menu"
           aria-label={label}
           className={styles.menu}
+          data-keyboard={byKeyboard || undefined}
           onKeyDown={onKeyDown}
           onBlur={(event) => {
             // Tab away and the menu goes with you, rather than being left

@@ -251,3 +251,37 @@ size the answer is set at instead of drifting away from it.
 already honours `prefers-reduced-motion` on its own: transforms and layout snap
 to their final values while opacity and colour still fade, so state stays
 legible without travelling.
+
+## On a phone: two things only the host can do
+
+The kit sizes itself, expands its own hit areas on a coarse pointer, and keeps
+nothing wider than its container. Two mobile faults are outside it, because
+both live in the host document rather than in any component.
+
+**The viewport meta.** Add `viewport-fit=cover` if you want the safe-area
+insets to report anything but zero:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+```
+
+**The zoom on focus.** iOS zooms the page in to any editable whose text is
+under 16px and does not zoom back out, so tapping the composer — which draws
+at `--ick-composer-size`, 12px — throws the conversation out of frame and
+leaves it there.
+
+There are three ways out and only one of them is good.
+
+| | |
+| --- | --- |
+| Set the composer to 16px | Works. The composer becomes the largest text on the page, bigger than the answer it turns into. |
+| `maximum-scale=1` in the meta | Works. Takes pinch-zoom away from everybody, permanently, for a fault that lasts as long as somebody is typing. |
+| Lock the scale **while a field has focus** | Works, and costs nothing the rest of the time. |
+
+The third is a change to the host's own `<meta>`, which is why the kit does not
+make it: a component library that rewrites the page's viewport as a side effect
+of being rendered is a surprise, not a library. `apps/playground/src/useNoFocusZoom.ts`
+is a copyable implementation — it swaps `maximum-scale` in on `focusin` and out
+on `focusout`, does nothing at all on a fine pointer, and stands aside for a
+reader who has pinched to zoom themselves, since snapping them back out is
+worse than the fault.

@@ -27,6 +27,17 @@ jobs:
       # installing it from git, and this catches that before they do.
       - run: npm ci
 
+      # Playwright is not a dependency of this repo — a browser download is a
+      # heavy thing to put on everyone who clones it — so the browser checks
+      # skip out loud where it is missing. Here they must not skip, which is
+      # the whole reason they are in the gate.
+      #
+      # WebKit as well as Chromium: two faults in one week were invisible to
+      # Chromium and plain in Safari, so a Chromium-only pass is a pass in one
+      # engine.
+      - name: Browsers for the visual and mobile checks
+        run: npm i -g playwright && npx playwright install --with-deps chromium webkit
+
       - name: Lint
         run: npm run lint
 

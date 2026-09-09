@@ -18,7 +18,7 @@
   align-items: center;
   gap: var(--ick-space-2);
   font-family: var(--ick-font-sans);
-  font-size: var(--ick-text-sm);
+  font-size: var(--ick-composer-size);
   letter-spacing: 0.03em;
   /* Fixed width when typing */
   width: 320px;

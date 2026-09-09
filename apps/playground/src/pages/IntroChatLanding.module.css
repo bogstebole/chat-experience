@@ -1,10 +1,26 @@
+/* `min-height` and a scroll, not a fixed height and `overflow: hidden`.
+
+   On a desktop the intro fits in a screen and centres in it, which is what
+   the fixed height was for. On a 375x812 phone it does not: the feature
+   banner alone is taller than the viewport, so `overflow: hidden` cut the
+   page off just under it and **`Start experience` could not be reached at
+   all** — the one control the page exists for, below a fold that would not
+   move.
+
+   A minimum height still centres it wherever it fits, and lets it scroll
+   wherever it does not. `padding-block` so the first and last thing on the
+   page are not against the edges once it is scrolling, and the safe-area
+   insets on top of that for a notch. */
 .page {
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-block: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background-color: var(--color-bg-page);
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 .container {
@@ -107,41 +123,11 @@
   gap: 16px;
 }
 
-.mobileNotice {
-  display: none;
-}
-
-.mobileButton {
-  display: none;
-}
-
-@media (max-width: 540px) {
-  .bannerWrapper {
-    display: none;
-  }
-
-  .buttonWrapper {
-    display: none;
-  }
-
-  .mobileNotice {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    background-color: var(--ick-surface-sunken);
-    border-radius: 24px;
-    padding: 12px 8px 8px;
-    width: 100%;
-    max-width: 540px;
-    box-sizing: border-box;
-  }
-
-  .mobileButton {
-    display: flex;
-    justify-content: center;
-  }
-}
-
+/* The "desktop only" notice that used to stand here is gone, and so is the
+   media query that hid the real page behind it. Mobile is the thing being
+   built now, not the thing being apologised for — and the feature banner
+   below already says, honestly and in one place, what works and what does
+   not. A second notice saying "not yet" beside it was the drift. */
 
 .fyi {
   font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;

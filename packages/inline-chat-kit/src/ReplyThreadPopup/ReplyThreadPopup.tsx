@@ -9,6 +9,7 @@ import { useChatTurns, type ChatTurn, type SendContext } from "../useChatTurns/u
 /** @deprecated Use `ChatTurn`. Kept so existing imports keep resolving. */
 export type Turn = ChatTurn;
 import { Button } from '../Button/Button';
+import { placePanel } from "./placePanel";
 import styles from "./ReplyThreadPopup.module.css";
 
 export interface ReplyThreadPopupProps {
@@ -163,20 +164,12 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
     feed.scrollTo({ top: feed.scrollHeight, behavior: "smooth" });
   }, [threadTurns]);
 
-  let replyTargetX = 0;
-  let replyTargetY = 0;
-  let replyTargetWidth = 480;
-  
-  if (typeof window !== "undefined") {
-    const screenWidth = window.innerWidth;
-    replyTargetWidth = Math.max(activeReply.rect.width + 80, 480);
-    replyTargetX = activeReply.rect.left + activeReply.rect.width / 2 - replyTargetWidth / 2;
-    const padding = 24;
-    if (replyTargetX < padding) replyTargetX = padding;
-    if (replyTargetX + replyTargetWidth > screenWidth - padding) replyTargetX = screenWidth - padding - replyTargetWidth;
-    
-    replyTargetY = activeReply.rect.top - 24;
-  }
+  /* Fit first, then place — see `placePanel`, which is a function precisely
+     so the arithmetic can be tested without a browser. */
+  const { x: replyTargetX, y: replyTargetY, width: replyTargetWidth } =
+    typeof window === "undefined"
+      ? { x: 0, y: 0, width: 480 }
+      : placePanel(activeReply.rect, window.innerWidth, window.innerHeight);
 
 
   return (

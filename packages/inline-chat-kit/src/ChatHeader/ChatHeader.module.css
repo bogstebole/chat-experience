@@ -170,6 +170,7 @@
 
 .back {
   box-sizing: border-box;
+  composes: target from "../styles/touch.module.css";
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -291,7 +292,15 @@
   background: var(--ick-surface-press);
 }
 
-.menuItem:focus-visible {
+/* The ring is worn by the item an arrow key would move from, and the menu
+   says when that is the case — see `byKeyboard` in `ChatHeader.tsx`.
+
+   Not `:focus-visible`, which is what this used and which the engines do not
+   agree on. A menu focuses an item as it opens; Chromium reads that as
+   programmatic and shows nothing, WebKit shows a ring. On a phone that meant
+   every menu opened with a thumb came up with its first item ringed, looking
+   chosen. Measured in both engines rather than argued about. */
+.menu[data-keyboard] .menuItem:focus {
   outline: 2px solid var(--ick-focus-ring);
   outline-offset: -2px;
 }

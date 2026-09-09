@@ -11,6 +11,16 @@
   margin-left: calc(var(--ick-space-2) * -1);
 }
 
+/* Four 28px buttons two pixels apart: on a pointer that is a tidy cluster; on
+   a finger it is four 44px hit areas overlapping by fourteen, and a press
+   between two of them goes to whichever was painted last. The row spreads only
+   where that is true. */
+@media (pointer: coarse) {
+  .row {
+    gap: var(--ick-touch-gap);
+  }
+}
+
 /* Invisible, not absent. It keeps its space so nothing shifts when it appears,
    and it still hit-tests at zero opacity — which is what makes hovering it
    work at all. `:focus-within` is what saves anyone arriving by keyboard from

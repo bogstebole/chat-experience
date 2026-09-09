@@ -1,5 +1,10 @@
 .chatPage {
+  /* Narrower on a phone than the 32 a desktop gets: a 390px screen cannot
+     spare 64 of it on margins. */
+  --page-pad-mobile: 16px;
+
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   /* Stated, because this is a flex item now and `margin: 0 auto` on one opts
@@ -13,6 +18,23 @@
   padding: 0 32px;
   position: relative;
   overflow: clip;
+}
+
+/* The notch, the rounded corners and the home indicator.
+
+   On a phone the 32px of side padding is measured from the edge of the glass,
+   which in landscape puts the first character of an answer under the notch.
+   `max()` rather than an addition: the inset is 0 on every screen that has no
+   notch, and adding it would still be 32 — what is wanted is *whichever is
+   larger*, so the padding is 32 normally and grows only where it must.
+
+   The bottom one is the home indicator, which sits over the composer. */
+@media (max-width: 760px) {
+  .chatPage {
+    padding-left: max(var(--page-pad-mobile), env(safe-area-inset-left));
+    padding-right: max(var(--page-pad-mobile), env(safe-area-inset-right));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 .chatInputBar {
@@ -39,7 +61,12 @@
    overflow the column without being clipped. */
 .chatFeed {
   padding-top: 100px;
-  padding-bottom: 99vh;
+  /* The tail is a token on the content wrapper now, not padding here. Padding
+     on a scroll container is a floor under its own height — 99vh of it made
+     this scroller 773px tall inside a 680px page, and the 93px that spilled
+     were clipped away with the newest line inside them. See the note in the
+     kit's `Conversation.module.css`. */
+  --ick-conversation-tail: 99vh;
   padding-left: 32px;
   padding-right: 32px;
   margin-left: -32px;
@@ -241,6 +268,7 @@ div.opening {
    opening the pane slides the conversation across rather than squashing it. */
 .chatWorkspace {
   height: 100vh;
+  height: 100dvh;
   box-sizing: border-box;
 }
 

@@ -12,8 +12,12 @@
  * The fixtures are plain HTML rather than stories, so this runs in a second
  * and does not need Storybook built.
  */
-import { chromium } from "../showcase/lib.mjs";
+import { browsers, skip } from "../harness.mjs";
 import { RULES_SOURCE } from "./rules.mjs";
+
+const playwright = await browsers();
+if (!playwright) skip("the visual QA self-test");
+const { chromium } = playwright;
 
 const TOLERANCE = 1;
 

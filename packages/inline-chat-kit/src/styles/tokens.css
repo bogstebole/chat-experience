@@ -154,6 +154,24 @@
        make the recess *lighter* than the page it is cut into. */
     --ick-ground: rgb(var(--ick-ink-rgb) / 0.05);
     --ick-card: var(--ick-surface);
+    /* The page everything stands on, and the one surface the light theme was
+       missing.
+
+       The dark theme separates a card from its page by lifting the card:
+       page 18, card 38, and the pane beside a conversation reads without
+       anything else being done. The light theme cannot do that — the card is
+       already `rgb(255 255 255)` and white is the ceiling — so before this the
+       artifact pane and the page behind it were **the same colour**, with only
+       a soft shadow between them. Measured: a difference of zero.
+
+       So light goes the other way and the page recedes instead. The card stays
+       pure paper, which is the point: a document should be the brightest thing
+       on the screen, and tinting the *pane* to separate it would be tinting the
+       one surface that has to look like paper.
+
+       97% is about eight levels down from white — under a card it reads as a
+       page, and on its own nobody would call it grey. */
+    --ick-page: color-mix(in srgb, rgb(var(--ick-paper-rgb)) 97%, rgb(var(--ick-ink-rgb)));
     /* An inset is always inside a card, so it is mixed **from** the card
        rather than washed over whatever happens to be behind it. Same colour
        either way when the card is on the page; on an approval's tinted ground
@@ -308,6 +326,34 @@
     --ick-ease: cubic-bezier(0.25, 1, 0.5, 1);
     --ick-ease-overshoot: cubic-bezier(0.34, 1.35, 0.64, 1);
     --ick-ease-overshoot-strong: cubic-bezier(0.34, 1.6, 0.64, 1);
+
+    /* What a finger needs, where a pointer needed 28. Apple's number and
+       WCAG 2.5.5's; nothing in the kit is drawn at it, because what grows is
+       an invisible box centred on the control. See `touch.module.css`. */
+    --ick-touch-target: 44px;
+    /* And what has to sit between two of them.
+
+       Two 28px controls reaching 44px each collide unless their centres are
+       44px apart, so the gap has to make up the difference: 28 + 16. Without
+       it the invisible boxes overlap and a press in the strip between two
+       buttons goes to whichever the browser painted last — which is the one
+       fault in this approach, and the one nothing on screen would show you.
+       Applied only under `pointer: coarse`; see `touch.module.css`. */
+    --ick-touch-gap: var(--ick-space-6);
+    /* The composer's text, one size everywhere.
+
+       It was briefly 16px on a coarse pointer, because mobile Safari zooms the
+       page in to any field whose text is under 16 and leaves it zoomed. That
+       works and it looks wrong: the composer would be the largest text on the
+       page, larger than the answer it turns into. The zoom is dealt with by
+       the host instead, by locking the scale for the moment a field is
+       focused — see `useNoFocusZoom` in the playground, and `theming.md`.
+
+       Kept as a token even though it now has one value: the size the composer
+       draws at is a thing a host might want to set, and it was already being
+       reached for through `--ick-text-sm`, which is a different idea that
+       happens to share a number. */
+    --ick-composer-size: var(--ick-text-sm);
 
     --ick-duration-press: 70ms;
     --ick-duration-fast: 160ms;
@@ -842,6 +888,13 @@
     --ick-reasoning-leading: 1.6;
     --ick-empty-pad: var(--ick-space-8);
     --ick-conversation-pad-block: var(--ick-space-7);
+    /* Empty room under the last turn. Nothing by default — a conversation
+       that ends where its content ends is the right shape for a box embedded
+       in a page. Set it to something near a screen height and a turn brought
+       to the top can get there, which is what the demo wants and what
+       `anchorId` is for. See the note in `Conversation.module.css` for why it
+       is not the viewport's own padding. */
+    --ick-conversation-tail: 0px;
     --ick-conversation-pad-inline: var(--ick-space-7);
     --ick-answer-size: 0.75rem;
     --ick-answer-leading: 1.7;
@@ -952,6 +1005,10 @@
        Still a wash, for the same reason the light one is: the ground is the
        bottom of the stack and has only the host's page under it. */
     --ick-dark-ground: rgb(var(--ick-glass-shade-rgb) / 0.45);
+    /* No mix in the dark: the page *is* the paper, and the card is what was
+       lifted off it. Doing both would push the page under the shadow of its
+       own cards. */
+    --ick-dark-page: rgb(var(--ick-paper-rgb));
 
     /* The marker's stroke, which is the one thing in the kit that composites
        with live text. See the note beside `--ick-marker-stroke` for why
@@ -1139,6 +1196,7 @@
       --ick-shadow-glass-pulse: var(--ick-dark-shadow-glass-pulse);
       --ick-recede: var(--ick-dark-recede);
       --ick-shadow-modal: var(--ick-dark-shadow-modal);
+      --ick-page: var(--ick-dark-page);
       --ick-shadow-float: var(--ick-dark-shadow-float);
       --ick-shadow-float-lift: var(--ick-dark-shadow-float-lift);
       --ick-shadow-float-press: var(--ick-dark-shadow-float-press);
@@ -1181,6 +1239,7 @@
     --ick-shadow-glass-pulse: var(--ick-dark-shadow-glass-pulse);
     --ick-recede: var(--ick-dark-recede);
     --ick-shadow-modal: var(--ick-dark-shadow-modal);
+    --ick-page: var(--ick-dark-page);
     --ick-shadow-float: var(--ick-dark-shadow-float);
     --ick-shadow-float-lift: var(--ick-dark-shadow-float-lift);
     --ick-shadow-float-press: var(--ick-dark-shadow-float-press);

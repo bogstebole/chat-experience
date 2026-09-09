@@ -20,6 +20,24 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      /* The stylesheet first, and by its public name.
+
+         A host is told to `import "inline-chat-kit/styles.css"` — that is what
+         the README says and what the website does — and the playground never
+         did. It relied on the bare `import "./styles/tokens.css"` inside the
+         kit's entry, which survives the dev server and does **not** survive
+         the production build: the built demo came out with every component's
+         CSS module and not one token, so `--bg` and everything else resolved
+         to nothing and the whole page rendered unstyled in serif. Nobody had
+         looked at the playground's build.
+
+         Pointed at the source rather than at `dist`, so it hot-reloads with
+         the components beside it. The name is the consumer's, the file is the
+         one being worked on. */
+      "inline-chat-kit/styles.css": resolve(
+        import.meta.dirname,
+        "../../packages/inline-chat-kit/src/styles/tokens.css"
+      ),
       // Point at the kit's source so editing it hot-reloads here without a
       // rebuild. Consumers get the built package via its exports map instead.
       "inline-chat-kit": resolve(import.meta.dirname, "../../packages/inline-chat-kit/src/index.ts"),

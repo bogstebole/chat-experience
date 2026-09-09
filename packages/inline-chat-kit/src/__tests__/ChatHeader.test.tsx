@@ -224,6 +224,40 @@ describe("the overflow menu", () => {
     expect(within(menu).getByRole("menuitem", { name: "Share" })).toHaveFocus();
   });
 
+  /**
+   * The ring belongs to the keyboard, and `:focus-visible` cannot be asked.
+   *
+   * A menu focuses an item as it opens, which is the pattern. Chromium reads
+   * that as programmatic and shows no ring; WebKit shows one — measured in
+   * both — so on a phone every menu opened with a thumb came up with its first
+   * item ringed as though it had been chosen. The menu says so itself now.
+   *
+   * `detail` is the click count: a click the browser synthesises from Enter or
+   * Space reports 0, a real press reports 1 or more.
+   */
+  it("rings the focused item for a keyboard and not for a thumb", () => {
+    render(<ChatHeader title="Chat" actions={ACTIONS} collapseActionsAt={520} />);
+    resizeTo(360);
+    const trigger = screen.getByRole("button", { name: "More actions" });
+
+    fireEvent.click(trigger, { detail: 1 });
+    expect(
+      screen.getByRole("menu"),
+      "opened with a pointer, so nothing is ringed"
+    ).not.toHaveAttribute("data-keyboard");
+
+    /* And an arrow takes it over, whatever opened it. */
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowDown" });
+    expect(screen.getByRole("menu")).toHaveAttribute("data-keyboard");
+
+    fireEvent.click(trigger, { detail: 1 });
+    fireEvent.click(trigger, { detail: 0 });
+    expect(
+      screen.getByRole("menu"),
+      "opened with Enter, so the item it focused is ringed"
+    ).toHaveAttribute("data-keyboard");
+  });
+
   it("moves with the arrows and wraps", () => {
     const { menu } = open();
     fireEvent.keyDown(menu, { key: "ArrowDown" });

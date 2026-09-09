@@ -451,3 +451,49 @@ describe("badges", () => {
     expect(tokens).toMatch(/--ick-chip-height:\s*var\(--ick-badge-size\)/);
   });
 });
+
+describe("the answer's column", () => {
+  /**
+   * An answer starts on the column and ends on it.
+   *
+   * The right margin was missing and nothing on a desktop showed it:
+   * `--ick-answer-measure` runs out first, so the line ends where the measure
+   * says and the column never comes into it. On a phone the measure is wider
+   * than the screen, so the prose ran to the container's edge — measured at
+   * 390px, the text ended at 374 while the words in the card right above it
+   * ended at 342, and the answer read as ragged against a box it was supposed
+   * to line up with.
+   *
+   * Checked here rather than in a browser because there is nothing to
+   * *measure* — the claim is that the two ends reach the same column, which is
+   * arithmetic on the stylesheet. A geometry test would need a viewport
+   * narrower than the measure to see the fault at all, which is exactly why it
+   * went unnoticed.
+   */
+  it("reaches the same column at both ends", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const css = await load("../ChatTurnRow/ChatTurnRow.module.css?raw");
+
+    const left = px(tokens, decl(css, ".answer", "margin-left"));
+    const right = px(tokens, decl(css, ".answer", "margin-right"));
+
+    expect(left, "an answer starts on the column").toBe(px(tokens, "var(--ick-answer-column)"));
+    expect(right, "and ends on it — this is the one that was missing").toBe(left);
+  });
+
+  /**
+   * And the boxes still bleed wider than it, which is the other half of the
+   * rule and the reason the column is a token rather than padding on a
+   * wrapper. A ground under a card reaches the turn's own edge; only the words
+   * are inset.
+   */
+  it("still lets the boxes bleed wider than the words", async () => {
+    const tokens = await load("../styles/tokens.css?raw");
+    const artifact = await load("../Artifact/ArtifactCard.module.css?raw");
+
+    expect(
+      px(tokens, decl(artifact, ".artifact", "padding")),
+      "a ground's own padding is narrower than the column its words land on"
+    ).toBeLessThan(px(tokens, "var(--ick-answer-column)"));
+  });
+});

@@ -434,11 +434,31 @@ export function ChatExperience() {
     setActiveReply({ text, rect });
   }, []);
 
+  /* Whether this reader has a pointer at all. Read once and watched, because a
+     tablet with a trackpad plugged in changes its answer. */
+  const [finePointer, setFinePointer] = useState(
+    () => typeof window === "undefined" || !window.matchMedia || window.matchMedia("(pointer: fine)").matches
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: fine)");
+    const read = () => setFinePointer(query.matches);
+    read();
+    query.addEventListener("change", read);
+    return () => query.removeEventListener("change", read);
+  }, []);
+
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `* { cursor: none !important; }` }} />
-      <CustomCursor />
+      {/* Hidden from the mouse, and there is no mouse on a phone. Left on, the
+          rule hides a cursor nobody has while the component keeps listening
+          for pointer moves that only ever arrive as taps. */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `@media (pointer: fine) { * { cursor: none !important; } }`,
+        }}
+      />
+      {finePointer && <CustomCursor />}
       <AnimatePresence mode="wait">
       {phase === "intro" ? (
         <motion.div
@@ -468,30 +488,6 @@ export function ChatExperience() {
                 </motion.p>
               </div>
             </div>
-
-            <motion.div variants={introItemVariants} className={introStyles.mobileNotice}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, paddingInline: 4, paddingBottom: 4 }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, marginTop: 1, color: "var(--ick-ink)" }}>
-                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2" />
-                  <path d="M8 7v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  <circle cx="8" cy="5" r="0.8" fill="currentColor" />
-                </svg>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace", fontSize: 12, lineHeight: "16px", letterSpacing: "-0.02em", color: "var(--ick-ink)" }}>
-                    Desktop only for now
-                  </span>
-                  <span style={{ fontFamily: "var(--font-geist-sans), 'Geist', system-ui, sans-serif", fontSize: 12, lineHeight: "18px", color: "var(--ick-ink-soft)" }}>
-                    Inline chat experience is built for desktop. Mobile support is on the way, check back soon.
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={introItemVariants} className={introStyles.mobileButton}>
-              <a href="/">
-                <Button variant="glass" size="m">Back to home</Button>
-              </a>
-            </motion.div>
 
             <motion.div variants={introItemVariants} className={introStyles.bannerWrapper}>
               <InlineChatBanner status={INLINE_CHAT_FEATURE_STATUS} />
