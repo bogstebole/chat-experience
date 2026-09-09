@@ -1,7 +1,7 @@
 /**
  * Does the page still zoom when a field is focused on a phone?
  *
- *   node tools/mobile/zoom-check.mjs        (dev server must be up on :5173)
+ *   npm run build && npm run zoom-check
  *
  * **In WebKit, because Chromium cannot show this.** Safari is the engine that
  * zooms, and it is also the engine whose `:focus-visible` disagrees — two
@@ -19,12 +19,19 @@
  * `maximum-scale=1` after any tap has taken pinch-zoom away from everybody,
  * which is worse than the fault.
  */
-import { execSync } from "node:child_process";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
-const mod = await import(pathToFileURL(join(execSync("npm root -g", { encoding: "utf8" }).trim(), "playwright", "index.js")).href);
-const { webkit, chromium } = mod.default ?? mod;
-const BASE = "http://localhost:5173";
+import { fileURLToPath } from "node:url";
+import { browsers, serveStatic, skip } from "../harness.mjs";
+
+const playwright = await browsers();
+if (!playwright) skip("the zoom check");
+const { webkit, chromium } = playwright;
+
+/* Against the build, not a dev server somebody remembered to start — see
+   `serveStatic`. It is the same app either way, and this one runs in CI. */
+const DIST = fileURLToPath(new URL("../../apps/playground/dist", import.meta.url));
+const site = await serveStatic(DIST, 4685);
+const BASE = site.url;
 const beat = (p, ms) => p.waitForTimeout(ms);
 const meta = (p) => p.evaluate(() => document.querySelector('meta[name="viewport"]').getAttribute("content"));
 const locked = (s) => s.includes("maximum-scale=1");
@@ -61,10 +68,21 @@ for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium 
      had to work with. */
   await page.evaluate(() => {
     window.__atFocus = null;
+    /* Only a focus that could zoom — an editable one.
+    
+       The first version recorded the first `focusin` of any kind, and on the
+       attachment fan's route that is the card's own button taking focus. A
+       button cannot zoom anything, so nothing had locked yet and the check
+       reported a fault five runs out of six. What matters is the meta at the
+       instant the *editor* takes focus. */
     document.addEventListener(
       "focusin",
-      () => {
-        if (window.__atFocus === null) {
+      (event) => {
+        const el = event.target;
+        const editable =
+          el instanceof HTMLElement &&
+          (el.isContentEditable || el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement);
+        if (editable && window.__atFocus === null) {
           window.__atFocus = document
             .querySelector('meta[name="viewport"]')
             .getAttribute("content");
@@ -76,6 +94,19 @@ for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium 
 
   const editor = page.locator("[contenteditable]").last();
   if (touch) await editor.tap(); else await editor.click();
+  /* Wait for the focus, do not assume it.
+  
+     The tap can land while the composer is still settling and miss, and then
+     every assertion below is about a field that never took focus — which
+     reads as a product failure and is a harness one. This run was green
+     standalone and red inside `npm run verify` until it waited. */
+  await page
+    .waitForFunction(() => document.activeElement?.isContentEditable === true, null, {
+      timeout: 4000,
+    })
+    .catch(() => {
+      console.log("    ??    the composer never took focus — the tap missed, not a fault");
+    });
   await beat(page, 400);
   check("while the composer has focus", touch, locked(await meta(page)));
   const atFocus = await page.evaluate(() => window.__atFocus);
@@ -96,11 +127,15 @@ for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium 
   if (await card.count()) { touch ? await card.tap() : await card.click(); await beat(page, 700); }
   check("after the attachment fan focuses the editor", touch, locked(await meta(page)));
   const viaFan = await page.evaluate(() => window.__atFocus);
-  check(
-    "and the fan's route was locked in time too",
-    touch,
-    viaFan !== null && locked(viaFan)
-  );
+  /* No focus at all means the fan's card was not pressed — the fan animates
+     in, and a tap that lands early hits where the card is about to be. That is
+     the harness missing, not the lock arriving late, and counting the two as
+     the same thing is how a check starts reporting faults that are its own. */
+  if (viaFan === null) {
+    console.log("    ??    the fan's card never focused anything — the tap missed, not a fault");
+  } else {
+    check("and the fan's route was locked in time too", touch, locked(viaFan));
+  }
 
   // A tap on something that is not a field must give pinch-zoom back.
   const header = page.locator("header button").first();
@@ -110,5 +145,6 @@ for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium 
 
   await b.close();
 }
+site.close();
 console.log(bad ? `\n  ${bad} wrong\n` : "\n  all behave\n");
 process.exit(bad ? 1 : 0);

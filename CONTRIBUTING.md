@@ -59,7 +59,23 @@ Motion's hosted servers; nothing here is needed to build or run the kit.
 ## Scripts
 
 `npm run verify` is **everything CI runs**, in CI's order: lint, tests, both
-builds, Storybook, and a dry-run pack. Run it before pushing — a narrower check
+builds, Storybook, the browser checks, and a dry-run pack.
+
+The browser checks need Playwright, which is deliberately not a dependency
+here — a browser download is a heavy thing to put on everyone who clones the
+repo. So they **skip out loud** where it is missing and CI installs it. A skip
+that was silent would be worse than not running: a green gate that checked
+nothing is the failure this repo keeps finding.
+
+```bash
+npm i -g playwright && npx playwright install chromium webkit
+```
+
+Two are **not** in the gate yet, both on purpose. `visual-qa:phone` reports 97
+things a thumb cannot reach and that is an open decision, not a regression;
+`follow-check` reports the 49px in I1a. Putting either in now would mean
+tuning a threshold to hide a number, which is the same as not having the
+check. Run it before pushing — a narrower check
 misses type errors that CI catches, because `tsc -b` follows project references
 into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 

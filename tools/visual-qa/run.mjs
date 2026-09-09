@@ -20,8 +20,12 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "../showcase/lib.mjs";
+import { browsers, skip } from "../harness.mjs";
 import { RULES_SOURCE } from "./rules.mjs";
+
+const playwright = await browsers();
+if (!playwright) skip("visual QA");
+const { chromium } = playwright;
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const STATIC = join(HERE, "..", "..", "packages", "inline-chat-kit", "storybook-static");

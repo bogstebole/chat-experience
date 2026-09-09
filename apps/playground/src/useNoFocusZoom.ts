@@ -80,23 +80,44 @@ export function useNoFocusZoom(): void {
     /**
      * And released again unless the tap actually put focus in a field.
      *
-     * Checked a frame later because focus lands after the gesture ends, and
-     * `focusout` fires before the next element has it. Without this a single
-     * tap anywhere would take pinch-zoom away for the rest of the session,
-     * which is the thing this hook exists not to do.
+     * Without a release, one tap anywhere would take pinch-zoom away for the
+     * rest of the session, which is the thing this hook exists not to do.
+     *
+     * **Cancelled by a focus that arrives late**, which is a race that was
+     * really there. The release used to be a single `requestAnimationFrame`
+     * after `pointerup`, and focus does not reliably land inside that frame:
+     * measured over six runs of the same tap, the lock survived twice and was
+     * released four times, with `pointerdown` firing and the field focused
+     * every time. On a phone those four are a page that zooms.
+     *
+     * So the release is scheduled rather than done, and a field taking focus
+     * calls it off. Belt and braces: `focusin` locks again as well, so the
+     * only way to end up unlocked with a field focused is for neither event
+     * to fire at all.
      */
+    let release = 0;
     const settle = () => {
-      requestAnimationFrame(() => {
+      clearTimeout(release);
+      release = window.setTimeout(() => {
         if (!field(document.activeElement)) meta.setAttribute("content", released);
-      });
+      }, 0);
+    };
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (!field(event.target)) return;
+      clearTimeout(release);
+      lock();
     };
 
     document.addEventListener("pointerdown", lock, true);
+    document.addEventListener("focusin", onFocusIn, true);
     document.addEventListener("pointerup", settle, true);
     document.addEventListener("pointercancel", settle, true);
     document.addEventListener("focusout", settle, true);
     return () => {
+      clearTimeout(release);
       document.removeEventListener("pointerdown", lock, true);
+      document.removeEventListener("focusin", onFocusIn, true);
       document.removeEventListener("pointerup", settle, true);
       document.removeEventListener("pointercancel", settle, true);
       document.removeEventListener("focusout", settle, true);
