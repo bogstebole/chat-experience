@@ -205,7 +205,12 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
      drawn one frame lower before the scroll catches up, which reads as a
      shudder on every frame of every answer. */
   useLayoutEffect(() => {
-    if (!follow || !following) return;
+    /* An anchor is an instruction, not a preference: the host has said which
+       turn to hold, so it is honoured whether or not the reader was following
+       the end. Gating it on `following` meant that pressing anything — which
+       now releases the follow, see below — also stopped the next message from
+       being taken to the top. */
+    if (!follow || (!following && !anchorId)) return;
     const view = viewport.current;
     const inner = content.current;
     if (!view || !inner || typeof ResizeObserver === "undefined") return;
@@ -264,13 +269,35 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       }
     };
 
+    /**
+     * And a press inside the conversation, which is the one this was missing.
+     *
+     * Everything that folds open — a tool call, the reasoning, the sources —
+     * grows the content, and growth is what makes the view keep up. So opening
+     * one while sitting at the end pinned the *end* and dragged the thing you
+     * had just opened up and off the top: measured, `scrollTop` 29 to 131 and
+     * the header from 160px down the view to 58, which reads as the panel
+     * opening upwards. With a long panel the header leaves the screen
+     * entirely, and the control to shut it again with it.
+     *
+     * A press is intent in exactly the way a wheel is — you reached for
+     * something here — so it lets go of the end and the browser's own scroll
+     * anchoring keeps what you pressed where it was. Following resumes by
+     * itself the moment the view is back at the end, and a sent message still
+     * goes to the top, because that is the anchor's job and the anchor is
+     * honoured regardless.
+     */
+    const pressed = () => setFollowing(false);
+
     view.addEventListener("wheel", onWheel, { passive: true });
     view.addEventListener("touchmove", away, { passive: true });
     view.addEventListener("keydown", onKey);
+    view.addEventListener("pointerdown", pressed, { passive: true });
     return () => {
       view.removeEventListener("wheel", onWheel);
       view.removeEventListener("touchmove", away);
       view.removeEventListener("keydown", onKey);
+      view.removeEventListener("pointerdown", pressed);
     };
   }, [follow, threshold, target, anchorId]);
 

@@ -184,6 +184,40 @@ check(
     (late.length ? `, worst ${Math.max(...late.map((s) => s.below))}px` : "")
 );
 
+/* ── Opening something ─────────────────────────────────────────────────────
+   Everything that folds open grows the content, and growth is what makes the
+   view keep up — so opening a panel while sitting at the end used to pin the
+   *end* and drag the thing just opened up and off the top. Measured before the
+   fix: `scrollTop` 29 to 131 and the header from 160px down the view to 58,
+   which reads as a panel opening upwards, with the control to shut it going
+   with it. What it has to do is stay exactly where it was pressed. */
+const headerAt = () =>
+  page.evaluate(() => {
+    const view = document.querySelector(".chatFeed");
+    const h = [...document.querySelectorAll("[aria-expanded]")].find((x) =>
+      x.textContent.includes("Thought")
+    );
+    if (!h) return null;
+    return Math.round(h.getBoundingClientRect().top - view.getBoundingClientRect().top);
+  });
+
+const fold = page.getByRole("button", { name: /Thought for/i }).first();
+if (await fold.count()) {
+  /* Into view first. Playwright scrolls an off-screen element before clicking
+     it, so measuring "before" without this measures a header 1696px above the
+     viewport and then calls the scroll that revealed it a fault. */
+  await fold.scrollIntoViewIfNeeded();
+  await beat(page, 700);
+  const before = await headerAt();
+  await fold.click();
+  await beat(page, 900);
+  const after = await headerAt();
+  check(
+    before !== null && after !== null && Math.abs(after - before) <= 4,
+    `a panel opens where it was pressed: its header sat at ${before}px and now sits at ${after}px`
+  );
+}
+
 /* ── The way back ──────────────────────────────────────────────────────────
    Scroll up to read something, then press the button that offers to take you
    back. It has to *travel*: `jump` asks for a smooth scroll and the effect
