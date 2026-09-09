@@ -349,6 +349,25 @@ export function ChatExperience() {
     [submit]
   );
 
+  /* And let go of it once the answer has settled.
+
+     The anchor was set on submit and never cleared, so the view stayed pinned
+     to that question for the rest of the session — and the composer, which in
+     this kit is the *next* turn, sat below the fold permanently. You could
+     finish reading an answer and have nowhere visible to type. It is also
+     where the 49px of I1a came from: the view had nothing to follow the last
+     lines of an answer with.
+
+     Derived rather than cleared by an effect. An effect that calls `setState`
+     is a second render to undo the first, and the answer is a function of what
+     the turn already is: `resting` is set once, when an answer stops arriving,
+     and only then. Releasing on `typing` would let go while somebody was still
+     editing the question. */
+  const anchoredTurn = anchorTurnId
+    ? (turns.find((t) => t.id === anchorTurnId) ?? null)
+    : null;
+  const heldAnchor = anchoredTurn && anchoredTurn.state !== "resting" ? anchorTurnId : null;
+
   /* Regenerating is the same submit: `useChatTurns` rewrites a turn that
      already has an answer in place rather than starting a new one. */
   const handleRegenerate = useCallback(
@@ -636,11 +655,15 @@ export function ChatExperience() {
           <Conversation
             ref={feedRef}
             viewportClassName="chatFeed"
-            anchorId={anchorTurnId ? `turn-${anchorTurnId}` : undefined}
+            anchorId={heldAnchor ? `turn-${heldAnchor}` : undefined}
             /* Matches the viewport's own `padding-top`, so a turn brought to
                the top lands where the first one already sits rather than
                under the fixed header. */
             anchorOffset={100}
+            /* Room under the composer once an answer settles. The last turn is
+               the input, and flush against the bottom edge of a phone is where
+               the browser's own chrome sits. */
+            endOffset={24}
           >
             {isEmpty && (
               <EmptyState

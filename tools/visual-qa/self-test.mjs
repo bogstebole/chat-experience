@@ -73,7 +73,6 @@ for (const test of CASES) {
   await page.setContent(`<body style="margin:0">${test.html}</body>`);
   const found = await page.evaluate(
     ([source, tolerance]) => {
-      // eslint-disable-next-line no-eval
       (0, eval)(source);
       return window.__visualQa(tolerance);
     },

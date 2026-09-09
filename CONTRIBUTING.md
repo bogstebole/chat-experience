@@ -71,11 +71,10 @@ nothing is the failure this repo keeps finding.
 npm i -g playwright && npx playwright install chromium webkit
 ```
 
-Two are **not** in the gate yet, both on purpose. `visual-qa:phone` reports 97
-things a thumb cannot reach and that is an open decision, not a regression;
-`follow-check` reports the 49px in I1a. Putting either in now would mean
-tuning a threshold to hide a number, which is the same as not having the
-check. Run it before pushing — a narrower check
+One is **not** in the gate, on purpose: `visual-qa:phone` reports 97 things a
+thumb cannot reach, and that is an open decision rather than a regression.
+Putting it in now would mean tuning a threshold to hide a number, which is the
+same as not having the check. Run it before pushing — a narrower check
 misses type errors that CI catches, because `tsc -b` follows project references
 into the kit's sources and a plain `--noEmit` on one tsconfig does not.
 

@@ -2,7 +2,7 @@
  * Does the conversation keep up with an answer, and does a sent message still
  * go to the top?
  *
- *   npm run follow-check            (dev server must be up on :5173)
+ *   npm run build && npm run follow-check
  *
  * Two things that pull in opposite directions, which is why they are checked
  * together. A sent message is scrolled to the **top** of the view, so the
@@ -22,7 +22,20 @@
  * page, and the follow logic read `clientHeight` 773 and believed a line drawn
  * at 700 was on screen.
  */
-import { chromium, BASE, beat } from "../showcase/lib.mjs";
+import { browsers, serveStatic, skip } from "../harness.mjs";
+
+const playwright = await browsers();
+if (!playwright) skip("the follow check");
+const { chromium } = playwright;
+
+/* Against the build, like the other gate checks — not a dev server somebody
+   remembered to start. */
+const site = await serveStatic(
+  new URL("../../apps/playground/dist", import.meta.url).pathname.replace(/%20/g, " "),
+  4693
+);
+const BASE = site.url;
+const beat = (p, ms) => p.waitForTimeout(ms);
 
 const HEIGHT = Number(process.argv[2] ?? 680);
 /** The demo's `anchorOffset`: the header sits over the top of the feed. */
@@ -94,6 +107,26 @@ for (const [i, q] of QUESTIONS.entries()) {
     `message ${i + 1} lands ${at.fromTop}px from the top of the view, wanted ${ANCHOR}`
   );
   await beat(page, 9000);
+
+  /* And when it settles, the composer is somewhere you can reach.
+  
+     In this kit the composer *is* the next turn — the input is the message —
+     so an anchor that holds the question at the top leaves the thing you type
+     into below the fold. The demo used to set the anchor on submit and never
+     let go of it, so that was every answer, for the rest of the session: you
+     could finish reading and have nowhere visible to type. */
+  const rest = await page.evaluate(() => {
+    const view = document.querySelector(".chatFeed");
+    const editor = [...view.querySelectorAll("[contenteditable]")].pop();
+    const row = editor.closest("[id^='turn-']") ?? editor;
+    const v = view.getBoundingClientRect();
+    const r = row.getBoundingClientRect();
+    return { under: Math.round(v.bottom - r.bottom), top: Math.round(r.top - v.top), tall: Math.round(v.height) };
+  });
+  check(
+    rest.under > 0 && rest.top > 0 && rest.top < rest.tall,
+    `after answer ${i + 1} the composer is in view, ${rest.under}px clear of the bottom edge`
+  );
 }
 
 // Now the conversation is long. Watch one more answer arrive.
@@ -152,5 +185,6 @@ check(
 );
 
 await browser.close();
+site.close();
 console.log(bad ? `\n  ${bad} wrong\n` : "\n  keeps up, and still takes a sent message to the top\n");
 process.exit(bad ? 1 : 0);

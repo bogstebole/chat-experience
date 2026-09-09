@@ -46,6 +46,17 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
    * neatly underneath and out of sight.
    */
   anchorOffset?: number;
+  /**
+   * How much room is left under the last turn when the view is at the end, in
+   * pixels.
+   *
+   * Zero puts the last line flush with the bottom edge, which is right for a
+   * transcript and wrong for this kit: the last turn *is* the composer — the
+   * input is the message — so flush means the thing you type into is jammed
+   * against the edge of the screen the moment an answer finishes. On a phone
+   * that is also where the browser's own chrome lives.
+   */
+  endOffset?: number;
   /** Switch the whole thing off and it is a plain scroll container. */
   follow?: boolean;
   /**
@@ -85,6 +96,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     children,
     anchorId,
     anchorOffset = 0,
+    endOffset = 0,
     threshold = THRESHOLD,
     scrollButton = true,
     scrollButtonLabel = "Jump to the latest",
@@ -119,8 +131,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     const bottom = last
       ? inner.offsetTop + last.offsetTop + last.offsetHeight
       : inner.offsetTop + inner.offsetHeight;
-    return Math.max(0, bottom - view.clientHeight);
-  }, []);
+    return Math.max(0, bottom + endOffset - view.clientHeight);
+  }, [endOffset]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
