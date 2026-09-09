@@ -8,6 +8,9 @@ import "@fontsource/geist-sans/600.css";
 import "@fontsource/geist-mono/400.css";
 import "@fontsource/geist-mono/500.css";
 import "@fontsource/geist-mono/600.css";
+/* What every host is told to do, and what this app was the only consumer
+   not doing. Before `./index.css`, so the demo can read the kit's tokens. */
+import "inline-chat-kit/styles.css";
 import "dialkit/styles.css";
 import "./index.css";
 import App from "./App";

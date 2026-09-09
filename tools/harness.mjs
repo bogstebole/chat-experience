@@ -77,6 +77,21 @@ export async function serveStatic(dir, port) {
       res.writeHead(200, { "content-type": TYPES[extname(path)] ?? "application/octet-stream" });
       res.end(body);
     } catch {
+      /* Fall back to `index.html` only for a **navigation**, never for an
+         asset.
+      
+         Falling back for everything answers a missing stylesheet with a page
+         of HTML, and a browser handed HTML for a `<link rel=stylesheet>` drops
+         it without a word. The playground came up in serif with no surfaces
+         at all and every colour read as transparent — which is what a colour
+         probe reports when there is no CSS, and it looks exactly like a
+         measurement bug. A request with a file extension wants that file or a
+         404. */
+      if (extname(path)) {
+        res.writeHead(404);
+        res.end("not here");
+        return;
+      }
       try {
         res.writeHead(200, { "content-type": "text/html" });
         res.end(await readFile(join(dir, "index.html")));

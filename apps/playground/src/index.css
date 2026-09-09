@@ -4,7 +4,9 @@
      no second set to keep in step and no media query to write here. */
   --font-sans: var(--ick-font-sans);
   --font-mono: var(--ick-font-mono);
-  --bg: rgb(var(--ick-paper-rgb));
+  /* The page, not the paper. A pane beside the conversation is a white card,
+     and on a white page there was nothing between the two — see `--ick-page`. */
+  --bg: var(--ick-page);
   --ink: var(--ick-ink);
   --ink-soft: var(--ick-ink-soft);
   --ink-faint: var(--ick-ink-faint);
