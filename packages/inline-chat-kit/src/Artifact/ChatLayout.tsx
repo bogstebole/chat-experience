@@ -45,8 +45,6 @@ export interface ChatLayoutProps extends HTMLAttributes<HTMLDivElement> {
    * it out and the sheet has neither, which is a sheet a thumb cannot dismiss.
    */
   onDismiss?: () => void;
-  /** What the ground behind a sheet is called, for anyone not looking at it. */
-  dismissLabel?: string;
 }
 
 /**
@@ -139,7 +137,6 @@ export function ChatLayout({
   children,
   pane,
   onDismiss,
-  dismissLabel = "Close",
   className,
   ...rest
 }: ChatLayoutProps) {
@@ -154,14 +151,19 @@ export function ChatLayout({
      A pane that still took four hundred milliseconds to unfold would be the
      one animation on the page ignoring the request. */
   const reduce = useReducedMotion();
-  const [slot, card, wash] = useMemo(() => {
+  const [slot, card, wash] = useMemo<[Variants, Variants | undefined, Variants]>(() => {
     const outer = narrow ? sheet : room;
-    /* Inside a sheet the card does not arrive on its own: the sheet coming up
+    /* Inside a sheet the card has no entrance of its own — the sheet coming up
        *is* the arrival, and a second fade within it reads as two things
-       happening for one gesture. */
-    const inner = narrow ? still(arriving) : arriving;
+       happening for one gesture.
+    
+       `undefined`, not a stilled copy of the wide one. A stilled variant still
+       *runs*, at zero duration: on the way out the document blinked away
+       instantly and an empty white sheet slid down after it. Which looks
+       exactly like the content being deleted rather than put away. */
+    const inner = narrow ? undefined : arriving;
     return reduce
-      ? [still(outer), still(inner), still(scrim)]
+      ? [still(outer), inner && still(inner), still(scrim)]
       : [outer, inner, scrim];
   }, [reduce, narrow]);
 
@@ -192,15 +194,22 @@ export function ChatLayout({
           not just open one. Anything opened afterwards animates. */}
       <AnimatePresence initial={false}>
         {shown && narrow && onDismiss && (
-          <motion.button
+          /* A wash, not a control.
+          
+             It was a `<button aria-label="Close">`, which put a second thing
+             called Close on the page — the pane's own X is the first — and a
+             tab stop in front of a sheet that already traps focus. Pressing
+             the ground is a convenience for a thumb; the reachable ways out
+             are the button and Escape, and both are in the pane. So this is
+             hidden from the tree and does nothing a keyboard can reach. */
+          <motion.div
             key="scrim"
-            type="button"
             className={styles.scrim}
             variants={wash}
             initial="closed"
             animate="open"
             exit="closed"
-            aria-label={dismissLabel}
+            aria-hidden
             onClick={onDismiss}
           />
         )}
