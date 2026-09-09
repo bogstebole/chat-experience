@@ -55,6 +55,8 @@ const QUESTIONS = [
 ];
 
 let bad = 0;
+/** Where each answer left the composer, so they can be compared. */
+const restingPlaces = [];
 const check = (ok, line) => {
   if (!ok) bad += 1;
   console.log(`    ${ok ? "ok  " : "FAIL"}  ${line}`);
@@ -127,7 +129,24 @@ for (const [i, q] of QUESTIONS.entries()) {
     rest.under > 0 && rest.top > 0 && rest.top < rest.tall,
     `after answer ${i + 1} the composer is in view, ${rest.under}px clear of the bottom edge`
   );
+  restingPlaces.push(rest.under);
 }
+
+/* Every answer has to leave the reader in the *same* place.
+  
+   "In view" alone is not enough, and this is the assertion that was missing
+   when the first version of the press rule regressed: releasing the follow on
+   any press meant a click into the composer released it too, so when an answer
+   settled there was nothing to bring the view back — and settling is also when
+   the reasoning block folds itself away, so the content shrank by its height
+   and everything above dropped into view. The composer stayed visible, 304px
+   clear instead of 124, and the check said ok. Where an answer leaves you must
+   not depend on which answer it was. */
+const spread = Math.max(...restingPlaces) - Math.min(...restingPlaces);
+check(
+  spread <= 4,
+  `and always in the same place: ${restingPlaces.join(", ")}px clear, a spread of ${spread}`
+);
 
 // Now the conversation is long. Watch one more answer arrive.
 //

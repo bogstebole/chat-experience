@@ -280,14 +280,23 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
      * opening upwards. With a long panel the header leaves the screen
      * entirely, and the control to shut it again with it.
      *
-     * A press is intent in exactly the way a wheel is — you reached for
-     * something here — so it lets go of the end and the browser's own scroll
-     * anchoring keeps what you pressed where it was. Following resumes by
-     * itself the moment the view is back at the end, and a sent message still
-     * goes to the top, because that is the anchor's job and the anchor is
-     * honoured regardless.
+     * A press on **something that folds** is intent in exactly the way a wheel
+     * is — you reached for this, here — so it lets go of the end and the
+     * browser's own scroll anchoring keeps what you pressed where it was.
+     *
+     * Only those. The first cut released on any press at all, and that is too
+     * much: clicking into the composer released it too, so when the answer
+     * settled there was nothing left to bring the view back — and settling is
+     * also when the reasoning block folds itself away, so the content shrank
+     * by its height and everything above dropped into view. It read as the
+     * conversation jumping to show an older message. A control that folds is
+     * the one press that changes the layout under the reader, and it is the
+     * only one that has to be answered this way.
      */
-    const pressed = () => setFollowing(false);
+    const pressed = (event: PointerEvent) => {
+      const on = event.target;
+      if (on instanceof Element && on.closest("[aria-expanded]")) setFollowing(false);
+    };
 
     view.addEventListener("wheel", onWheel, { passive: true });
     view.addEventListener("touchmove", away, { passive: true });

@@ -145,6 +145,7 @@ describe("nothing writes its own", () => {
         expect(src, `${name} is exempt as a menu and is no longer one`).toContain(
           'aria-haspopup="menu"'
         );
+        expect(/aria-expanded\s*=/.test(src), `${name} no longer writes one at all`).toBe(true);
         continue;
       }
       if (MORPHS.includes(name)) {
@@ -163,7 +164,15 @@ describe("nothing writes its own", () => {
         ).not.toContain("aria-controls");
         continue;
       }
-      expect(src.includes("aria-expanded"), `${name} builds its own header`).toBe(false);
+      /* Written, not merely mentioned.
+      
+         `aria-expanded=` is a component declaring itself a disclosure;
+         `[aria-expanded]` inside a selector is a component *asking* which
+         things are. `Conversation` needs the second — a press on something
+         that folds is the one press that changes the layout under a reader, so
+         it lets go of the end for that and nothing else — and matching the
+         bare string called that building a header. */
+      expect(/aria-expanded\s*=/.test(src), `${name} builds its own header`).toBe(false);
     }
   });
 
