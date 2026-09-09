@@ -130,8 +130,19 @@ export const PaneSkeleton: Story = {
  * which says it to anybody not using one.
  *
  * Narrow the Storybook viewport past 760px of *this container* and the pane
- * covers the conversation instead — same component, told it is modal, so it
- * holds focus and answers Escape. Same entrance, at the width of everything.
+ * becomes a **sheet**: it comes up from the bottom over the conversation
+ * rather than replacing it, so a strip of what you asked stays visible while
+ * you read what came back.
+ *
+ * It is the same component, told it is modal, so it holds focus and answers
+ * Escape — and it gains two ways out that belong to the layout rather than to
+ * the pane: dragged down, or the conversation behind it pressed.
+ *
+ * The gesture is settled by `touch-action` rather than by code. The sheet's
+ * body says `pan-y`, so a finger that starts on the text scrolls the text; the
+ * header, the grabber and the space around them have no scroller under them
+ * and drag the sheet. That is the one thing that makes or breaks a sheet on
+ * the web, and it is two declarations.
  */
 export const TheWholeThing: Story = {
   render: function TheWholeThing() {
@@ -140,6 +151,7 @@ export const TheWholeThing: Story = {
     return (
       <div style={{ height: 480, display: "flex" }}>
         <ChatLayout
+          onDismiss={artifacts.close}
           pane={({ narrow, expanded, toggleExpanded }) =>
             artifacts.openId ? (
               <ArtifactPane

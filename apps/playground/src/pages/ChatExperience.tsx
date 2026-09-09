@@ -537,6 +537,9 @@ export function ChatExperience() {
         <ChatLayout
           key="chat"
           className="chatWorkspace"
+          /* On a phone the pane is a sheet, and a sheet's ways out belong to
+             the layout: dragged down, or the conversation behind it pressed. */
+          onDismiss={artifacts.close}
           pane={({ narrow, expanded, toggleExpanded }) =>
             artifacts.openId ? (
               <ArtifactPane

@@ -107,27 +107,52 @@
    only, it grows leftwards out of the edge it belongs to — the same entrance
    as the wide case, at the size of the whole layout. */
 @container (max-width: 760px) {
+  /* Pinned to the bottom and short of the top, which is the whole difference
+     between a sheet and a cover: a strip of the conversation stays visible, so
+     you can still see what you asked while reading what came back. */
   .slot {
     position: absolute;
-    top: 0;
-    right: 0;
+    inset-inline: 0;
+    top: auto;
     bottom: 0;
-    left: auto;
+    height: var(--ick-sheet-height);
     z-index: 1;
+    /* The card is dragged past this edge on the way out. */
+    overflow: visible;
   }
 
   .card,
   .card[data-expanded] {
-    /* The layout's own width, not the slot's — the slot's is mid-animation.
-       Nothing to expand into, either: it is already covering everything. */
-    width: 100cqi;
+    /* Nothing to expand into: a sheet is already as wide as the screen. */
+    width: 100%;
+    height: 100%;
     margin: 0;
+    /* Dragged, so it must not be waiting for the browser to decide whether
+       this gesture was a scroll. */
+    touch-action: none;
   }
 
-  /* Full-bleed, so no corners. A rounded sheet covering everything shows the
-     page through four little notches at the edges of the screen, which reads
-     as a mistake rather than as a card. */
+  /* Corners at the top only. The bottom runs off the screen, and rounding it
+     shows the page through two notches against the bezel. */
   .card > * {
-    border-radius: 0;
+    border-start-start-radius: var(--ick-sheet-radius);
+    border-start-end-radius: var(--ick-sheet-radius);
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
   }
+}
+
+/* What the conversation goes under while a sheet is over it. Its own element
+   rather than a shadow on the sheet, because it has to fade on its own clock:
+   the sheet slides and the scrim dims, and a reader reads the second one
+   first. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--ick-sheet-scrim);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
