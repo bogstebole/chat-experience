@@ -46,6 +46,17 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
    * neatly underneath and out of sight.
    */
   anchorOffset?: number;
+  /**
+   * How much room is left under the last turn when the view is at the end, in
+   * pixels.
+   *
+   * Zero puts the last line flush with the bottom edge, which is right for a
+   * transcript and wrong for this kit: the last turn *is* the composer — the
+   * input is the message — so flush means the thing you type into is jammed
+   * against the edge of the screen the moment an answer finishes. On a phone
+   * that is also where the browser's own chrome lives.
+   */
+  endOffset?: number;
   /** Switch the whole thing off and it is a plain scroll container. */
   follow?: boolean;
   /**
@@ -85,6 +96,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     children,
     anchorId,
     anchorOffset = 0,
+    endOffset = 0,
     threshold = THRESHOLD,
     scrollButton = true,
     scrollButtonLabel = "Jump to the latest",
@@ -119,8 +131,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     const bottom = last
       ? inner.offsetTop + last.offsetTop + last.offsetHeight
       : inner.offsetTop + inner.offsetHeight;
-    return Math.max(0, bottom - view.clientHeight);
-  }, []);
+    return Math.max(0, bottom + endOffset - view.clientHeight);
+  }, [endOffset]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
@@ -161,14 +173,28 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     return endOfContent();
   }, [anchorId, anchorOffset, endOfContent]);
 
+  /**
+   * True while the way-back button's own scroll is still travelling.
+   *
+   * Without it that scroll never happened. `jump` asks for `behavior: smooth`
+   * and then sets `following`, which re-runs the effect below, whose first act
+   * is `view.scrollTop = target()` — an assignment, which cancels a smooth
+   * scroll on the spot. Measured: the view went from 0 to 1088 inside 80ms,
+   * so the button teleported instead of travelling and a reader lost their
+   * place with nothing to follow.
+   *
+   * A ref rather than state: nothing renders differently for it, and a render
+   * in the middle of a scroll is the last thing this wants.
+   */
+  const travelling = useRef(false);
+
   const jump = useCallback(
     (smooth: boolean) => {
       const view = viewport.current;
       if (!view) return;
-      view.scrollTo({
-        top: target(),
-        behavior: smooth && !prefersReducedMotion() ? "smooth" : "auto",
-      });
+      const gentle = smooth && !prefersReducedMotion();
+      travelling.current = gentle;
+      view.scrollTo({ top: target(), behavior: gentle ? "smooth" : "auto" });
       setFollowing(true);
     },
     [target]
@@ -185,7 +211,17 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     if (!view || !inner || typeof ResizeObserver === "undefined") return;
 
     const keepUp = () => {
-      view.scrollTop = target();
+      const want = target();
+      /* Let the way-back button's scroll finish rather than snapping past it —
+         and notice here when it has arrived, rather than waiting for a scroll
+         event. jsdom fires none, so a flag cleared only by that event stays
+         set for ever and the view stops keeping up with the answer entirely.
+         A test said so. */
+      if (travelling.current) {
+        if (Math.abs(view.scrollTop - want) > 1) return;
+        travelling.current = false;
+      }
+      view.scrollTop = want;
     };
     keepUp();
 
@@ -207,6 +243,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     if (!view) return;
 
     const away = () => {
+      // A reader who touches the view during the journey has taken it over.
+      travelling.current = false;
       if (Math.abs(view.scrollTop - target()) > threshold) setFollowing(false);
     };
 
@@ -243,7 +281,11 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       if (!follow) return;
       const view = viewport.current;
       if (!view) return;
-      if (Math.abs(view.scrollTop - target()) <= threshold) setFollowing(true);
+      if (Math.abs(view.scrollTop - target()) <= threshold) {
+        // Arrived. Following resumes and the effect may set the scroll again.
+        travelling.current = false;
+        setFollowing(true);
+      }
     },
     [follow, onScroll, threshold, target]
   );

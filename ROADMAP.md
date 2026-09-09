@@ -1121,23 +1121,18 @@ the sixth is the one this week kept charging for.
       The honest first step is a device, not a narrow window. A resized
       desktop browser does not have a keyboard that steals half the viewport.
 
-- [ ] **I1a · The last 49 pixels of the follow.** Closed the big one — the
-      demo's scroller stood 93px taller than the page because of a
-      screen-height `padding-bottom`, and everything drawn in those 93px was
-      clipped away while the follow logic believed it was on screen. What is
-      left is smaller and real: `npm run follow-check` reports the newest line
-      up to **49px** behind on **7 of 61** growth steps of a long answer, in
-      one unbroken run rather than scattered.
+- [x] **I1a · The last 49 pixels of the follow — and they were the composer.**
+      Closed, and it turned out not to be a scroll fault at all. The demo set
+      the anchor on submit and never let go of it, so the view stayed pinned to
+      that question for the rest of the session: the newest line fell behind by
+      up to 49px on the last steps of a long answer, and the composer — which
+      in this kit is the *next* turn — sat below the fold permanently. You
+      could finish reading an answer and have nowhere visible to type.
 
-      Three readings of this were wrong before that one was right — a sampler
-      in `requestAnimationFrame` reads the scroll before the component has been
-      told the content grew and invents a one-frame lag on every step; the last
-      `[id^="turn-"]` in the document is the empty composer row, not an answer;
-      and `getBoundingClientRect` during a turn's entrance is the animation, not
-      the layout. The check now samples in a `ResizeObserver` registered after
-      the kit's own, which is where the reader stands.
-
-      It exits non-zero on purpose until this is closed.
+      Released on `resting` and both go together: 0 of 56 growth steps behind,
+      and the composer lands 124px clear of the bottom edge. `follow-check` is
+      in the gate now, and fails on the old behaviour with four assertions
+      rather than one.
 
 - [ ] **I2 · A fixed composer at the bottom, as an alternative to the
       inline one.** The whole kit is built on the input *being* the message.

@@ -116,7 +116,6 @@ for (const story of stories) {
 
   const violations = await page.evaluate(
     ([source, tolerance, phone]) => {
-      // eslint-disable-next-line no-eval
       (0, eval)(source);
       return window.__visualQa(tolerance, { phone });
     },
