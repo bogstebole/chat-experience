@@ -49,10 +49,41 @@ for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium 
   await beat(page, 400);
   check("at rest, before anything", false, locked(await meta(page)));
 
+  /* Read *inside* a capture-phase `focusin`, not after the tap has settled.
+  
+     This is the assertion the whole check exists for and the first version did
+     not make. Safari decides whether to zoom as focus lands, so the lock has to
+     already be there at that instant — and a lock applied in the hook's own
+     `focusin` handler still ends up in place a moment later, which is what a
+     read-after-the-fact sees. Measured: with the hook on `focusin` this check
+     passed while the page still zoomed. Capture runs before bubble, and this
+     listener is registered before the hook's, so what it reads is what Safari
+     had to work with. */
+  await page.evaluate(() => {
+    window.__atFocus = null;
+    document.addEventListener(
+      "focusin",
+      () => {
+        if (window.__atFocus === null) {
+          window.__atFocus = document
+            .querySelector('meta[name="viewport"]')
+            .getAttribute("content");
+        }
+      },
+      true
+    );
+  });
+
   const editor = page.locator("[contenteditable]").last();
   if (touch) await editor.tap(); else await editor.click();
   await beat(page, 400);
   check("while the composer has focus", touch, locked(await meta(page)));
+  const atFocus = await page.evaluate(() => window.__atFocus);
+  check(
+    "and it was already locked at the instant focus landed",
+    touch,
+    atFocus !== null && locked(atFocus)
+  );
 
   // Through the attachment fan: the path that was still zooming.
   await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
@@ -60,9 +91,16 @@ for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium 
   const add = page.getByRole("button", { name: "Add", exact: true });
   if (touch) await add.tap(); else await add.click();
   await beat(page, 700);
+  await page.evaluate(() => (window.__atFocus = null));
   const card = page.locator("[class*='addCardFan']").first();
   if (await card.count()) { touch ? await card.tap() : await card.click(); await beat(page, 700); }
   check("after the attachment fan focuses the editor", touch, locked(await meta(page)));
+  const viaFan = await page.evaluate(() => window.__atFocus);
+  check(
+    "and the fan's route was locked in time too",
+    touch,
+    viaFan !== null && locked(viaFan)
+  );
 
   // A tap on something that is not a field must give pinch-zoom back.
   const header = page.locator("header button").first();
