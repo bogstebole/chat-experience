@@ -184,6 +184,34 @@ check(
     (late.length ? `, worst ${Math.max(...late.map((s) => s.below))}px` : "")
 );
 
+/* ── The way back ──────────────────────────────────────────────────────────
+   Scroll up to read something, then press the button that offers to take you
+   back. It has to *travel*: `jump` asks for a smooth scroll and the effect
+   that keeps up with an answer used to overwrite `scrollTop` in the same
+   frame, which cancels one. Measured before the fix — 0 to 1088 inside 80ms,
+   a teleport, and a reader loses their place with nothing to follow. */
+/* With the wheel, not `scrollTo`. The component reads intent from the input on
+   purpose — a programmatic scroll is not somebody choosing to leave, so it
+   never raises the button, and a check that scrolls that way is testing
+   nothing. */
+await page.mouse.move(560, 400);
+await page.mouse.wheel(0, -1400);
+await beat(page, 900);
+const button = page.getByRole("button", { name: /jump to the latest/i });
+const shown = await button.count();
+check(shown > 0, "the way-back button appears once you have scrolled away");
+if (shown) {
+  const at = () => page.evaluate(() => Math.round(document.querySelector(".chatFeed").scrollTop));
+  await button.click();
+  const path = [];
+  for (let i = 0; i < 8; i++) {
+    await beat(page, 70);
+    path.push(await at());
+  }
+  const stops = new Set(path).size;
+  check(stops >= 3, `and travels rather than teleporting: ${path.join(" → ")}`);
+}
+
 await browser.close();
 site.close();
 console.log(bad ? `\n  ${bad} wrong\n` : "\n  keeps up, and still takes a sent message to the top\n");
