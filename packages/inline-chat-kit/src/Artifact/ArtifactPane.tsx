@@ -130,6 +130,10 @@ export function ArtifactPane({
           It only became a problem when the pane stopped being an `<aside>`,
           which would have scoped it; the axe pass caught the consequence a
           minute after it caught the cause. */}
+      {/* The strip that says "pull me", and only where pulling does something.
+          Not a control: pressing it does nothing, so it is `aria-hidden` and
+          the close button beside it is the reachable way out. */}
+      {modal && <span className={styles.grabber} aria-hidden />}
       <div className={styles.head}>
         <div className={styles.headText}>
           <h2 className={styles.title} id={titleId} ref={heading} tabIndex={-1}>

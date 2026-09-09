@@ -110,6 +110,68 @@ export const PaneSkeleton: Story = {
 };
 
 /**
+ * The same pane on a phone, where it is a **sheet**.
+ *
+ * Not a second component. It is `ArtifactPane` told it is modal, placed by
+ * `ChatLayout`, which is the only thing that changes: a sheet and a pane
+ * disagree about position and about how you get out of them, and about
+ * nothing else. Two components would be two answers to focus, Escape and the
+ * drag that would then have to be kept in step — the same duplication one
+ * `Button` and one `DisclosureHeader` exist to avoid.
+ *
+ * It has its own story because it has its own appearance, and appearance is
+ * what Storybook is the source of truth for. Reaching it by dragging the
+ * viewport narrower on the story above is a thing nobody does.
+ *
+ * What is worth looking at is the gesture, and it is settled by `touch-action`
+ * rather than by code: the body says `pan-y`, so a finger that starts on the
+ * document scrolls the document and never drags the sheet; the header and the
+ * grabber have no scroller under them and drag it. Then distance **or** speed
+ * dismisses — 120px or 600px a second — because distance alone loses a flick
+ * and speed alone throws away a deliberate peek.
+ */
+export const Sheet: Story = {
+  parameters: { viewport: { defaultViewport: "mobile1" }, layout: "fullscreen" },
+  render: function Sheet() {
+    const artifacts = useArtifacts("plan");
+
+    return (
+      <div style={{ height: 640, width: 390, display: "flex" }}>
+        <ChatLayout
+          onDismiss={artifacts.close}
+          pane={({ narrow, expanded, toggleExpanded }) =>
+            artifacts.openId ? (
+              <ArtifactPane
+                title="5k training plan"
+                meta="8 weeks · 4 runs a week"
+                modal={narrow}
+                expanded={expanded}
+                onToggleExpanded={toggleExpanded}
+                onClose={artifacts.close}
+              >
+                <pre style={{ margin: 0, font: "inherit", whiteSpace: "pre-wrap" }}>{PLAN}</pre>
+              </ArtifactPane>
+            ) : null
+          }
+        >
+          <Conversation scrollButton={false}>
+            <ArtifactCard
+              id="plan"
+              title="5k training plan"
+              meta="8 weeks"
+              kind="text"
+              content={PLAN}
+              open={artifacts.openId === "plan"}
+              onOpen={artifacts.toggle}
+            />
+          </Conversation>
+        </ChatLayout>
+      </div>
+    );
+  },
+};
+
+/**
  * The whole pattern: press the card, the plan opens on the right, press it
  * again and it closes.
  *
@@ -130,8 +192,19 @@ export const PaneSkeleton: Story = {
  * which says it to anybody not using one.
  *
  * Narrow the Storybook viewport past 760px of *this container* and the pane
- * covers the conversation instead — same component, told it is modal, so it
- * holds focus and answers Escape. Same entrance, at the width of everything.
+ * becomes a **sheet**: it comes up from the bottom over the conversation
+ * rather than replacing it, so a strip of what you asked stays visible while
+ * you read what came back.
+ *
+ * It is the same component, told it is modal, so it holds focus and answers
+ * Escape — and it gains two ways out that belong to the layout rather than to
+ * the pane: dragged down, or the conversation behind it pressed.
+ *
+ * The gesture is settled by `touch-action` rather than by code. The sheet's
+ * body says `pan-y`, so a finger that starts on the text scrolls the text; the
+ * header, the grabber and the space around them have no scroller under them
+ * and drag the sheet. That is the one thing that makes or breaks a sheet on
+ * the web, and it is two declarations.
  */
 export const TheWholeThing: Story = {
   render: function TheWholeThing() {
@@ -140,6 +213,7 @@ export const TheWholeThing: Story = {
     return (
       <div style={{ height: 480, display: "flex" }}>
         <ChatLayout
+          onDismiss={artifacts.close}
           pane={({ narrow, expanded, toggleExpanded }) =>
             artifacts.openId ? (
               <ArtifactPane

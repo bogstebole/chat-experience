@@ -28,6 +28,18 @@
   overflow: hidden;
 }
 
+/* The sheet's handle. Drawn, not pressable — what it says is "this edge
+   moves", and the thing that moves is the whole sheet. */
+.grabber {
+  display: block;
+  flex-shrink: 0;
+  width: var(--ick-sheet-grabber-width);
+  height: var(--ick-sheet-grabber-height);
+  margin: var(--ick-space-3) auto 0;
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-sheet-grabber);
+}
+
 /* Stays while the body moves. A title that scrolls away takes with it the only
    thing saying what is being read. */
 .head {
@@ -73,6 +85,18 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   color: var(--ick-ink);
+  /* The one thing that decides whether a web sheet feels right.
+
+     The sheet is dragged with a finger and the body is scrolled with the same
+     finger, so something has to say which. `pan-y` here gives the vertical
+     gesture to the scroller whenever it starts inside the body — so reading
+     never drags the sheet — while the header, the grabber and the margins
+     around them have no scroller under them and drag it. Two surfaces, one
+     finger, and no arbitration code at all.
+
+     `overscroll-behavior: contain` above is the other half: at the top of the
+     body a further pull does not become the page's. */
+  touch-action: pan-y;
 }
 
 /* ── Before there is anything to read ───────────────────────────────────── */

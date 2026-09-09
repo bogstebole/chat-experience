@@ -634,6 +634,25 @@
        drops along with its corners. The same 24 it uses inside itself, so the
        ring of space around the words is even the whole way out. */
     --ick-artifact-pane-inset: var(--ick-space-7);
+    /* ── The pane on a phone: a sheet, not a cover ─────────────────────────
+       Below `ChatLayout`'s breakpoint the pane used to cover the conversation
+       edge to edge, which loses the thing the pane is *about*: you cannot see
+       what you asked while reading what came back. A sheet keeps a strip of
+       the conversation in view and gives the reader an obvious way out —
+       downwards, with a thumb, which is where a thumb already is. */
+    --ick-sheet-height: 88%;
+    /* Corners at the top only. The bottom runs off the screen, and a rounded
+       edge against the bottom bezel shows the page through two notches. */
+    --ick-sheet-radius: var(--ick-radius-xl);
+    /* The strip that says "pull me". Not a control — pressing it does
+       nothing — so it is drawn small and quiet and the whole header drags. */
+    --ick-sheet-grabber: rgb(var(--ick-ink-rgb) / 0.18);
+    --ick-sheet-grabber-width: 36px;
+    --ick-sheet-grabber-height: 4px;
+    /* What the conversation goes under. Dark enough to say the sheet is on
+       top, light enough that the question you asked is still legible. */
+    --ick-sheet-scrim: rgb(var(--ick-glass-shade-rgb) / 0.28);
+
     --ick-artifact-skeleton: var(--ick-inset);
 
     /* ═══ System message ════════════════════════════════════════════════════
