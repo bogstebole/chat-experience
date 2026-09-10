@@ -467,6 +467,18 @@ describe("the room to move into", () => {
       </Conversation>
     );
     const { viewport, content } = apply(view.container, TALL);
+    /* `turn-a` at 100 and `turn-b` at 900, both 100 tall — so the
+       conversation ends at 1000, 900 of it under `turn-a` and 100 under
+       `turn-b`. The two anchors want very different amounts of room, which is
+       the difference this fixture exists to show. */
+    Object.defineProperty(view.container.querySelector("#turn-a")!, "offsetTop", {
+      value: 100,
+      configurable: true,
+    });
+    Object.defineProperty(view.container.querySelector("#turn-a")!, "offsetHeight", {
+      value: 100,
+      configurable: true,
+    });
     Object.defineProperty(view.container.querySelector("#turn-b")!, "offsetTop", {
       value: 900,
       configurable: true,
@@ -481,11 +493,28 @@ describe("the room to move into", () => {
   const tailOf = (content: HTMLElement) =>
     content.style.getPropertyValue("--ick-conversation-tail");
 
-  it("is exactly what the last turn needs to reach the anchor", () => {
+  it("is exactly what the anchored turn needs to reach the anchor", () => {
     const { content } = withTail();
     grow();
-    // 600 of screen, less 100 held above the anchor, less the turn's own 100.
+    // 600 of screen, less 100 held above the anchor, less the 100 from the
+    // anchored turn's top to the end of the conversation.
     expect(tailOf(content)).toBe("400px");
+  });
+
+  /**
+   * The measurement that was wrong the first time, in one assertion.
+   *
+   * Taking the **last turn's own height** off leaves everything between the
+   * anchor and the end unaccounted for. Here the anchored turn is the first
+   * one and there is 900px under it, so the room needed is none — but the
+   * last turn is only 100 tall, and measuring that gave 400px of room to
+   * scroll into with nothing in it. In the demo it was 536px after every
+   * answer, because the last turn there is the composer.
+   */
+  it("counts everything under the anchor, not just the last turn", () => {
+    const { content } = withTail({ anchorId: "turn-a" });
+    grow();
+    expect(tailOf(content)).toBe("0px");
   });
 
   it("shrinks to nothing once the last turn fills the screen", () => {

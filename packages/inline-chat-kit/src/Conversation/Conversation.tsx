@@ -69,21 +69,28 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
    * in a 680px view, with the last turn above the top edge), too little and
    * the newest message cannot reach the top.
    *
-   * `"auto"` measures it instead, and the measurement is exact:
+   * `"auto"` measures it instead:
    *
-   *     screen - anchorOffset - (the last turn's height)
+   *     screen - anchorOffset - (the anchored turn's top to the end) - padding
    *
-   * which puts the end of the scroll exactly where the last turn sits at the
-   * anchor: far enough that any turn can be brought to the top, and not one
-   * pixel further, so there is nowhere left to scroll that shows an empty
-   * screen. It shrinks to nothing as the last turn grows past a screenful.
+   * and the second term is the whole point. Measuring the **last turn's own
+   * height** instead — which this did first — leaves everything between the
+   * anchor and the end unaccounted for: the last turn is the composer, 44px
+   * of it, so an answer that already filled the screen still got 536px of
+   * room under it to scroll into. What the room is for is lifting the
+   * anchored turn to the top, and what stands between that turn and the
+   * bottom edge is the whole stack under it.
    *
-   * `endOffset` is deliberately **not** in that sum. The two are different
-   * distances that look alike: the end gap is where the view comes to rest,
-   * the tail is how far it is allowed to go. Subtracting one from the other
-   * costs the anchor exactly `endOffset` of travel — measured, the second
-   * message came to rest 196px down instead of 100, because the scroll ran
-   * out 96px short of where it was aiming.
+   * Sized this way, the end of the scroll lands exactly where the anchored
+   * turn sits at the anchor. So the view comes to rest **at** the end of the
+   * scroll and there is nowhere further to go — the room is spent holding the
+   * turn up, not left over underneath. It shrinks as the answer grows, which
+   * is also why an answer does not have to be chased: the content grows and
+   * the room shrinks by the same pixel, so the scroll height does not move
+   * and neither does the turn at the top.
+   *
+   * Never below `endOffset`, so a turn taller than the screen still rests
+   * with the composer clear of the bottom edge instead of jammed against it.
    *
    * Zero unless this conversation anchors, because the room exists for
    * anchoring. A number takes it over, in pixels; so does the
@@ -122,6 +129,17 @@ const THRESHOLD = 64;
  * reads the transform mid-flight; this is layout, which does not move.
  */
 const flowTop = (el: HTMLElement, view: HTMLElement): number => el.offsetTop - view.offsetTop;
+
+/** The turn the room is measured against, if it is still on the page. */
+const held0 = (view: HTMLElement, id: string | null): HTMLElement | null =>
+  id ? view.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"]`) : null;
+
+/** Written only when it changes, so an answer does not touch the DOM per frame. */
+const write = (inner: HTMLElement, applied: { current: number }, room: number): void => {
+  if (room === applied.current) return;
+  applied.current = room;
+  inner.style.setProperty("--ick-conversation-tail", `${Math.round(room)}px`);
+};
 
 /**
  * The scroll container: it keeps up with an answer as it arrives, and stops
@@ -171,8 +189,18 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
    * still has to be written down the first time.
    */
   const applied = useRef(-1);
-  /** Whether this conversation anchors at all. The tail is only for that. */
-  const anchors = useRef(false);
+  /**
+   * The turn the room is measured against: the last one anchored, held on to
+   * after the host lets go.
+   *
+   * A boolean would not do, and neither would reading `anchorId` live. The
+   * demo drops the anchor when an answer settles — holding it for ever is
+   * what pinned the composer below the fold — so a measurement that needed a
+   * live anchor would lose its subject at the end of every answer and the
+   * room would collapse under the reader. Which turn was last brought to the
+   * top does not stop being true in between messages.
+   */
+  const anchors = useRef<string | null>(null);
 
   /**
    * Where the last pixel of the last *turn* sits flush with the bottom edge.
@@ -208,17 +236,34 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     const view = viewport.current;
     const inner = content.current;
     if (!view || !inner) return;
+    if (tail !== "auto") return write(inner, applied, Math.max(0, tail));
+
+    /* The conversation's own bottom padding is room under the last turn too,
+       and it is already inside `scrollHeight`. Counting it twice puts the end
+       of the scroll below the anchor by exactly that much, which is somewhere
+       to scroll and nothing to see there. */
+    const pad = parseFloat(getComputedStyle(view).paddingBottom) || 0;
+    /* Never less than the end gap, so a turn taller than the screen still
+       comes to rest with the composer clear of the bottom edge rather than
+       jammed against it. */
+    const floor = Math.max(0, endOffset - pad);
+
     const last = inner.lastElementChild as HTMLElement | null;
-    const room =
-      tail !== "auto"
-        ? Math.max(0, tail)
-        : anchors.current && last
-          ? Math.max(0, view.clientHeight - anchorOffset - last.offsetHeight)
-          : 0;
-    if (room === applied.current) return;
-    applied.current = room;
-    inner.style.setProperty("--ick-conversation-tail", `${Math.round(room)}px`);
-  }, [tail, anchorOffset]);
+    const held = held0(view, anchors.current);
+    if (!last || !held) return write(inner, applied, floor);
+
+    /* **From the anchored turn to the end of the conversation** — not the last
+       turn's own height, which is what this measured first and is wrong by
+       everything in between. The last turn is the composer, 44px of it, so an
+       answer that already filled the screen still got a screen of room under
+       it: 536px of nothing to scroll into after every answer.
+    
+       What the room is for is lifting the anchored turn to the top, and what
+       stands between it and the bottom edge is the whole stack under it. So
+       that is what comes off. */
+    const stack = flowTop(last, view) + last.offsetHeight - flowTop(held, view);
+    write(inner, applied, Math.max(floor, view.clientHeight - anchorOffset - stack - pad));
+  }, [tail, anchorOffset, endOffset]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
@@ -298,7 +343,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        collapse at the end of every answer and take the view with it. What is
        true is that this conversation *anchors*, and that does not stop being
        true between messages. */
-    if (anchorId) anchors.current = true;
+    if (anchorId) anchors.current = anchorId;
     const view = viewport.current;
     const inner = content.current;
     fitTail();

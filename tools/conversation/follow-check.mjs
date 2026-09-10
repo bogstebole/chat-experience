@@ -142,6 +142,25 @@ for (const [i, q] of QUESTIONS.entries()) {
     `after answer ${i + 1} the composer is in view, ${rest.under}px clear of the bottom edge`
   );
   restingPlaces.push(rest.under);
+
+  /* And there is nowhere further to go.
+  
+     This is the assertion that was missing when the room under the last turn
+     was first measured, and it is the one that says the room is *spent*
+     rather than left over. The room exists to lift a turn to the top; sized
+     right, the end of the scroll is exactly where that turn sits at the
+     anchor, so coming to rest and running out of scroll are the same place.
+     Any gap between them is somewhere a reader can scroll with nothing in it
+     — 536px of it after every answer, when the measurement took the last
+     turn's own height instead of everything under the anchor. */
+  const spare = await page.evaluate(() => {
+    const view = document.querySelector(".chatFeed");
+    return Math.round(view.scrollHeight - view.clientHeight - view.scrollTop);
+  });
+  check(
+    spare <= 8,
+    `and answer ${i + 1} leaves nowhere further to scroll: ${spare}px of room under the view`
+  );
 }
 
 /* Every answer has to leave the reader in the *same* place.
@@ -273,14 +292,20 @@ const bottomOut = await page.evaluate(() => {
     height: Math.round(v.height),
   };
 });
+/* Measured against where the view already rests, not against a number typed
+   in here. Sized right the two are the same place, so scrolling as far as it
+   will go shows what resting shows — the last turn, with the end gap under
+   it. Before, the same drag ended 61px above the top edge on a blank page. */
+const restingGap = restingPlaces[restingPlaces.length - 1];
 check(
-  bottomOut.fromTop >= 0 && bottomOut.fromTop <= ANCHOR + 8,
+  bottomOut.fromTop >= 0 && bottomOut.fromTop + 8 < bottomOut.height,
   `scrolled as far as it goes, the last turn is still on screen — ` +
-    `${bottomOut.fromTop}px from the top of a ${bottomOut.height}px view, wanted at most ${ANCHOR}`
+    `${bottomOut.fromTop}px from the top of a ${bottomOut.height}px view`
 );
 check(
-  bottomOut.blankBelow < bottomOut.height,
-  `and the screen is never blank: ${bottomOut.blankBelow}px of room under the last turn`
+  bottomOut.blankBelow <= restingGap + 8,
+  `and what is under it is the end gap, not a screenful: ` +
+    `${bottomOut.blankBelow}px, and the view rests at ${restingGap}px`
 );
 
 /* ── The way back ──────────────────────────────────────────────────────────
