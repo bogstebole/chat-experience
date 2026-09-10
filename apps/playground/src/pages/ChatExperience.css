@@ -61,12 +61,12 @@
    overflow the column without being clipped. */
 .chatFeed {
   padding-top: 100px;
-  /* The tail is a token on the content wrapper now, not padding here. Padding
-     on a scroll container is a floor under its own height — 99vh of it made
-     this scroller 773px tall inside a 680px page, and the 93px that spilled
-     were clipped away with the newest line inside them. See the note in the
-     kit's `Conversation.module.css`. */
-  --ick-conversation-tail: 99vh;
+  /* No tail is declared here any more. It was `99vh`, a guess, and a guess
+     that large meant the reader could scroll a whole screen past the end of
+     the conversation into nothing — measured, 697px of blank in a 680px view,
+     with the last turn above the top edge. `Conversation` measures it now:
+     exactly the room the last turn needs to reach the anchor, and no more.
+     See its `tail` prop. */
   padding-left: 32px;
   padding-right: 32px;
   margin-left: -32px;

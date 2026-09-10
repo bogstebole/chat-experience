@@ -665,8 +665,14 @@ export function ChatExperience() {
             anchorOffset={100}
             /* Room under the composer once an answer settles. The last turn is
                the input, and flush against the bottom edge of a phone is where
-               the browser's own chrome sits. */
-            endOffset={24}
+               the browser's own chrome sits, so this is about a composer's
+               height of air under it.
+
+               It reads larger than it used to because it now means what it
+               says. `endOfContent` counted the viewport's own `padding-top`
+               twice, so `24` here left the composer 124px clear; the same
+               124px, asked for honestly. */
+            endOffset={120}
           >
             {isEmpty && (
               <EmptyState

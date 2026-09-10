@@ -57,6 +57,39 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
    * that is also where the browser's own chrome lives.
    */
   endOffset?: number;
+  /**
+   * The empty room under the last turn, which is what lets a turn be brought
+   * to the top at all.
+   *
+   * An element cannot be scrolled to the top of a container that ends just
+   * below it — so `anchorId` only works if there is somewhere to scroll into.
+   * That room used to be a guess written in the host's stylesheet, `99vh`,
+   * and a guess is wrong in both directions at once: too much of it and the
+   * reader can scroll a whole screen into nothing (measured: 697px of blank
+   * in a 680px view, with the last turn above the top edge), too little and
+   * the newest message cannot reach the top.
+   *
+   * `"auto"` measures it instead, and the measurement is exact:
+   *
+   *     screen - anchorOffset - (the last turn's height)
+   *
+   * which puts the end of the scroll exactly where the last turn sits at the
+   * anchor: far enough that any turn can be brought to the top, and not one
+   * pixel further, so there is nowhere left to scroll that shows an empty
+   * screen. It shrinks to nothing as the last turn grows past a screenful.
+   *
+   * `endOffset` is deliberately **not** in that sum. The two are different
+   * distances that look alike: the end gap is where the view comes to rest,
+   * the tail is how far it is allowed to go. Subtracting one from the other
+   * costs the anchor exactly `endOffset` of travel — measured, the second
+   * message came to rest 196px down instead of 100, because the scroll ran
+   * out 96px short of where it was aiming.
+   *
+   * Zero unless this conversation anchors, because the room exists for
+   * anchoring. A number takes it over, in pixels; so does the
+   * `--ick-conversation-tail` token, which this writes.
+   */
+  tail?: "auto" | number;
   /** Switch the whole thing off and it is a plain scroll container. */
   follow?: boolean;
   /**
@@ -73,6 +106,22 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const THRESHOLD = 64;
+
+/**
+ * How far down the scroll an element's top sits, in layout coordinates.
+ *
+ * `offsetTop` is measured from the nearest **positioned** ancestor, which here
+ * is the root — the viewport itself is not positioned, so every turn and the
+ * wrapper around them all report against the same origin. Adding the
+ * wrapper's own `offsetTop` to a turn's, as this used to, counts the
+ * viewport's padding twice: measured in the demo, a conversation ending at
+ * 729 was read as ending at 829, and the composer came to rest 100px higher
+ * than the `endOffset` it was given.
+ *
+ * `offsetTop` rather than a rect on purpose. Turns animate in, and a rect
+ * reads the transform mid-flight; this is layout, which does not move.
+ */
+const flowTop = (el: HTMLElement, view: HTMLElement): number => el.offsetTop - view.offsetTop;
 
 /**
  * The scroll container: it keeps up with an answer as it arrives, and stops
@@ -97,6 +146,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     anchorId,
     anchorOffset = 0,
     endOffset = 0,
+    tail = "auto",
     threshold = THRESHOLD,
     scrollButton = true,
     scrollButtonLabel = "Jump to the latest",
@@ -114,6 +164,15 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
   useImperativeHandle(ref, () => viewport.current as HTMLDivElement, []);
   const content = useRef<HTMLDivElement | null>(null);
   const [following, setFollowing] = useState(true);
+  /**
+   * The tail this component last wrote, so it can tell it apart from content
+   * and so an unchanged measurement does not touch the DOM on every frame of
+   * an answer. `-1` because no measurement can produce it: a real one of zero
+   * still has to be written down the first time.
+   */
+  const applied = useRef(-1);
+  /** Whether this conversation anchors at all. The tail is only for that. */
+  const anchors = useRef(false);
 
   /**
    * Where the last pixel of the last *turn* sits flush with the bottom edge.
@@ -129,10 +188,37 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     if (!view || !inner) return 0;
     const last = inner.lastElementChild as HTMLElement | null;
     const bottom = last
-      ? inner.offsetTop + last.offsetTop + last.offsetHeight
-      : inner.offsetTop + inner.offsetHeight;
+      ? flowTop(last, view) + last.offsetHeight
+      : /* No element to measure — a consumer whose children are bare text.
+           The wrapper stands in, less the tail, which is padding this
+           component put there itself and is emphatically not content. */
+        flowTop(inner, view) + inner.offsetHeight - applied.current;
     return Math.max(0, bottom + endOffset - view.clientHeight);
   }, [endOffset]);
+
+  /**
+   * The tail, measured rather than guessed. See the `tail` prop.
+   *
+   * Written as the token the stylesheet already reads, so there is one
+   * mechanism rather than two, and written **on the wrapper** — a scroll
+   * container cannot be shorter than its own padding, which is how a 99vh pad
+   * once made a 773px scroller inside a 680px page.
+   */
+  const fitTail = useCallback(() => {
+    const view = viewport.current;
+    const inner = content.current;
+    if (!view || !inner) return;
+    const last = inner.lastElementChild as HTMLElement | null;
+    const room =
+      tail !== "auto"
+        ? Math.max(0, tail)
+        : anchors.current && last
+          ? Math.max(0, view.clientHeight - anchorOffset - last.offsetHeight)
+          : 0;
+    if (room === applied.current) return;
+    applied.current = room;
+    inner.style.setProperty("--ick-conversation-tail", `${Math.round(room)}px`);
+  }, [tail, anchorOffset]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
@@ -164,10 +250,11 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       const el = view.querySelector<HTMLElement>(`[id="${CSS.escape(anchorId)}"]`);
       if (el) {
         const max = Math.max(0, view.scrollHeight - view.clientHeight);
-        const top = el.offsetTop - anchorOffset;
+        const from = flowTop(el, view);
+        const top = from - anchorOffset;
         // Where the anchored turn's last pixel sits flush with the bottom.
-        const tail = el.offsetTop + el.offsetHeight - view.clientHeight;
-        return Math.max(0, Math.min(Math.max(top, tail), max));
+        const end = from + el.offsetHeight - view.clientHeight;
+        return Math.max(0, Math.min(Math.max(top, end), max));
       }
     }
     return endOfContent();
@@ -199,6 +286,29 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     },
     [target]
   );
+
+  /* ── The room to move into ─────────────────────────────────────────────
+     Declared before the effect that keeps up, and that ordering is the point:
+     observers fire in registration order, so the tail is the right size
+     before anything reads where the end of the scroll now is. */
+  useLayoutEffect(() => {
+    /* Latched rather than read live. The demo lets go of the anchor once an
+       answer settles — holding it for ever is what pinned the composer below
+       the fold — so a tail that existed only while `anchorId` was set would
+       collapse at the end of every answer and take the view with it. What is
+       true is that this conversation *anchors*, and that does not stop being
+       true between messages. */
+    if (anchorId) anchors.current = true;
+    const view = viewport.current;
+    const inner = content.current;
+    fitTail();
+    if (!view || !inner || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(fitTail);
+    // The wrapper for the last turn's height, the viewport for the screen's.
+    observer.observe(inner);
+    observer.observe(view);
+    return () => observer.disconnect();
+  }, [anchorId, fitTail]);
 
   /* ── Keeping up ────────────────────────────────────────────────────────
      Layout effect, and the reason matters: run after paint and the answer is

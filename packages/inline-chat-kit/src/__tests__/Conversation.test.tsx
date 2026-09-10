@@ -7,20 +7,30 @@ import { Conversation } from "../Conversation/Conversation";
  * nothing to reason about. The geometry is faked here — but only the
  * geometry. Every decision still comes from the component.
  */
-let notify: (() => void) | null = null;
+/**
+ * All of them, in registration order.
+ *
+ * There is more than one now — the tail is measured by an observer registered
+ * before the one that keeps up, precisely so it runs first — and a fake that
+ * remembered only the last callback silently dropped the first. Which looks
+ * exactly like the tail never being measured.
+ */
+let watchers: (() => void)[] = [];
 
 class FakeResizeObserver {
+  private cb: () => void;
   constructor(cb: () => void) {
-    notify = cb;
+    this.cb = cb;
+    watchers.push(cb);
   }
   observe() {}
   unobserve() {}
   disconnect() {
-    notify = null;
+    watchers = watchers.filter((w) => w !== this.cb);
   }
 }
 
-const grow = () => act(() => notify?.());
+const grow = () => act(() => watchers.forEach((w) => w()));
 
 interface Layout {
   /** Height of the visible area. */
@@ -55,7 +65,7 @@ const TALL: Layout = { clientHeight: 600, contentTop: 0, contentHeight: 1000, sc
 beforeEach(() => vi.stubGlobal("ResizeObserver", FakeResizeObserver));
 afterEach(() => {
   vi.unstubAllGlobals();
-  notify = null;
+  watchers = [];
 });
 
 describe("keeping up", () => {
@@ -434,5 +444,138 @@ describe("holding a turn at the top", () => {
 
     fireEvent.click(container.querySelector("button")!);
     expect(viewport.scrollTop).toBe(900);
+  });
+});
+
+/**
+ * The room under the last turn, and why it is measured rather than declared.
+ *
+ * An element cannot be scrolled to the top of a container that ends just below
+ * it, so `anchorId` needs somewhere to scroll into. The demo used to declare
+ * that room in its own stylesheet as `99vh`, and a guess is wrong in both
+ * directions at once: measured in the built demo, the reader could scroll
+ * 697px past the end of a 680px view — a completely blank screen, with the
+ * last turn above the top edge.
+ */
+describe("the room to move into", () => {
+  /** 600 tall, a last turn 100 tall, and the content ending at 1000. */
+  const withTail = (props: Record<string, unknown> = {}) => {
+    const view = render(
+      <Conversation anchorId="turn-b" anchorOffset={100} {...props}>
+        <div id="turn-a">first</div>
+        <div id="turn-b">second</div>
+      </Conversation>
+    );
+    const { viewport, content } = apply(view.container, TALL);
+    Object.defineProperty(view.container.querySelector("#turn-b")!, "offsetTop", {
+      value: 900,
+      configurable: true,
+    });
+    Object.defineProperty(view.container.querySelector("#turn-b")!, "offsetHeight", {
+      value: 100,
+      configurable: true,
+    });
+    return { ...view, viewport, content };
+  };
+
+  const tailOf = (content: HTMLElement) =>
+    content.style.getPropertyValue("--ick-conversation-tail");
+
+  it("is exactly what the last turn needs to reach the anchor", () => {
+    const { content } = withTail();
+    grow();
+    // 600 of screen, less 100 held above the anchor, less the turn's own 100.
+    expect(tailOf(content)).toBe("400px");
+  });
+
+  it("shrinks to nothing once the last turn fills the screen", () => {
+    const { container, content } = withTail();
+    Object.defineProperty(container.querySelector("#turn-b")!, "offsetHeight", {
+      value: 900,
+      configurable: true,
+    });
+    grow();
+    expect(tailOf(content)).toBe("0px");
+  });
+
+  /**
+   * The end gap is where the view comes to rest; the tail is how far it is
+   * allowed to go. They look like the same distance and are not, and taking
+   * one out of the other costs the anchor exactly `endOffset` of travel —
+   * measured in the browser, the second message came to rest 196px down
+   * instead of 100 because the scroll ran out 96px short.
+   */
+  it("is not shortened by the end gap, which is a different distance", () => {
+    const { content } = withTail({ endOffset: 120 });
+    grow();
+    expect(tailOf(content)).toBe("400px");
+  });
+
+  /* A transcript that never anchors has nothing to scroll a turn up to, and
+     room under it would only be room to scroll into nothing. */
+  it("is nothing at all when the conversation does not anchor", () => {
+    const { container } = render(
+      <Conversation>
+        <div id="turn-a">first</div>
+      </Conversation>
+    );
+    const { content } = apply(container, TALL);
+    grow();
+    expect(tailOf(content)).toBe("0px");
+  });
+
+  /* And it stays once an anchor has been used, because the demo lets go of
+     the anchor when an answer settles. A tail that collapsed at that moment
+     would take the view down with it at the end of every answer. */
+  it("stays after the anchor is let go of", () => {
+    const { rerender, container, content } = withTail();
+    grow();
+    expect(tailOf(content)).toBe("400px");
+    rerender(
+      <Conversation anchorOffset={100}>
+        <div id="turn-a">first</div>
+        <div id="turn-b">second</div>
+      </Conversation>
+    );
+    Object.defineProperty(container.querySelector("#turn-b")!, "offsetHeight", {
+      value: 100,
+      configurable: true,
+    });
+    grow();
+    expect(tailOf(content)).toBe("400px");
+  });
+
+  it("hands over to a number", () => {
+    const { content } = withTail({ tail: 64 });
+    grow();
+    expect(tailOf(content)).toBe("64px");
+  });
+
+  /**
+   * And the end of the content is measured once, not twice.
+   *
+   * A turn's `offsetTop` is taken from the nearest positioned ancestor — the
+   * root — and so is the wrapper's, so adding the two counts the viewport's
+   * padding twice. Measured in the demo: a conversation ending at 729 read as
+   * ending at 829, and the composer came to rest 100px above the `endOffset`
+   * it was given.
+   */
+  it("does not count the padding above the conversation as content", () => {
+    const { container } = render(
+      <Conversation>
+        <div id="turn-a">only</div>
+      </Conversation>
+    );
+    const { viewport } = apply(container, { ...TALL, contentTop: 100 });
+    Object.defineProperty(container.querySelector("#turn-a")!, "offsetTop", {
+      value: 900,
+      configurable: true,
+    });
+    Object.defineProperty(container.querySelector("#turn-a")!, "offsetHeight", {
+      value: 100,
+      configurable: true,
+    });
+    grow();
+    expect(viewport.scrollTop).toBe(400); // 1000 - 600, not 1100 - 600
   });
 });

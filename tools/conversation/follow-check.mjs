@@ -38,8 +38,15 @@ const BASE = site.url;
 const beat = (p, ms) => p.waitForTimeout(ms);
 
 const HEIGHT = Number(process.argv[2] ?? 680);
-/** The demo's `anchorOffset`: the header sits over the top of the feed. */
-const ANCHOR = 100;
+/**
+ * The demo's `anchorOffset`, read off the page rather than restated here.
+ *
+ * It used to be a `100` written in this file next to a `100` in the demo, and
+ * two copies of a number are one copy of a number and one thing that will
+ * disagree with it. The demo sets its `anchorOffset` to match the feed's own
+ * `padding-top`, so the page can be asked.
+ */
+let ANCHOR = 100;
 /**
  * A single frame behind is a repaint, not a fault — the content grew and the
  * scroll caught it on the next one, 16ms later and 11px down. A run of them is
@@ -68,6 +75,11 @@ await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 await beat(page, 900);
 await page.getByRole("button", { name: /start experience/i }).click();
 await beat(page, 1500);
+
+ANCHOR = await page.evaluate(() =>
+  Math.round(parseFloat(getComputedStyle(document.querySelector(".chatFeed")).paddingTop))
+);
+console.log(`  the feed holds an anchored turn ${ANCHOR}px down\n`);
 
 /**
  * The last turn **that has something in it**.
@@ -236,6 +248,40 @@ if (await fold.count()) {
     `a panel opens where it was pressed: its header sat at ${before}px and now sits at ${after}px`
   );
 }
+
+/* ── The end of the scroll ─────────────────────────────────────────────────
+   How far past the conversation a reader can go, which is the other half of
+   holding a turn at the top: a turn can only be brought to the top if there is
+   room under it to scroll into, and that room used to be a flat `99vh` in the
+   demo's stylesheet. Measured before this: 697px of blank in a 680px view,
+   with the last turn above the top edge — a completely empty screen at the
+   bottom of every conversation.
+
+   `Conversation` measures the room now, so the end of the scroll is exactly
+   where the last turn sits at the anchor. Which is what this asserts: scroll
+   as far as it goes and the last turn is *there*, not gone. */
+const bottomOut = await page.evaluate(() => {
+  const view = document.querySelector(".chatFeed");
+  view.scrollTop = view.scrollHeight;
+  const inner = view.firstElementChild;
+  const last = inner.lastElementChild;
+  const v = view.getBoundingClientRect();
+  const r = last.getBoundingClientRect();
+  return {
+    fromTop: Math.round(r.top - v.top),
+    blankBelow: Math.round(v.bottom - r.bottom),
+    height: Math.round(v.height),
+  };
+});
+check(
+  bottomOut.fromTop >= 0 && bottomOut.fromTop <= ANCHOR + 8,
+  `scrolled as far as it goes, the last turn is still on screen — ` +
+    `${bottomOut.fromTop}px from the top of a ${bottomOut.height}px view, wanted at most ${ANCHOR}`
+);
+check(
+  bottomOut.blankBelow < bottomOut.height,
+  `and the screen is never blank: ${bottomOut.blankBelow}px of room under the last turn`
+);
 
 /* ── The way back ──────────────────────────────────────────────────────────
    Scroll up to read something, then press the button that offers to take you
