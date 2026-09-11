@@ -340,20 +340,15 @@
        fault in this approach, and the one nothing on screen would show you.
        Applied only under `pointer: coarse`; see `touch.module.css`. */
     --ick-touch-gap: var(--ick-space-6);
-    /* The composer's text, one size everywhere.
-
-       It was briefly 16px on a coarse pointer, because mobile Safari zooms the
-       page in to any field whose text is under 16 and leaves it zoomed. That
-       works and it looks wrong: the composer would be the largest text on the
-       page, larger than the answer it turns into. The zoom is dealt with by
-       the host instead, by locking the scale for the moment a field is
-       focused — see `useNoFocusZoom` in the playground, and `theming.md`.
-
-       Kept as a token even though it now has one value: the size the composer
-       draws at is a thing a host might want to set, and it was already being
-       reached for through `--ick-text-sm`, which is a different idea that
-       happens to share a number. */
+    /* ── Text somebody types into ──────────────────────────────────────────
+       Two tokens rather than a reach for `--ick-text-*`, because the size a
+       field draws at is not the same idea as a step on the type scale even
+       when they share a number — and on a touch device they stop sharing it.
+       See the `pointer: coarse` block near the end of this file: mobile
+       Safari zooms the page in to any editable whose text is under 16px and
+       does not zoom back out, so every field is at least that there. */
     --ick-composer-size: var(--ick-text-sm);
+    --ick-field-size: var(--ick-text-md);
 
     --ick-duration-press: 70ms;
     --ick-duration-fast: 160ms;
@@ -1265,6 +1260,54 @@
     --ick-shadow-float-press: var(--ick-dark-shadow-float-press);
   }
 
+
+  /* ═══ A touch device ═════════════════════════════════════════════════════
+     The type scale, raised — and the reason is a platform rule, not a taste.
+
+     Mobile Safari zooms the page in to any editable whose text computes below
+     16px, and it does not zoom back out afterwards. So tapping the composer
+     threw the conversation out of frame and left it there.
+
+     There were three ways out and two of them were worse. Putting
+     `maximum-scale=1` in the viewport permanently takes pinch-zoom away from
+     everybody, for ever, to fix something that lasts as long as somebody is
+     typing. Locking the scale only while a field has focus is what this repo
+     shipped for a while: a hook that rewrote the host document's viewport
+     meta on `pointerdown` and released it afterwards. It cost two ordering
+     bugs, one race, and a guard that switched itself off for good once the
+     page was zoomed — and none of it could be checked, because no engine
+     outside a real iPhone implements zoom-on-focus at all. It was a
+     workaround for a font size, and it was never provable.
+
+     The third way is to stop being under 16px. The objection to that was
+     always that the composer would be the biggest text on the page, larger
+     than the answer it turns into — which is true if only the composer
+     moves. So the whole scale moves. 12px reading text on a 390px screen was
+     too small anyway, which is the same conclusion arrived at from the other
+     direction.
+
+     Under a fine pointer nothing here applies and the desktop is untouched. */
+  @media (pointer: coarse) {
+    :root,
+    .ick-theme {
+      --ick-text-xs: 0.75rem;    /* 12px */
+      --ick-text-sm: 0.875rem;   /* 14px */
+      --ick-text-md: 0.9375rem;  /* 15px */
+      --ick-text-lg: 1.0625rem;  /* 17px */
+
+      /* The two that carry the rule. `1rem` is the number Safari looks for,
+         and `max()` keeps it true for a host that has set its own: a theme
+         that puts the composer at 18 keeps 18, one that puts it at 13 gets
+         16 and no zoom. A floor, not an override. */
+      --ick-composer-size: max(1rem, var(--ick-text-sm));
+      --ick-field-size: max(1rem, var(--ick-text-md));
+
+      /* And the answer with them, so the composer is not the odd one out.
+         The kit's smaller text — labels, captions, the reasoning footnote —
+         follows the scale above. */
+      --ick-answer-size: 1rem;
+    }
+  }
 
   /* ═══ Migration aliases ══════════════════════════════════════════════════
      The unprefixed names components still read, pointed at the new ones so

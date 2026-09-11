@@ -1,25 +1,37 @@
 /**
- * Does the page still zoom when a field is focused on a phone?
+ * Can anything on the page make a phone zoom itself in?
  *
  *   npm run build && npm run zoom-check
  *
- * **In WebKit, because Chromium cannot show this.** Safari is the engine that
- * zooms, and it is also the engine whose `:focus-visible` disagrees — two
- * faults this week that a Chromium-only pass reported as clean. Install it
- * once with `npx playwright install webkit`.
+ * iOS zooms the page in to any editable whose text computes under 16px and
+ * does not zoom back out, so tapping the composer threw the conversation out
+ * of frame and left it there. The kit answers that by not being under 16px on
+ * a touch device — see the `pointer: coarse` block in `tokens.css`.
  *
- * What it cannot check is the zoom itself: no engine here implements
- * zoom-on-focus, so there is nothing to observe. What it checks instead is the
- * thing that was actually wrong — **when** the lock is in place. It has to be
- * on before focus lands, because Safari decides as focus lands; a lock applied
- * in the focus handler is one step late, which is what shipped and what still
- * zoomed through the attachment fan.
+ * ## Why this check looks nothing like the one it replaces
  *
- * And the other half: that the lock lets go again. A page that quietly keeps
- * `maximum-scale=1` after any tap has taken pinch-zoom away from everybody,
- * which is worse than the fault.
+ * The old answer was a hook in the host that rewrote the document's viewport
+ * meta while a field had focus, and this file used to assert the *timing* of
+ * that: that `maximum-scale=1` was in place at the instant focus landed. It
+ * cost two ordering bugs, one race, and a guard that switched itself off for
+ * good once the page was zoomed.
+ *
+ * None of which the check could see, because **no engine outside a real
+ * iPhone implements zoom-on-focus.** There was nothing to observe, so it
+ * observed a proxy, and a proxy is only as good as the belief that it stands
+ * for the thing. Twice it did not: the check went green over a version that
+ * still zoomed.
+ *
+ * A font size is not a proxy. It is the input to the platform's own rule, it
+ * is the same number in every engine, and it is either under 16 or it is not.
+ * So this measures that, in both engines, at phone width — and it would have
+ * caught every one of the faults the timing check let through.
+ *
+ * The other half is that the way out stays open: nothing may lock
+ * `maximum-scale`, because a page that quietly takes pinch-zoom away from
+ * everybody has fixed a fault that lasts seconds by breaking something that
+ * lasts for ever.
  */
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { browsers, serveStatic, skip } from "../harness.mjs";
 
@@ -27,124 +39,150 @@ const playwright = await browsers();
 if (!playwright) skip("the zoom check");
 const { webkit, chromium } = playwright;
 
-/* Against the build, not a dev server somebody remembered to start — see
-   `serveStatic`. It is the same app either way, and this one runs in CI. */
 const DIST = fileURLToPath(new URL("../../apps/playground/dist", import.meta.url));
 const site = await serveStatic(DIST, 4685);
 const BASE = site.url;
 const beat = (p, ms) => p.waitForTimeout(ms);
-const meta = (p) => p.evaluate(() => document.querySelector('meta[name="viewport"]').getAttribute("content"));
-const locked = (s) => s.includes("maximum-scale=1");
+
+/** What iOS looks for. Not a preference. */
+const FLOOR = 16;
 
 let bad = 0;
-const check = (label, want, got) => {
-  const ok = want === got;
-  if (!ok) bad++;
-  console.log(`    ${ok ? "ok  " : "FAIL"}  ${label} — ${got ? "locked" : "free"}`);
+const check = (ok, line) => {
+  if (!ok) bad += 1;
+  console.log(`    ${ok ? "ok  " : "FAIL"}  ${line}`);
 };
 
-for (const [name, engine, touch] of [["webkit touch", webkit, true], ["chromium touch", chromium, true], ["chromium mouse", chromium, false]]) {
-  const b = await engine.launch();
-  const page = await (await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: touch, isMobile: touch })).newPage();
-  await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-  await beat(page, 1000);
-  await page.getByRole("button", { name: /start experience/i }).click();
-  await beat(page, 1800);
-  console.log(`  ${name}`);
-
-  await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
-  await beat(page, 400);
-  check("at rest, before anything", false, locked(await meta(page)));
-
-  /* Read *inside* a capture-phase `focusin`, not after the tap has settled.
-  
-     This is the assertion the whole check exists for and the first version did
-     not make. Safari decides whether to zoom as focus lands, so the lock has to
-     already be there at that instant — and a lock applied in the hook's own
-     `focusin` handler still ends up in place a moment later, which is what a
-     read-after-the-fact sees. Measured: with the hook on `focusin` this check
-     passed while the page still zoomed. Capture runs before bubble, and this
-     listener is registered before the hook's, so what it reads is what Safari
-     had to work with. */
-  await page.evaluate(() => {
-    window.__atFocus = null;
-    /* Only a focus that could zoom — an editable one.
-    
-       The first version recorded the first `focusin` of any kind, and on the
-       attachment fan's route that is the card's own button taking focus. A
-       button cannot zoom anything, so nothing had locked yet and the check
-       reported a fault five runs out of six. What matters is the meta at the
-       instant the *editor* takes focus. */
-    document.addEventListener(
-      "focusin",
-      (event) => {
-        const el = event.target;
-        const editable =
-          el instanceof HTMLElement &&
-          (el.isContentEditable || el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement);
-        if (editable && window.__atFocus === null) {
-          window.__atFocus = document
-            .querySelector('meta[name="viewport"]')
-            .getAttribute("content");
-        }
-      },
-      true
-    );
+/**
+ * Every editable on the page, with the size it actually draws at.
+ *
+ * Computed off the element rather than off the token, because a token is a
+ * claim and this is the thing the platform reads. Hidden ones are skipped —
+ * the composer's file input is `display: none` and cannot zoom anything.
+ */
+const fields = (page) =>
+  page.evaluate(() => {
+    const off = ["button", "submit", "reset", "checkbox", "radio", "file", "range", "hidden", "color", "image"];
+    return [...document.querySelectorAll("input, textarea, [contenteditable]")]
+      .filter((el) => {
+        if (el instanceof HTMLInputElement && off.includes(el.type)) return false;
+        if (el.getAttribute("contenteditable") === "false") return false;
+        const cs = getComputedStyle(el);
+        return cs.display !== "none" && cs.visibility !== "hidden";
+      })
+      .map((el) => ({
+        what:
+          el.tagName.toLowerCase() +
+          (typeof el.className === "string" && el.className
+            ? `.${el.className.split(" ")[0].replace(/_.*/, "")}`
+            : ""),
+        size: Math.round(parseFloat(getComputedStyle(el).fontSize) * 100) / 100,
+      }));
   });
 
-  const editor = page.locator("[contenteditable]").last();
-  if (touch) await editor.tap(); else await editor.click();
-  /* Wait for the focus, do not assume it.
-  
-     The tap can land while the composer is still settling and miss, and then
-     every assertion below is about a field that never took focus — which
-     reads as a product failure and is a harness one. This run was green
-     standalone and red inside `npm run verify` until it waited. */
-  await page
-    .waitForFunction(() => document.activeElement?.isContentEditable === true, null, {
-      timeout: 4000,
-    })
-    .catch(() => {
-      console.log("    ??    the composer never took focus — the tap missed, not a fault");
-    });
-  await beat(page, 400);
-  check("while the composer has focus", touch, locked(await meta(page)));
-  const atFocus = await page.evaluate(() => window.__atFocus);
-  check(
-    "and it was already locked at the instant focus landed",
-    touch,
-    atFocus !== null && locked(atFocus)
-  );
+/**
+ * And the tokens themselves, resolved.
+ *
+ * A component that is not on screen right now still has to obey the rule, and
+ * the token is what it will read when it arrives. `max()` inside a custom
+ * property does not resolve until something uses it, so this uses it.
+ */
+const tokens = (page) =>
+  page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.position = "absolute";
+    probe.style.visibility = "hidden";
+    document.body.append(probe);
+    const read = (name) => {
+      probe.style.fontSize = `var(${name})`;
+      return Math.round(parseFloat(getComputedStyle(probe).fontSize) * 100) / 100;
+    };
+    const out = {
+      "--ick-composer-size": read("--ick-composer-size"),
+      "--ick-field-size": read("--ick-field-size"),
+    };
+    probe.remove();
+    return out;
+  });
 
-  // Through the attachment fan: the path that was still zooming.
-  await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
-  await beat(page, 400);
+const meta = (p) =>
+  p.evaluate(() => document.querySelector('meta[name="viewport"]')?.getAttribute("content") ?? "");
+
+for (const [name, engine, touch] of [
+  ["webkit touch", webkit, true],
+  ["chromium touch", chromium, true],
+  ["chromium mouse", chromium, false],
+]) {
+  const b = await engine.launch();
+  const page = await (
+    await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: touch, isMobile: touch })
+  ).newPage();
+  await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+  await beat(page, 1000);
+  console.log(`  ${name}`);
+
+  /* The check is about a touch device, so the first thing to establish is
+     that the engine agrees it is one. Without this the whole run could pass
+     by never applying the rule at all. */
+  const coarse = await page.evaluate(() => matchMedia("(pointer: coarse)").matches);
+  check(coarse === touch, `the engine reports a ${coarse ? "coarse" : "fine"} pointer`);
+
+  await page.getByRole("button", { name: /start experience/i }).click();
+  await beat(page, 1800);
+
+  // The attachment fan, because its card focuses the editor — the route that
+  // used to zoom when the composer on its own did not.
   const add = page.getByRole("button", { name: "Add", exact: true });
-  if (touch) await add.tap(); else await add.click();
-  await beat(page, 700);
-  await page.evaluate(() => (window.__atFocus = null));
-  const card = page.locator("[class*='addCardFan']").first();
-  if (await card.count()) { touch ? await card.tap() : await card.click(); await beat(page, 700); }
-  check("after the attachment fan focuses the editor", touch, locked(await meta(page)));
-  const viaFan = await page.evaluate(() => window.__atFocus);
-  /* No focus at all means the fan's card was not pressed — the fan animates
-     in, and a tap that lands early hits where the card is about to be. That is
-     the harness missing, not the lock arriving late, and counting the two as
-     the same thing is how a check starts reporting faults that are its own. */
-  if (viaFan === null) {
-    console.log("    ??    the fan's card never focused anything — the tap missed, not a fault");
-  } else {
-    check("and the fan's route was locked in time too", touch, locked(viaFan));
+  if (await add.count()) {
+    touch ? await add.tap() : await add.click();
+    await beat(page, 700);
   }
 
-  // A tap on something that is not a field must give pinch-zoom back.
-  const header = page.locator("header button").first();
-  if (touch) await header.tap(); else await header.click();
-  await beat(page, 500);
-  check("after a tap on a button", false, locked(await meta(page)));
+  const seen = await fields(page);
+  const small = seen.filter((f) => f.size < FLOOR);
+  check(
+    seen.length > 0,
+    `${seen.length} editable${seen.length === 1 ? "" : "s"} on the page: ` +
+      seen.map((f) => `${f.what} ${f.size}px`).join(", ")
+  );
+  if (touch) {
+    check(
+      small.length === 0,
+      small.length
+        ? `and ${small.length} of them would zoom the page: ` +
+          small.map((f) => `${f.what} ${f.size}px`).join(", ")
+        : `and none of them is under ${FLOOR}px, so there is nothing to zoom`
+    );
+  }
+
+  const size = await tokens(page);
+  const named = Object.entries(size).map(([k, v]) => `${k} ${v}px`).join(", ");
+  if (touch) {
+    check(
+      Object.values(size).every((v) => v >= FLOOR),
+      `the tokens a field reads are at or over ${FLOOR}px — ${named}`
+    );
+  } else {
+    /* The other direction, and it is worth an assertion of its own: a rule
+       that applied everywhere would pass the check above and quietly make the
+       desktop 16px too. The scale is meant to move on touch devices only. */
+    check(
+      Object.values(size).every((v) => v < FLOOR),
+      `and a mouse is left alone — ${named}`
+    );
+  }
+
+  /* Nothing may take pinch-zoom away. This is what the old hook did for the
+     length of a tap, and it is what a `maximum-scale` in the document would
+     do for ever. Either way the reader loses the way out. */
+  const viewport = await meta(page);
+  check(
+    !/maximum-scale|user-scalable\s*=\s*no/.test(viewport),
+    `and the page can still be pinched — ${viewport || "no viewport meta"}`
+  );
 
   await b.close();
 }
 site.close();
-console.log(bad ? `\n  ${bad} wrong\n` : "\n  all behave\n");
+console.log(bad ? `\n  ${bad} wrong\n` : "\n  nothing on the page can make it zoom\n");
 process.exit(bad ? 1 : 0);

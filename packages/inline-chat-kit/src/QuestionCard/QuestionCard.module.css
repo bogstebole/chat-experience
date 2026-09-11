@@ -314,7 +314,9 @@
   all: unset;
   width: 100%;
   font-family: var(--ick-font-sans);
-  font-size: var(--ick-text-md);
+  /* Not `--ick-text-md`: this is text somebody types into, and on a touch
+     device that is a different size. See `--ick-field-size`. */
+  font-size: var(--ick-field-size);
   color: var(--ick-ink);
   caret-color: var(--ick-ink);
 }
@@ -368,7 +370,9 @@
   all: unset;
   width: 100%;
   font-family: var(--ick-font-sans);
-  font-size: var(--ick-text-md);
+  /* Not `--ick-text-md`: this is text somebody types into, and on a touch
+     device that is a different size. See `--ick-field-size`. */
+  font-size: var(--ick-field-size);
   color: var(--ick-ink);
   caret-color: var(--ick-ink);
 }

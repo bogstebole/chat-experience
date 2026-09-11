@@ -265,23 +265,34 @@ insets to report anything but zero:
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 ```
 
-**The zoom on focus.** iOS zooms the page in to any editable whose text is
-under 16px and does not zoom back out, so tapping the composer — which draws
-at `--ick-composer-size`, 12px — throws the conversation out of frame and
-leaves it there.
+**The zoom on focus.** iOS zooms the page in to any editable whose text
+computes under 16px, and it does not zoom back out. Tapping the composer threw
+the conversation out of frame and left it there.
 
-There are three ways out and only one of them is good.
+**The kit handles this and you do not have to do anything.** Under
+`@media (pointer: coarse)` the type scale is raised and two tokens carry a
+floor:
+
+```css
+--ick-composer-size: max(1rem, var(--ick-text-sm));
+--ick-field-size:    max(1rem, var(--ick-text-md));
+```
+
+`max()` rather than a flat `1rem`, so a theme that puts the composer at 18px
+keeps 18 and a theme that puts it at 13 gets 16 — a floor, not an override.
+Anything somebody types into should draw at `--ick-field-size`; that is the
+token the guard in `tools/mobile/zoom-check.mjs` asserts against, in both
+engines, at phone width.
+
+There were three ways out and two of them were worse.
 
 | | |
 | --- | --- |
-| Set the composer to 16px | Works. The composer becomes the largest text on the page, bigger than the answer it turns into. |
 | `maximum-scale=1` in the meta | Works. Takes pinch-zoom away from everybody, permanently, for a fault that lasts as long as somebody is typing. |
-| Lock the scale **while a field has focus** | Works, and costs nothing the rest of the time. |
+| Lock the scale **while a field has focus** | What this repo shipped for a while — a hook rewriting the host's viewport meta on `pointerdown`. It cost two ordering bugs, one race, and a guard that switched itself off for good once the page was zoomed. None of it could be checked: no engine outside a real iPhone implements zoom-on-focus, so every green run proved nothing. |
+| **Stop being under 16px** | What the kit does. Checkable everywhere, and there is nothing left to go wrong. |
 
-The third is a change to the host's own `<meta>`, which is why the kit does not
-make it: a component library that rewrites the page's viewport as a side effect
-of being rendered is a surprise, not a library. `apps/playground/src/useNoFocusZoom.ts`
-is a copyable implementation — it swaps `maximum-scale` in on `focusin` and out
-on `focusout`, does nothing at all on a fine pointer, and stands aside for a
-reader who has pinched to zoom themselves, since snapping them back out is
-worse than the fault.
+The objection to the third was always that the composer would become the
+largest text on the page, bigger than the answer it turns into — true if only
+the composer moves. So the whole scale moves, on touch devices only. 12px
+reading text on a 390px screen was too small anyway.
