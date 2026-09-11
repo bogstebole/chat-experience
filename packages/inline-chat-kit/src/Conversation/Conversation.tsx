@@ -201,6 +201,16 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
    * top does not stop being true in between messages.
    */
   const anchors = useRef<string | null>(null);
+  /**
+   * Whether the room was actually measured against a turn that is on the page.
+   *
+   * Not the same question as whether this conversation anchors. A host can
+   * name an anchor that is not there — a turn removed, an id that never
+   * matched — and then there was nothing to size the room against and the end
+   * of the scroll means nothing in particular. The end of the *content* is
+   * the honest answer in that case.
+   */
+  const sized = useRef(false);
 
   /**
    * Where the last pixel of the last *turn* sits flush with the bottom edge.
@@ -214,6 +224,24 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     const view = viewport.current;
     const inner = content.current;
     if (!view || !inner) return 0;
+
+    /* When the kit sized the room, the end of the scroll is where the room
+       was **aimed** — the anchored turn at the top — so that is where coming
+       to rest means something.
+    
+       Measuring the end of the content instead only agrees with it while the
+       answer is longer than the screen. Below that the room is bigger than
+       the floor, the end of the scroll moves down with it, and resting at the
+       end of the *content* leaves the difference unspent: measured in a
+       1400px window, 585px and 551px of it after the second and third
+       answers, with the turn that had just been sent left in the middle of
+       the view instead of at the top. The first fix for this was checked
+       only against answers longer than the screen, where the two numbers are
+       the same and nothing shows. */
+    if (tail === "auto" && sized.current) {
+      return Math.max(0, view.scrollHeight - view.clientHeight);
+    }
+
     const last = inner.lastElementChild as HTMLElement | null;
     const bottom = last
       ? flowTop(last, view) + last.offsetHeight
@@ -222,7 +250,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
            component put there itself and is emphatically not content. */
         flowTop(inner, view) + inner.offsetHeight - applied.current;
     return Math.max(0, bottom + endOffset - view.clientHeight);
-  }, [endOffset]);
+  }, [endOffset, tail]);
 
   /**
    * The tail, measured rather than guessed. See the `tail` prop.
@@ -250,7 +278,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
 
     const last = inner.lastElementChild as HTMLElement | null;
     const held = held0(view, anchors.current);
-    if (!last || !held) return write(inner, applied, floor);
+    sized.current = !!last && !!held;
+    if (!sized.current || !last || !held) return write(inner, applied, floor);
 
     /* **From the anchored turn to the end of the conversation** — not the last
        turn's own height, which is what this measured first and is wrong by

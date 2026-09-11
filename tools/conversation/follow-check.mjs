@@ -62,7 +62,7 @@ const QUESTIONS = [
 ];
 
 let bad = 0;
-/** Where each answer left the composer, so they can be compared. */
+/** Where each answer left the composer, reported rather than compared. */
 const restingPlaces = [];
 const check = (ok, line) => {
   if (!ok) bad += 1;
@@ -143,6 +143,53 @@ for (const [i, q] of QUESTIONS.entries()) {
   );
   restingPlaces.push(rest.under);
 
+  /* And the message you sent is still at the top when the answer is done.
+  
+     This is the assertion that matters, and it replaces one that compared
+     where each answer left the *composer*. That comparison held only while
+     every answer was longer than the screen — which is all this check ever
+     sent — because there the room falls to its floor and the composer always
+     lands the same distance from the bottom. Give the window room and the
+     answers come out shorter than it: the composer then sits directly under
+     whatever the answer turned out to be, so its distance from the bottom is
+     supposed to vary, and a spread of 43px read as a fault while a real one
+     of 551px went unnoticed for a different reason.
+  
+     Where the *turn* ends up is the thing that must not vary. It fits on the
+     screen, it is at the anchor; it does not, it has scrolled past the anchor
+     and the end of the answer is what you are looking at. */
+  const settled = await page.evaluate(() => {
+    const view = document.querySelector(".chatFeed");
+    const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
+      (t) => t.textContent.trim().length > 0
+    );
+    const last = answered[answered.length - 1];
+    const v = view.getBoundingClientRect();
+    const r = last.getBoundingClientRect();
+    return {
+      fromTop: Math.round(r.top - v.top),
+      turn: Math.round(r.height),
+      view: Math.round(v.height),
+    };
+  });
+  /* One rule, stated without repeating the component's arithmetic: the turn
+     never comes to rest **below** the anchor. It is at the anchor, or the
+     view has gone past it because the turn and the composer under it together
+     outgrew the screen. What is not allowed is what the report showed — the
+     message you sent sitting in the middle of the view with room unspent
+     beneath it.
+  
+     A first attempt did repeat the arithmetic, predicating on the turn's own
+     height, and got it wrong: a 494px turn fits a 680px view and still cannot
+     be held at the anchor, because the composer comes after it. Which is the
+     same mistake as the one being fixed, in the check instead of the code. */
+  const past = settled.fromTop < ANCHOR - 4;
+  check(
+    settled.fromTop <= ANCHOR + 4,
+    `and turn ${i + 1} rests ${past ? "past" : "at"} the anchor — ${settled.fromTop}px, ` +
+      `never below ${ANCHOR} (${settled.turn}px of turn in a ${settled.view}px view)`
+  );
+
   /* And there is nowhere further to go.
   
      This is the assertion that was missing when the room under the last turn
@@ -163,21 +210,7 @@ for (const [i, q] of QUESTIONS.entries()) {
   );
 }
 
-/* Every answer has to leave the reader in the *same* place.
-  
-   "In view" alone is not enough, and this is the assertion that was missing
-   when the first version of the press rule regressed: releasing the follow on
-   any press meant a click into the composer released it too, so when an answer
-   settled there was nothing to bring the view back — and settling is also when
-   the reasoning block folds itself away, so the content shrank by its height
-   and everything above dropped into view. The composer stayed visible, 304px
-   clear instead of 124, and the check said ok. Where an answer leaves you must
-   not depend on which answer it was. */
-const spread = Math.max(...restingPlaces) - Math.min(...restingPlaces);
-check(
-  spread <= 4,
-  `and always in the same place: ${restingPlaces.join(", ")}px clear, a spread of ${spread}`
-);
+console.log(`    (the composer came to rest ${restingPlaces.join(", ")}px clear of the bottom)`);
 
 // Now the conversation is long. Watch one more answer arrive.
 //

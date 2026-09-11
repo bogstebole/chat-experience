@@ -574,6 +574,35 @@ describe("the room to move into", () => {
     expect(tailOf(content)).toBe("400px");
   });
 
+  /**
+   * And once the room has been sized, coming to rest means the end of it.
+   *
+   * The room is aimed at holding the anchored turn at the top, so resting
+   * anywhere above the end of the scroll leaves the difference unspent and
+   * the turn somewhere in the middle of the view. That only shows when the
+   * answer is shorter than the screen — above that the room falls to its
+   * floor and the end of the content and the end of the scroll are the same
+   * number, which is why a first version checked only against long answers
+   * and found nothing.
+   */
+  it("comes to rest at the end of the scroll, not the end of the content", () => {
+    const { rerender, container, viewport } = withTail();
+    grow();
+    rerender(
+      <Conversation anchorOffset={100}>
+        <div id="turn-a">first</div>
+        <div id="turn-b">second</div>
+      </Conversation>
+    );
+    Object.defineProperty(container.querySelector("#turn-b")!, "offsetHeight", {
+      value: 100,
+      configurable: true,
+    });
+    grow();
+    expect(viewport.scrollTop).toBe(1100); // scrollHeight - clientHeight
+    expect(viewport.scrollTop).not.toBe(400); // the end of the content
+  });
+
   it("hands over to a number", () => {
     const { content } = withTail({ tail: 64 });
     grow();
