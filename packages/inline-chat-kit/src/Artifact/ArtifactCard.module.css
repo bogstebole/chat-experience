@@ -61,8 +61,17 @@
    row; a card the width of the answer needs the shadow to carry it, and the
    shadow only reads if the gap under the card actually opens. */
 .artifact:not([data-open]) .card:hover {
-  transform: translateY(-2px);
   box-shadow: var(--ick-shadow-float-lift);
+}
+
+/* The travel, only where there is something to hover with. A tap on a phone
+   fires a hover that stays, so ungated the card sat two pixels up until you
+   touched something else. The shadow stays on touch: it says which card you
+   are on without claiming the card moved. */
+@media (hover: hover) and (pointer: fine) {
+  .artifact:not([data-open]) .card:hover {
+    transform: translateY(-2px);
+  }
 }
 
 /* Pressed, including the open one — pressing that closes the pane, so it has

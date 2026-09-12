@@ -115,6 +115,16 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
 const THRESHOLD = 64;
 
 /**
+ * How long a deliberate move is given before the view goes back to tracking.
+ *
+ * A ceiling, not a duration — the browser owns how long its own smooth scroll
+ * takes. Without one, a travel that never quite arrives (because the answer
+ * kept growing and moved the target out from under it) would leave the view
+ * refusing to track for the rest of the session.
+ */
+const TRAVEL = 500;
+
+/**
  * How far down the scroll an element's top sits, in layout coordinates.
  *
  * `offsetTop` is measured from the nearest **positioned** ancestor, which here
@@ -347,14 +357,16 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
    * A ref rather than state: nothing renders differently for it, and a render
    * in the middle of a scroll is the last thing this wants.
    */
-  const travelling = useRef(false);
+  const travelling = useRef(0);
+  /** The last anchor this has already moved to, so it only moves once. */
+  const moved = useRef<string | null>(null);
 
   const jump = useCallback(
     (smooth: boolean) => {
       const view = viewport.current;
       if (!view) return;
       const gentle = smooth && !prefersReducedMotion();
-      travelling.current = gentle;
+      travelling.current = gentle ? performance.now() + TRAVEL : 0;
       view.scrollTo({ top: target(), behavior: gentle ? "smooth" : "auto" });
       setFollowing(true);
     },
@@ -407,12 +419,34 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
          set for ever and the view stops keeping up with the answer entirely.
          A test said so. */
       if (travelling.current) {
-        if (Math.abs(view.scrollTop - want) > 1) return;
-        travelling.current = false;
+        if (performance.now() < travelling.current && Math.abs(view.scrollTop - want) > 1) return;
+        travelling.current = 0;
       }
       view.scrollTop = want;
     };
-    keepUp();
+
+    /* ── Arriving at a new turn ──────────────────────────────────────────
+       A sent message travels to the top rather than appearing there.
+
+       Sending one adds a whole turn at once, so the content grows by its
+       height in a single frame and the scroll used to be assigned the new
+       position in that same frame. Measured across two answers at 1120×680:
+       three moves over 24px in the whole session and every one of them a
+       single frame — 154px, 416px, 172px — while the reasoning folding away
+       at the end was gradual and cost nothing. The sharpness was never the
+       settle; it was the send.
+
+       So the one move that is a **decision** gets to be a journey, and the
+       thousand that are tracking stay instant. Only when it is far enough to
+       be worth watching — a short hop reads better snapped than eased. */
+    const fresh = anchorId !== null && anchorId !== undefined && anchorId !== moved.current;
+    if (anchorId) moved.current = anchorId;
+    if (fresh && !prefersReducedMotion() && Math.abs(view.scrollTop - target()) > threshold) {
+      travelling.current = performance.now() + TRAVEL;
+      view.scrollTo({ top: target(), behavior: "smooth" });
+    } else {
+      keepUp();
+    }
 
     const observer = new ResizeObserver(keepUp);
     observer.observe(inner);
@@ -420,7 +454,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     /* `anchorId` is in here on purpose: a new turn means the view moves to it,
        and it moves whether or not the reader had scrolled away from the last
        one. Sending a message is asking to be taken to it. */
-  }, [follow, following, target, anchorId]);
+  }, [follow, following, target, anchorId, threshold]);
 
   /* ── Letting go ────────────────────────────────────────────────────────
      Intent, read from the input rather than inferred from the scroll event.
@@ -433,7 +467,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
 
     const away = () => {
       // A reader who touches the view during the journey has taken it over.
-      travelling.current = false;
+      travelling.current = 0;
       if (Math.abs(view.scrollTop - target()) > threshold) setFollowing(false);
     };
 
@@ -503,7 +537,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       if (!view) return;
       if (Math.abs(view.scrollTop - target()) <= threshold) {
         // Arrived. Following resumes and the effect may set the scroll again.
-        travelling.current = false;
+        travelling.current = 0;
         setFollowing(true);
       }
     },

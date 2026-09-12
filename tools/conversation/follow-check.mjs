@@ -369,6 +369,42 @@ if (shown) {
   check(stops >= 3, `and travels rather than teleporting: ${path.join(" → ")}`);
 }
 
+/* ── Sending one is a journey, not a cut ───────────────────────────────────
+   A sent message goes to the top, and it has to *travel* there. Sending adds
+   a whole turn at once, so the content grows by its height in a single frame,
+   and the scroll used to be assigned the new position in that same frame.
+   Traced at 1120×680 across two answers: three moves over 24px in the whole
+   session, every one of them a single frame — 154px, 416px, 172px. The 416
+   was the send. That is what "too sharp" was; the reasoning folding away at
+   the end was already gradual and cost nothing.
+
+   Growth is still instant on purpose and is not what this measures: easing
+   the arrival of text would mean the line being read slides for a third of a
+   second. Only the deliberate move is eased. */
+await page.evaluate(() => {
+  window.__path = [];
+  const view = document.querySelector(".chatFeed");
+  const tick = () => {
+    window.__path.push(Math.round(view.scrollTop));
+    window.__raf = requestAnimationFrame(tick);
+  };
+  window.__raf = requestAnimationFrame(tick);
+});
+await send("How big is the Higgs boson?");
+await beat(page, 420);
+const path = await page.evaluate(() => {
+  cancelAnimationFrame(window.__raf);
+  return window.__path;
+});
+const stops = new Set(path).size;
+const biggest = path.slice(1).reduce((worst, at, i) => Math.max(worst, Math.abs(at - path[i])), 0);
+check(
+  stops >= 4 && biggest < 200,
+  `a sent message travels to the top rather than cutting to it: ` +
+    `${stops} distinct positions, largest single step ${biggest}px`
+);
+await beat(page, 9000);
+
 await browser.close();
 site.close();
 console.log(bad ? `\n  ${bad} wrong\n` : "\n  keeps up, and still takes a sent message to the top\n");

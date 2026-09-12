@@ -207,7 +207,19 @@
   box-shadow: var(--ick-shadow-glass);
   backdrop-filter: blur(var(--ick-glass-blur));
   -webkit-backdrop-filter: blur(var(--ick-glass-blur));
-  transition: all var(--ick-duration-slow) var(--ick-ease);
+  /* Named, not `all`, and this is the button the composer is made of — mic,
+     plus, send — plus the X on an attachment. Pressed constantly.
+
+     `all` animates whatever happens to change, and what changes here includes
+     `backdrop-filter`: a blur re-composited every frame for 400ms, which is
+     the expensive one in Safari and buys nothing, because the blur is the
+     same before and after. Colour and shadow are the state; the lift is the
+     movement, and it is quicker, because a press is not a journey. */
+  transition:
+    background var(--ick-duration-base) var(--ick-ease),
+    color var(--ick-duration-base) var(--ick-ease),
+    box-shadow var(--ick-duration-base) var(--ick-ease),
+    transform var(--ick-duration-fast) var(--ick-ease);
 }
 
 .glass::before {
@@ -249,7 +261,19 @@
   background: var(--ick-glass-fill-hover);
   color: var(--ick-ink-glass-strong);
   box-shadow: var(--ick-shadow-glass-hover);
-  transform: translateY(-1px);
+}
+
+/* The lift only where there is something to hover with.
+   
+   A touchscreen fires a hover on tap and leaves it there until the next tap
+   somewhere else, so ungated this left the composer's buttons standing a
+   pixel high for as long as you did not touch anything — a state the design
+   has no name for. The colour and shadow above stay: those read as "this is
+   the one under your finger" and are right either way. */
+@media (hover: hover) and (pointer: fine) {
+  .glass:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
 }
 
 .glass:hover:not(:disabled)::after {
