@@ -341,6 +341,94 @@ check(
     `${bottomOut.blankBelow}px, and the view rests at ${restingGap}px`
 );
 
+/* ── While the answer is written ───────────────────────────────────────────
+   The anchored message must not move at all.
+
+   Every check here until now measured *transitions* — where a message lands,
+   where the view comes to rest, whether it travelled. None of them watched
+   the long quiet stretch in between, and that is where the fault lived: the
+   message sat at the anchor and flipped a pixel up and down for the whole
+   length of every answer after the first. Reported three times, "fixed"
+   twice, because the measurements were of the wrong moment and each one was
+   true.
+
+   It was a feedback loop. The room under the conversation is part of
+   `scrollHeight`, `target` clamps to `scrollHeight`, and the room was
+   recomputed from measurements on every frame — so the room moved the view,
+   the view moved the measurements, and the measurements moved the room.
+   Sized to be exactly enough, the clamp sat on a knife edge and a fraction of
+   a pixel chose the side. Measured before: thirty-one changes of position
+   while parked. After: two. */
+await page.evaluate(() => {
+  window.__still = [];
+  const view = document.querySelector(".chatFeed");
+  const tick = () => {
+    const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
+      (t) => t.textContent.trim().length > 0
+    );
+    const last = answered[answered.length - 1];
+    if (last) {
+      const box = last.getBoundingClientRect();
+      window.__still.push({
+        y: Math.round(box.top - view.getBoundingClientRect().top),
+        h: Math.round(box.height),
+      });
+    }
+    window.__raf2 = requestAnimationFrame(tick);
+  };
+  window.__raf2 = requestAnimationFrame(tick);
+});
+await send("What does particle physics actually study?");
+await beat(page, 11000);
+const still = await page.evaluate(() => {
+  cancelAnimationFrame(window.__raf2);
+  return window.__still;
+});
+/* Only the stretch where it is parked at the anchor: the journey there is
+   supposed to move, and so is the settle at the end. */
+/* The **longest** stretch it spends at the anchor.
+  
+   Contiguous, not a filter: filtering lets the frames after the settle back
+   in — the message comes to rest a couple of dozen pixels above the anchor,
+   inside any tolerance wide enough to be readable — and then counts the
+   settle itself as jitter.
+  
+   And the longest rather than the first, because in a tall window the message
+   *passes through* the anchor on its way and the first stretch is three
+   frames of the journey. The one worth measuring is the one it stays in. */
+/* While the answer is being **written**, which is what the assertion says.
+  
+   The window has to end when the answer does. Left open it ran on through the
+   twenty seconds of stillness afterwards and counted whatever happened there,
+   and in a tall window the message rests *at* the anchor, so there was no
+   edge to stop at. The turn's own height is the honest signal: while it grows,
+   the answer is arriving. */
+let writingUntil = 0;
+for (let i = 1; i < still.length; i++) if (still[i].h !== still[i - 1].h) writingUntil = i;
+const written = still.slice(0, writingUntil + 1);
+
+/* The longest stretch it spends at the anchor within that. Contiguous, not a
+   filter — filtering lets the settle back in and counts it as jitter — and the
+   longest rather than the first, because in a tall window the message passes
+   *through* the anchor on its way and the first stretch is three frames of the
+   journey. */
+let longest = [];
+let streak = [];
+for (const f of written) {
+  if (Math.abs(f.y - ANCHOR) <= 6) streak.push(f.y);
+  else { if (streak.length > longest.length) longest = streak; streak = []; }
+}
+if (streak.length > longest.length) longest = streak;
+const parked = longest;
+let shifts = 0;
+for (let i = 1; i < parked.length; i++) if (parked[i] !== parked[i - 1]) shifts++;
+const spread = parked.length ? Math.max(...parked) - Math.min(...parked) : 0;
+check(
+  parked.length > 200 && shifts <= 4,
+  `the anchored message holds still while its answer is written: ` +
+    `${shifts} shifts over ${parked.length} frames, ${spread}px of spread`
+);
+
 /* ── Reading back through it ───────────────────────────────────────────────
    Scrolling up must not be a fight.
 
