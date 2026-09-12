@@ -1,6 +1,8 @@
 # Changelog
 
-Dates are the day the work landed on `main`.
+Dates are the day the work landed on `main`, which is not always the day it
+reached npm: `0.52.1` and `0.53.0` were written up here and never published,
+and their changes shipped in `0.54.0`. Each is marked.
 
 The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
@@ -202,6 +204,10 @@ see *Where it is meant to run*.
 
 ## 0.53.0 — 2026-09-03
 
+> **Never published.** This version exists in this file and not on npm —
+> the registry goes `0.52.0` → `0.54.0`. Everything below shipped in 0.54.0,
+> which is the version to install if you came here looking for it.
+
 ### Changed
 
 - **The artifact card moves instead of changing colour.** Pointing at it lifted
@@ -271,6 +277,10 @@ see *Where it is meant to run*.
   viewport.
 
 ## 0.52.1 — 2026-09-03
+
+> **Never published.** This version exists in this file and not on npm —
+> the registry goes `0.52.0` → `0.54.0`. Everything below shipped in 0.54.0,
+> which is the version to install if you came here looking for it.
 
 ### Fixed
 
