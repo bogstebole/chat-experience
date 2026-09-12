@@ -8,7 +8,7 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
-## Unreleased
+## 0.54.1 — 2026-09-12
 
 ### Fixed
 
