@@ -168,18 +168,44 @@ describe("letting go", () => {
 });
 
 describe("coming back", () => {
-  it("picks the thread back up once the view is near the end again", () => {
+  it("picks the thread back up once the view is at the end again", () => {
     const { container } = render(<Conversation>answer</Conversation>);
     const { viewport, content } = apply(container, TALL);
     grow();
     fireEvent.wheel(viewport, { deltaY: -50 });
 
-    viewport.scrollTop = 380; // inside the 64px threshold of 400
+    viewport.scrollTop = 400; // the end of the content — actually back
     fireEvent.scroll(viewport);
 
     Object.defineProperty(content, "offsetHeight", { value: 1600, configurable: true });
     grow();
     expect(viewport.scrollTop).toBe(1000);
+  });
+
+  /**
+   * And not before. This assertion used to say the opposite — 380, "inside the
+   * 64px threshold of 400" — which is the fault written down as a rule.
+   *
+   * A reader on their way up passes through every distance between here and
+   * there, so treating "near" as "arrived" catches them mid-gesture and hands
+   * them back to the bottom. Measured in the browser at rest, where the end of
+   * the scroll is now exactly where the view rests: wheeling up 20, 40 and 63
+   * pixels all ended back at the bottom, and 80 was free. The first 64 pixels
+   * of reading back through a conversation were spent fighting, and then it
+   * let go all at once.
+   */
+  it("does not pick it back up while the reader is still on their way out", () => {
+    const { container } = render(<Conversation>answer</Conversation>);
+    const { viewport, content } = apply(container, TALL);
+    grow();
+    fireEvent.wheel(viewport, { deltaY: -20 });
+
+    viewport.scrollTop = 380; // 20px up: inside the old band, and still leaving
+    fireEvent.scroll(viewport);
+
+    Object.defineProperty(content, "offsetHeight", { value: 1600, configurable: true });
+    grow();
+    expect(viewport.scrollTop, "dragged back to the end mid-gesture").toBe(380);
   });
 
   it("stays let go while the view is still well away", () => {

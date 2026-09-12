@@ -125,6 +125,31 @@ const THRESHOLD = 64;
 const TRAVEL = 500;
 
 /**
+ * How close to the end counts as having **arrived** there.
+ *
+ * Not the same number as `threshold`, and the difference is the whole of a
+ * bug. `threshold` is how far you have to go before the view accepts that you
+ * have left — generous on purpose, so a small nudge does not abandon the
+ * answer you are reading. Arriving is the opposite question, and answering it
+ * with the same generosity means the view re-acquires you while you are still
+ * on your way out.
+ *
+ * Measured on a conversation at rest, which since the room under the last turn
+ * became measured is exactly the end of the scroll — so every upward scroll
+ * now starts inside that band:
+ *
+ *     wheeled up 20px  → wanted 134, ended at 154   dragged back
+ *     wheeled up 40px  → wanted 114, ended at 154   dragged back
+ *     wheeled up 63px  → wanted  91, ended at 154   dragged back
+ *     wheeled up 80px  → wanted  74, ended at  74   free
+ *
+ * The first 64 pixels of reading back through a conversation were spent
+ * fighting, and then it let go all at once — which is what "it jumps at a
+ * certain point" is. Four pixels is a rounding allowance, not an opinion.
+ */
+const ARRIVED = 4;
+
+/**
  * How far down the scroll an element's top sits, in layout coordinates.
  *
  * `offsetTop` is measured from the nearest **positioned** ancestor, which here
@@ -528,20 +553,28 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     };
   }, [follow, threshold, target, anchorId]);
 
-  /** Back at the end by any route — dragging the bar, momentum, the button. */
+  /**
+   * Back at the end by any route — dragging the bar, momentum, the button.
+   *
+   * **Arrived, not nearly.** This is the one place the component is allowed to
+   * infer intent from the scroll event rather than from the input, and it has
+   * to be strict about it: a reader on their way *up* passes through every
+   * distance between here and there, so a generous band catches them mid-
+   * gesture and hands them back to the bottom. See `ARRIVED`.
+   */
   const handleScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
       onScroll?.(event);
       if (!follow) return;
       const view = viewport.current;
       if (!view) return;
-      if (Math.abs(view.scrollTop - target()) <= threshold) {
+      if (Math.abs(view.scrollTop - target()) <= ARRIVED) {
         // Arrived. Following resumes and the effect may set the scroll again.
         travelling.current = 0;
         setFollowing(true);
       }
     },
-    [follow, onScroll, threshold, target]
+    [follow, onScroll, target]
   );
 
   const detached = follow && !following;

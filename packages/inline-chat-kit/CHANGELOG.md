@@ -10,6 +10,32 @@ existing install is called out under **Breaking**, with what to do about it.
 
 ## Unreleased
 
+### Fixed
+
+- **Scrolling up was fought for the first 64 pixels, then let go all at
+  once.** Since 0.54.0 measured the room under the last turn, the view comes
+  to rest exactly at the end of the scroll — so every upward scroll now starts
+  inside the band that counts as "back at the end", and the scroll event
+  re-acquired a reader who was still on their way out. Measured at rest, with
+  a real wheel:
+
+  | wheeled up | wanted | ended at |
+  | --- | --- | --- |
+  | 20px | 134 | **154** |
+  | 40px | 114 | **154** |
+  | 63px | 91 | **154** |
+  | 80px | 74 | 74 |
+
+  Arriving and leaving are different questions and no longer share a number.
+  `threshold` stays what it was — how far you must go before the view accepts
+  you have left, generous so a nudge does not abandon the answer you are
+  reading. Coming back now means coming back: four pixels, a rounding
+  allowance rather than an opinion.
+
+  A test asserted the old behaviour in so many words — "inside the 64px
+  threshold" — which is the fault written down as a rule. It says the opposite
+  now, beside one that pins the fault.
+
 ### Added
 
 - **[Getting started](./getting-started.md)** — one file, ten minutes, a chat

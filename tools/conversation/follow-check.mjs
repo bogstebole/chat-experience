@@ -341,6 +341,46 @@ check(
     `${bottomOut.blankBelow}px, and the view rests at ${restingGap}px`
 );
 
+/* ── Reading back through it ───────────────────────────────────────────────
+   Scrolling up must not be a fight.
+
+   Since the room under the last turn became measured, the view comes to rest
+   exactly at the end of the scroll — so every upward scroll starts inside
+   whatever band counts as "back at the end". With that band at the release
+   threshold, the scroll event re-acquired a reader who was still on their way
+   out and put them back at the bottom: measured at rest, wheeling up 20, 40
+   and 63 pixels all ended at the bottom again, and 80 was free. Sixty-four
+   pixels of fighting and then it let go all at once. */
+const held = await page.evaluate(async () => {
+  const view = document.querySelector(".chatFeed");
+  const max = view.scrollHeight - view.clientHeight;
+  const settle = () => new Promise((r) => setTimeout(r, 300));
+  const out = [];
+  for (const back of [20, 40, 63, 120]) {
+    view.scrollTop = max;
+    await settle();
+    /* A real wheel: that is what tells the component the reader left. A
+       programmatic scroll alone never releases it, so a check that only moved
+       `scrollTop` would pass against the fault. */
+    view.dispatchEvent(new WheelEvent("wheel", { deltaY: -back, bubbles: true, cancelable: true }));
+    view.scrollTop = max - back;
+    await settle();
+    out.push({ back, wanted: max - back, at: Math.round(view.scrollTop) });
+  }
+  view.scrollTop = max;
+  return out;
+});
+const dragged = held.filter((h) => Math.abs(h.at - h.wanted) > 4);
+check(
+  dragged.length === 0,
+  dragged.length
+    ? `scrolling up is fought: ` +
+      dragged.map((h) => `${h.back}px up ended at ${h.at} not ${h.wanted}`).join(", ")
+    : `scrolling up stays where it is put — ` +
+      held.map((h) => `${h.back}→${h.at}`).join(", ")
+);
+await beat(page, 400);
+
 /* ── The way back ──────────────────────────────────────────────────────────
    Scroll up to read something, then press the button that offers to take you
    back. It has to *travel*: `jump` asks for a smooth scroll and the effect
