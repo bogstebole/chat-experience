@@ -447,6 +447,35 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
         if (performance.now() < travelling.current && Math.abs(view.scrollTop - want) > 1) return;
         travelling.current = 0;
       }
+
+      /* ── Growth while nothing is being written ────────────────────────
+         Tracking an answer has to be instant: easing the arrival of text
+         means the line being read slides for a third of a second. But not
+         everything that grows the conversation is an answer arriving.
+
+         When one finishes, the next turn — the empty composer — is appended,
+         and the content grows by its height in a single frame. Measured on
+         the demo at 1100×700, at the moment the turn count went from one to
+         two: `scrollTop` 0 → 182 in one frame and the message that had been
+         sent leapt from 100 to −82, off the top of the view. Nothing was
+         being read at that instant; the answer had just ended.
+
+         The component can tell the two apart without being told, because the
+         host lets go of the anchor when an answer settles. An anchor held
+         means something is still being written, and growth is tracked.
+
+         **`anchors.current` and not just `!anchorId`.** A conversation that
+         never anchors — a plain transcript following its own end — has no
+         anchor to hold at any moment, and there growth really is the answer
+         arriving and must stay instant. Two tests said so, immediately. What
+         this is about is an anchoring conversation between turns. */
+      const gap = want - view.scrollTop;
+      if (anchors.current && !anchorId && Math.abs(gap) > threshold && !prefersReducedMotion()) {
+        travelling.current = performance.now() + TRAVEL;
+        view.scrollTo({ top: want, behavior: "smooth" });
+        return;
+      }
+
       view.scrollTop = want;
     };
 

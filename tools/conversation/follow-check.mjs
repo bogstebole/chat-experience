@@ -425,7 +425,7 @@ await page.evaluate(() => {
   window.__path = [];
   const view = document.querySelector(".chatFeed");
   const tick = () => {
-    window.__path.push(Math.round(view.scrollTop));
+    window.__path.push({ t: Math.round(performance.now()), top: Math.round(view.scrollTop) });
     window.__raf = requestAnimationFrame(tick);
   };
   window.__raf = requestAnimationFrame(tick);
@@ -436,12 +436,20 @@ const path = await page.evaluate(() => {
   cancelAnimationFrame(window.__raf);
   return window.__path;
 });
-const stops = new Set(path).size;
-const biggest = path.slice(1).reduce((worst, at, i) => Math.max(worst, Math.abs(at - path[i])), 0);
+const stops = new Set(path.map((p) => p.top)).size;
+/* How long the move took, not how big any one step was.
+  
+   A per-frame bound measures the machine, not the motion: inside `npm run
+   verify` this check runs after several browsers have had their turn, frames
+   drop, and two consecutive samples land further apart in time — so a smooth
+   scroll reported a 680px "step" once and 43px on the three runs after it. A
+   dropped frame is not a jump. Time cannot be dropped. */
+const moving = path.filter((p, i) => i && p.top !== path[i - 1].top);
+const spanMs = moving.length ? moving[moving.length - 1].t - moving[0].t : 0;
 check(
-  stops >= 4 && biggest < 200,
+  stops >= 4 && spanMs >= 120,
   `a sent message travels to the top rather than cutting to it: ` +
-    `${stops} distinct positions, largest single step ${biggest}px`
+    `${stops} distinct positions over ${spanMs}ms`
 );
 await beat(page, 9000);
 

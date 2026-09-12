@@ -488,9 +488,29 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       return () => cancelAnimationFrame(id);
     }, [value, isReadOnly, updateFade]);
 
+    /**
+     * The composer takes focus when it becomes one, and **does not scroll**.
+     *
+     * `focus()` scrolls the element into view. That is usually a kindness and
+     * here it is a fault: when an answer settles, the next turn is appended
+     * and this runs on a composer that has just mounted at the bottom of the
+     * conversation — so the browser scrolled to it instantly, and the message
+     * that had been sent leapt off the top of the view. Measured on the demo
+     * at 1100×700: `scrollTop` 0 → 175 in a single frame at the moment the
+     * turn count went from one to two.
+     *
+     * It took three traces to find, because every instrument pointed at the
+     * scroll logic — which was innocent. `Conversation` made exactly one
+     * correction in the whole session, and it was a smooth one arriving after
+     * the jump had already happened.
+     *
+     * Where the view goes belongs to `Conversation`, which knows about
+     * anchors, tails and whether a reader has scrolled away. Focus is about
+     * the keyboard.
+     */
     useEffect(() => {
       if (state === "idle" || state === "typing") {
-        editorRef.current?.focus();
+        editorRef.current?.focus({ preventScroll: true });
       }
     }, [state]);
 

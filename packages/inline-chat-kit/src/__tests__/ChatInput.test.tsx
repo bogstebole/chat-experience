@@ -303,3 +303,38 @@ describe("ChatInput — attaching", () => {
     expect(onAttach).toHaveBeenCalledTimes(2);
   });
 });
+
+/**
+ * Taking focus is not an instruction to scroll.
+ *
+ * `focus()` brings its element into view, which is usually a kindness. Here it
+ * is a fault: when an answer settles, the next turn is appended and this
+ * composer mounts at the bottom of a conversation, so the browser scrolled
+ * straight to it and the message that had just been sent leapt off the top of
+ * the view. Measured on the demo at 1100×700, at the frame the turn count went
+ * from one to two: `scrollTop` 0 → 175, in one frame. With `preventScroll` the
+ * same moment takes eight frames and a largest step of 48px, because
+ * `Conversation` is doing it instead — and it is the one that knows about
+ * anchors, tails, and whether the reader has scrolled away.
+ *
+ * It took three traces to find. Every instrument pointed at the scroll logic,
+ * which was innocent: `Conversation` made exactly one correction in the whole
+ * session, a smooth one, arriving after the jump had already happened.
+ */
+describe("ChatInput — focus does not scroll", () => {
+  it("asks for focus without the scroll that usually comes with it", () => {
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+    try {
+      render(
+        <ChatInput state="idle" value="" onChange={() => {}} onSubmit={() => {}} onStop={() => {}} />
+      );
+      expect(focus, "the composer never took focus at all").toHaveBeenCalled();
+      const askedForIt = focus.mock.calls.some(
+        ([options]) => (options as FocusOptions | undefined)?.preventScroll === true
+      );
+      expect(askedForIt, "focused without `preventScroll`, so the browser scrolls to it").toBe(true);
+    } finally {
+      focus.mockRestore();
+    }
+  });
+});

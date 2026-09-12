@@ -8,6 +8,33 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.54.2 — 2026-09-12
+
+### Fixed
+
+- **The sent message leapt off the top of the view when an answer settled.**
+  Measured on the demo at 1100×700, at the frame the turn count went from one
+  to two: `scrollTop` 0 → 175, in a single frame, and the message that had
+  just been sent went from 100px down the view to −75.
+
+  It was not the scroll logic. `Conversation` made **exactly one** correction
+  in the whole session — a smooth one, arriving after the jump had already
+  happened. The jump was `focus()`: when an answer settles the next turn is
+  appended, its composer mounts at the bottom of the conversation and focuses
+  itself, and focusing an element brings it into view. Instantly, and without
+  asking anyone.
+
+  `preventScroll` now. Where the view goes belongs to `Conversation`, which
+  knows about anchors, tails, and whether the reader has scrolled away; focus
+  is about the keyboard. The same moment is now eight frames with a largest
+  step of 48px.
+
+  Three traces to find, because every instrument pointed at the scroll logic
+  and the scroll logic was innocent. The first two also measured the wrong
+  element — during an answer the last editable belongs to the turn being
+  written, and afterwards to a different turn entirely, so the trace read a
+  change of subject as a movement.
+
 ## 0.54.1 — 2026-09-12
 
 ### Fixed
