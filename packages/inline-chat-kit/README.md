@@ -10,6 +10,42 @@ answers you can draw on with a marker,
 syntax-highlighted code blocks, a scroll container that keeps up with an
 answer, and reply-in-thread popups.
 
+## Where it is meant to run
+
+**Desktop and tablet.** That is what this is designed for, tuned for, and what
+the checks measure.
+
+It runs on a phone and does not break. The artifact pane becomes a bottom
+sheet, so does a reply thread; every control is reachable by a thumb; nothing
+zooms when a field takes focus; the type scale rises so reading text is 16px
+and the icons rise with it. There are guards for each of those, in two engines,
+at 390×844 — `npm run zoom-check` and `npm run reach-check`.
+
+**But it is not tuned for a phone, and the inline idea itself is weaker there.**
+Worth saying plainly rather than leaving you to discover it.
+
+The argument for an inline composer is that you see your question and its
+answer at once, because the thing you type into *is* the message. A phone gives
+you about half a screen once the keyboard is up — and the browser will not tell
+you how much. So the platform takes away the one thing the design exists for.
+
+Four more that no amount of CSS reaches:
+
+| | |
+| --- | --- |
+| the keyboard's height | the browser does not report it reliably; a native scroll view is simply told |
+| text selection | the system's own selection UI fights a marker drawn in prose — this kit ships a selection-mode toggle *because* of that |
+| scroll physics | rubber-banding and momentum belong to the browser, not to you |
+| haptics | no API at all on iOS Safari |
+
+If you need a phone-first chat, treat this as a specification for one rather
+than an implementation of one. The parts that would carry over are the ones
+with no DOM in them — `useChatTurns`, `turnParts`, `placePanel` — and they are
+plain TypeScript on purpose.
+
+Desktop **applications** are a different story: an Electron or Tauri renderer
+is a browser, so this works there today with nothing changed.
+
 ## Install
 
 ```bash

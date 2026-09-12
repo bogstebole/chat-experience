@@ -254,6 +254,12 @@ legible without travelling.
 
 ## On a phone: two things only the host can do
 
+**First, what a phone is for here.** The kit is built and tuned for desktop and
+tablet. It runs on a phone and does not break — see *Where it is meant to run*
+in the README for what holds up, what does not, and why the inline model is a
+weaker idea on a small screen. Everything below is true on a phone; none of it
+makes a phone the target.
+
 The kit sizes itself, expands its own hit areas on a coarse pointer, and keeps
 nothing wider than its container. Two mobile faults are outside it, because
 both live in the host document rather than in any component.

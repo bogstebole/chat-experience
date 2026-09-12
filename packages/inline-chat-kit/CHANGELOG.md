@@ -6,6 +6,200 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.54.0 — 2026-09-12
+
+Everything here came out of using the kit on a phone. It is better there than
+it was, and the README now says plainly that a phone is not what it is for —
+see *Where it is meant to run*.
+
+### Fixed
+
+- **A sent message travels to the top instead of cutting to it.** Sending adds
+  a whole turn at once, so the content grew by its height in a single frame and
+  the scroll was assigned its new position in that same frame. Traced at
+  1120×680 across two answers: three moves over 24px in the whole session and
+  every one of them a single frame — 154px, **416px**, 172px. The 416 was the
+  send.
+
+  The reasoning block folding away at the end was never the problem: it was
+  already gradual (−29, −58, −206 across frames) and moved the scroll by
+  nothing. Now the one move that is a decision is eased and the thousand that
+  are tracking stay instant, because easing the arrival of text would mean the
+  line being read slides for a third of a second. Measured after: `178 → 206 →
+  244 → 287 → 326 → 358 → 384`, largest single step 42px.
+
+- **The room under the last turn is measured rather than guessed.** A turn can
+  only be brought to the top if there is room under it to scroll into, and that
+  room was a `99vh` typed into the demo's stylesheet. At the end of the scroll:
+  673px of it on desktop, 836px on a phone, and the last turn **61px above the
+  top edge** — a completely blank screen at the bottom of every conversation.
+
+  `Conversation` takes a `tail` prop now, `"auto"` by default, and the
+  measurement is `screen - anchorOffset - (the anchored turn's top to the end
+  of the content)`. That makes the end of the scroll exactly where the anchored
+  turn sits at the anchor, so coming to rest and running out of scroll are the
+  same place and the room is spent holding the turn up rather than left over
+  underneath it. It also explains why chasing an answer costs nothing: the
+  content grows and the room shrinks by the same pixel, so the scroll height
+  does not move and neither does the turn at the top.
+
+- **A short answer leaves its question at the top too.** The room was being
+  sized correctly and then not rested at: resting still meant the end of the
+  *content*, which agrees with the end of the scroll only while the answer is
+  longer than the screen. Below that the difference was left unspent with the
+  turn stranded mid-view — 575px from the top in a 1174px window, with 475px
+  still to scroll.
+
+- **`endOfContent` counted the conversation's top padding twice.** A
+  conversation ending at 729 read as ending at 829, so the composer came to
+  rest 100px above the `endOffset` it was given. See **Breaking**.
+
+- **Only a control that folds lets go of the end.** Releasing the follow on any
+  press meant clicking into the composer released it too, so when an answer
+  settled there was nothing to bring the view back — and settling is also when
+  the reasoning block folds itself away, so the content shrank by its height
+  and everything above dropped into view. It read as the conversation jumping
+  to show an older message.
+
+- **An attachment's remove button is always there on a phone.** It sat under a
+  wash over the whole square, revealed on `:hover`, and there is nothing to
+  hover with — so it was drawn, in the accessibility tree, present to every
+  test that asks whether it is *there*, and unreachable. Under
+  `@media (hover: none)` it is a button in the top-right corner instead:
+  measured 28×28, 4px in from the corner of the 64px square, and a press at its
+  middle lands on it. The wash stays on a pointer, where it is the better
+  answer.
+
+- **A picture attachment was never actually drawn.** `background-image`
+  computed to `none` in both engines: the URL went into an unquoted `url()`,
+  and a bracket inside it closes the `url()` early, so the browser threw the
+  whole declaration away with no error anywhere. An SVG data URL says
+  `fill="url(#g)"`, and `encodeURIComponent` does not touch brackets — so the
+  stories showed a row of blank squares under the heading "pictures — they show
+  themselves" for as long as they had existed, and any host whose image URL
+  contains a bracket had the same.
+
+- **The reply thread stays on the screen.** It hung off the phrase from a fixed
+  top and grew downwards with nothing stopping it: at 390×844 with a passage
+  556px down, the panel ended at 920 after one reply — 76px past the bottom
+  edge, and every message after it pushed more out of reach. `placePanel`
+  returns a `maxHeight` now and stops following a phrase down once there would
+  be less than 260px left. A window short enough had this at any width.
+
+- **The disclosure row's fades work at any height.** They required
+  `clientHeight >= 630`, the thread's old fixed ceiling written again as a
+  number, so with the height coming from the screen they would have stopped
+  appearing exactly where they are most needed — the short panel is the one
+  whose content does not fit.
+
+- **`transition: all` on the glass button.** 400ms, on what the composer's mic,
+  plus and send are made of, and the X on an attachment. Among the properties
+  it was animating: `backdrop-filter`, a blur re-composited every frame for
+  four hundred milliseconds, and the same blur before and after. Named now —
+  colour and shadow at 200ms, the lift at 160ms.
+
+- **`:hover` no longer moves anything on a touchscreen.** The glass button's
+  lift and the artifact card's were ungated, and a touchscreen fires a hover on
+  tap and leaves it there until the next tap somewhere else — so they stood a
+  pixel or two high for as long as you did not touch anything. Both are inside
+  `@media (hover: hover) and (pointer: fine)`. The colour and shadow stay on
+  touch: those say "this is the one under your finger", which is true.
+
+### Added
+
+- **A bottom sheet on a phone, for the reply thread.** Below 760px it comes up
+  from the bottom instead of hanging off the phrase, with a grabber and a drag
+  to put it away — the same sheet the artifact pane becomes, with the same
+  tokens. Capping its height alone would have turned it into a letterbox: 289px
+  of thread in the lower third, under a phrase you can no longer see. It grows
+  from the bottom edge with the thread rather than standing at a fixed 88%,
+  because one reply is what a thread usually has and a sheet that is mostly
+  white reads as something that failed to load.
+
+- **The type scale rises on a touch device, and only where it earns it.**
+  `@media (pointer: coarse)` puts the prose and anything you type into at 16px
+  and caps everything else at 14. iOS zooms the page in to any editable whose
+  text computes under 16px and does not zoom back out; the answer is to stop
+  being under 16px rather than to fight the viewport.
+
+  | | before | after | mouse |
+  | --- | --- | --- | --- |
+  | prose | 12px | 16px | 12px |
+  | composer | 12px | 16px | 12px |
+  | header, chips | 13–14px | 14px | 13–14px |
+
+- **`--ick-field-size`** — the size text somebody types into draws at, which is
+  not the same idea as a step on the type scale even when they share a number.
+  `max(1rem, …)` under a coarse pointer: a floor, not an override, so a theme
+  at 18px keeps 18 and a theme at 13 gets 16.
+
+- **`--ick-icon`** — icons sized from the text beside them. Around fifty
+  `size={13..16}` call sites were fixed pixels, so raising the text left every
+  one behind. `1.15em` on touch, and `auto` elsewhere, which on an inline SVG
+  means its own width and height attributes — so a pointer keeps exactly the
+  sizes the call sites asked for.
+
+- **`--ick-control-xs` … `--ick-control-xl`** — `Button`'s five heights, as
+  tokens. They were pixels in its stylesheet, flattered 13px text, and are
+  tight around 14: the tool row was 16px of text in a 26px box. 28/32/38/44/52
+  on touch against 24/28/32/40/48. The look changes; the hit area does not —
+  that is `--ick-touch-target`, and it has always been 44px without anything
+  moving.
+
+- **`tail` on `<Conversation>`** — `"auto"` or a number of pixels. See
+  **Fixed**, and **Breaking** for what it supersedes.
+
+- **`npm run reach-check`** — what a thumb can reach on a device with no hover,
+  in both engines at 390×844, against Storybook rather than the demo (the demo
+  holds one attachment; the question needs two side by side, because these
+  buttons grow an invisible 44px box under `pointer: coarse` and two of those
+  6px apart would have the wrong one answering).
+
+- **`npm run follow-check:tall`** — the same follow check in a 1400px window.
+  The short window made every answer taller than the screen, which is the one
+  regime where two different numbers agree, so an assertion that there is
+  nowhere further to scroll passed while being unable to fail.
+
+- **`motionRules.test.ts`** — two rules read out of the stylesheets, because
+  neither is visible on screen: no `transition: all`, and no `:hover` that
+  moves something outside a pointer query. A screenshot is taken with no
+  pointer, so the second one can never appear in a picture.
+
+### Changed
+
+- **`zoom-check` measures font sizes rather than a proxy for them.** It used to
+  assert that `maximum-scale=1` was in place at the instant focus landed, for a
+  hook that locked the host's viewport while a field had focus. No engine
+  outside a real iPhone implements zoom-on-focus, so the check observed a stand-in
+  and twice went green over a version that still zoomed. A font size is the
+  input to the platform's own rule, is the same number in every engine, and is
+  either under 16 or not.
+
+### Breaking
+
+- **`endOffset` on `<Conversation>` now means what it says.** `endOfContent`
+  added the content wrapper's `offsetTop` to the last turn's, and both are
+  measured from the same positioned ancestor — so it counted the viewport's
+  padding twice and every value was effectively `endOffset + padding`. If you
+  set it, the composer will now rest closer to the bottom edge than it did by
+  exactly your conversation's top padding. **What to do:** raise `endOffset` by
+  that padding to keep what you had. The demo went from `24` to `120`.
+
+- **`--ick-conversation-tail` is written by the component.** `<Conversation>`
+  measures the room its anchor needs and sets the token on the content wrapper,
+  which beats a value set in a stylesheet. **What to do:** nothing, if you were
+  not setting it. If you were, pass `tail={<px>}` instead — a number takes the
+  measurement over, and the token remains the value used before the first
+  measurement.
+
+- **The type scale is different on a touch device.** Nothing renamed and
+  nothing removed, but a phone or tablet now draws the prose and the composer
+  at 16px, the rest at 14, icons at `1.15em`, and controls 4–8px taller. **What
+  to do:** nothing, unless you want the old sizes, in which case re-declare the
+  `--ick-text-*`, `--ick-answer-size`, `--ick-composer-size`, `--ick-field-size`,
+  `--ick-icon` and `--ick-control-*` tokens inside your own
+  `@media (pointer: coarse)` block.
+
 ## 0.53.0 — 2026-09-03
 
 ### Changed
