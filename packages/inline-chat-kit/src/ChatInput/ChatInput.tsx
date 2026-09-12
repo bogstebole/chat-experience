@@ -219,7 +219,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onEdit,
       onCancelEdit,
       isEditing = false,
-      placeholder = "Placeholder text...",
+      /* A default that can ship. It was "Placeholder text...", a stand-in
+         nobody replaced, and a default is what every consumer who has not
+         thought about it yet gets in production — which is most of them on
+         their first afternoon. Found by writing the getting-started page and
+         looking at what it drew. */
+      placeholder = "Ask anything…",
       animationConfig,
       style,
     },

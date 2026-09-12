@@ -8,6 +8,37 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## Unreleased
+
+### Added
+
+- **[Getting started](./getting-started.md)** — one file, ten minutes, a chat
+  that runs with no backend, then one paragraph to point it at a model. The
+  README's first example was a single `<ChatInput>`, which is a text box: to
+  get the experience the page describes you also needed `useChatTurns`,
+  `Conversation` and the anchoring, and those were three sections apart with no
+  runnable file between them.
+
+  The example is `src/examples/minimal.tsx`, so `tsc -b` compiles it on every
+  build; a test asserts the page quotes it character for character; and a
+  Storybook story renders it, so the claim that it works is checked three ways
+  and none of them is a screenshot somebody took once. Nothing imports it, so
+  the library build never reaches it — verified at zero occurrences in the
+  bundle.
+
+### Fixed
+
+- **The default placeholder was `"Placeholder text..."`** — a stand-in nobody
+  replaced. A default is what every consumer who has not thought about it yet
+  ships in production, which is most of them on their first afternoon. It is
+  `"Ask anything…"` now. Found by writing the getting-started page and looking
+  at what it drew, which is the argument for having one.
+
+- **The changelog promised two versions that were never published.** The
+  registry goes `0.52.0` → `0.54.0`; this file described `0.52.1` and `0.53.0`
+  with dates, so anyone reaching for `npm i inline-chat-kit@0.53.0` got
+  nothing. Both are marked, and their changes shipped in `0.54.0`.
+
 ## 0.54.0 — 2026-09-12
 
 Everything here came out of using the kit on a phone. It is better there than

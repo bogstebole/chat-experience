@@ -10,6 +10,10 @@ answers you can draw on with a marker,
 syntax-highlighted code blocks, a scroll container that keeps up with an
 answer, and reply-in-thread popups.
 
+**New here?** [**Getting started**](./getting-started.md) is one file, ten
+minutes, and a chat that runs with no backend. The rest of this page is the
+reference.
+
 ## Where it is meant to run
 
 **Desktop and tablet.** That is what this is designed for, tuned for, and what
