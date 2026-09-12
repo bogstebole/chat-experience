@@ -58,6 +58,22 @@ export function formatSize(bytes?: number): string {
 
 const isImage = (a: Attachment) => Boolean(a.url) && (a.type ?? "").startsWith("image/");
 
+/**
+ * A URL that survives being written into `url("…")`.
+ *
+ * Unquoted, a bracket inside the URL closes the `url()` early — the rest is
+ * garbage, the browser throws the whole declaration away, and the element
+ * gets `background-image: none`. No error anywhere; the picture is simply not
+ * there. Which is what the stories showed for as long as they have existed: a
+ * row of blank squares under the heading "pictures — they show themselves",
+ * because an SVG data URL says `fill="url(#g)"` and those brackets are not
+ * touched by `encodeURIComponent`.
+ *
+ * So it is quoted, and the two characters that could close the quote are
+ * escaped. Everything else is a URL's business.
+ */
+const cssUrl = (url: string) => url.replace(/["\\]/g, encodeURIComponent);
+
 /** A picture of the kind of thing it is, for the ones with no picture. */
 function Glyph({ type }: { type?: string }) {
   const kind = (type ?? "").split("/")[0];
@@ -106,7 +122,7 @@ export function Attachments({
                  is not looking at it. */
               <span
                 className={styles.picture}
-                style={{ backgroundImage: `url(${file.url})` }}
+                style={{ backgroundImage: `url("${cssUrl(file.url!)}")` }}
                 role="img"
                 aria-label={file.name}
               />

@@ -129,3 +129,33 @@
     transition: none;
   }
 }
+
+/* ── Where there is no hover ─────────────────────────────────────────────
+   A control that only appears on hover does not exist on a phone.
+
+   The wash above is a good answer for a pointer: the button has the whole
+   square to be pressed in, and the square is only obscured while somebody is
+   pointing at it. Neither half survives the move. There is no pointing, so
+   the wash would have to be permanent — a scrim over every picture for as
+   long as it is attached, which is the picture you attached, hidden. And a
+   full-square target that is always armed is a picture you cannot touch
+   without deleting it.
+
+   So on touch it stops being a wash and becomes a button, in the corner,
+   always there. Nothing is covered but the corner it sits in, and the rest of
+   the square goes back to being a picture. `hover: none` rather than
+   `pointer: coarse`: the reason is the missing hover, not the finger — and
+   the two come apart on a touchscreen laptop, where hovering still works and
+   this rule should not apply. */
+@media (hover: none) {
+  .item[data-picture] .remove {
+    inset: var(--ick-attachment-remove-inset) var(--ick-attachment-remove-inset) auto auto;
+    background: none;
+    opacity: 1;
+  }
+
+  /* The picture is the thing you attached. Leave it alone. */
+  .item[data-picture]:hover .picture {
+    filter: none;
+  }
+}

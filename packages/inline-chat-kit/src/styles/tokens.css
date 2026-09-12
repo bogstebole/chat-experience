@@ -735,6 +735,10 @@
     --ick-attachment-fill: var(--ick-inset);
     /* The corner a thumbnail has had since it was one image, kept. */
     --ick-attachment-radius: var(--ick-radius-md);
+    /* How far the remove button sits in from the corner of a picture, where
+       it lives on a device with no hover to reveal it. Small: the square is
+       64px and the button has to stay off the middle of the picture. */
+    --ick-attachment-remove-inset: var(--ick-space-2);
 
     /* ═══ Work states ═══════════════════════════════════════════════════════
        Queued, working, finished, failed — one vocabulary and one set of

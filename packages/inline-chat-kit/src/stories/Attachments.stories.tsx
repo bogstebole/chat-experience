@@ -84,7 +84,39 @@ export const BeingAssembled: Story = {
   render: function Removable() {
     const [files, setFiles] = useState<Attachment[]>([...PICTURES, ...FILES]);
     return (
-      <Wrap label="hover a picture for its button; a named file keeps one beside it">
+      <Wrap label="hover a picture for its button — on a phone it is always in the corner; a named file keeps one beside it">
+        <Attachments
+          attachments={files}
+          onRemove={(id) => setFiles((f) => f.filter((a) => a.id !== id))}
+        />
+      </Wrap>
+    );
+  },
+};
+
+/**
+ * The same row on a device with no hover.
+ *
+ * Not something a story can switch on — `@media (hover: none)` answers to the
+ * device, not to a knob — so this is here to be **looked at in a phone
+ * viewport**, where the buttons move to the corners and stay there. The rule
+ * itself is asserted in `tools/mobile/reach-check.mjs`, against this file's
+ * story above, because a control that only appears on hover is invisible to
+ * every check that asks whether it is *there*.
+ *
+ * Why a corner and not a permanent wash: the wash is a good answer for a
+ * pointer, where the whole square is the target and it is only obscured while
+ * somebody is pointing at it. With no hover it would have to be permanent —
+ * the picture you attached, hidden, for as long as it is attached — and a
+ * whole square that is always armed is a picture you cannot touch without
+ * deleting it.
+ */
+export const NoHover: Story = {
+  name: "Where there is no hover",
+  render: function Removable() {
+    const [files, setFiles] = useState<Attachment[]>(PICTURES);
+    return (
+      <Wrap label="open this in a phone viewport — the buttons are in the corners, always">
         <Attachments
           attachments={files}
           onRemove={(id) => setFiles((f) => f.filter((a) => a.id !== id))}
