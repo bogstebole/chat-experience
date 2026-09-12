@@ -350,6 +350,23 @@
     --ick-composer-size: var(--ick-text-sm);
     --ick-field-size: var(--ick-text-md);
 
+    /* ── How big an icon is ────────────────────────────────────────────────
+       `auto`, which on an inline SVG means the width and height attributes it
+       was given — so on a pointer every icon is exactly the size its call
+       site asked for and this token changes nothing. It exists for the touch
+       block near the end of this file, where the icons are sized from the
+       text beside them instead. */
+    --ick-icon: auto;
+
+    /* ── How tall a control is ─────────────────────────────────────────────
+       `Button`'s five sizes, as tokens rather than numbers in its stylesheet,
+       so the touch block can grow them without the component knowing. */
+    --ick-control-xs: 24px;
+    --ick-control-s: 28px;
+    --ick-control-m: 32px;
+    --ick-control-l: 40px;
+    --ick-control-xl: 48px;
+
     --ick-duration-press: 70ms;
     --ick-duration-fast: 160ms;
     --ick-duration-base: 200ms;
@@ -1294,10 +1311,15 @@
   @media (pointer: coarse) {
     :root,
     .ick-theme {
-      --ick-text-xs: 0.75rem;    /* 12px */
+      /* Nothing above 14 but the two things you read and the one you type
+         into. The first cut raised the whole scale proportionally and the
+         phone came out shouting: a 17px header, 15px chips, a 16px
+         disclosure row over 16px prose, and no way to tell chrome from
+         content because everything was the same weight of loud. */
+      --ick-text-xs: 0.75rem;    /* 12px — captions, sizes, badges */
       --ick-text-sm: 0.875rem;   /* 14px */
-      --ick-text-md: 0.9375rem;  /* 15px */
-      --ick-text-lg: 1.0625rem;  /* 17px */
+      --ick-text-md: 0.875rem;   /* 14px */
+      --ick-text-lg: 0.875rem;   /* 14px */
 
       /* The two that carry the rule. `1rem` is the number Safari looks for,
          and `max()` keeps it true for a host that has set its own: a theme
@@ -1306,10 +1328,39 @@
       --ick-composer-size: max(1rem, var(--ick-text-sm));
       --ick-field-size: max(1rem, var(--ick-text-md));
 
-      /* And the answer with them, so the composer is not the odd one out.
-         The kit's smaller text — labels, captions, the reasoning footnote —
-         follows the scale above. */
+      /* The prose, and the reasoning that reads like it. Text you read at
+         arm's length on a small screen, which is the one place the size is
+         worth spending. */
       --ick-answer-size: 1rem;
+
+      /* Chrome that is derived from the answer everywhere else and is not
+         prose: the row that says how long something thought, a task list, an
+         approval. Pointed back at the scale so it does not follow the prose
+         up. */
+      --ick-disclosure-size: var(--ick-text-md);
+      --ick-task-size: var(--ick-text-md);
+      --ick-approval-size: var(--ick-text-md);
+
+      /* Icons, sized from the text they sit beside rather than from a number
+         written into a component.
+
+         There are around fifty `size={13..16}` call sites and they were all
+         fixed pixels, so raising the text left the icons behind it — a 14px
+         glyph against 16px text reads as a mistake. `em` makes the two move
+         together, and the size the icons keep on a pointer is the one they
+         were given: `auto` on an inline SVG means its own width and height
+         attributes, so nothing outside this block changes. */
+      --ick-icon: 1.15em;
+
+      /* Controls, grown to suit. Pixel heights that flattered 13px text are
+         tight around 14 — the tool row was 16px of text in a 26px box. This
+         is the look changing, not the hit area: that is `--ick-touch-target`,
+         and it has always been 44px without anything moving. */
+      --ick-control-xs: 28px;
+      --ick-control-s: 32px;
+      --ick-control-m: 38px;
+      --ick-control-l: 44px;
+      --ick-control-xl: 52px;
     }
   }
 

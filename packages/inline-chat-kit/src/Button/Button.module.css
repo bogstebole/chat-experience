@@ -71,11 +71,21 @@
    both read at 13px, which is what both of the old components used at those
    heights. */
 
-.xs { height: 24px; min-width: 24px; font-size: var(--ick-text-xs); gap: var(--ick-space-2); }
-.s  { height: 28px; min-width: 28px; font-size: var(--ick-text-md); gap: var(--ick-space-3); }
-.m  { height: 32px; min-width: 32px; font-size: var(--ick-text-md); gap: var(--ick-space-3); }
-.l  { height: 40px; min-width: 40px; font-size: var(--ick-text-lg); gap: var(--ick-space-4); }
-.xl { height: 48px; min-width: 48px; font-size: 1rem;               gap: var(--ick-space-4); }
+/* Heights come from tokens so a touch device can have roomier ones without
+   this file knowing — see the `pointer: coarse` block in `tokens.css`. The
+   numbers that used to live here flattered 13px text and are tight around 14. */
+.xs { height: var(--ick-control-xs); min-width: var(--ick-control-xs); font-size: var(--ick-text-xs); gap: var(--ick-space-2); }
+.s  { height: var(--ick-control-s);  min-width: var(--ick-control-s);  font-size: var(--ick-text-md); gap: var(--ick-space-3); }
+.m  { height: var(--ick-control-m);  min-width: var(--ick-control-m);  font-size: var(--ick-text-md); gap: var(--ick-space-3); }
+.l  { height: var(--ick-control-l);  min-width: var(--ick-control-l);  font-size: var(--ick-text-lg); gap: var(--ick-space-4); }
+.xl { height: var(--ick-control-xl); min-width: var(--ick-control-xl); font-size: 1rem;               gap: var(--ick-space-4); }
+
+/* And the icon inside, from the text it sits beside. `auto` on a pointer is
+   the SVG's own width and height attributes, so this is inert there. */
+.btn svg {
+  width: var(--ick-icon);
+  height: var(--ick-icon);
+}
 
 .hasText.xs { padding: 0 var(--ick-space-3); }
 .hasText.s  { padding: 0 var(--ick-space-5) 0 var(--ick-space-4); }

@@ -51,6 +51,7 @@
 
 .jump {
   all: unset;
+  font-size: var(--ick-text-md);
   box-sizing: border-box;
   position: absolute;
   left: 50%;
@@ -79,6 +80,13 @@
     opacity var(--ick-duration-fast) ease,
     transform var(--ick-duration-fast) var(--ick-ease),
     visibility 0s linear var(--ick-duration-fast);
+}
+
+/* Sized from the text scale rather than the 15px its call site asks for, so
+   it grows with everything else on a touch device. Inert on a pointer. */
+.jump svg {
+  width: var(--ick-icon);
+  height: var(--ick-icon);
 }
 
 .jump[data-shown] {

@@ -1,5 +1,5 @@
 /**
- * Can anything on the page make a phone zoom itself in?
+ * How big is everything on a phone, and can any of it make the page zoom?
  *
  *   npm run build && npm run zoom-check
  *
@@ -105,6 +105,75 @@ const tokens = (page) =>
     return out;
   });
 
+/**
+ * The rest of the scale, and what the icons beside it come out at.
+ *
+ * A phone raises two sizes and only two: the prose, and the text you type
+ * into. Everything else stays small, and the icons are sized from the text
+ * they sit next to rather than from a number in a component. The first cut
+ * raised the whole scale together and the phone came out shouting — a 17px
+ * header over 15px chips over 16px prose, with 13px icons left behind by all
+ * of it.
+ */
+const scale = (page) =>
+  page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.position = "absolute";
+    probe.style.visibility = "hidden";
+    document.body.append(probe);
+    const read = (name) => {
+      probe.style.fontSize = `var(${name})`;
+      return Math.round(parseFloat(getComputedStyle(probe).fontSize) * 100) / 100;
+    };
+    const out = {
+      prose: read("--ick-answer-size"),
+      /* The loudest step of the ordinary scale. Chrome — headers, chips,
+         labels, the row that says how long something thought. */
+      chrome: Math.max(read("--ick-text-sm"), read("--ick-text-md"), read("--ick-text-lg")),
+    };
+    probe.remove();
+
+    /* And every icon against the text it is drawn beside. A glyph half the
+       height of its label reads as a mistake, and nothing about it is visible
+       in a number written into a component. */
+    const strays = [];
+    for (const svg of document.querySelectorAll("svg")) {
+      const seen = svg.getBoundingClientRect();
+      if (seen.width < 2) continue;
+      const cs = getComputedStyle(svg);
+      /* The **used** width, not the rect.
+      
+         A rect is measured after every transform above it, and this kit
+         animates whole panels with `scale` — the attachment fan's cards sit
+         at about 1.35 while they are open, so their 16px icons measured 21.3
+         and 22.5 and the check called two correct icons a fault. The font
+         size it is being compared against is not transformed, so the width
+         must not be either. */
+      const drawn = parseFloat(cs.width);
+      /* Decorative artwork is not an icon beside text. */
+      if (!Number.isFinite(drawn) || drawn > 40) continue;
+      const font = parseFloat(cs.fontSize);
+      /* Not a band around the font size — a **floor**, and the direction
+         matters.
+      
+         A glyph carries padding inside its own box, so an icon drawn at the
+         text's size already reads slightly smaller than the letters beside
+         it. Below that it reads as a mistake, which is what a page of 13px
+         icons against raised text looked like. A symmetric band called that
+         acceptable: 13 against 16 is 19% off, well inside any tolerance worth
+         writing, and still visibly wrong.
+      
+         The ceiling is loose because it is not the failure anybody has: an
+         icon has to be half again the text before it looks like artwork. */
+      if (drawn < font - 1) {
+        strays.push(`${Math.round(drawn * 10) / 10}px icon under ${Math.round(font)}px text`);
+      } else if (drawn > font * 1.6) {
+        strays.push(`${Math.round(drawn * 10) / 10}px icon over ${Math.round(font)}px text`);
+      }
+    }
+    return { ...out, strays };
+  });
+
 const meta = (p) =>
   p.evaluate(() => document.querySelector('meta[name="viewport"]')?.getAttribute("content") ?? "");
 
@@ -169,6 +238,51 @@ for (const [name, engine, touch] of [
     check(
       Object.values(size).every((v) => v < FLOOR),
       `and a mouse is left alone — ${named}`
+    );
+  }
+
+  /* An answer first, and it is not optional.
+  
+     The scale and the icons were measured on the empty state, where the only
+     icons are the header's and the composer's. Everything the complaint was
+     about — the row that says how long something thought, a tool call, the
+     actions under an answer — only exists once something has been asked. So
+     the guard could not fail: put the old sizes back and it still said ok,
+     because none of the elements that were wrong were on the page. */
+  /* The fan is still open from the check above, and its backdrop swallows
+     everything behind it — Playwright retried the click for thirty seconds
+     and then failed with a stack trace instead of a finding. Escape does not
+     shut it; the backdrop is what it listens to, so that is what gets
+     pressed. */
+  const backdrop = page.locator('[class*="addBackdrop"]');
+  if (await backdrop.count()) {
+    touch ? await backdrop.first().tap() : await backdrop.first().click();
+    await beat(page, 700);
+  }
+  await page.getByRole("button", { name: /How big is the Higgs boson/i }).click();
+  await page.waitForFunction(
+    () => !!document.querySelector("[aria-expanded]"),
+    null,
+    { timeout: 20000 }
+  ).catch(() => console.log("    ??    no answer arrived — the scale is measured on less than it should be"));
+  await beat(page, 9000);
+
+  const sizes = await scale(page);
+  if (touch) {
+    check(
+      sizes.prose >= 16,
+      `the prose is ${sizes.prose}px — the one size worth spending on a small screen`
+    );
+    check(
+      sizes.chrome <= 14,
+      `and the chrome around it stays at ${sizes.chrome}px, so there is still a difference ` +
+        `between what you read and what you press`
+    );
+    check(
+      sizes.strays.length === 0,
+      sizes.strays.length
+        ? `but ${sizes.strays.length} icons are out of step with their text — ${sizes.strays.slice(0, 4).join(", ")}`
+        : `and no icon is smaller than the text beside it`
     );
   }
 

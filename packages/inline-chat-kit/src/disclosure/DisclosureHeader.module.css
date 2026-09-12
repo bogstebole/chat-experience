@@ -39,6 +39,10 @@
   width: calc(100% + var(--ick-space-3) * 2);
   margin-inline: calc(var(--ick-space-3) * -1);
   padding: var(--ick-space-2) calc(var(--ick-space-3) + var(--ick-disclosure-inset));
+  /* Stated rather than inherited. The row sits inside the prose, so without
+     this it takes the prose's size — which on a phone is 16px, and the icons
+     beside the label are then sized against a number the row does not use. */
+  font-size: var(--ick-disclosure-size);
   border-radius: var(--ick-radius-sm);
   font-family: var(--ick-font-sans);
   cursor: pointer;
@@ -93,6 +97,13 @@
 
 .header:disabled:hover {
   background: none;
+}
+
+/* Icons from the text they sit beside. `auto` on a pointer is the SVG's own
+   width and height attributes, so this changes nothing there. */
+.header svg {
+  width: var(--ick-icon);
+  height: var(--ick-icon);
 }
 
 .glyph {
