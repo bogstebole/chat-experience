@@ -19,6 +19,12 @@
 
 .panel {
   position: absolute;
+  box-sizing: border-box;
+  /* A column, so the thread inside can be told to take what is left rather
+     than a number. The panel's own ceiling comes from `placePanel`, which
+     knows how much room there is between where it opens and the bottom of
+     the screen — see `maxHeight` there. */
+  display: flex;
   padding: var(--ick-space-2);
   overflow: hidden;
   transform-origin: center center;
@@ -31,6 +37,63 @@
   box-shadow: var(--ick-shadow-modal);
 }
 
+/* ── On a phone ──────────────────────────────────────────────────────────
+   The thread stops hanging off the phrase and comes up from the bottom.
+
+   Hanging off a phrase works where there is somewhere to hang: beside the
+   passage, above it, with room underneath. A phone has none of that. Measured
+   on a 390×844 screen with a passage 556px down, the panel ended at 920 after
+   a single reply — 76px past the bottom edge, and every message after it
+   pushed more out of reach. Capping the height stops it running off the
+   screen and turns it into a letterbox instead: 289px of thread, in the lower
+   third, under a phrase you can no longer see.
+
+   So it becomes what the artifact pane already becomes here, with the same
+   tokens and the same gesture. Geometry is stated here rather than animated,
+   because Motion writes `left`/`top`/`width` inline and no rule in this file
+   could outrank that — see the note on the variants. */
+.panel[data-sheet] {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: auto;
+  /* As tall as the thread, and no taller than the artifact sheet would be.
+  
+     Fixed at the sheet height it left most of a screen of white under the
+     input on a thread with one reply in it — which is what a thread usually
+     has, since the whole idea is one question about one passage. A sheet that
+     is mostly empty reads as something that failed to load. It grows from the
+     bottom edge as the thread fills, which is the direction a sheet grows. */
+  height: auto;
+  max-height: var(--ick-sheet-height);
+  /* Top corners only. The bottom two are off the screen, and rounding them
+     puts a sliver of the page under a sheet that is supposed to be resting on
+     the edge. */
+  border-radius: var(--ick-sheet-radius) var(--ick-sheet-radius) 0 0;
+  /* The drag is the sheet's; the thread inside keeps its own scrolling. */
+  touch-action: none;
+}
+
+.panel[data-sheet] .feed {
+  /* No ceiling of its own here: the sheet's is the one that counts, and two
+     would leave the shorter one deciding for reasons nobody can see. */
+  max-height: none;
+  height: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* Says it can be pulled, and gives a thumb somewhere to pull that is not a
+   control. Same shape as the artifact sheet's. */
+.grabber {
+  display: block;
+  flex-shrink: 0;
+  width: var(--ick-sheet-grabber-width);
+  height: var(--ick-sheet-grabber-height);
+  margin: 0 auto var(--ick-space-2);
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-sheet-grabber);
+}
+
 /* The panel is `replyTargetWidth` wide with 4px of padding, so the column is
    simply the space left over. It used to be told `replyTargetWidth - 8` from
    JavaScript. */
@@ -38,6 +101,11 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  /* `min-height: 0` on every link of the chain, or a flex item refuses to be
+     shorter than its content and the panel grows past its own ceiling
+     regardless. */
+  min-height: 0;
+  flex: 1;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -90,6 +158,8 @@
   position: relative;
   border-radius: var(--ick-radius-xl);
   overflow: hidden;
+  min-height: 0;
+  flex: 1;
 }
 
 /* The fades that say there is more above or below. */
@@ -121,7 +191,12 @@
 .feed {
   background-color: var(--ick-surface);
   border-radius: var(--ick-radius-xl);
+  /* Two ceilings, and they mean different things. This one is taste — a
+     thread taller than this is a conversation and belongs in the main feed.
+     The other is the screen, and it is the panel's. */
   max-height: 640px;
+  height: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
 }

@@ -145,4 +145,33 @@ describe("placePanel", () => {
   it("does not open above the top of the screen", () => {
     expect(placePanel({ left: 100, top: 8, width: 240 }, 390, 844).y).toBe(24);
   });
+
+  /**
+   * And it does not run off the bottom either, which is the half that was
+   * missing.
+   *
+   * The panel hangs off the phrase and grows downwards as the thread fills,
+   * and nothing stopped it. Measured in the demo at 390×844 with a passage
+   * 556px down: after a single reply the panel ended at 920, and every
+   * message after that pushed more of it further out of reach.
+   */
+  it("leaves room under itself for the thread to grow into", () => {
+    const { y, maxHeight } = placePanel({ left: 100, top: 556, width: 240 }, 390, 844);
+    expect(y + maxHeight, "the panel's own bottom edge").toBeLessThanOrEqual(844 - 24);
+  });
+
+  /* A phrase at the very bottom of the screen. Following it down would open a
+     panel twenty pixels tall, so it stops following and sits where it can
+     still be used. */
+  it("stops following a phrase down once there is no room left", () => {
+    const { y, maxHeight } = placePanel({ left: 100, top: 820, width: 240 }, 390, 844);
+    expect(y).toBeLessThanOrEqual(844 - 24 - 260);
+    expect(maxHeight).toBeGreaterThanOrEqual(260);
+  });
+
+  /* A caller that does not say how tall the screen is has not asked for a
+     ceiling, and inventing one would cap a panel nobody measured. */
+  it("has no ceiling when it is not told the screen height", () => {
+    expect(placePanel(anchor, 1280).maxHeight).toBe(Infinity);
+  });
 });

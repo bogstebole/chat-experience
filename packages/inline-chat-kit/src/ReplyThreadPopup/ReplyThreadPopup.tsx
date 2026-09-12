@@ -28,6 +28,20 @@ export interface ReplyThreadPopupProps {
   ) => AsyncIterable<string> | Promise<string> | string;
 }
 
+/**
+ * Below this the thread stops hanging off the phrase and comes up from the
+ * bottom instead. Kept with the stylesheet, and with `ChatLayout`'s own
+ * breakpoint — two sheets in one kit that disagree about what a phone is
+ * would be worse than either choice.
+ */
+const NARROW = 760;
+
+/** Coming up from the bottom, and going back down. */
+const sheet = {
+  closed: { y: "100%", opacity: 1, transition: { type: "spring" as const, visualDuration: 0.28, bounce: 0 } },
+  open: { y: 0, opacity: 1, transition: { type: "spring" as const, visualDuration: 0.42, bounce: 0.18 } },
+};
+
 /** Everything inside the panel that can take focus, in tab order. */
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
@@ -50,6 +64,34 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
   const labelId = useId();
   const quoteId = useId();
   const animConfig = defaultInlineAnimConfig;
+
+  /**
+   * Whether this is a phone, watched rather than read once.
+   *
+   * `matchMedia` on the window rather than a container query like
+   * `ChatLayout` uses, and the difference is real: that pane lives inside the
+   * conversation's own column and has to answer to it, while this is fixed
+   * over the whole screen. What matters here is the screen.
+   */
+  /* Guarded on the **result**, not just on the function. `?.()` says the
+     method may be missing; it says nothing about what comes back, and a test
+     environment that stubs `matchMedia` with something returning nothing
+     brought the whole dialog down on `undefined.matches`. An axe test found
+     it, which is the sort of thing the accessibility pass is quietly good
+     for. */
+  const [narrow, setNarrow] = useState(() =>
+    typeof window === "undefined"
+      ? false
+      : (window.matchMedia?.(`(max-width: ${NARROW}px)`)?.matches ?? false)
+  );
+  useEffect(() => {
+    const query = window.matchMedia?.(`(max-width: ${NARROW}px)`);
+    if (!query?.addEventListener) return;
+    const answer = () => setNarrow(query.matches);
+    answer();
+    query.addEventListener("change", answer);
+    return () => query.removeEventListener("change", answer);
+  }, []);
 
   // Turn state, streaming and the reveal are the same problem here as in the
   // main feed, so they come from the same place rather than being written
@@ -116,10 +158,16 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
     const wrap = threadFeedRef.current;
     if (!wrap) return;
     
-    // Strict max height check: only allow fade if container has physically hit max height bounds
-    const isAtMaxHeight = wrap.clientHeight >= 630; // Small tolerance for borders/rounding
-    const overflowAmount = wrap.scrollHeight - wrap.clientHeight;
-    const hasOverflow = isAtMaxHeight && overflowAmount > 2;
+    /* Whether there is anything out of sight, which is the only question the
+       fades answer.
+    
+       This used to also require `clientHeight >= 630` — the thread's old
+       fixed ceiling, written again as a number. The panel takes the room the
+       screen leaves it now, so on a phone it is rarely 630 tall and the fades
+       would have stopped appearing exactly where they are most needed: the
+       short panel is the one whose content does not fit. Overflow is the
+       question; height was a proxy for it. */
+    const hasOverflow = wrap.scrollHeight - wrap.clientHeight > 2;
     
     if (!hasOverflow) { 
       setThreadFade("none"); 
@@ -166,9 +214,9 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
 
   /* Fit first, then place — see `placePanel`, which is a function precisely
      so the arithmetic can be tested without a browser. */
-  const { x: replyTargetX, y: replyTargetY, width: replyTargetWidth } =
+  const { x: replyTargetX, y: replyTargetY, width: replyTargetWidth, maxHeight } =
     typeof window === "undefined"
-      ? { x: 0, y: 0, width: 480 }
+      ? { x: 0, y: 0, width: 480, maxHeight: Infinity }
       : placePanel(activeReply.rect, window.innerWidth, window.innerHeight);
 
 
@@ -192,29 +240,67 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
         aria-labelledby={`${labelId} ${quoteId}`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        initial={{ 
+        /* Two shapes, and only one of them is placed.
+        
+           Beside the phrase, the panel travels from the passage's own box to
+           where it is going, so it reads as the passage opening. On a phone
+           there is nowhere for it to go — a panel hanging off a phrase near
+           the bottom of the screen is a panel mostly below it, and capping
+           its height only turns that into a letterbox. So it comes up from
+           the bottom instead, and its geometry belongs to the stylesheet:
+           Motion writes `left`/`top`/`width` as inline styles, which no media
+           query can override, so the sheet's variants must not mention them
+           at all. */
+        data-sheet={narrow || undefined}
+        initial={narrow ? "closed" : {
         left: activeReply.rect.left, 
         top: activeReply.rect.top, 
         width: activeReply.rect.width, 
         borderRadius: 12,
         opacity: 0
       }}
-      animate={{ 
+      animate={narrow ? "open" : { 
         left: replyTargetX, 
         top: replyTargetY, 
         width: replyTargetWidth, 
         borderRadius: 28,
         opacity: 1,
       }}
-      exit={{ 
+      exit={narrow ? "closed" : { 
         opacity: 0,
         scale: 0.95,
         filter: "blur(4px)"
       }}
-      transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+      variants={narrow ? sheet : undefined}
+      transition={narrow ? undefined : { type: "spring", bounce: 0, duration: 0.4 }}
+      {...(narrow
+        ? {
+            /* Dragged down to put away, like the artifact sheet. Distance
+               **or** speed: distance alone loses a quick flick, speed alone
+               dismisses a slow nudge that was meant to peek. */
+            drag: "y" as const,
+            dragConstraints: { top: 0, bottom: 0 },
+            dragElastic: { top: 0, bottom: 0.6 },
+            dragMomentum: false,
+            onDragEnd: (
+              _e: unknown,
+              info: { offset: { y: number }; velocity: { y: number } }
+            ) => {
+              if (info.offset.y > 120 || info.velocity.y > 600) onClose();
+            },
+          }
+        : {})}
+      /* A ceiling rather than an animated property: how much room there is
+         between the panel and the bottom of the screen is a fact about the
+         screen, not a thing to travel to. Motion owns everything in
+         `animate`; this sits beside it. */
+      style={!narrow && Number.isFinite(maxHeight) ? { maxHeight } : undefined}
       className={styles.panel}
     >
       <div className={styles.column}>
+        {/* Says the sheet can be pulled, and gives a thumb somewhere to pull
+            it that is not a control. Drawn only where it means something. */}
+        {narrow && <div className={styles.grabber} aria-hidden />}
         <div className={styles.header}>
           <div className={styles.headerLabel}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" className={styles.headerIcon} aria-hidden>

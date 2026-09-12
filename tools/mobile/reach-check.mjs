@@ -1,5 +1,5 @@
 /**
- * Can a thumb reach the controls, on a device with no hover?
+ * Can a thumb reach what it came for, on a phone?
  *
  *   npm run build-storybook --workspace packages/inline-chat-kit && npm run reach-check
  *
@@ -139,6 +139,69 @@ for (const [name, engine, touch] of [
       `and on a pointer they stay hidden until the picture is hovered`
     );
   }
+
+  /* ── The reply thread ────────────────────────────────────────────────
+     A panel that hangs off a phrase has to hang somewhere, and a phone has
+     nowhere: measured in the demo at 390×844 with a passage 556px down, it
+     ended at 920 after one reply — 76px past the bottom edge, with every
+     message after it pushing more out of reach. It is a sheet here now, up
+     from the bottom, and the only assertions that matter are that it stays
+     on the screen and that what you came for is on it. */
+  const thread = await b.newContext({
+    viewport: { width: touch ? 390 : 1280, height: 844 },
+    hasTouch: touch,
+    isMobile: touch,
+  });
+  const panel = await thread.newPage();
+  await panel.goto(`${site.url}/iframe.html?id=components-replythreadpopup--open&viewMode=story`, {
+    waitUntil: "networkidle",
+  });
+  await beat(panel, 900);
+
+  const laid = await panel.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    if (!dialog) return null;
+    const r = dialog.getBoundingClientRect();
+    const on = (el) => {
+      if (!el) return null;
+      const b = el.getBoundingClientRect();
+      return { top: Math.round(b.top), bottom: Math.round(b.bottom) };
+    };
+    return {
+      sheet: dialog.hasAttribute("data-sheet"),
+      top: Math.round(r.top),
+      bottom: Math.round(r.bottom),
+      screen: window.innerHeight,
+      below: Math.round(r.bottom - window.innerHeight),
+      close: on(dialog.querySelector('[aria-label="Close thread"]')),
+      editor: on(dialog.querySelector("[contenteditable]")),
+    };
+  });
+
+  if (!laid) {
+    console.log("    ??    the thread story drew no dialog — nothing measured");
+  } else if (touch) {
+    check(laid.sheet, `the thread comes up from the bottom rather than hanging off the phrase`);
+    check(
+      laid.below <= 0 && laid.bottom >= laid.screen - 1,
+      `and it rests on the bottom edge: ${laid.bottom}px in a ${laid.screen}px screen`
+    );
+    const reachable = (box) => box && box.top >= 0 && box.bottom <= laid.screen;
+    check(
+      reachable(laid.close),
+      `the way out is on the screen — ${laid.close ? `${laid.close.top}–${laid.close.bottom}px` : "no close button found"}`
+    );
+    check(
+      reachable(laid.editor),
+      `and so is the place to type — ${laid.editor ? `${laid.editor.top}–${laid.editor.bottom}px` : "no input found"}`
+    );
+  } else {
+    /* The other direction: beside the phrase is the right answer where there
+       is room, and this rule is not supposed to have taken that away. */
+    check(!laid.sheet, `and on a wide screen it still hangs off the phrase rather than the bottom`);
+    check(laid.below <= 0, `with nothing below the fold: ${laid.below}px past the bottom edge`);
+  }
+  await thread.close();
 
   await b.close();
 }
