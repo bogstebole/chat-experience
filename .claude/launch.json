@@ -24,6 +24,18 @@
       ],
       "port": 6006,
       "autoPort": false
+    },
+    {
+      "name": "website",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "--prefix",
+        "/Users/bogste/Documents/Projects/Personal/Website/Website v1",
+        "dev"
+      ],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

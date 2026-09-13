@@ -30,6 +30,7 @@ import { type TurnPartUpdate } from "../turnParts/turnParts";
 import { type Answer } from "../QuestionCard/types";
 import { type Decision } from "../Approval/Approval";
 import { type Attachment } from "../Attachments/Attachments";
+import { useThemeAttribute } from "../theme/useThemeAttribute";
 import styles from "./ChatExperience.module.css";
 
 /**
@@ -221,10 +222,7 @@ export function ChatExperience({
     return () => query.removeEventListener("change", sync);
   }, []);
   const theme = chosen ?? (systemDark ? "dark" : "light");
-  useEffect(() => {
-    if (chosen) document.documentElement.setAttribute("data-theme", chosen);
-    else document.documentElement.removeAttribute("data-theme");
-  }, [chosen]);
+  useThemeAttribute(chosen);
   const setTheme = useCallback(
     (next: "light" | "dark") => {
       if (!controlled) setOwnTheme(next);
