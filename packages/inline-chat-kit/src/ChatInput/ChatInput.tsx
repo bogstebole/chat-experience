@@ -93,6 +93,18 @@ export interface InlineAnimConfig {
   addCards: { staggerDelay: number; stiffness: number; damping: number; inputScale: number; inputBlur: number; angle1: number; angle2: number; angle3: number; hoverPull: number };
 }
 
+/**
+ * How small a composer control is when it arrives, and when it goes.
+ *
+ * Not zero. Nothing in the world appears from nothing, and at `scale: 0` these
+ * three read as popping into being rather than arriving — the eye has nothing
+ * to track from. 0.9 keeps them recognisable for the whole of the entrance,
+ * which is what makes it read as a thing moving rather than a thing switching
+ * on. The box still collapses to no width, so the row closes up exactly as it
+ * did; it is the glyph that stops vanishing.
+ */
+const ARRIVES_AT = 0.9;
+
 export const defaultInlineAnimConfig: InlineAnimConfig = {
   bubble: { stiffness: 600, damping: 22, mass: 0.3 },
   button: { stiffness: 500, damping: 50, mass: 0.2, staggerEnter: 0.06, staggerExit: 0.06 },
@@ -803,10 +815,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {!isGlass && showButtons && showMic && (
                     <motion.div
                       key="mic"
-                      initial={{ opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28, height: 28, marginLeft: 2 }}
+                      initial={{ opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 2 }}
                       exit={{
-                        opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0,
+                        opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0,
                         transition: pendingExpansion.current
                           ? { type: "tween", duration: ac?.wrap?.exitDuration ?? 0.15, ease: "easeOut", delay: (ac?.button?.staggerExit ?? 0.055) * 2 }
                           : undefined
@@ -821,7 +833,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         delay: (ac?.button?.staggerEnter ?? 0.055) * 2,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative" }}
+                      /* The height is stated and never animated. It was going 0 → 28 with the
+                         width, and taking it out of the animation took it out
+                         altogether: a flex item with no height and a button
+                         inside it collapses, and `zoom-check` found the plus
+                         invisible. Constant, it holds the row's alignment and
+                         costs nothing per frame. */
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: 28 }}
                     >
                       <Button
                         variant="ghost"
@@ -901,10 +919,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {!isGlass && showButtons && (
                     <motion.div
                       key="lead"
-                      initial={{ opacity: 0, scale: 0, width: 0, height: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28, height: 28 }}
+                      initial={{ opacity: 0, scale: ARRIVES_AT, width: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28 }}
                       exit={{
-                        opacity: 0, scale: 0, width: 0, height: 0,
+                        opacity: 0, scale: ARRIVES_AT, width: 0,
                         transition: pendingExpansion.current
                           ? { type: "tween", duration: ac?.wrap?.exitDuration ?? 0.15, ease: "easeOut", delay: ac?.button?.staggerExit ?? 0.055 }
                           : undefined
@@ -916,7 +934,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         delay: ac?.button?.staggerEnter ?? 0.055,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative" }}
+                      /* The height is stated and never animated. It was going 0 → 28 with the
+                         width, and taking it out of the animation took it out
+                         altogether: a flex item with no height and a button
+                         inside it collapses, and `zoom-check` found the plus
+                         invisible. Constant, it holds the row's alignment and
+                         costs nothing per frame. */
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: 28 }}
                     >
                       <AnimatePresence mode="popLayout" initial={false}>
                         {isEditing ? (
@@ -968,13 +992,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   {showInlineGlyph && showButtons && (
                     <motion.div
                       key="inline-action"
-                      initial={{ opacity: 0, scale: 0, width: 0, height: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28, height: 28, marginLeft: 8 }}
+                      initial={{ opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0 }}
+                      animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 8 }}
                       exit={{
                         opacity: 0,
-                        scale: 0,
+                        scale: ARRIVES_AT,
                         width: 0,
-                        height: 0,
                         marginLeft: 0,
                         transition: pendingExpansion.current
                           ? { type: "tween", duration: ac?.wrap?.exitDuration ?? 0.15, ease: "easeOut" }
@@ -983,7 +1006,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             visualDuration: ac?.enterButton?.visualDuration ?? 0.18,
                             bounce: ac?.enterButton?.bounce ?? 0.3,
                             opacity: { type: "tween", duration: 0.15 },
-                            height: bubbleSpring,
                             width: bubbleSpring,
                             marginLeft: bubbleSpring
                           }
@@ -994,7 +1016,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         bounce: ac?.enterButton?.bounce ?? 0.5,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "visible", transformOrigin: "right" }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "visible", transformOrigin: "right", height: 28 }}
                     >
                       <Button
                         variant="primary"
