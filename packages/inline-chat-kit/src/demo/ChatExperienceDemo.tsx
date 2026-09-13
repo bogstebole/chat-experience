@@ -5,6 +5,7 @@ import type { InlineAnimConfig } from "../ChatInput/ChatInput";
 import type { FoldMotion } from "../QuestionGroup/QuestionGroup";
 import type { Answer } from "../QuestionCard/types";
 import type { Decision } from "../Approval/Approval";
+import { useThemeAttribute } from "../theme/useThemeAttribute";
 import { IntroLanding, type IntroMotion } from "./IntroLanding";
 import { QUESTIONS, RUNNING_PLAN, scriptedApi, threadReply, scriptedTranscript } from "./scriptedApi";
 import styles from "./ChatExperienceDemo.module.css";
@@ -72,6 +73,17 @@ export function ChatExperienceDemo({
   introMotion,
 }: ChatExperienceDemoProps) {
   const [started, setStarted] = useState(skipIntro);
+
+  /* The landing page gets the theme too, and only when the host is the one
+     holding it. `ChatExperience` writes the same attribute from the same value
+     once the chat is up, so the two agree by construction — but it is not
+     mounted yet while somebody is still reading the page in front of it, and
+     without this that page came up in whatever the system preferred and then
+     changed colour when they pressed the button.
+
+     Skipped when `theme` is undefined, because then the chat holds its own and
+     this would be a second writer removing what the first had just set. */
+  useThemeAttribute(theme === undefined ? undefined : theme);
 
   /* The answers to a question the assistant asked.
 
