@@ -341,6 +341,114 @@ check(
     `${bottomOut.blankBelow}px, and the view rests at ${restingGap}px`
 );
 
+/* ── While the answer is written ───────────────────────────────────────────
+   The anchored message must not move at all.
+
+   Every check here until now measured *transitions* — where a message lands,
+   where the view comes to rest, whether it travelled. None of them watched
+   the long quiet stretch in between, and that is where the fault lived: the
+   message sat at the anchor and flipped a pixel up and down for the whole
+   length of every answer after the first. Reported three times, "fixed"
+   twice, because the measurements were of the wrong moment and each one was
+   true.
+
+   It was a feedback loop. The room under the conversation is part of
+   `scrollHeight`, `target` clamps to `scrollHeight`, and the room was
+   recomputed from measurements on every frame — so the room moved the view,
+   the view moved the measurements, and the measurements moved the room.
+   Sized to be exactly enough, the clamp sat on a knife edge and a fraction of
+   a pixel chose the side. Measured before: the message sat at 100, flipped to
+   101 and back thirty-one times, with the room going 418, 379, 374, 372, 362,
+   360, 351 underneath it. After: it decelerates into the anchor and then does
+   not move again for the rest of the answer — 473 frames at 680px, 466 at
+   1400px, not one of them a pixel off. */
+await page.evaluate(() => {
+  window.__still = [];
+  const view = document.querySelector(".chatFeed");
+  const tick = () => {
+    const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
+      (t) => t.textContent.trim().length > 0
+    );
+    const last = answered[answered.length - 1];
+    if (last) {
+      const box = last.getBoundingClientRect();
+      window.__still.push({
+        y: Math.round(box.top - view.getBoundingClientRect().top),
+        /* The turn says so itself: `aria-busy` is on it for screen readers
+           while the answer is arriving. So the window measured below is the
+           one the assertion names. Inferring it from the turn's height
+           instead — while it grows, the answer is arriving — ran past the
+           end: a finished turn still changes height as the streaming caret
+           goes and the actions appear, and those frames dragged the window
+           over the settle. */
+        writing: last.getAttribute("aria-busy") === "true",
+      });
+    }
+    window.__raf2 = requestAnimationFrame(tick);
+  };
+  window.__raf2 = requestAnimationFrame(tick);
+});
+await send("What does particle physics actually study?");
+await beat(page, 11000);
+const still = await page.evaluate(() => {
+  cancelAnimationFrame(window.__raf2);
+  return window.__still;
+});
+/* The stretch where the answer is being written, and nothing either side:
+   the journey to the anchor is before it and the settle is after it, and both
+   are supposed to move. Contiguous, because "every frame where it was
+   writing" would staple two answers together across the gap between them. */
+let streak = [];
+let writing = [];
+for (const frame of still) {
+  if (frame.writing) streak.push(frame.y);
+  else {
+    if (streak.length > writing.length) writing = streak;
+    streak = [];
+  }
+}
+if (streak.length > writing.length) writing = streak;
+
+/* Jitter is not motion. It is motion that **changes its mind**.
+  
+   That distinction is the whole of this check, and getting it wrong is what
+   made the first version of it lie. It took every frame within a few pixels
+   of the anchor and counted each change of position — which caught the last
+   five frames of the deceleration, 106, 105, 103, 102, 101, and reported the
+   arrival as the fault. The arrival is required to move; the check above it
+   asserts exactly that. A reversal is not required by anything.
+  
+   Measured on the fault this was written for: the message flipped between 100
+   and 101 for the length of every answer after the first — thirty-one
+   reversals. Measured after: none, at either height. */
+let reversals = 0;
+let heading = 0;
+for (let i = 1; i < writing.length; i++) {
+  const step = Math.sign(writing[i] - writing[i - 1]);
+  if (step && heading && step !== heading) reversals++;
+  if (step) heading = step;
+}
+
+/* Reversals alone would let a slow creep through, since a creep never turns
+   around. By halfway through an answer the message has long since arrived, so
+   the back half has to be a single number — and that number has to be the
+   anchor, or it is holding still somewhere it does not belong. */
+const settledHalf = writing.slice(Math.floor(writing.length / 2));
+const spread = settledHalf.length
+  ? Math.max(...settledHalf) - Math.min(...settledHalf)
+  : Infinity;
+const restsAt = settledHalf[settledHalf.length - 1] ?? -1;
+
+check(
+  writing.length > 200 &&
+    reversals === 0 &&
+    spread === 0 &&
+    Math.abs(restsAt - ANCHOR) <= 4,
+  `the anchored message holds still while its answer is written: ` +
+    `${reversals} reversals over ${writing.length} frames, ` +
+    `and the back half sits at ${restsAt}px within ${spread}px`
+);
+
 /* ── Reading back through it ───────────────────────────────────────────────
    Scrolling up must not be a fight.
 

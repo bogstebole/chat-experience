@@ -326,8 +326,30 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        stands between it and the bottom edge is the whole stack under it. So
        that is what comes off. */
     const stack = flowTop(last, view) + last.offsetHeight - flowTop(held, view);
-    write(inner, applied, Math.max(floor, view.clientHeight - anchorOffset - stack - pad));
-  }, [tail, anchorOffset, endOffset]);
+    const needed = Math.max(floor, view.clientHeight - anchorOffset - stack - pad);
+
+    /* ── While a turn is anchored, the room only grows ────────────────────
+       The room's contract is *at least this much* — enough for the anchored
+       turn to reach the anchor — and a floor does not drop while the thing
+       standing on it is still standing.
+
+       Letting it shrink on every frame made it a feedback loop. The room is
+       part of `scrollHeight`, `target` clamps to `scrollHeight`, so the room
+       moved the view, the view moved the measurements, and the measurements
+       moved the room. Sized to be *exactly* enough, the clamp sat on a knife
+       edge and a fraction of a pixel decided which side. Measured while a
+       second answer was written: the message sat at y=100 and flipped to 101
+       and back thirty-one times, with the room going 418, 379, 374, 372, 362,
+       360, 351 underneath it.
+
+       Monotonic while held, and recomputed exactly the moment the anchor is
+       let go — so a long answer carries some spare room under it until it
+       settles, and nothing carries it afterwards. Growing is still allowed,
+       which is what keeps this self-correcting: a first measurement taken
+       before the layout is final is raised by the next one rather than
+       standing for the whole answer. */
+    write(inner, applied, anchorId ? Math.max(needed, applied.current) : needed);
+  }, [tail, anchorOffset, endOffset, anchorId]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
