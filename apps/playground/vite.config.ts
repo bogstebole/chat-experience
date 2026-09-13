@@ -38,6 +38,13 @@ export default defineConfig({
         import.meta.dirname,
         "../../packages/inline-chat-kit/src/styles/tokens.css"
       ),
+      /* The demo entry, before the bare name — an alias map is walked in
+         order, and `"inline-chat-kit"` matched as a prefix would rewrite this
+         to `src/index.ts/demo`, which is a path through a file. */
+      "inline-chat-kit/demo": resolve(
+        import.meta.dirname,
+        "../../packages/inline-chat-kit/src/demo/index.ts"
+      ),
       // Point at the kit's source so editing it hot-reloads here without a
       // rebuild. Consumers get the built package via its exports map instead.
       "inline-chat-kit": resolve(import.meta.dirname, "../../packages/inline-chat-kit/src/index.ts"),

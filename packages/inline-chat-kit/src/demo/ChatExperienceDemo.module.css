@@ -1,0 +1,11 @@
+/* The plan inside the artifact pane. The kit draws the pane; what is in it is
+   the host's, and here the host is this demo — so its typography lives beside
+   the demo rather than in a page's stylesheet. */
+.plan {
+  margin: 0;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-sm);
+  line-height: 1.65;
+  color: var(--ick-ink-soft);
+  white-space: pre-wrap;
+}

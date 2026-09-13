@@ -1,4 +1,4 @@
-import type { Attachment, Question, Source, TurnPart, TurnPartUpdate } from "inline-chat-kit";
+import type { Attachment, Question, Source, TurnPart, TurnPartUpdate } from "../index";
 
 /**
  * The demo pretending to be a model, and now pretending to be an agent.

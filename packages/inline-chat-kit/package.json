@@ -1,7 +1,7 @@
 {
   "name": "inline-chat-kit",
   "version": "0.54.3",
-  "description": "An inline AI chat experience for React. The input is the message: it morphs into the bubble, the answer streams beneath it, and the parts around it — tool calls, reasoning, questions, artifacts, dictation — come with it.",
+  "description": "An inline AI chat experience for React. The input is the message: it morphs into the bubble, the answer streams beneath it, and the parts around it \u2014 tool calls, reasoning, questions, artifacts, dictation \u2014 come with it.",
   "keywords": [
     "react",
     "chat",
@@ -45,7 +45,11 @@
       "import": "./dist/inline-chat-kit.js"
     },
     "./styles.css": "./dist/inline-chat-kit.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./demo": {
+      "types": "./dist/demo/index.d.ts",
+      "import": "./dist/demo.js"
+    }
   },
   "publishConfig": {
     "access": "public"

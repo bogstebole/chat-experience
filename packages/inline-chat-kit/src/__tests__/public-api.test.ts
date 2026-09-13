@@ -16,6 +16,7 @@ const EXPECTED_EXPORTS = [
   "Approval",
   "Button",
   "ChainOfThought",
+  "ChatExperience",
   "ChatHeader",
   "ChatInput",
   "Chip",

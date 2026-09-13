@@ -16,9 +16,19 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: resolve(import.meta.dirname, "src/index.ts"),
+      /* Two entries, because the demo is not the library.
+
+         `inline-chat-kit` is what an app builds on. `inline-chat-kit/demo` is
+         the scripted showcase — a landing page, a conversation full of
+         particle physics, and the answers behind it — which two apps were each
+         keeping their own copy of. Behind its own entry, an app that never
+         imports it never carries a line of it. */
+      entry: {
+        "inline-chat-kit": resolve(import.meta.dirname, "src/index.ts"),
+        demo: resolve(import.meta.dirname, "src/demo/index.ts"),
+      },
       formats: ["es"],
-      fileName: () => "inline-chat-kit.js",
+      fileName: (_format, name) => `${name}.js`,
     },
     cssFileName: "inline-chat-kit",
     rollupOptions: {

@@ -563,7 +563,7 @@ const APP_SHOTS = [
          land where it likes the composer is off-frame half the time, and the
          one thing this shot is for is what it looks like *in* the gradient. */
       await page.evaluate(() => {
-        const feed = document.querySelector(".chatFeed");
+        const feed = document.querySelector(".ick-chat-feed");
         const row = document.querySelector("[data-active-input]");
         if (!feed || !row) return;
         const gap = row.getBoundingClientRect().bottom - (window.innerHeight - 40);
