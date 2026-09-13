@@ -1,0 +1,342 @@
+/* ── The assembled experience ──────────────────────────────────────────────
+   What used to be `ChatExperience.css` in two host apps, 301 and 306 lines of
+   nearly the same thing. Every rule here is about how the kit's own pieces sit
+   together — a fixed header over a scrolling conversation, the fades at both
+   ends, the column they share — which makes it the kit's, not a page's.
+
+   The one token it used to need from the host is gone with it: this said
+   `var(--bg)`, which the playground aliased to `--ick-page` and the website
+   did not alias at all until a header rendered see-through over a scrolling
+   answer. It says `--ick-page` now. A component that needs a variable the host
+   has to remember to define is a component with a bug waiting in it. */
+
+.page {
+  /* Narrower on a phone than the 32 a desktop gets: a 390px screen cannot
+     spare 64 of it on margins. */
+  --page-pad-mobile: 16px;
+
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  /* Stated, because this is a flex item now and `margin: 0 auto` on one opts
+     it out of stretching — so it was sized by its content instead of by
+     `max-width`, and the column lost 96px the day `ChatLayout` went around it.
+     With a width to cap, `max-width` caps it and the auto margins centre it,
+     which is what they were always doing on a block. */
+  width: 100%;
+  max-width: var(--ick-experience-width, 720px);
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  overflow: clip;
+}
+
+/* The notch, the rounded corners and the home indicator.
+
+   On a phone the 32px of side padding is measured from the edge of the glass,
+   which in landscape puts the first character of an answer under the notch.
+   `max()` rather than an addition: the inset is 0 on every screen that has no
+   notch, and adding it would still be 32 — what is wanted is *whichever is
+   larger*, so the padding is 32 normally and grows only where it must.
+
+   The bottom one is the home indicator, which sits over the composer. */
+@media (max-width: 760px) {
+  .page {
+    padding-left: max(var(--page-pad-mobile), env(safe-area-inset-left));
+    padding-right: max(var(--page-pad-mobile), env(safe-area-inset-right));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* The scroll container is `Conversation`; this is only what the viewport
+   inside it needs. Not here: `flex`, `overflow-y`, `display` and `gap`, all of
+   which the component owns — the gap is `--ick-conversation-gap`, which
+   already defaults to the 48px this used to restate.
+
+   No tail is declared either. It was `99vh`, a guess, and a guess that large
+   meant the reader could scroll a whole screen past the end of the
+   conversation into nothing — measured, 697px of blank in a 680px view, with
+   the last turn above the top edge. `Conversation` measures it: exactly the
+   room the last turn needs to reach the anchor, and no more.
+
+   The negative inline margins are the bleed that lets a marker stroke overflow
+   the column without being clipped. */
+.feed {
+  padding-top: var(--ick-experience-anchor, 100px);
+  padding-left: 32px;
+  padding-right: 32px;
+  margin-left: -32px;
+  margin-right: -32px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.feed::-webkit-scrollbar {
+  display: none;
+}
+
+/* Over the fade, not under it.
+
+   The fade is for the *conversation* running off the bottom edge. The composer
+   is not conversation — it is the control you type into, and it lives at the
+   end of the feed because it morphs into the message it sends. Which put it
+   inside 180px of gradient: after a long answer the box came out washed to
+   nearly nothing, and a control you can barely see is one people assume they
+   are not allowed to use. It was never actually blocked — the fade has always
+   been `pointer-events: none` — so the whole fault was that it looked
+   unavailable.
+
+   `[data-active-input]` is the kit saying which row is the live one; it is
+   only ever the last turn, waiting, so no answer is lifted with it. The blur
+   is a sibling in `.page`'s stacking context and `Conversation`'s root is
+   `z-index: auto`, which creates no context of its own — so a row inside the
+   feed competes with the blur directly, and 6 beats 5. */
+.feed [data-active-input] {
+  position: relative;
+  z-index: 6;
+}
+
+.topBlur {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  max-width: var(--ick-experience-width, 720px);
+  left: 50%;
+  transform: translateX(-50%);
+  height: 120px;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(to bottom, var(--ick-page) 30%, transparent 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+.bottomBlur {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(to top, var(--ick-page) 10%, transparent 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  mask-image: linear-gradient(to top, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 50%, transparent 100%);
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  max-width: var(--ick-experience-width, 720px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+@media (max-width: 540px) {
+  .header {
+    padding: 16px;
+  }
+
+  .bottomBlur {
+    height: 80px;
+  }
+}
+
+/* The context meter: a ring and its percentage. A header is the one place
+   where "Context used 3.4k of 8k tokens" is more than anybody asked for, so
+   only the number is on screen and the sentence stays in the tooltip — but the
+   number stays. Hidden on a narrow screen, where the actions have already
+   folded into a menu and there is no room left to spare. */
+.context {
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+@media (max-width: 560px) {
+  .context {
+    display: none;
+  }
+}
+
+.selectMode {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--ick-tray);
+}
+
+.selectMode button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 99px;
+  color: var(--ick-ink-faint);
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+
+.selectMode button:hover {
+  color: var(--ick-ink);
+}
+
+.selectMode button[data-active="true"] {
+  background: var(--ick-tray-thumb);
+  color: var(--ick-ink);
+  box-shadow: var(--ick-shadow-1);
+}
+
+/* ── The opening ──────────────────────────────────────────────────────────
+   The block and the composer under it are one centred column of one width.
+   Before this the openers sat centred at the top and the composer floated at
+   the bottom right, and the two read as unrelated to each other.
+
+   The block's own 40px of bottom padding came on top of the conversation's
+   48px gap, which put 88px between the last opener and the box you type in. */
+.opening {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+div.opening {
+  padding-bottom: 0;
+}
+
+/* The page, once there is a pane. `ChatLayout` is the row; the chat column
+   inside it keeps its own max-width and centres in whatever room is left, so
+   opening the pane slides the conversation across rather than squashing it.
+   The kit does not set a height on `ChatLayout`: how tall a chat is belongs to
+   the page around it, and here that page is this file. */
+.workspace {
+  height: 100vh;
+  height: 100dvh;
+  box-sizing: border-box;
+}
+
+/* ── Saved highlights ─────────────────────────────────────────────────────
+   A reader marks passages; this is where they end up. Inline styles in both
+   copies before this, which is why the two had drifted apart by a few pixels
+   in three places. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--ick-scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.sheet {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 32px;
+  border-radius: 24px;
+  background: var(--ick-surface-raised);
+  border: 1px solid var(--ick-border);
+  box-shadow: var(--ick-shadow-modal);
+}
+
+.sheetHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.sheetTitle {
+  margin: 0;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink);
+}
+
+.close {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-ink-soft);
+  transition: background 0.2s, color 0.2s;
+}
+
+.close:hover {
+  background: var(--ick-surface-active);
+  color: var(--ick-ink);
+}
+
+.group {
+  margin-bottom: 24px;
+}
+
+.groupTitle {
+  margin: 0 0 8px;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  font-weight: 400;
+  color: var(--ick-ink-faint);
+}
+
+.marks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mark {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--ick-marker-tint);
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-ink);
+  transition: background-color 0.2s;
+}
+
+/* Gated, because a touchscreen leaves a hover behind after a tap — see
+   `motionRules.test.ts`. Colour only, so this is safe either way; the gate is
+   here because the rule is the rule. */
+@media (hover: hover) and (pointer: fine) {
+  .mark:hover {
+    background: var(--ick-marker);
+  }
+}
+
+.mark:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: 2px;
+}

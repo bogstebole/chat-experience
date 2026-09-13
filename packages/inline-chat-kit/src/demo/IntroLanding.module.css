@@ -19,7 +19,7 @@
   justify-content: center;
   padding-block: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-bottom));
   box-sizing: border-box;
-  background-color: var(--color-bg-page);
+  background-color: var(--ick-page);
   overflow-x: clip;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .welcome {
-  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  font-family: var(--ick-font-mono);
   font-size: 15px;
   font-weight: 400;
   line-height: 18px;
@@ -74,7 +74,7 @@
 }
 
 .title {
-  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  font-family: var(--ick-font-mono);
   font-size: 20px;
   font-weight: 500;
   line-height: 24px;
@@ -84,7 +84,7 @@
 }
 
 .version {
-  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  font-family: var(--ick-font-mono);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
@@ -93,7 +93,7 @@
 }
 
 .description {
-  font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
+  font-family: var(--ick-font-sans);
   font-size: 14px;
   font-weight: 400;
   line-height: 18px;
@@ -130,11 +130,47 @@
    not. A second notice saying "not yet" beside it was the drift. */
 
 .fyi {
-  font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
+  font-family: var(--ick-font-sans);
   font-size: 10px;
   font-weight: 400;
   line-height: 15px;
   color: var(--ick-ink-faint);
   text-align: center;
   margin: 0;
+}
+
+/* The way back out, styled here rather than by whoever passes it.
+
+   It used to be a `.secondaryBtn` class defined in each host's own stylesheet,
+   which is two definitions of one button and a third waiting for the next host
+   — and on the website the class sat in the chat page's stylesheet, so the
+   link on the *intro* was styled by a file about the conversation. Targeting
+   the element means a host hands over an `<a>`, or a framework's `<Link>`,
+   which renders one, and gets the look without being told a class name. */
+.buttonWrapper a {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-family: var(--ick-font-mono);
+  font-size: var(--ick-text-xs);
+  color: var(--ick-ink-soft);
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .buttonWrapper a:hover {
+    background: var(--ick-surface-active);
+    color: var(--ick-ink);
+  }
+}
+
+.buttonWrapper a:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: 2px;
 }

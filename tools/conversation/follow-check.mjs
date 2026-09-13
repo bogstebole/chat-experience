@@ -77,7 +77,7 @@ await page.getByRole("button", { name: /start experience/i }).click();
 await beat(page, 1500);
 
 ANCHOR = await page.evaluate(() =>
-  Math.round(parseFloat(getComputedStyle(document.querySelector(".chatFeed")).paddingTop))
+  Math.round(parseFloat(getComputedStyle(document.querySelector(".ick-chat-feed")).paddingTop))
 );
 console.log(`  the feed holds an anchored turn ${ANCHOR}px down\n`);
 
@@ -92,7 +92,7 @@ console.log(`  the feed holds an anchored turn ${ANCHOR}px down\n`);
  */
 const lastTurn = () =>
   page.evaluate(() => {
-    const view = document.querySelector(".chatFeed");
+    const view = document.querySelector(".ick-chat-feed");
     const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
       (t) => t.textContent.trim().length > 0
     );
@@ -130,7 +130,7 @@ for (const [i, q] of QUESTIONS.entries()) {
      let go of it, so that was every answer, for the rest of the session: you
      could finish reading and have nowhere visible to type. */
   const rest = await page.evaluate(() => {
-    const view = document.querySelector(".chatFeed");
+    const view = document.querySelector(".ick-chat-feed");
     const editor = [...view.querySelectorAll("[contenteditable]")].pop();
     const row = editor.closest("[id^='turn-']") ?? editor;
     const v = view.getBoundingClientRect();
@@ -159,7 +159,7 @@ for (const [i, q] of QUESTIONS.entries()) {
      screen, it is at the anchor; it does not, it has scrolled past the anchor
      and the end of the answer is what you are looking at. */
   const settled = await page.evaluate(() => {
-    const view = document.querySelector(".chatFeed");
+    const view = document.querySelector(".ick-chat-feed");
     const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
       (t) => t.textContent.trim().length > 0
     );
@@ -201,7 +201,7 @@ for (const [i, q] of QUESTIONS.entries()) {
      — 536px of it after every answer, when the measurement took the last
      turn's own height instead of everything under the anchor. */
   const spare = await page.evaluate(() => {
-    const view = document.querySelector(".chatFeed");
+    const view = document.querySelector(".ick-chat-feed");
     return Math.round(view.scrollHeight - view.clientHeight - view.scrollTop);
   });
   check(
@@ -224,7 +224,7 @@ console.log(`    (the composer came to rest ${restingPlaces.join(", ")}px clear 
 // is registered last, so it sees what the reader will.
 await page.evaluate(() => {
   window.__seen = [];
-  const view = document.querySelector(".chatFeed");
+  const view = document.querySelector(".ick-chat-feed");
   const content = view.firstElementChild;
   const read = () => {
     const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
@@ -276,7 +276,7 @@ check(
    with it. What it has to do is stay exactly where it was pressed. */
 const headerAt = () =>
   page.evaluate(() => {
-    const view = document.querySelector(".chatFeed");
+    const view = document.querySelector(".ick-chat-feed");
     const h = [...document.querySelectorAll("[aria-expanded]")].find((x) =>
       x.textContent.includes("Thought")
     );
@@ -313,7 +313,7 @@ if (await fold.count()) {
    where the last turn sits at the anchor. Which is what this asserts: scroll
    as far as it goes and the last turn is *there*, not gone. */
 const bottomOut = await page.evaluate(() => {
-  const view = document.querySelector(".chatFeed");
+  const view = document.querySelector(".ick-chat-feed");
   view.scrollTop = view.scrollHeight;
   const inner = view.firstElementChild;
   const last = inner.lastElementChild;
@@ -364,7 +364,7 @@ check(
    1400px, not one of them a pixel off. */
 await page.evaluate(() => {
   window.__still = [];
-  const view = document.querySelector(".chatFeed");
+  const view = document.querySelector(".ick-chat-feed");
   const tick = () => {
     const answered = [...view.querySelectorAll("[id^='turn-']")].filter(
       (t) => t.textContent.trim().length > 0
@@ -460,7 +460,7 @@ check(
    and 63 pixels all ended at the bottom again, and 80 was free. Sixty-four
    pixels of fighting and then it let go all at once. */
 const held = await page.evaluate(async () => {
-  const view = document.querySelector(".chatFeed");
+  const view = document.querySelector(".ick-chat-feed");
   const max = view.scrollHeight - view.clientHeight;
   const settle = () => new Promise((r) => setTimeout(r, 300));
   const out = [];
@@ -506,7 +506,7 @@ const button = page.getByRole("button", { name: /jump to the latest/i });
 const shown = await button.count();
 check(shown > 0, "the way-back button appears once you have scrolled away");
 if (shown) {
-  const at = () => page.evaluate(() => Math.round(document.querySelector(".chatFeed").scrollTop));
+  const at = () => page.evaluate(() => Math.round(document.querySelector(".ick-chat-feed").scrollTop));
   await button.click();
   const path = [];
   for (let i = 0; i < 8; i++) {
@@ -531,7 +531,7 @@ if (shown) {
    second. Only the deliberate move is eased. */
 await page.evaluate(() => {
   window.__path = [];
-  const view = document.querySelector(".chatFeed");
+  const view = document.querySelector(".ick-chat-feed");
   const tick = () => {
     window.__path.push({ t: Math.round(performance.now()), top: Math.round(view.scrollTop) });
     window.__raf = requestAnimationFrame(tick);

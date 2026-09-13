@@ -53,6 +53,19 @@ export type {
 export { announce } from "./announce/announce";
 export type { Politeness } from "./announce/announce";
 
+/* The whole thing, assembled — a header over a conversation over a composer,
+   with the anchor, the pane, the highlights and the thread already wired to
+   each other. Every other export here is a piece; this is the piece that puts
+   them together, and it is in the kit because two host pages doing it turned
+   into two copies that drifted. */
+export { ChatExperience } from "./ChatExperience/ChatExperience";
+export type {
+  ChatExperienceProps,
+  ChatExperienceEmpty,
+  ChatExperienceArtifact,
+  PartWriter,
+} from "./ChatExperience/ChatExperience";
+
 /* The chrome above the conversation */
 export { ChatHeader, headerIconSize } from "./ChatHeader/ChatHeader";
 export type {

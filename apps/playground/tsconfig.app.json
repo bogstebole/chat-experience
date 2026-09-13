@@ -23,7 +23,8 @@
 
     /* Resolve the kit to its source, matching the Vite alias */
     "paths": {
-      "inline-chat-kit": ["../../packages/inline-chat-kit/src/index.ts"]
+      "inline-chat-kit": ["../../packages/inline-chat-kit/src/index.ts"],
+      "inline-chat-kit/demo": ["../../packages/inline-chat-kit/src/demo/index.ts"]
     }
   },
   "include": ["src", "../../packages/inline-chat-kit/src"]
