@@ -8,6 +8,60 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.55.0 — 2026-09-13
+
+### Added
+
+- **`ChatExperience` — the whole thing, assembled.** Every other export here is
+  a piece: a header, a scroll container, a turn, a pane. Putting them together
+  was a page's job right up until two pages did it, and then it was a copy.
+
+  ```tsx
+  <ChatExperience onSend={ask} title="Chat" placeholder="Ask anything…" />
+  ```
+
+  It holds a sent turn at the top while its answer is written and lets go when
+  it settles; titles the header from the first question actually asked rather
+  than from the first keystroke; places the artifact pane *beside* the
+  conversation rather than inside it, which is the difference between a pane
+  and a modal; announces a full context window once, through the kit's own live
+  region rather than a second one; and asks whether there is a pointer before
+  drawing a cursor for it. A host gives it content and identity — `onSend`, the
+  copy, what is in the pane, where "back" goes.
+
+  The pieces are all still exported. Assemble them yourself when your app needs
+  a shape this one does not have.
+
+- **`inline-chat-kit/demo`** — the scripted showcase behind its own entry
+  point: the landing page, the banner, and the particle-physics answers. An app
+  that never imports it never carries a line of it; the library entry is 1.8 kB
+  and the demo is 22.
+
+### Fixed
+
+- **Two variables the kit expected a host to define.** The chat stylesheet said
+  `var(--bg)` and the landing page said `--color-bg-page`, `--font-geist-sans`
+  and `--font-jetbrains-mono` — none of which this package ships. They rendered
+  correctly in a host that happened to have them and silently wrong in one that
+  did not: a header see-through over a scrolling answer, and an intro in serif
+  on a white page. All of it is on `--ick-` tokens now.
+
+### Internal
+
+- **The fork that caused the last three bug reports is gone.** Two apps each
+  kept their own copy of the assembly — 865 lines and 890, ~90% identical —
+  along with 537 byte-identical lines of scripted answers and two stylesheets.
+  Every fix went into one of them.
+
+- **`noForks.test.ts`** measures it from now on: any file under `apps/` sharing
+  more than half its substantial lines with a file in the kit fails, naming
+  both files and the share. Comments are stripped so a quotation is not a fork,
+  and whitespace is normalised so a reformat is not a defence. Watched failing
+  before it was trusted — a planted copy reports `100% (327 of 327 lines)`.
+
+- The getting-started example is now the one-liner, compiled on every build and
+  quoted into the page character for character, as before.
+
 ## 0.54.3 — 2026-09-13
 
 ### Fixed

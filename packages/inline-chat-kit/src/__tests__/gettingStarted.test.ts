@@ -32,8 +32,8 @@ const page = readFileSync(join(PKG, "getting-started.md"), "utf8");
 const quotable = source
   .replace(/^\/\*\*[\s\S]*?\*\/\n/, "")
   .replace(
-    'import { ChatTurnRow, Conversation, useChatTurns } from "../index";',
-    'import { ChatTurnRow, Conversation, useChatTurns } from "inline-chat-kit";\n' +
+    'import { ChatExperience } from "../index";',
+    'import { ChatExperience } from "inline-chat-kit";\n' +
       'import "inline-chat-kit/styles.css";'
   );
 
