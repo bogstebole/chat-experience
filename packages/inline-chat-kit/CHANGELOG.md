@@ -8,6 +8,54 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.54.3 — 2026-09-13
+
+### Fixed
+
+- **The sent message flickered a pixel up and down for the whole length of
+  every answer after the first.** Measured while a second answer was written:
+  the message sat at y=100 and flipped to 101 and back thirty-one times, with
+  the room under the conversation going 418, 379, 374, 372, 362, 360, 351
+  underneath it — a new value on every frame.
+
+  It was a feedback loop. That room is part of `scrollHeight`, the scroll
+  target is clamped to `scrollHeight`, and the room was recomputed from
+  measurements on every frame: the room moved the view, the view moved the
+  measurements, and the measurements moved the room. Sized to be *exactly*
+  enough for the anchored turn to reach the anchor, the clamp sat on a knife
+  edge and a fraction of a pixel chose the side.
+
+  A floor does not drop while the thing standing on it is still standing. So
+  while a turn is anchored the room only grows, and it is recomputed the
+  moment the anchor is let go — a long answer carries some spare room until it
+  settles, and nothing carries it afterwards. Growing stays allowed, which is
+  what keeps it self-correcting: a first measurement taken before layout is
+  final is raised by the next one rather than standing for the whole answer.
+
+  After: the message decelerates into the anchor and then holds one position
+  for the rest of the answer — 473 frames at a 680px viewport, 466 at 1400px,
+  not one of them a pixel off.
+
+### Internal
+
+- **`follow-check` has a guard for it**, and it had none before: every check
+  in there measured a *transition* — where a message lands, where the view
+  comes to rest, whether it travelled — and this fault lived in the quiet
+  stretch between them, which is why it was reported three times and "fixed"
+  twice on measurements that were each true.
+
+  The window comes from `aria-busy`, which the turn already carries for
+  screen readers while its answer arrives, so it is the window the assertion
+  names rather than one inferred from the turn's height — that one ran past
+  the end of the answer and counted the settle. The fault inside it is a
+  **reversal**, because jitter is not motion, it is motion that changes its
+  mind; the arrival is required to move and is asserted elsewhere. A creep
+  never reverses, so the back half of the window has to be a single number as
+  well, and that number the anchor.
+
+  Watched failing on the fault before it was trusted: 4 reversals at both
+  heights with the room recomputing per frame, none with the floor.
+
 ## 0.54.2 — 2026-09-12
 
 ### Fixed
