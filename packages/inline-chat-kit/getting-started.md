@@ -19,85 +19,49 @@ kit uses whatever copy your app already has. React 18 or 19.
 ## The whole thing
 
 ```tsx
-import { useCallback, useState } from "react";
-import { ChatTurnRow, Conversation, useChatTurns } from "inline-chat-kit";
+import { ChatExperience } from "inline-chat-kit";
 import "inline-chat-kit/styles.css";
 
-/** How far below the top edge a sent message comes to rest. */
-const ANCHOR = 24;
-
 export function MinimalChat() {
-  /* Which turn to hold at the top. Kept here rather than inside the kit
-     because "which message am I looking at" is the host's question: you may
-     want it to follow a regenerate, a jump from a sidebar, or nothing at all. */
-  const [anchored, setAnchored] = useState<string | null>(null);
-
-  const { turns, setDraft, submit, stop, beginEdit, cancelEdit } = useChatTurns({
-    /* Return a string, a promise of one, or an async iterable of deltas. The
-       kit has no answers of its own — return nothing and nothing appears. */
-    onSend: async (message) => `You said: ${message}`,
-  });
-
-  const send = useCallback(
-    (id: string, value: string) => {
-      setAnchored(id);
-      submit(id, value);
-    },
-    [submit]
-  );
-
-  /* Held while the answer is arriving, let go when it settles — otherwise the
-     question stays pinned to the top for ever and the composer, which is the
-     last turn, sits below the fold. */
-  const holding = turns.find((turn) => turn.id === anchored);
-  const anchorId =
-    holding && holding.state !== "resting" ? `turn-${holding.id}` : undefined;
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
-      <Conversation
-        anchorId={anchorId}
-        /* Match whatever padding sits above the conversation, or a turn
-           brought to the top lands underneath it. */
-        anchorOffset={ANCHOR}
-        /* Room left under the composer when an answer settles. */
-        endOffset={ANCHOR}
-        style={{ padding: ANCHOR }}
-      >
-        {turns.map((turn, i) => (
-          <ChatTurnRow
-            key={turn.id}
-            turn={turn}
-            /* The last turn is the composer: this is what makes it one. */
-            isActiveInput={
-              i === turns.length - 1 &&
-              (turn.state === "idle" || turn.state === "typing")
-            }
-            /* Pass the hook's own functions straight through — they are stable,
-               and `ChatTurnRow` is memoised on them. An arrow made during
-               render hands the memo a new prop every time. */
-            onDraft={setDraft}
-            onSubmit={send}
-            onStop={stop}
-            onEdit={beginEdit}
-            onCancelEdit={cancelEdit}
-            placeholder="Ask anything…"
-          />
-        ))}
-      </Conversation>
-    </div>
+    <ChatExperience
+      /* The one thing that has to be yours. Return a string, a promise of one,
+         or an async iterable of deltas — the kit has no answers of its own. */
+      onSend={async (message) => `You said: ${message}`}
+      /* Shown in the header until a question has been asked; after that the
+         header carries the first question, so somebody arriving at a
+         conversation in progress can see what it is about. */
+      title="Chat"
+      placeholder="Ask anything…"
+      /* Before anybody has asked. The openers are sent rather than typed into
+         the box: one that only fills the input asks somebody to press send on
+         a sentence they did not write. */
+      empty={{
+        title: "Ask me anything",
+        description: "Or press one of these.",
+        suggestions: ["What can you do?", "Write me a haiku"],
+      }}
+    />
   );
 }
 ```
 
-That is a working chat: type, press enter, the pill you typed into becomes the
-bubble holding your message, it travels to the top, and the answer is revealed
-underneath it at reading pace. The last turn is always the composer for the
-next message — that is what `isActiveInput` marks, and it is the whole idea.
+That is a working chat. Type, press enter, and the pill you typed into becomes
+the bubble holding your message; it travels to the top of the view and stays
+there while the answer is written underneath it, then lets go so the composer
+for your next message is back on screen. The last turn is always that composer
+— which is the whole idea, and the reason a message does not appear to move so
+much as to *become* the thing that was sent.
+
+`ChatExperience` is the assembly. Everything it draws is also exported on its
+own — `Conversation`, `ChatHeader`, `ChatTurnRow`, `useChatTurns` — so you can
+put the pieces together yourself when your app needs a shape this one does not
+have. Reach for that second; there is more to remember than it looks, and the
+kit has already been caught getting it wrong in a page that did.
 
 **This file is compiled on every build of this package and a test asserts it
-matches this page character for character.** If it does not work, that is a
-bug here, not a mistake you made.
+matches this page character for character.** If it does not work, that is a bug
+here, not a mistake you made.
 
 ## Point it at your model
 
