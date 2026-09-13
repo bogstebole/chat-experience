@@ -8,6 +8,23 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.55.1 — 2026-09-13
+
+### Fixed
+
+- **The demo's landing page ignored the theme the host had chosen.**
+  `data-theme` was written by an effect inside `ChatExperience`, which is the
+  chat — and the landing page stands in front of it. A site that had decided
+  this page is read in light got a dark landing page and a light conversation,
+  changing colour under the reader at the press of a button.
+
+  The effect is `useThemeAttribute` now and both callers use it. `undefined`
+  and `null` stop meaning the same thing, which is what keeps two callers from
+  fighting over one attribute: `null` is "nobody has chosen", so the attribute
+  comes off and the kit follows `prefers-color-scheme`; `undefined` is "not
+  mine to say", which is how a caller opts out of a hook that cannot be called
+  conditionally.
+
 ## 0.55.0 — 2026-09-13
 
 ### Added
