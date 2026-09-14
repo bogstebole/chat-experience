@@ -16,17 +16,15 @@
  * the page rather than guessed, with room around it for the shadow.
  */
 import { mkdir, rm } from "node:fs/promises";
-import { spawn } from "node:child_process";
 import { join } from "node:path";
 import {
   BASE,
-  FPS,
-  H264,
   OUT,
   SCALE,
   beat,
   bundledFfmpeg,
   chromium,
+  clip,
   startCapture,
   systemFfmpeg,
 } from "./lib.mjs";
@@ -91,53 +89,11 @@ await capture.stop();
 
 const ffmpeg = systemFfmpeg() ?? bundledFfmpeg();
 const out = join(OUT, `composer-${NAME}.mp4`);
+const result = await clip({ frames: capture.frames, out, ffmpeg, crop, slow: SLOW });
 
-/* Crop in the frame's own pixels, which are `SCALE` times the CSS ones — the
-   screencast reads the browser's scale factor, not the context's. */
-const filter =
-  `crop=${crop.w * SCALE}:${crop.h * SCALE}:${crop.x * SCALE}:${crop.y * SCALE},` +
-  `setpts=${SLOW}*PTS`;
-
-const { frames } = capture;
-if (frames.length === 0) throw new Error("no frames were captured");
-const start = frames[0].t;
-const duration = frames[frames.length - 1].t - start;
-const slots = Math.max(1, Math.round(duration * FPS));
-
-const proc = spawn(ffmpeg, [
-  "-y",
-  "-f", "image2pipe",
-  "-r", String(FPS),
-  "-c:v", "mjpeg",
-  "-i", "pipe:0",
-  "-vf", filter,
-  ...H264,
-  "-pix_fmt", "yuv420p",
-  out,
-]);
-let complaint = "";
-proc.stderr.on("data", (d) => (complaint += d));
-
-/* Frames arrive only when something changes, so they are spaced unevenly.
-   Encoding needs a steady rate: for each slot on a fixed clock, write whichever
-   frame was the most recent at that moment. */
-const { readFile } = await import("node:fs/promises");
-let at = 0;
-for (let slot = 0; slot < slots; slot++) {
-  const t = start + slot / FPS;
-  while (at + 1 < frames.length && frames[at + 1].t <= t) at++;
-  proc.stdin.write(await readFile(frames[at].name));
-}
-proc.stdin.end();
-
-const code = await new Promise((r) => proc.on("close", r));
 await rm(frameDir, { recursive: true, force: true });
 await browser.close();
 
-if (code !== 0) {
-  console.error(complaint.split("\n").slice(-12).join("\n"));
-  process.exit(1);
-}
 console.log(
-  `${out}\n  ${frames.length} frames, ${crop.w}×${crop.h} CSS px, ${SLOW}× slower than life`
+  `${out}\n  ${result.frames} frames, ${crop.w}\u00d7${crop.h} CSS px, ${SLOW}\u00d7 slower than life`
 );
