@@ -219,3 +219,67 @@ export async function encode(frames, out, ffmpeg, codec) {
 
   await done;
 }
+
+/**
+ * A clip of what was captured: cropped to a region, optionally slowed, encoded.
+ *
+ * `encode` above writes the whole frame at life speed, which is right for the
+ * showcase and wrong for looking at one transition — a 300ms animation is ten
+ * frames in a corner of a 1120px page. This takes a crop in CSS pixels and a
+ * speed factor, and is what the before/after recordings use.
+ *
+ * `slow` of 1 is life speed. Anything above it multiplies the presentation
+ * timestamps, which stretches the clip without inventing frames: what you see
+ * is what was captured, held longer. Nothing is interpolated, so a slowed clip
+ * cannot show smoothness the real thing did not have.
+ */
+export async function clip({ frames, out, ffmpeg, crop, slow = 1, codec = H264 }) {
+  if (frames.length === 0) throw new Error("no frames were captured");
+
+  const filters = [];
+  if (crop) {
+    /* In the frame's own pixels, which are `SCALE` times the CSS ones — the
+       screencast reads the browser's scale factor, not the context's. */
+    filters.push(
+      `crop=${crop.w * SCALE}:${crop.h * SCALE}:${crop.x * SCALE}:${crop.y * SCALE}`
+    );
+  }
+  if (slow !== 1) filters.push(`setpts=${slow}*PTS`);
+
+  const start = frames[0].t;
+  const duration = frames[frames.length - 1].t - start;
+  const slots = Math.max(1, Math.round(duration * FPS));
+
+  const proc = spawn(ffmpeg, [
+    "-y",
+    "-f", "image2pipe",
+    "-r", String(FPS),
+    "-c:v", "mjpeg",
+    "-i", "pipe:0",
+    ...(filters.length ? ["-vf", filters.join(",")] : []),
+    ...codec,
+    "-pix_fmt", "yuv420p",
+    out,
+  ]);
+
+  let stderr = "";
+  proc.stderr.on("data", (chunk) => (stderr += chunk));
+  proc.stdin.on("error", () => {});
+
+  /* Frames arrive only when something changes, so they are spaced unevenly.
+     Encoding needs a steady rate: for each slot on a fixed clock, write
+     whichever frame was the most recent at that moment. */
+  let at = 0;
+  for (let slot = 0; slot < slots; slot++) {
+    const t = start + slot / FPS;
+    while (at + 1 < frames.length && frames[at + 1].t <= t) at++;
+    proc.stdin.write(await readFile(frames[at].name));
+  }
+  proc.stdin.end();
+
+  const code = await new Promise((resolve) => proc.on("close", resolve));
+  if (code !== 0) {
+    throw new Error(`ffmpeg exited ${code}\n${stderr.trim().split("\n").slice(-12).join("\n")}`);
+  }
+  return { out, frames: frames.length, slots };
+}

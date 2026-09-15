@@ -91,7 +91,19 @@ export function IntroLanding({
       opacity: 0,
       filter: `blur(${m.blurOut}px)`,
       y: m.offsetOut,
-      transition: { duration: m.durationOut, ease: [0.4, 0, 1, 1] as const },
+      /* `cubic-bezier(0.23, 1, 0.32, 1)` — a strong ease-out.
+      
+         It was `[0.4, 0, 1, 1]`, which is ease-in, and this is the one
+         transition in the demo that nobody can avoid: it is what happens when
+         you press the button that starts the thing. An ease-in holds still at
+         the exact moment somebody has just acted and is watching to see
+         whether the press did anything, then rushes the part they have
+         stopped attending to. The same 280ms the other way round feels like
+         an answer.
+      
+         The built-in `easeOut` would be the lazy fix and is too weak to read
+         at this distance — the curve above leaves hard and lands soft. */
+      transition: { duration: m.durationOut, ease: [0.23, 1, 0.32, 1] as const },
     },
   };
 
