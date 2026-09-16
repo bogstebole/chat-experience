@@ -228,6 +228,20 @@ div.opening {
   height: 100vh;
   height: 100dvh;
   box-sizing: border-box;
+  /* The experience paints its own ground, and its own ink on it.
+
+     It did not, and got away with it in the playground only because the
+     playground body happened to say `background: var(--ick-page)`. On the
+     website the body is the site own white, so switching to dark swapped every
+     token the kit reads — text to near-white, the fades to near-black — and
+     left them standing on a page nobody had told to change. Measured there:
+     `--ick-page` rgb(18 18 18), the page behind it rgb(255 255 255), openers
+     rgb(245 245 245). White on white, framed in black gradients.
+
+     A dark theme that depends on the host remembering to paint its body is a
+     dark theme that works on one host. */
+  background: var(--ick-page);
+  color: var(--ick-ink);
 }
 
 /* ── Saved highlights ─────────────────────────────────────────────────────

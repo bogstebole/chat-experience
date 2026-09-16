@@ -197,13 +197,11 @@ export function TextHighlighter({
   // Live values for the stable document listener (avoids re-registering on every
   // render). Written after commit — the listener only reads them from event
   // handlers, which run well after paint.
-  const selectionModeRef = useRef(selectionMode);
   const selectionsRef = useRef(selections);
   const onHighlightCompleteRef = useRef(onHighlightComplete);
   const menuAnchorRef = useRef(menuAnchor);
 
   useEffect(() => {
-    selectionModeRef.current = selectionMode;
     selectionsRef.current = selections;
     onHighlightCompleteRef.current = onHighlightComplete;
     menuAnchorRef.current = menuAnchor;
@@ -299,20 +297,29 @@ export function TextHighlighter({
   }, [openMenu]);
 
   /**
-   * A selection the reader made themselves.
+   * A selection the reader made themselves — by pointer or by keyboard, in
+   * either mode.
    *
-   * The pointer half only applies in precise mode, where native selection owns
-   * the pointer. The keyboard half applies in both modes: dragging a marker
-   * has no keyboard equivalent, so refusing keyboard selection in marker mode
-   * would leave that mode with no way in at all.
+   * The pointer half used to be refused in marker mode, on the reasoning that
+   * the pointer there belongs to the marker. It does while a stroke is being
+   * drawn: `handlePointerDown` calls `preventDefault`, so a drag across a word
+   * leaves no native selection behind and this returns at the collapsed check.
+   *
+   * What it does not cover is every other way a person selects text. A
+   * double-click, a triple-click, a drag that begins in the margin — none of
+   * those are strokes, all of them leave a real selection, and in the mode
+   * this component is in by default all of them used to produce nothing: no
+   * highlight, no reply in thread, no remove. Measured on the website: a
+   * double-click on "carrying" selected the word and the menu stayed shut.
+   *
+   * So the mode no longer decides. A selection that exists is a selection the
+   * reader made, and it gets the same menu either way.
    */
   useEffect(() => {
     const capture = (fromKeyboard: boolean) => {
       if (menuAnchorRef.current) return;
       const container = containerRef.current;
       if (!container) return;
-      if (!fromKeyboard && selectionModeRef.current !== "precise") return;
-
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || sel.rangeCount === 0 || !sel.toString().trim()) return;
 

@@ -49,7 +49,10 @@ export interface ChatExperienceDemoProps {
   /** The theme, if the host keeps it. Left off, the header's own toggle does. */
   theme?: "light" | "dark" | null;
   onThemeChange?: (theme: "light" | "dark") => void;
-  /** Development chrome the playground turns on and nobody else does. */
+  /** The pointer-following cursor — the pencil in marker mode, the text beam
+      in precise. On unless turned off: it is not development chrome, it is the
+      only thing on screen that says which of the two modes you are in. Only
+      ever drawn where there is a pointer to replace. */
   cursor?: boolean;
   /** Motion, opened up so a tuning panel can reach it. */
   animationConfig?: InlineAnimConfig;
@@ -66,7 +69,7 @@ export function ChatExperienceDemo({
   skipIntro = false,
   theme,
   onThemeChange,
-  cursor = false,
+  cursor = true,
   animationConfig,
   foldMotion,
   feedDelay,
