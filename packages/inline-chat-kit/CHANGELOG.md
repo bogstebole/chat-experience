@@ -8,6 +8,39 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.55.2 — 2026-09-16
+
+### Fixed
+
+- **The dark theme was white on white on any host that paints its own body.**
+  Nothing in the kit painted a background. The playground got away with it
+  because its own `body` says `background: var(--ick-page)`; a site whose body
+  is white did not. Switching to dark swapped every token the kit reads — text
+  to near-white, the fades to near-black — and left them standing on a page
+  nobody had told to change. Measured on the website: `--ick-page`
+  rgb(18 18 18), the page behind it rgb(255 255 255), openers rgb(245 245 245),
+  framed in black gradients.
+
+  `ChatExperience` paints `--ick-page` and `--ick-ink` itself now. A dark theme
+  that depends on the host remembering to paint its body is a dark theme that
+  works on one host.
+
+- **The demo lost its pencil.** The pointer cursor was labelled development
+  chrome when the assembly moved into the kit in 0.55.0, and defaulted off. It
+  is not chrome: it is the only thing on screen that says whether you are
+  holding a marker or a text beam. On by default in `inline-chat-kit/demo`; the
+  `cursor` prop on `ChatExperience` is unchanged and still opt-in.
+
+- **A selection made any way but a marker stroke opened nothing.** In marker
+  mode — the default — `TextHighlighter` refused native selections, on the
+  reasoning that the pointer there belongs to the marker. It does while a
+  stroke is being drawn; `preventDefault` sees to that. What the reasoning
+  missed is every other way a person selects text: a double-click, a
+  triple-click, a drag beginning in the margin. None are strokes, all leave a
+  real selection, and all produced nothing — no highlight, no reply in thread,
+  no remove. Measured: a double-click on a word selected it and the menu stayed
+  shut. The mode no longer decides.
+
 ## 0.55.1 — 2026-09-13
 
 ### Fixed
