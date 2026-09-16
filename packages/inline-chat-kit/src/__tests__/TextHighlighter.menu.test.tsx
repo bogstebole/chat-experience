@@ -193,3 +193,27 @@ describe("the highlight menu — opened with a pointer", () => {
     expect(document.activeElement).toBe(document.body);
   });
 });
+
+describe("the highlight menu — opening from a selection the reader made", () => {
+  /**
+   * The default mode is the marker, and a marker is drawn by dragging across a
+   * word. But the way almost everybody selects text is not that: it is a
+   * double-click, a triple-click, or a drag that begins in the margin. All
+   * three leave a native selection behind in marker mode, and all three used
+   * to open nothing — no highlight, no reply in thread, no remove. Measured on
+   * the website: a double-click on "carrying" selected it and the menu stayed
+   * shut.
+   */
+  it("opens for a native selection in marker mode, as it does in precise", () => {
+    const { surface, menu } = setup();
+    const range = document.createRange();
+    range.selectNodeContents(surface);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    fireEvent.mouseUp(document);
+
+    expect(menu()).not.toBeNull();
+  });
+});
