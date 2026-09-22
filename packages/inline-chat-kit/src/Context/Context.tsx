@@ -2,22 +2,9 @@
 
 import type { HTMLAttributes, ReactNode } from "react";
 import styles from "./Context.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
-type Labels = {
-  name: string;
-  /** Between the two numbers: "128k of 1M". */
-  of: string;
-  tokens: string;
-  /** Said once it is past `warnAt`, and it should say what happens next. */
-  nearlyFull: string;
-};
-
-const LABELS: Labels = {
-  name: "Context used",
-  of: "of",
-  tokens: "tokens",
-  nearlyFull: "Nearly full — the oldest messages will start dropping out",
-};
+type Labels = LabelsOf<"context">;
 
 export interface ContextProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   used: number;
@@ -69,7 +56,7 @@ export function Context({
   className,
   ...rest
 }: ContextProps) {
-  const label_ = { ...LABELS, ...labels };
+  const label_ = useLabels("context", labels);
 
   /* A total of zero is a window that has not been reported yet, not one that
      is full. Clamped, because a host summing its own tokens will overshoot

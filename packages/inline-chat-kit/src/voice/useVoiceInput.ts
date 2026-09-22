@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { announce } from "../announce/announce";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
+import { defaultLabels, type VoiceLabels } from "../labels/labels";
 
 /**
  * The microphone, and everything around turning it into text except the part
@@ -78,6 +79,12 @@ export interface UseVoiceInputOptions {
    * straight to the browser.
    */
   meterRef?: RefObject<HTMLElement | null>;
+  /**
+   * What is said through the live region, and the errors it reports. English
+   * when left out. A hook cannot read a `LabelsProvider` the host renders
+   * below it, so `ChatInput` passes its own through here.
+   */
+  labels?: Partial<VoiceLabels>;
 }
 
 export interface VoiceInput {
@@ -126,6 +133,7 @@ export function useVoiceInput({
   onTranscript,
   onDone,
   meterRef,
+  labels,
 }: UseVoiceInputOptions): VoiceInput {
   /**
    * Whether a microphone can be asked for, answered once and never again.
@@ -156,8 +164,11 @@ export function useVoiceInput({
   // Callbacks are read through a ref so that starting the microphone does not
   // depend on the identity of a function the host recreates every render.
   const handlers = useRef({ onTranscribe, onTranscript, onDone });
+  // Read the same way, and for the same reason: a host writes it inline.
+  const said = useRef<VoiceLabels>({ ...defaultLabels.voice, ...labels });
   useEffect(() => {
     handlers.current = { onTranscribe, onTranscript, onDone };
+    said.current = { ...defaultLabels.voice, ...labels };
   });
 
   /** Everything that holds hardware or a frame loop, released in one place. */
@@ -239,26 +250,26 @@ export function useVoiceInput({
       const controller = new AbortController();
       abortRef.current = controller;
       setPhase("transcribing");
-      announce("Transcribing.");
+      announce(said.current.transcribing);
       try {
         const text = await consume(handler(audio, { signal: controller.signal, mimeType }));
         if (controller.signal.aborted) return;
         // A recording with nothing in it is not a failure. Saying so out loud
         // is the difference between "it is broken" and "say something".
         if (!text) {
-          announce("Nothing was heard.");
+          announce(said.current.nothingHeard);
           setPhase("idle");
           return;
         }
         handlers.current.onTranscript?.(text);
         handlers.current.onDone?.(text);
-        announce("Transcript added.");
+        announce(said.current.transcriptAdded);
         setPhase("idle");
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setError(cause instanceof Error ? cause.message : "The transcript could not be made.");
+        setError(cause instanceof Error ? cause.message : said.current.transcriptFailed);
         setPhase("failed");
-        announce("The transcript could not be made.", "assertive");
+        announce(said.current.transcriptFailed, "assertive");
       } finally {
         abortRef.current = null;
       }
@@ -283,11 +294,11 @@ export function useVoiceInput({
       // be sending them to a button that can no longer work.
       if (name === "NotAllowedError" || name === "SecurityError") {
         setPhase("denied");
-        announce("Microphone access was refused.", "assertive");
+        announce(said.current.refused, "assertive");
       } else {
-        setError(name === "NotFoundError" ? "No microphone was found." : "The microphone could not be opened.");
+        setError(name === "NotFoundError" ? said.current.notFound : said.current.couldNotOpen);
         setPhase("failed");
-        announce("The microphone could not be opened.", "assertive");
+        announce(said.current.couldNotOpen, "assertive");
       }
       return;
     }
@@ -326,13 +337,13 @@ export function useVoiceInput({
     };
     recorder.start();
     setPhase("listening");
-    announce("Listening.");
+    announce(said.current.listening);
   }, [runMeter, teardown, transcribe]);
 
   const stop = useCallback(() => {
     const recorder = recorderRef.current;
     if (recorder && recorder.state !== "inactive") {
-      announce("Stopped listening.");
+      announce(said.current.stoppedListening);
       recorder.stop();
       return;
     }

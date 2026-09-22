@@ -3,23 +3,18 @@
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "../Button/Button";
+import { useLabels, type ApprovalLabels } from "../labels/labels";
 import styles from "./Approval.module.css";
 
 /** Once, every time from now on, or not at all. */
 export type Decision = "once" | "always" | "denied";
 
-type Labels = Record<"once" | "always" | "deny", string> &
-  Record<"allowedOnce" | "allowedAlways" | "wasDenied" | "pending", string>;
+/** The buttons, by what they answer. `"deny"` is the button; `"denied"` the record. */
+export type ApprovalChoice = "once" | "always" | "deny";
 
-const LABELS: Labels = {
-  once: "Allow once",
-  always: "Always allow",
-  deny: "Deny",
-  allowedOnce: "Allowed once",
-  allowedAlways: "Allowed from now on",
-  wasDenied: "Denied",
-  pending: "Waiting for you",
-};
+const ALL_CHOICES: ApprovalChoice[] = ["once", "always", "deny"];
+
+type Labels = ApprovalLabels;
 
 export interface ApprovalProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   /** What is being asked. One line: "Run a command in your shell". */
@@ -39,6 +34,14 @@ export interface ApprovalProps extends Omit<HTMLAttributes<HTMLElement>, "title"
   onDecide?: (decision: Decision) => void;
   /** Nothing can be decided from here — a record of a decision already made. */
   readOnly?: boolean;
+  /**
+   * Which answers are offered. All three when left out.
+   *
+   * Leave out `"always"` where a standing permission means nothing — applying
+   * one edit to a plan is a thing that happens once. "Allow once" stays the
+   * primary and Deny stays first; only the button that is not offered goes.
+   */
+  choices?: ApprovalChoice[];
   labels?: Partial<Labels>;
 }
 
@@ -71,11 +74,13 @@ export function Approval({
   decision = null,
   onDecide,
   readOnly = false,
+  choices = ALL_CHOICES,
   labels,
   className,
   ...rest
 }: ApprovalProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("approval", labels);
+  const offers = (choice: ApprovalChoice) => choices.includes(choice);
   const titleId = useId();
   const settled = decision !== null;
 
@@ -134,20 +139,26 @@ export function Approval({
            without tabbing past two that say yes. */
         !readOnly && (
           <div className={styles.actions}>
-            <Button
-              variant="ghost"
-              size="m"
-              className={styles.deny}
-              onClick={() => onDecide?.("denied")}
-            >
-              {label.deny}
-            </Button>
-            <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
-              {label.always}
-            </Button>
-            <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
-              {label.once}
-            </Button>
+            {offers("deny") && (
+              <Button
+                variant="ghost"
+                size="m"
+                className={styles.deny}
+                onClick={() => onDecide?.("denied")}
+              >
+                {label.deny}
+              </Button>
+            )}
+            {offers("always") && (
+              <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
+                {label.always}
+              </Button>
+            )}
+            {offers("once") && (
+              <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
+                {label.once}
+              </Button>
+            )}
           </div>
         )
       )}

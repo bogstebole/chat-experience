@@ -8,6 +8,53 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.56.0 — 2026-09-22
+
+Four things that kept the kit out of a real host app: an answer could only
+hold the kit's own parts, an approval always offered "forever", an assembled
+chat could not be translated, and it drew controls a host had no use for.
+Nothing here changes what an existing install draws.
+
+### Added
+
+- **`{ kind: "custom", id, type, data }` — the host's own card in an answer.**
+  Every other part is a component in this package; this one is drawn by the
+  new `renderPart(part, { turnId })` prop on `ChatTurnRow` and
+  `ChatExperience`, in its place among the other parts and inside the answer's
+  entrance. Merged by id like the rest, so `{ kind: "custom", id, data }`
+  replaces `data` and keeps `type`. Without a renderer, or when it returns
+  `null`, the part draws nothing. `CustomPart` is exported.
+- **`chat` on `ChatExperience`.** It called `useChatTurns` itself, so a host
+  had no `updatePart` and a card could not change after the answer finished.
+  Pass your own hook's result and it is used instead; left out, nothing
+  changes. `onSend` is optional when `chat` is given.
+- **`choices` on `<Approval>` and on the approval part.** `["once", "deny"]`
+  leaves "Always allow" out. Allow once stays the primary and Deny stays first.
+  `ApprovalChoice` is exported.
+- **`labels` on `ChatExperience` and `ChatTurnRow`, and `LabelsProvider`.** One
+  `ChatLabels` object, grouped by component and partial, reaches every piece
+  through context — the header, the composer and its menu, the microphone and
+  what it announces, the highlighter, the thread, the code block's copy, the
+  pane, the jump button, the option letters, and every part. The strings that
+  were hard-coded English with no way in now all go through it.
+  `defaultLabels` is the English set. The individual `labels` props keep
+  working and win over the provider.
+- **`headerActions` and `composerMenu` on `ChatExperience`.**
+  `headerActions={false}` (or `["theme"]`, `["share"]`) drops the built-in
+  header actions; `composerMenu={false}` removes the "+", and a list of
+  `{ id, label, icon?, onSelect? }` replaces its three entries. `ChatInput`
+  takes the same list as `menu`. `ComposerMenuItem` is exported.
+
+### Fixed
+
+- **Every row in `ChatExperience` re-rendered on every frame of an answer.**
+  `onOpenArtifact` was an arrow written inline in the rows' props — a new
+  function each render — so `ChatTurnRow`'s memo never held inside the
+  assembled experience. Hoisted; the custom-part test fails without it.
+- **The composer's menu opened the file picker by matching the word "Add".**
+  Translated, it would have stopped attaching anything. It matches the entry's
+  id now.
+
 ## 0.55.2 — 2026-09-16
 
 ### Fixed

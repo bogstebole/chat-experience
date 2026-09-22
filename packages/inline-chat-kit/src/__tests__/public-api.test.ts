@@ -31,6 +31,8 @@ const EXPECTED_EXPORTS = [
   "EmptyState",
   "FOLDABLE_FROM",
   "InlineCitation",
+  "LabelsProvider",
+  "defaultLabels",
   "Loader",
   "Sources",
   "QuestionCard",

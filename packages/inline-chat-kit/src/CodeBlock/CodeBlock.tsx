@@ -11,6 +11,7 @@ import {
   type Highlighter,
 } from "./highlight";
 import styles from "./CodeBlock.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 export interface CodeBlockProps
   // `onCopy` is a DOM clipboard handler as well as a prop here, and the two
@@ -28,6 +29,7 @@ export interface CodeBlockProps
   onCopy?: (code: string) => void;
   /** How long the button stays confirmed, in ms. */
   copiedFor?: number;
+  labels?: Partial<LabelsOf<"codeBlock">>;
 }
 
 const COPIED_FOR = 1600;
@@ -48,9 +50,11 @@ export function CodeBlock({
   copyable = true,
   onCopy,
   copiedFor = COPIED_FOR,
+  labels,
   className,
   ...rest
 }: CodeBlockProps) {
+  const text = useLabels("codeBlock", labels);
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -89,10 +93,10 @@ export function CodeBlock({
     setCopied(true);
     // The tick is a picture. Without this a screen reader is told nothing
     // happened at all, which is the same as the copy having failed.
-    announce("Copied to clipboard");
+    announce(text.copiedAnnouncement);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), copiedFor);
-  }, [code, copiedFor, onCopy]);
+  }, [code, copiedFor, onCopy, text.copiedAnnouncement]);
 
   const caption = label === false ? null : (label ?? lang ?? null);
   const showBar = caption !== null || copyable;
@@ -111,10 +115,10 @@ export function CodeBlock({
                  a pointerdown starts drawing a marker. The click is for the
                  button, not the paragraph under it. */
               onPointerDown={(event) => event.stopPropagation()}
-              aria-label={copied ? "Copied" : "Copy code"}
+              aria-label={copied ? text.copied : text.copyCode}
             >
               {copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
-              <span className={styles.copyLabel}>{copied ? "Copied" : "Copy"}</span>
+              <span className={styles.copyLabel}>{copied ? text.copied : text.copy}</span>
             </button>
           )}
         </div>

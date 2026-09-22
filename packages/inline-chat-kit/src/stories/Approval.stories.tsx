@@ -135,3 +135,43 @@ export const Live: Story = {
     );
   },
 };
+
+/**
+ * Two answers, where a standing permission means nothing.
+ *
+ * `choices={["once", "deny"]}`: applying one change to a plan happens once, so
+ * "always" is not offered. Allow once stays the primary and Deny stays first —
+ * only the button that is not offered goes. Decided, the record says only what
+ * was decided.
+ */
+export const TwoChoices: Story = {
+  render: function TwoChoices() {
+    const [decision, setDecision] = useState<Decision | null>(null);
+    return (
+      <>
+        <Wrap label='choices={["once", "deny"]} — press one'>
+          <Approval
+            title="Apply the change to your plan"
+            description="This week only. Nothing else moves."
+            choices={["once", "deny"]}
+            decision={decision}
+            onDecide={setDecision}
+          />
+        </Wrap>
+        <Wrap label="and in Serbian, through labels">
+          <Approval
+            title="Upiši izmenu u kalendar"
+            description="Samo ovu nedelju. Ništa drugo se ne menja."
+            choices={["once", "deny"]}
+            labels={{ once: "Dozvoli jednom", deny: "Odbij" }}
+          />
+        </Wrap>
+        {decision && (
+          <button type="button" onClick={() => setDecision(null)}>
+            Ask again
+          </button>
+        )}
+      </>
+    );
+  },
+};

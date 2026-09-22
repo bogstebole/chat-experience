@@ -5,6 +5,7 @@ import { FileText, Film, Music, Image as ImageIcon, File } from "lucide-react";
 import type { HTMLAttributes } from "react";
 import { Button } from "../Button/Button";
 import styles from "./Attachments.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 /** Something sent along with a message. */
 export interface Attachment {
@@ -24,8 +25,7 @@ export interface Attachment {
   size?: number;
 }
 
-type Labels = { remove: string };
-const LABELS: Labels = { remove: "Remove" };
+type Labels = LabelsOf<"attachments">;
 
 export interface AttachmentsProps extends Omit<HTMLAttributes<HTMLUListElement>, "onRemove"> {
   attachments: Attachment[];
@@ -103,7 +103,7 @@ export function Attachments({
   className,
   ...rest
 }: AttachmentsProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("attachments", labels);
   if (attachments.length === 0) return null;
 
   return (

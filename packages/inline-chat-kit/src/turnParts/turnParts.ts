@@ -3,7 +3,7 @@ import type { Thought } from "../ChainOfThought/ChainOfThought";
 import type { Source } from "../Sources/Sources";
 import type { Task } from "../TaskList/TaskList";
 import type { ToolState } from "../Tool/Tool";
-import type { Decision } from "../Approval/Approval";
+import type { ApprovalChoice, Decision } from "../Approval/Approval";
 import type { Answer, Question } from "../QuestionCard/types";
 import type { SystemTone } from "../SystemMessage/SystemMessage";
 import type { ArtifactKind, ArtifactState } from "../Artifact/ArtifactCard";
@@ -91,6 +91,12 @@ export type TurnPart =
       tool?: { name: string; input?: unknown };
       /** `null` or absent while it is still being asked. */
       decision?: Decision | null;
+      /**
+       * Which answers are offered. All three when left out. Drop `"always"`
+       * where a standing permission means nothing — approving one edit to a
+       * plan, say — and "Allow once" stays the primary.
+       */
+      choices?: ApprovalChoice[];
     }
   | {
       kind: "question";
@@ -136,7 +142,30 @@ export type TurnPart =
       lang?: string;
       content?: string;
       state?: ArtifactState;
-    };
+    }
+  | CustomPart;
+
+/**
+ * A part the kit does not know how to draw, and the host does.
+ *
+ * Every other kind is a component in this package. This one is the host's:
+ * `type` says which of its own cards it is — `"plan-diff"`, `"send-request"` —
+ * and `data` is whatever that card needs. `<ChatTurnRow>` hands it to
+ * `renderPart` and draws what comes back, in its place among the other parts.
+ *
+ * Still data rather than JSX, for the reason the rest are: a stream can send
+ * `{ kind: "custom", id, type, data }` and cannot send a component. Merged by
+ * id like everything else, so `{ kind: "custom", id, data }` replaces `data`
+ * and leaves `type` alone.
+ */
+export interface CustomPart {
+  kind: "custom";
+  id: string;
+  /** Which of the host's cards this is. The kit never reads it. */
+  type: string;
+  /** Whatever that card needs. Replaced whole on an update, not merged. */
+  data?: unknown;
+}
 
 /**
  * An update to a part, which is a part with everything optional but the two

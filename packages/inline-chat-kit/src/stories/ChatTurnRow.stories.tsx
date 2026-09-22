@@ -1,8 +1,10 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import { useChatTurns, type ChatTurn } from "../useChatTurns/useChatTurns";
 import type { ChatInputHandle } from "../ChatInput/ChatInput";
+import { LabelsProvider } from "../labels/labels";
+import { hostRenderer, serbianApi, serbianLabels } from "./hostCards";
 
 const ANSWER =
   "Particle physics studies the most fundamental constituents of matter and the " +
@@ -216,4 +218,55 @@ export const Measure: Story = {
       />
     </Frame>
   ),
+};
+
+/**
+ * The host's own cards, in the answer.
+ *
+ * `{ kind: "custom", id, type, data }` parts, streamed between the prose and
+ * the kit's own parts, drawn by `renderPart` in their place. Press "Primeni na
+ * plan": the card writes `{ kind: "custom", id, data }` back through
+ * `updatePart` after the answer has finished, and only this row re-renders.
+ *
+ * `renderPart` is built once from `updatePart`, which is stable — a renderer
+ * rebuilt every render would re-render every row. The rows are assembled by
+ * hand, so the Serbian comes from a `LabelsProvider` around the list.
+ */
+export const HostCards: Story = {
+  render: function HostCards(args) {
+    const { turns, submit, updatePart, setDraft, stop } = useChatTurns({ onSend: serbianApi });
+    const renderPart = useMemo(() => hostRenderer(updatePart), [updatePart]);
+    const asked = useRef(false);
+    useEffect(() => {
+      if (asked.current) return;
+      asked.current = true;
+      submit(turns[0].id, "Prilagodi mi plan za sledeću nedelju");
+    }, [submit, turns]);
+    const decide = useCallback(
+      (turnId: string, partId: string, decision: "once" | "always" | "denied") =>
+        updatePart(turnId, { kind: "approval", id: partId, decision }),
+      [updatePart]
+    );
+    return (
+      <LabelsProvider labels={serbianLabels}>
+      <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 32 }}>
+        {turns.map((turn, i) => (
+          <ChatTurnRow
+            key={turn.id}
+            {...args}
+            turn={turn}
+            isActiveInput={i === turns.length - 1 && (turn.state === "idle" || turn.state === "typing")}
+            onDraft={setDraft}
+            onSubmit={submit}
+            onStop={stop}
+            onDecideApproval={decide}
+            renderPart={renderPart}
+            /* The meta's English placeholder would win over the labels. */
+            placeholder={undefined}
+          />
+        ))}
+      </div>
+      </LabelsProvider>
+    );
+  },
 };

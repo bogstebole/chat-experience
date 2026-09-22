@@ -8,6 +8,7 @@ import { parseMarkdown, type MdNode } from "../markdown/parseMarkdown";
 import { InlineCitation } from "../InlineCitation/InlineCitation";
 import type { Source } from "../Sources/Sources";
 import styles from "./TextHighlighter.module.css";
+import { fill, useLabels } from "../labels/labels";
 import { MessageCircle, Trash2 } from "lucide-react";
 
 const SKEW_ANGLE = -20;
@@ -112,6 +113,7 @@ export function TextHighlighter({
   sources,
   onSelectSource,
 }: TextHighlighterProps) {
+  const text_ = useLabels("highlighter");
   const containerRef = useRef<HTMLDivElement>(null);
   const [paths, setPaths] = useState<PathData[]>([]);
   const [selections, setSelections] = useState<SelectionHighlight[]>([]);
@@ -759,8 +761,7 @@ export function TextHighlighter({
           else — a directly referenced node is used even when hidden. Without
           this, the keys exist but nothing tells anyone they do. */}
       <span id={hintId} className={styles.srOnly} aria-hidden="true">
-        Left and right arrow keys move by word. Hold shift to select. Enter
-        highlights the selection, Escape clears it.
+        {text_.keyboardHint}
       </span>
 
       <div className={styles.hitbox} />
@@ -831,7 +832,9 @@ export function TextHighlighter({
       {allMarkers.length > 0 && (
         <div
           role="group"
-          aria-label={`${allMarkers.length} highlight${allMarkers.length === 1 ? "" : "s"}`}
+          aria-label={fill(allMarkers.length === 1 ? text_.countOne : text_.countMany, {
+            count: allMarkers.length,
+          })}
         >
           {allMarkers.map((marker) => (
             <button
@@ -848,7 +851,7 @@ export function TextHighlighter({
                 openMenuFor(marker, true);
               }}
             >
-              {`Highlight: ${shorten(marker.text)}`}
+              {`${text_.highlight} ${shorten(marker.text)}`}
             </button>
           ))}
         </div>
@@ -860,7 +863,7 @@ export function TextHighlighter({
           <motion.div
             ref={menuRef}
             role="menu"
-            aria-label="Highlight actions"
+            aria-label={text_.menu}
             onKeyDown={handleMenuKeyDown}
             onBlur={(e) => {
               // Tab out and the menu goes with you. Leaving one open behind
@@ -889,9 +892,9 @@ export function TextHighlighter({
                   e.stopPropagation();
                   replyInThread();
                 }}
-                title="Reply in thread"
+                title={text_.reply}
               >
-                Reply in thread
+                {text_.reply}
               </Button>
             </motion.div>
 
@@ -909,8 +912,8 @@ export function TextHighlighter({
                   e.stopPropagation();
                   removeHighlight(menuAnchor.pathId);
                 }}
-                title="Remove highlight"
-                aria-label="Remove highlight"
+                title={text_.remove}
+                aria-label={text_.remove}
               />
             </motion.div>
           </motion.div>

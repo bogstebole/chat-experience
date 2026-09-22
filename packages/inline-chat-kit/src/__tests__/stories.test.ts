@@ -34,6 +34,8 @@ const NOT_COMPONENTS: Record<string, string> = {
   loadHighlighter:
     "fetches the syntax grammars; what it produces is the colour in the CodeBlock stories",
   canHighlight: "asks whether a language is one of the eleven; answers a boolean",
+  defaultLabels:
+    "the English strings, as data; what they look like translated is the ChatExperience localized story",
 };
 
 const valueExports = (): string[] => {

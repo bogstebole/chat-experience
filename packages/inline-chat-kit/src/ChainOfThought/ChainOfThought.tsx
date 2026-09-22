@@ -10,6 +10,7 @@ import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { formatDuration } from "../duration/formatDuration";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./ChainOfThought.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 /** One step of a derivation: what was worked out, and the working. */
 export interface Thought {
@@ -22,20 +23,7 @@ export interface Thought {
   state?: WorkState;
 }
 
-type Labels = {
-  /** Followed by the count: "Thought through 4 steps". */
-  through: string;
-  step: string;
-  steps: string;
-  thinking: string;
-};
-
-const LABELS: Labels = {
-  through: "Thought through",
-  step: "step",
-  steps: "steps",
-  thinking: "Thinking",
-};
+type Labels = LabelsOf<"chain">;
 
 export interface ChainOfThoughtProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   steps: Thought[];
@@ -77,7 +65,7 @@ export function ChainOfThought({
   className,
   ...rest
 }: ChainOfThoughtProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("chain", labels);
   const listId = useId();
   const still = prefersReducedMotion();
   const thinking = state === "thinking";

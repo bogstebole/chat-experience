@@ -2,6 +2,7 @@
 
 import type { HTMLAttributes, ReactNode } from "react";
 import { Button } from "../Button/Button";
+import { useLabels } from "../labels/labels";
 import styles from "./EmptyState.module.css";
 
 export interface EmptyStateProps
@@ -36,11 +37,13 @@ export function EmptyState({
   description,
   suggestions,
   onSuggestion,
-  suggestionsLabel = "Suggestions",
+  suggestionsLabel: suggestionsProp,
   children,
   className,
   ...rest
 }: EmptyStateProps) {
+  const fallback = useLabels("emptyState").suggestions;
+  const suggestionsLabel = suggestionsProp ?? fallback;
   const chips = onSuggestion ? (suggestions ?? []) : [];
 
   return (

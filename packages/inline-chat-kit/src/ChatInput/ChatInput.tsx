@@ -61,9 +61,10 @@ import { Attachments, type Attachment } from "../Attachments/Attachments";
 import { Button } from "../Button/Button";
 import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
-import { AddCardsOverlay } from "./AddCardsOverlay";
+import { AddCardsOverlay, type ComposerMenuItem } from "./AddCardsOverlay";
 import { useVoiceInput, type TranscribeHandler } from "../voice/useVoiceInput";
 import styles from "./ChatInput.module.css";
+import { useLabels, type ChatInputLabels } from "../labels/labels";
 
 
 export type ChatInputState = "idle" | "typing" | "responding" | "resting";
@@ -166,6 +167,14 @@ export interface ChatInputProps {
   onCancelEdit?: () => void;
   isEditing?: boolean;
   placeholder?: string;
+  /**
+   * What the "+" opens. Left out, the built-in three — Add, Design,
+   * Connectors. A list replaces them; an entry with id `"attach"` and no
+   * `onSelect` opens the file picker. `false` takes the "+" away altogether.
+   */
+  menu?: ComposerMenuItem[] | false;
+  /** Every word the composer says. See `ChatLabels`. */
+  labels?: Partial<ChatInputLabels>;
   animationConfig?: InlineAnimConfig;
   style?: React.CSSProperties;
 }
@@ -236,13 +245,19 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
          thought about it yet gets in production — which is most of them on
          their first afternoon. Found by writing the getting-started page and
          looking at what it drew. */
-      placeholder = "Ask anything…",
+      placeholder: placeholderProp,
+      menu,
+      labels,
       animationConfig,
       style,
     },
     ref
   ) {
     const instanceId = useId();
+    const text = useLabels("input", labels);
+    const voiceLabels = useLabels("voice");
+    const placeholder = placeholderProp ?? text.placeholder;
+    const hasMenu = menu !== false;
     const editorRef = useRef<HTMLDivElement>(null);
     const editorWrapRef = useRef<HTMLDivElement>(null);
     const editorClipRef = useRef<HTMLDivElement>(null);
@@ -429,6 +444,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         editorRef.current?.focus();
       },
       meterRef,
+      labels: voiceLabels,
     });
 
     const isGlass = state === "responding" || state === "resting";
@@ -890,14 +906,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         disabled={voice.state === "denied"}
                         aria-label={
                           voice.state === "listening"
-                            ? "Stop listening"
+                            ? text.stopListening
                             : voice.state === "requesting"
-                            ? "Waiting for microphone access"
+                            ? text.waitingForMicrophone
                             : voice.state === "transcribing"
-                              ? "Cancel transcription"
+                              ? text.cancelTranscription
                               : voice.state === "denied"
-                                ? "Microphone blocked"
-                                : "Dictate a message"
+                                ? text.microphoneBlocked
+                                : text.dictate
                         }
                         style={{ width: "100%", height: "100%", position: "relative" }}
                       />
@@ -916,7 +932,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
                   }}
                 >
-                  {!isGlass && showButtons && (
+                  {!isGlass && showButtons && (hasMenu || isEditing) && (
                     <motion.div
                       key="lead"
                       initial={{ opacity: 0, scale: ARRIVES_AT, width: 0 }}
@@ -959,12 +975,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                                 e.stopPropagation();
                                 onCancelEdit?.();
                               }}
-                              aria-label="Cancel edit"
-                              title="Cancel edit"
+                              aria-label={text.cancelEdit}
+                              title={text.cancelEdit}
                               style={{ width: "100%", height: "100%" }}
                             />
                           </motion.div>
-                        ) : !isAddOpen ? (
+                        ) : hasMenu && !isAddOpen ? (
                           <motion.div
                             key="plus-btn"
                             initial={{ opacity: 0, scale: 0.5 }}
@@ -980,8 +996,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                                 e.stopPropagation();
                                 setIsAddOpen(true);
                               }}
-                              aria-label="Add"
-                              title="Add"
+                              aria-label={text.add}
+                              title={text.add}
                               style={{ width: "100%", height: "100%" }}
                             />
                           </motion.div>
@@ -1026,7 +1042,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                           if (showStop) onStop?.();
                           else onSubmit(value, attached);
                         }}
-                        aria-label={showStop ? "Stop response" : isEditing ? "Save edits" : "Send message"}
+                        aria-label={showStop ? text.stop : isEditing ? text.save : text.send}
                         style={{ flexShrink: 0, width: 28 }}
                       />
                     </motion.div>
@@ -1041,8 +1057,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           <AddCardsOverlay
             isAddOpen={isAddOpen}
             setIsAddOpen={setIsAddOpen}
-            onAdd={(label) => {
-              if (!label || label === "Add") {
+            items={menu || undefined}
+            onAdd={(_label, id) => {
+              /* By id, not by what it says: the label is translated now, and
+                 "Dodaj" is not "Add". The picker opens for the built-in entry
+                 and for a host's `attach` that did not bring its own action. */
+              const item = menu ? menu.find((entry) => entry.id === id) : undefined;
+              if (id === "attach" && !item?.onSelect) {
                 fileInputRef.current?.click();
               }
               onAdd?.();
@@ -1072,8 +1093,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           {showMic && (voice.state === "denied" || voice.state === "failed") && (
             <p className={styles.voiceNote} data-tone={voice.state}>
               {voice.state === "denied"
-                ? "Microphone access is blocked. Allow it for this site in your browser settings, then reload."
-                : (voice.error ?? "The microphone could not be opened.")}
+                ? text.microphoneBlockedHelp
+                : (voice.error ?? voiceLabels.couldNotOpen)}
             </p>
           )}
         </div>

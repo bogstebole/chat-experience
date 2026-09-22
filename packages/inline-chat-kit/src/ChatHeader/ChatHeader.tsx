@@ -12,6 +12,7 @@ import {
 } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { Button, type ButtonSize } from "../Button/Button";
+import { useLabels } from "../labels/labels";
 import styles from "./ChatHeader.module.css";
 
 export type ChatHeaderVariant = "plain" | "glass" | "bordered";
@@ -171,9 +172,9 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
     truncate = true,
     onBack,
     backHref,
-    backLabel = "Back",
+    backLabel: backProp,
     actions = [],
-    overflowLabel = "More actions",
+    overflowLabel: overflowProp,
     variant = "plain",
     size = "m",
     align = "start",
@@ -187,6 +188,9 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
   },
   ref
 ) {
+  const text = useLabels("header");
+  const backLabel = backProp ?? text.back;
+  const overflowLabel = overflowProp ?? text.more;
   const rootRef = useRef<HTMLElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [scrolled, setScrolled] = useState(false);

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Approval } from "../Approval/Approval";
 import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import type { ChatTurn } from "../useChatTurns/useChatTurns";
@@ -144,5 +145,89 @@ describe("as a part of a turn", () => {
       expect(settled?.querySelectorAll("svg"), decision).toHaveLength(1);
       unmount();
     }
+  });
+});
+
+/**
+ * Two answers, where "from now on" means nothing.
+ *
+ * Applying one edit to a plan happens once; a standing permission to apply
+ * edits nobody has seen yet is not something anybody is being asked for. So
+ * the button that offers it can be left out — and nothing else about the
+ * approval moves: Allow once is still the primary, Deny is still first.
+ */
+describe("with only two choices", () => {
+  const TWO = ["once", "deny"] as const;
+
+  it("offers the two it was given and not the third", () => {
+    render(<Approval title="Primeni izmenu" choices={[...TWO]} />);
+    expect(screen.getAllByRole("button")).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "Always allow" })).toBeNull();
+  });
+
+  it("keeps Allow once as the primary", () => {
+    render(<Approval title="Primeni izmenu" choices={[...TWO]} />);
+    const once = screen.getByRole("button", { name: "Allow once" });
+    const deny = screen.getByRole("button", { name: "Deny" });
+    expect(once.className).not.toBe(deny.className);
+    // The same button the three-way approval makes primary.
+    const { container } = render(<Approval title="Tri" />);
+    const primary = [...container.querySelectorAll("button")].find(
+      (b) => b.textContent === "Allow once"
+    )!;
+    expect(once.className).toBe(primary.className);
+  });
+
+  it("puts Deny first, so the keyboard reaches the safe answer first", async () => {
+    const user = userEvent.setup();
+    const onDecide = vi.fn();
+    render(<Approval title="Primeni izmenu" choices={[...TWO]} onDecide={onDecide} />);
+
+    const [first, second] = screen.getAllByRole("button");
+    expect(first).toHaveTextContent("Deny");
+    expect(second).toHaveTextContent("Allow once");
+
+    await user.tab();
+    expect(first).toHaveFocus();
+    await user.tab();
+    expect(second).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onDecide).toHaveBeenCalledWith("once");
+  });
+
+  it("settles into a record of what was decided, and nothing it did not offer", () => {
+    const { container, rerender } = render(
+      <Approval title="Primeni izmenu" choices={[...TWO]} />
+    );
+    expect(container.firstElementChild).not.toHaveAttribute("data-decision");
+
+    rerender(<Approval title="Primeni izmenu" choices={[...TWO]} decision="once" />);
+    expect(container.firstElementChild).toHaveAttribute("data-decision", "once");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("Allowed once")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/from now on|Always/);
+
+    rerender(<Approval title="Primeni izmenu" choices={[...TWO]} decision="denied" />);
+    expect(container.firstElementChild).toHaveAttribute("data-decision", "denied");
+    expect(screen.getByText("Denied")).toBeInTheDocument();
+  });
+
+  it("carries the choices as a part", () => {
+    const onDecideApproval = vi.fn();
+    render(
+      <ChatTurnRow
+        onDecideApproval={onDecideApproval}
+        turn={{
+          id: "t1",
+          user: "Izmeni plan",
+          ai: "",
+          state: "responding",
+          parts: [{ kind: "approval", id: "ask", title: "Primeni izmenu", choices: [...TWO] }],
+        }}
+      />
+    );
+    expect(screen.queryByRole("button", { name: "Always allow" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Allow once" }));
+    expect(onDecideApproval).toHaveBeenCalledWith("t1", "ask", "once");
   });
 });

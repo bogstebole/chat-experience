@@ -3,19 +3,9 @@
 import type { HTMLAttributes } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import styles from "./Branch.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
-type Labels = {
-  previous: string;
-  next: string;
-  /** `{index}` and `{total}` are filled in. */
-  position: string;
-};
-
-const LABELS: Labels = {
-  previous: "Previous answer",
-  next: "Next answer",
-  position: "Answer {index} of {total}",
-};
+type Labels = LabelsOf<"branch">;
 
 export interface BranchProps extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> {
   /** How many answers this turn has had. */
@@ -38,7 +28,7 @@ export interface BranchProps extends Omit<HTMLAttributes<HTMLDivElement>, "onSel
  * "1 of 1" is a control offering to take you nowhere.
  */
 export function Branch({ total, index, onSelect, labels, className, ...rest }: BranchProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("branch", labels);
   if (total < 2) return null;
 
   const at = Math.min(Math.max(index, 0), total - 1);
