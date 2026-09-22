@@ -26,7 +26,7 @@ export { useChatTurns } from "./useChatTurns/useChatTurns";
 /* What a turn carries besides its prose: reasoning, tool calls, a plan, a
    question. A `SendHandler` streams these alongside the answer's deltas. */
 export { mergeParts } from "./turnParts/turnParts";
-export type { CustomPart, TurnPart, TurnPartUpdate } from "./turnParts/turnParts";
+export type { CustomPart, CustomPartContext, TurnPart, TurnPartUpdate } from "./turnParts/turnParts";
 
 /* Every word the kit says, in one object. `ChatExperience` and `ChatTurnRow`
    take it as `labels`; `LabelsProvider` hands it to anything assembled by

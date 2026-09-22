@@ -30,7 +30,11 @@ import {
 import { type FoldMotion } from "../QuestionGroup/QuestionGroup";
 import { type InlineAnimConfig, type ChatInputHandle } from "../ChatInput/ChatInput";
 import { type TranscribeHandler } from "../voice/useVoiceInput";
-import { type CustomPart, type TurnPartUpdate } from "../turnParts/turnParts";
+import {
+  type CustomPart,
+  type CustomPartContext,
+  type TurnPartUpdate,
+} from "../turnParts/turnParts";
 import { type ComposerMenuItem } from "../ChatInput/AddCardsOverlay";
 import { LabelsProvider, fill, useLabels, type ChatLabels } from "../labels/labels";
 import { type Answer } from "../QuestionCard/types";
@@ -120,7 +124,7 @@ export interface ChatExperienceProps {
    * it stable — outside the component or in `useCallback` — or every row
    * re-renders on every frame of an answer arriving.
    */
-  renderPart?: (part: CustomPart, context: { turnId: string }) => ReactNode;
+  renderPart?: (part: CustomPart, context: CustomPartContext) => ReactNode;
 
   /**
    * Every word the chat says, grouped by the component that says it. Partial:
@@ -168,6 +172,23 @@ export interface ChatExperienceProps {
 
   /** The pane beside the conversation, asked for the artifact that is open. */
   artifact?: (openId: string) => ChatExperienceArtifact | null;
+
+  /**
+   * Which artifact is open, held by the host. Left out (`undefined`), this
+   * component keeps it. `null` is "none open" — held, just empty.
+   */
+  openArtifactId?: string | null;
+  /** Somebody opened or closed one — a card pressed, the pane's X, a custom
+      card calling `openArtifact`. Called whether or not the state is held. */
+  onOpenArtifactChange?: (id: string | null) => void;
+  /**
+   * Who draws the pane. `"inline"` (the default): this component, beside the
+   * conversation, from `artifact`. `"none"`: nobody here — no pane, no room
+   * made for one. The cards still open and still show which one is open;
+   * the host draws the pane wherever its own layout wants it, usually with
+   * `openArtifactId` and `<ArtifactPane>`.
+   */
+  pane?: "inline" | "none";
 
   /** The theme, if the host keeps it. Left off, this manages its own and puts
       a toggle in the header; `data-theme` on the root element either way, and
@@ -242,6 +263,9 @@ export function ChatExperience({
   contextTotal,
   contextBase = 0,
   artifact,
+  openArtifactId: openArtifactProp,
+  onOpenArtifactChange,
+  pane: paneMode = "inline",
   theme: themeProp,
   onThemeChange,
   cursor = false,
@@ -384,6 +408,30 @@ export function ChatExperience({
      card or the pane, because they are in different parts of the tree and both
      need the answer. */
   const artifacts = useArtifacts();
+  /* Held by the host or here, the same rule the theme follows. `undefined`
+     means "not held"; `null` is a held value. */
+  const artifactHeld = openArtifactProp !== undefined;
+  const openArtifactId = artifactHeld ? openArtifactProp : artifacts.openId;
+  /* Read through a ref so the setter below stays one function for the life of
+     the component — it is handed to every row, and the rows are memoised. */
+  const artifactState = useRef({ openArtifactId, artifactHeld, onOpenArtifactChange });
+  useEffect(() => {
+    artifactState.current = { openArtifactId, artifactHeld, onOpenArtifactChange };
+  });
+  const setOpenArtifact = artifacts.open;
+  const clearOpenArtifact = artifacts.close;
+  const changeArtifact = useCallback(
+    (id: string | null) => {
+      const { artifactHeld: held, onOpenArtifactChange: report } = artifactState.current;
+      if (!held) {
+        if (id === null) clearOpenArtifact();
+        else setOpenArtifact(id);
+      }
+      report?.(id);
+    },
+    [setOpenArtifact, clearOpenArtifact]
+  );
+  const closeArtifact = useCallback(() => changeArtifact(null), [changeArtifact]);
 
   /* Kept per turn rather than as one value, or rating a second answer would
      silently un-rate the first. */
@@ -414,10 +462,11 @@ export function ChatExperience({
      which is a new function every render — so every finished row re-rendered
      on every frame of the answer arriving, and `ChatTurnRow`'s memo, whose
      whole job is to stop that, never got the chance. */
-  const toggleArtifact = artifacts.toggle;
+  /* A card pressed again closes what it opened. */
   const openArtifact = useCallback(
-    (_turnId: string, id: string) => toggleArtifact(id),
-    [toggleArtifact]
+    (_turnId: string, id: string) =>
+      changeArtifact(artifactState.current.openArtifactId === id ? null : id),
+    [changeArtifact]
   );
 
   const handleReplyInThread = useCallback((text: string, rect: DOMRect) => {
@@ -511,7 +560,8 @@ export function ChatExperience({
     ...(actions ?? []),
   ];
 
-  const open = artifacts.openId ? artifact?.(artifacts.openId) : null;
+  const open =
+    paneMode === "inline" && openArtifactId ? artifact?.(openArtifactId) : null;
 
   const chat = (
     <motion.div
@@ -626,8 +676,9 @@ export function ChatExperience({
                 selectionMode={selectionMode}
                 animationConfig={animationConfig}
                 foldMotion={foldMotion}
-                openArtifactId={artifacts.openId}
+                openArtifactId={openArtifactId}
                 onOpenArtifact={openArtifact}
+                onArtifactChange={changeArtifact}
                 placeholder={placeholder}
                 onDraft={setDraft}
                 onSubmit={handleSubmit}
@@ -682,7 +733,7 @@ export function ChatExperience({
         className={styles.workspace}
         /* On a phone the pane is a sheet, and a sheet's ways out belong to the
            layout: dragged down, or the conversation behind it pressed. */
-        onDismiss={artifacts.close}
+        onDismiss={closeArtifact}
         pane={({ narrow, expanded, toggleExpanded }) =>
           open ? (
             <ArtifactPane
@@ -691,7 +742,7 @@ export function ChatExperience({
               modal={narrow}
               expanded={expanded}
               onToggleExpanded={toggleExpanded}
-              onClose={artifacts.close}
+              onClose={closeArtifact}
             >
               {open.children}
             </ArtifactPane>

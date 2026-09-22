@@ -8,6 +8,28 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.57.0 — 2026-09-22
+
+A pane the host draws itself. `ChatExperience` placed its artifact pane beside
+the conversation and held which one was open, which is right until the host has
+a layout of its own. Nothing changes for a host that passes none of this.
+
+### Added
+
+- **`openArtifactId` and `onOpenArtifactChange` on `ChatExperience`.** Which
+  artifact is open, held by the host. Left out, the component keeps its own;
+  `null` is a held "none open". The change callback fires either way.
+- **`pane="inline" | "none"` on `ChatExperience`.** `"none"` draws no
+  `ArtifactPane`, reserves no width for one and never calls `artifact`; a
+  pressed card only reports its id, and still shows it is open from
+  `openArtifactId`.
+- **`openArtifact(id)` and `closeArtifact()` in `renderPart`'s context**, next
+  to `turnId` — so a host's own card can open the pane. `CustomPartContext` is
+  exported. `ChatTurnRow` takes `onArtifactChange` for the same when assembled
+  by hand.
+- **`ArtifactPane` outside `ChatLayout`**, documented and tested: a region with
+  focus on its title when it mounts, no trap and no Escape unless `modal`.
+
 ## 0.56.0 — 2026-09-22
 
 Four things that kept the kit out of a real host app: an answer could only

@@ -168,6 +168,19 @@ export interface CustomPart {
 }
 
 /**
+ * What `renderPart` is handed besides the part: the turn it is in, and the
+ * pane. A host's card can open an artifact the way an `ArtifactCard` does —
+ * a person in a list opening their profile — without holding the pane's
+ * state itself.
+ */
+export interface CustomPartContext {
+  turnId: string;
+  /** Show this artifact in the pane. Opens; does not toggle. */
+  openArtifact: (id: string) => void;
+  closeArtifact: () => void;
+}
+
+/**
  * An update to a part, which is a part with everything optional but the two
  * fields that say which one it is.
  *

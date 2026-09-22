@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ChatExperience } from "../ChatExperience/ChatExperience";
 import { useChatTurns } from "../useChatTurns/useChatTurns";
+import { ArtifactPane } from "../Artifact/ArtifactPane";
 import type { Decision } from "../Approval/Approval";
 import type { PartWriter } from "../ChatExperience/ChatExperience";
 import { hostRenderer, serbianApi, serbianLabels } from "./hostCards";
@@ -142,6 +143,56 @@ export const Localized: Story = {
           suggestions: ["Prilagodi mi plan za sledeću nedelju"],
         }}
       />
+    );
+  },
+};
+
+/**
+ * The host draws the pane.
+ *
+ * `pane="none"` keeps the kit out of the way — no pane, no room made for one —
+ * and `openArtifactId` / `onOpenArtifactChange` put which one is open in the
+ * host's state. The host's column holds an `<ArtifactPane>` keyed by id. Ask
+ * for the 5k plan and press its card; the conversation does not move.
+ */
+export const HostDrawnPane: Story = {
+  render: function HostDrawnPane(args) {
+    const [openId, setOpenId] = useState<string | null>(null);
+    return (
+      <div style={{ display: "flex", height: "100vh", background: "var(--ick-page)" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex" }}>
+          <ChatExperience
+            {...args}
+            {...Opening.args}
+            pane="none"
+            openArtifactId={openId}
+            onOpenArtifactChange={setOpenId}
+          />
+        </div>
+        {openId && (
+          <div
+            style={{
+              width: 380,
+              flexShrink: 0,
+              padding: 12,
+              boxSizing: "border-box",
+              borderLeft: "1px solid var(--ick-border)",
+              display: "flex",
+            }}
+          >
+            <ArtifactPane
+              key={openId}
+              title="The host's own column"
+              meta={`openArtifactId = "${openId}"`}
+              onClose={() => setOpenId(null)}
+            >
+              <p style={{ margin: 0, color: "var(--ick-ink-soft)" }}>
+                Drawn by the host, next to a ChatExperience that made no room for it.
+              </p>
+            </ArtifactPane>
+          </div>
+        )}
+      </div>
     );
   },
 };

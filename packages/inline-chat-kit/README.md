@@ -461,6 +461,10 @@ and the kit does not guess its shape.
 `ChatExperience` calls `useChatTurns` itself, so a host using it passes its own
 instead — `chat={useChatTurns({ onSend })}` — to hold `updatePart`.
 
+The second argument to `renderPart` is `{ turnId, openArtifact, closeArtifact }`
+(`CustomPartContext`), so a card can open the pane — see
+[Drawing the pane yourself](#drawing-the-pane-yourself).
+
 #### Citing a source from the prose
 
 `[^1]` in the answer is a **citation marker**, and the number is a position in
@@ -1040,6 +1044,49 @@ without one.
 That is the part worth having in a library rather than the box. On open, focus
 moves to the pane's heading — not into its first control, which would skip what
 the thing is — and it is **not** trapped unless the pane is covering the chat.
+
+#### Drawing the pane yourself
+
+`ChatExperience` places the pane beside the conversation. A host with a layout
+of its own — its own column, a drawer, a route — holds which artifact is open
+and tells the kit to keep out of the way:
+
+```tsx
+const [openId, setOpenId] = useState<string | null>(null);
+const open = openId ? findArtifact(openId) : null;
+
+<div className="workspace">
+  <ChatExperience
+    chat={chat}
+    pane="none"                        // no pane here, and no room made for one
+    openArtifactId={openId}            // the cards still show which one is open
+    onOpenArtifactChange={setOpenId}   // a card pressed, or a custom card's openArtifact
+    renderPart={renderPart}
+  />
+  {open && (
+    <aside className="my-column">
+      <ArtifactPane key={openId} title={open.title} onClose={() => setOpenId(null)}>
+        {open.body}
+      </ArtifactPane>
+    </aside>
+  )}
+</div>
+```
+
+- **`openArtifactId` / `onOpenArtifactChange`** hold the state outside. Left
+  out, `ChatExperience` keeps its own, as before. `null` is a held "nothing
+  open"; only `undefined` means "not held". `onOpenArtifactChange` is called
+  either way, so a host can listen without holding.
+- **`pane="none"`** draws no `ArtifactPane`, makes no room for one and never
+  calls `artifact`. Pressing a card reports the id (pressing the open one again
+  reports `null`).
+- **A custom card opens one too.** `renderPart`'s second argument carries
+  `openArtifact(id)` and `closeArtifact()`, next to `turnId`: a caregiver in
+  your card opens her profile the way an `ArtifactCard` opens a plan.
+- **`<ArtifactPane>` stands on its own.** Outside `ChatLayout` leave `modal`
+  off: it is a region, focus moves to its title when it mounts, and it neither
+  traps focus nor takes Escape. Key it by the artifact's id, so opening a
+  different one is a new pane — and focus moves to the new title.
 
 ### `<SystemMessage>`
 

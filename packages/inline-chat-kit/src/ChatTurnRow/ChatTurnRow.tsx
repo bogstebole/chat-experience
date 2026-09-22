@@ -21,7 +21,7 @@ import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { ChatTurn } from "../useChatTurns/useChatTurns";
-import type { CustomPart } from "../turnParts/turnParts";
+import type { CustomPart, CustomPartContext } from "../turnParts/turnParts";
 import type { ComposerMenuItem } from "../ChatInput/AddCardsOverlay";
 import { LabelsProvider, type ChatLabels } from "../labels/labels";
 import styles from "./ChatTurnRow.module.css";
@@ -41,6 +41,12 @@ export interface ChatTurnRowProps {
    */
   openArtifactId?: string | null;
   onOpenArtifact?: (turnId: string, artifactId: string) => void;
+  /**
+   * Set which artifact is open, or `null` to close it. What a custom card's
+   * `openArtifact` / `closeArtifact` call. Left out, `openArtifact` falls back
+   * to `onOpenArtifact` and `closeArtifact` does nothing. Keep it stable.
+   */
+  onArtifactChange?: (artifactId: string | null) => void;
   /** Stagger for the entrance, in seconds. */
   entranceDelay?: number;
   /** Passed through to the highlighter over the answer. */
@@ -133,7 +139,7 @@ export interface ChatTurnRowProps {
    * — belongs in the part's `data`, written with `updatePart`, not in a
    * closure: then only the row that owns it re-renders.
    */
-  renderPart?: (part: CustomPart, context: { turnId: string }) => ReactNode;
+  renderPart?: (part: CustomPart, context: CustomPartContext) => ReactNode;
 
   /**
    * The live composer's "+" menu. `false` takes the "+" away; a list replaces
@@ -206,6 +212,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   foldMotion,
   openArtifactId = null,
   onOpenArtifact,
+  onArtifactChange,
   entranceDelay = 0,
   selectionMode = "marker",
   questionAlign = "end",
@@ -400,7 +407,12 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                 />
               );
             case "custom": {
-              const drawn = renderPart?.(part, { turnId: turn.id });
+              const drawn = renderPart?.(part, {
+                turnId: turn.id,
+                openArtifact: (id) =>
+                  onArtifactChange ? onArtifactChange(id) : onOpenArtifact?.(turn.id, id),
+                closeArtifact: () => onArtifactChange?.(null),
+              });
               /* Nothing, rather than a placeholder: a host that has no card for
                  this type has said what it wants drawn. */
               if (drawn === null || drawn === undefined || drawn === false) return null;
