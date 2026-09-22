@@ -6,6 +6,7 @@ import { Copy, Pencil } from "lucide-react";
 import { Button } from "../Button/Button";
 import styles from "./ChatInput.module.css";
 import type { InlineAnimConfig } from "./ChatInput";
+import { useLabels } from "../labels/labels";
 
 export interface HoverActionsRowProps {
   showActions: boolean;
@@ -28,6 +29,7 @@ export function HoverActionsRow({
   value,
   ac,
 }: HoverActionsRowProps) {
+  const text = useLabels("input");
   return (
     <AnimatePresence initial={false}>
       {showActions && (
@@ -55,22 +57,22 @@ export function HoverActionsRow({
             >
               <Button
                 variant="ghost"
-                icon={isExpanded ? "Read less" : "Read more"}
+                icon={isExpanded ? text.readLess : text.readMore}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded((v) => !v);
                 }}
-                aria-label={isExpanded ? "Read less" : "Read more"}
+                aria-label={isExpanded ? text.readLess : text.readMore}
                 style={{ width: "auto", padding: "4px 10px", fontSize: 10, letterSpacing: "0.03em" }}
               />
             </motion.div>
           )}
           {([
-            { icon: <Copy size={14} aria-hidden />, onClick: () => onCopy?.(value), label: "Copy" },
-            { icon: <Pencil size={14} aria-hidden />, onClick: () => onEdit?.(value), label: "Edit" },
-          ] as const).map(({ icon, onClick, label }) => (
+            { id: "copy", icon: <Copy size={14} aria-hidden />, onClick: () => onCopy?.(value), label: text.copy },
+            { id: "edit", icon: <Pencil size={14} aria-hidden />, onClick: () => onEdit?.(value), label: text.edit },
+          ] as const).map(({ id, icon, onClick, label }) => (
             <motion.div
-              key={label}
+              key={id}
               variants={{
                 hidden: { opacity: 0, scale: 0.8 },
                 visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: ac?.actions?.stiffness ?? 400, damping: ac?.actions?.damping ?? 22 } },

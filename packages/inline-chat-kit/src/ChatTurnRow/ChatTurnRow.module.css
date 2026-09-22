@@ -34,6 +34,12 @@
   gap: var(--ick-space-7);
 }
 
+/* A host's own card. Nothing but the room: what it looks like is the host's,
+   and a flex child with no minimum would push a wide one past the column. */
+.custom {
+  min-width: 0;
+}
+
 /* Nothing arrived yet, so it should take up no room and add no gap. */
 .body:empty {
   display: none;

@@ -1,5 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useCallback, useMemo } from "react";
 import { ChatExperience } from "../ChatExperience/ChatExperience";
+import { useChatTurns } from "../useChatTurns/useChatTurns";
+import type { Decision } from "../Approval/Approval";
+import type { PartWriter } from "../ChatExperience/ChatExperience";
+import { hostRenderer, serbianApi, serbianLabels } from "./hostCards";
 import { scriptedApi, threadReply, scriptedTranscript, RUNNING_PLAN } from "../demo/scriptedApi";
 
 /**
@@ -98,5 +103,45 @@ export const NearlyFull: Story = {
     ...Everything.args,
     contextTotal: 1_200,
     contextBase: 1_000,
+  },
+};
+
+/**
+ * The whole chat in Serbian, with the host's own cards, and without the
+ * actions a host has no use for.
+ *
+ * - `labels` — one object, every piece. Anything left out stays English.
+ * - `chat` — the host's own `useChatTurns`, so its cards can write back with
+ *   `updatePart` after the answer has finished ("Primeni na plan" →
+ *   "Primenjeno").
+ * - `renderPart` — the cards: a proposed change, a request to send, a button
+ *   that opens a page in the app.
+ * - `headerActions={false}` and `composerMenu={false}` — no theme toggle, no
+ *   Share, no "+" menu.
+ */
+export const Localized: Story = {
+  render: function Localized() {
+    const chat = useChatTurns({ onSend: serbianApi, announcements: { responding: "Stiže odgovor" } });
+    const renderPart = useMemo(() => hostRenderer(chat.updatePart), [chat.updatePart]);
+    const decide = useCallback(
+      (write: PartWriter, turnId: string, partId: string, decision: Decision) =>
+        write(turnId, { kind: "approval", id: partId, decision }),
+      []
+    );
+    return (
+      <ChatExperience
+        chat={chat}
+        renderPart={renderPart}
+        labels={serbianLabels}
+        headerActions={false}
+        composerMenu={false}
+        onDecideApproval={decide}
+        empty={{
+          title: "Kako mogu da pomognem?",
+          description: "Pitaj za plan treninga, pa primeni izmene jednim klikom.",
+          suggestions: ["Prilagodi mi plan za sledeću nedelju"],
+        }}
+      />
+    );
   },
 };

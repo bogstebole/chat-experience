@@ -5,6 +5,7 @@ import { Check, Copy, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "../Button/Button";
 import { announce } from "../announce/announce";
 import styles from "./AnswerActions.module.css";
+import { useLabels } from "../labels/labels";
 
 export type Verdict = "up" | "down";
 
@@ -37,13 +38,6 @@ export interface AnswerActionsProps
   labels?: Partial<Record<"copy" | "copied" | "regenerate" | "up" | "down", string>>;
 }
 
-const DEFAULT_LABELS = {
-  copy: "Copy answer",
-  copied: "Copied",
-  regenerate: "Regenerate",
-  up: "Good answer",
-  down: "Bad answer",
-} as const;
 
 const COPIED_FOR = 1600;
 
@@ -68,7 +62,7 @@ export function AnswerActions({
 }: AnswerActionsProps) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const label = { ...DEFAULT_LABELS, ...labels };
+  const label = useLabels("answerActions", labels);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 

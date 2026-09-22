@@ -9,11 +9,12 @@ import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { formatDuration } from "../duration/formatDuration";
 import { Loader } from "../Loader/Loader";
 import styles from "./Tool.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 /** Queued, working, finished, or failed — the kit's four, shared with `TaskList`. */
 export type ToolState = WorkState;
 
-type Labels = Record<"input" | "output" | "error" | ToolState, string>;
+type Labels = LabelsOf<"tool">;
 
 export interface ToolProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "onToggle"> {
   /** What was called. Set in mono: it is an identifier, not prose. */
@@ -41,15 +42,6 @@ export interface ToolProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" 
   onOpenChange?: (open: boolean) => void;
   labels?: Partial<Labels>;
 }
-
-const LABELS: Labels = {
-  input: "Input",
-  output: "Output",
-  error: "Error",
-  pending: "Queued",
-  running: "Running",
-  done: "Done",
-};
 
 /**
  * A value, and how it wants to be drawn.
@@ -134,7 +126,7 @@ export function Tool({
   className,
   ...rest
 }: ToolProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("tool", labels);
   const bodyId = useId();
 
   const failed = state === "error";

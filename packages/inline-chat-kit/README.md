@@ -153,6 +153,14 @@ Which is why the callbacks take the turn's id rather than being closed over per
 row. Pass the hook's own functions straight through — they are stable. An arrow
 created during render is not, and hands the memo a new prop every time.
 
+`renderPart` is a callback like the others and follows the same rule: define
+it outside the component, or wrap it in `useCallback` / `useMemo`. A renderer
+written inline is a new function every render, which is a changed prop on every
+row — so every finished answer re-renders on every frame of the one arriving,
+exactly the cost the memo exists to remove. What a card needs to change (it was
+applied, it was sent) belongs in the part's `data`, written back with
+`updatePart`; then only the row that owns it re-renders.
+
 If you write your own row instead, wrap it in `React.memo` and do the same.
 
 ## The four states
@@ -217,6 +225,9 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `onFeedback` | `(id, verdict) => void` | | Draws the thumbs |
 | `feedback` | `"up" \| "down" \| null` | `null` | Which one is lit |
 | `answerActions` | `boolean` | `true` | Leave the row out |
+| `renderPart` | `(part, { turnId }) => ReactNode` | | Draws `custom` parts — see below. Keep it stable |
+| `composerMenu` | `ComposerMenuItem[] \| false` | built-in three | The composer's "+" menu; `false` removes the "+" |
+| `labels` | `ChatLabels` | English | Every word the row says — see [Labels](#labels-every-word-the-kit-says) |
 
 The live row carries **`data-active-input`**, so a page can style the composer
 without knowing which turn it is. The case it exists for: a gradient fading the
@@ -411,14 +422,44 @@ component that owns it.
 | `tasks` | `<TaskList>` | `title`, `tasks`, `collapsible` |
 | `chain` | `<ChainOfThought>` | `steps`, `state`, `duration` |
 | `sources` | `<Sources>` | `sources`, `title`, `collapsible` |
-| `approval` | `<Approval>` | `title`, `description`, `tool`, `decision` |
+| `approval` | `<Approval>` | `title`, `description`, `tool`, `decision`, `choices` |
 | `question` | `<QuestionGroup>` | `title`, `questions`, `answers`, `activeIndex`, `collapsible` |
 | `notice` | `<SystemMessage>` | `text`, `tone` |
 | `artifact` | `<ArtifactCard>` | `title`, `meta`, `preview`, `lang`, `content`, `state` |
+| `custom` | whatever `renderPart` returns | `type`, `data` — the host's own card |
 
 `reasoning` and `chain` are the same job at two grains — a block of prose, or
 steps that follow from one another. Sending both for one stretch of thinking
 says it twice.
+
+#### Your own cards: `custom`
+
+Every other kind is a component in this package. `custom` is the host's: `type`
+says which of your cards it is, `data` is whatever that card needs, and
+`renderPart` draws it — in its place among the other parts, inside the answer
+and its entrance.
+
+```tsx
+import type { CustomPart } from "inline-chat-kit";
+
+// Streamed like any part…
+yield { kind: "custom", id: "plan", type: "plan-diff", data: { changes, status: "proposed" } };
+
+// …drawn by the host. Outside the component, so it is stable.
+const renderPart = (part: CustomPart, { turnId }: { turnId: string }) =>
+  part.type === "plan-diff" ? <PlanDiff turnId={turnId} id={part.id} {...(part.data as PlanDiffData)} /> : null;
+
+// …and changed after the answer has finished, by id. Only `data` is replaced.
+updatePart(turnId, { kind: "custom", id: "plan", data: { changes, status: "applied" } });
+```
+
+Without `renderPart`, or when it returns `null`, the part draws nothing — no
+placeholder, no error. A type the host does not recognise is a type it chose
+not to draw. `data` is replaced whole on an update, not merged: it is yours,
+and the kit does not guess its shape.
+
+`ChatExperience` calls `useChatTurns` itself, so a host using it passes its own
+instead — `chat={useChatTurns({ onSend })}` — to hold `updatePart`.
 
 #### Citing a source from the prose
 
@@ -567,6 +608,7 @@ can already see.
 | `decision` | `"once" \| "always" \| "denied" \| null` | `null` while it is still asking |
 | `onDecide` | `(decision) => void` | |
 | `readOnly` | `boolean` | A record of a decision made elsewhere |
+| `choices` | `("once" \| "always" \| "deny")[]` | Which answers are offered. All three by default |
 
 **Three answers, not two.** "Yes" and "yes forever" are not the same answer,
 and a UI offering one button for both collects the wrong one. **Allow once is
@@ -578,6 +620,15 @@ too, so a keyboard reaches the safe answer without tabbing past the other two.
 It turns red only under the pointer, because a permanently red button is the
 first thing the eye lands on.
 
+**Two answers, where "forever" means nothing.** Applying one change to a plan
+happens once; `choices={["once", "deny"]}` leaves "Always allow" out. Nothing
+else moves: Allow once is still the primary, Deny is still first in the DOM and
+alone on the left, and the record it settles into says only what was decided.
+
+```tsx
+<Approval title="Apply the change to your plan" choices={["once", "deny"]} onDecide={decide} />
+```
+
 Give it something to show. An approval with nothing under it is asking for a
 signature on a blank page.
 
@@ -586,7 +637,7 @@ decided. Live controls under a decision already made invite a second one that
 contradicts the first.
 
 As a `TurnPart` it is `{ kind: "approval", id, title, description?, tool?,
-decision? }` — data, like every part, so the tool it names is drawn for it
+decision?, choices? }` — data, like every part, so the tool it names is drawn for it
 rather than passed in as an element. `<ChatTurnRow>` reports through
 `onDecideApproval`.
 
@@ -1265,6 +1316,63 @@ existing call sites keep working. Its `s` / `m` / `l` map to `m` / `l` / `xl`.
 
 Neither takes a dark-mode prop: the theme is a token swap on an ancestor. See
 [theming.md](./theming.md).
+
+## Labels: every word the kit says
+
+Every component takes a `labels` prop, and `ChatExperience` and `ChatTurnRow`
+take one object for all of them — grouped by the component that says it, and
+partial: anything left out stays English.
+
+```tsx
+import { ChatExperience, type ChatLabels } from "inline-chat-kit";
+
+const sr: ChatLabels = {
+  input: { placeholder: "Pitaj bilo šta…", send: "Pošalji poruku", copy: "Kopiraj", edit: "Izmeni" },
+  approval: { once: "Dozvoli jednom", deny: "Odbij", allowedOnce: "Dozvoljeno jednom", wasDenied: "Odbijeno" },
+  reasoning: { thinking: "Razmišljam", thoughtFor: "Razmišljao" },
+  answerActions: { copy: "Kopiraj odgovor", regenerate: "Ponovo" },
+  tasks: { progress: "{done} od {total}" },
+};
+
+<ChatExperience onSend={send} labels={sr} />;
+```
+
+What counts as a word: text on screen, an `aria-label`, a `title`, a
+placeholder, text only a screen reader gets, and what is said through the live
+region. `{name}` in a value is filled in — keep it, and move it wherever the
+language wants it. `defaultLabels` is the full English set, which is also the
+list of what there is to translate.
+
+It travels by context, not by a prop on every row, so the rows' memo is not
+disturbed. For pieces assembled by hand, `LabelsProvider` does what
+`ChatExperience` does:
+
+```tsx
+<LabelsProvider labels={sr}>
+  {turns.map((turn) => <ChatTurnRow key={turn.id} turn={turn} /* … */ />)}
+</LabelsProvider>
+```
+
+The value is compared by content, so an object written inline costs nothing
+after the first render. A component's own `labels` prop wins over the provider
+for that one instance.
+
+### Turning off what you do not use
+
+`ChatExperience` draws a theme toggle and Share in the header and a "+" menu in
+the composer. A host that has none of those says so:
+
+```tsx
+<ChatExperience
+  onSend={send}
+  headerActions={false}          // or ["theme"], or ["share"]
+  composerMenu={false}           // or your own: [{ id, label, icon?, onSelect }]
+/>
+```
+
+The saved highlights button is not one of the header's actions — it appears
+only once there is a highlight, and it is the only way back to them. An entry in
+your own menu with id `"attach"` and no `onSelect` opens the file picker.
 
 ## Theming
 

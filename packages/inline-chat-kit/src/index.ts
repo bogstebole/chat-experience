@@ -15,7 +15,7 @@ export type {
 
 /* Input internals — exported so consumers can recompose the input */
 export { AddCardsOverlay } from "./ChatInput/AddCardsOverlay";
-export type { AddCardsOverlayProps } from "./ChatInput/AddCardsOverlay";
+export type { AddCardsOverlayProps, ComposerMenuItem } from "./ChatInput/AddCardsOverlay";
 export { HoverActionsRow } from "./ChatInput/HoverActionsRow";
 export type { HoverActionsRowProps } from "./ChatInput/HoverActionsRow";
 export { MorphGlyph } from "./ChatInput/MorphGlyph";
@@ -26,7 +26,26 @@ export { useChatTurns } from "./useChatTurns/useChatTurns";
 /* What a turn carries besides its prose: reasoning, tool calls, a plan, a
    question. A `SendHandler` streams these alongside the answer's deltas. */
 export { mergeParts } from "./turnParts/turnParts";
-export type { TurnPart, TurnPartUpdate } from "./turnParts/turnParts";
+export type { CustomPart, TurnPart, TurnPartUpdate } from "./turnParts/turnParts";
+
+/* Every word the kit says, in one object. `ChatExperience` and `ChatTurnRow`
+   take it as `labels`; `LabelsProvider` hands it to anything assembled by
+   hand. Partial — what is left out stays English. */
+export { LabelsProvider, defaultLabels } from "./labels/labels";
+export type {
+  ChatLabels,
+  AnswerActionsLabels,
+  ApprovalLabels,
+  BranchLabels,
+  ChainLabels,
+  ChatInputLabels,
+  ContextLabels,
+  ReasoningLabels,
+  SourcesLabels,
+  TaskListLabels,
+  ToolLabels,
+  VoiceLabels,
+} from "./labels/labels";
 export type {
   ChatAnnouncements,
   ChatTurn,
@@ -63,6 +82,7 @@ export type {
   ChatExperienceProps,
   ChatExperienceEmpty,
   ChatExperienceArtifact,
+  ChatExperienceHeaderAction,
   PartWriter,
 } from "./ChatExperience/ChatExperience";
 
@@ -99,7 +119,7 @@ export type { InlineCitationProps } from "./InlineCitation/InlineCitation";
 
 /* "It wants to do this. Is that all right?" */
 export { Approval } from "./Approval/Approval";
-export type { ApprovalProps, Decision } from "./Approval/Approval";
+export type { ApprovalChoice, ApprovalProps, Decision } from "./Approval/Approval";
 
 /* How full the window is, and why a long conversation starts forgetting */
 export { Context } from "./Context/Context";

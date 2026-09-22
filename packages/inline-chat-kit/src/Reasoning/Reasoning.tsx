@@ -7,18 +7,12 @@ import { DisclosureHeader } from "../disclosure/DisclosureHeader";
 import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { formatDuration } from "../duration/formatDuration";
 import styles from "./Reasoning.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 /** Still working it out, or finished. */
 export type ReasoningState = "thinking" | "done";
 
-type Labels = Record<"thinking" | "thought" | "thoughtFor", string>;
-
-const LABELS: Labels = {
-  thinking: "Thinking",
-  thought: "Thought",
-  /** Followed by the duration: "Thought for 12s". */
-  thoughtFor: "Thought for",
-};
+type Labels = LabelsOf<"reasoning">;
 
 export interface ReasoningProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** The thinking itself. Prose, not structure — see `Tool` for that. */
@@ -63,7 +57,7 @@ export function Reasoning({
   className,
   ...rest
 }: ReasoningProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("reasoning", labels);
   const bodyId = useId();
   const thinking = state === "thinking";
 

@@ -5,6 +5,7 @@ import { useDisclosure } from "../disclosure/useDisclosure";
 import { DisclosureHeader } from "../disclosure/DisclosureHeader";
 import { DisclosureBody } from "../disclosure/DisclosureBody";
 import styles from "./Sources.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 /** Where a claim came from. */
 export interface Source {
@@ -18,9 +19,7 @@ export interface Source {
   quote?: string;
 }
 
-type Labels = { title: string; one: string; many: string };
-
-const LABELS: Labels = { title: "Sources", one: "source", many: "sources" };
+type Labels = LabelsOf<"sources">;
 
 export interface SourcesProps extends Omit<HTMLAttributes<HTMLElement>, "title" | "onSelect"> {
   sources: Source[];
@@ -63,7 +62,7 @@ export function Sources({
   className,
   ...rest
 }: SourcesProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("sources", labels);
   const listId = useId();
 
   const disclosure = useDisclosure({ open, defaultOpen, onOpenChange, preferOpen: true });

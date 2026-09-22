@@ -13,6 +13,7 @@ import {
 } from "react";
 import { ArrowDown } from "lucide-react";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
+import { useLabels } from "../labels/labels";
 import styles from "./Conversation.module.css";
 
 export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
@@ -202,7 +203,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     tail = "auto",
     threshold = THRESHOLD,
     scrollButton = true,
-    scrollButtonLabel = "Jump to the latest",
+    scrollButtonLabel: scrollButtonProp,
     follow = true,
     className,
     viewportClassName,
@@ -211,6 +212,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
   },
   ref
 ) {
+  const jumpLabel = useLabels("conversation").jump;
+  const scrollButtonLabel = scrollButtonProp ?? jumpLabel;
   const viewport = useRef<HTMLDivElement | null>(null);
   /* The forwarded ref is the *viewport*, not the root. Anyone reaching for a
      ref here wants to scroll something, and the root does not scroll. */

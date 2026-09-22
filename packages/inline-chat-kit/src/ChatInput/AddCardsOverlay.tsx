@@ -1,22 +1,43 @@
 "use client";
 
-import React from "react";
+import React, { type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Paperclip, Palette, Link2, X } from "lucide-react";
 import { Button } from "../Button/Button";
 import styles from "./ChatInput.module.css";
 import type { InlineAnimConfig } from "./ChatInput";
+import { useLabels } from "../labels/labels";
 
-const ADD_CARDS = [
-  { Icon: Paperclip, label: "Add" },
-  { Icon: Palette, label: "Design" },
-  { Icon: Link2, label: "Connectors" },
-] as const;
+/**
+ * One entry in the composer's "+" menu.
+ *
+ * `attach` is the one id the composer knows: without an `onSelect` of its own
+ * it opens the file picker, which is what the first built-in entry does.
+ */
+export interface ComposerMenuItem {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  onSelect?: () => void;
+}
+
+/** What the menu holds when the host says nothing, in the reader's language. */
+export function useDefaultComposerMenu(): ComposerMenuItem[] {
+  const text = useLabels("input");
+  return [
+    { id: "attach", label: text.attach, icon: <Paperclip size={16} aria-hidden /> },
+    { id: "design", label: text.design, icon: <Palette size={16} aria-hidden /> },
+    { id: "connectors", label: text.connectors, icon: <Link2 size={16} aria-hidden /> },
+  ];
+}
 
 export interface AddCardsOverlayProps {
   isAddOpen: boolean;
   setIsAddOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  onAdd?: (label?: string) => void;
+  /** Called with the entry's label and, second, its id — match on the id. */
+  onAdd?: (label?: string, id?: string) => void;
+  /** The entries. Defaults to Add, Design and Connectors. */
+  items?: ComposerMenuItem[];
   showInlineGlyph: boolean;
   showButtons: boolean;
   ac: InlineAnimConfig | undefined;
@@ -26,10 +47,14 @@ export function AddCardsOverlay({
   isAddOpen,
   setIsAddOpen,
   onAdd,
+  items,
   showInlineGlyph,
   showButtons,
   ac,
 }: AddCardsOverlayProps) {
+  const builtIn = useDefaultComposerMenu();
+  const cards = items ?? builtIn;
+  const { closeMenu } = useLabels("input");
   return (
     <AnimatePresence>
       {isAddOpen && (
@@ -50,30 +75,32 @@ export function AddCardsOverlay({
             className={styles.addOverlay}
           >
             <div className={styles.addCardsContainer}>
-              {ADD_CARDS.map(({ Icon, label }, i) => {
+              {cards.map(({ id, icon, label, onSelect }, i) => {
                 const sd = ac?.addCards?.staggerDelay ?? 0.04;
                 const enterDelay = i * sd;
-                const exitDelay = (ADD_CARDS.length - 1 - i) * sd;
+                const exitDelay = (cards.length - 1 - i) * sd;
                 const angles = [
                   ac?.addCards?.angle1 ?? -26,
                   ac?.addCards?.angle2 ?? -2,
                   ac?.addCards?.angle3 ?? 22,
                 ];
+                // A fourth entry and beyond fans at the last angle there is.
+                const angle = angles[Math.min(i, angles.length - 1)];
                 const hoverPull = ac?.addCards?.hoverPull ?? 8;
 
                 return (
                   <motion.button
-                    key={label}
+                    key={id}
                     className={styles.addCardFan}
                     style={{
                       right: showInlineGlyph && showButtons ? 36 : 0,
                       bottom: 1,
                       transformOrigin: "calc(100% - 22px) 50%",
-                      zIndex: 3 - i,
+                      zIndex: cards.length - i,
                     }}
                     initial={{ opacity: 0, scale: 0.95, rotate: 0, width: 160 }}
                     animate={{
-                      opacity: 1, scale: 1, rotate: angles[i], width: 160,
+                      opacity: 1, scale: 1, rotate: angle, width: 160,
                       transition: {
                         type: "spring", stiffness: ac?.addCards?.stiffness ?? 350, damping: ac?.addCards?.damping ?? 25, delay: enterDelay,
                         opacity: { duration: 0.1, delay: enterDelay },
@@ -90,11 +117,12 @@ export function AddCardsOverlay({
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsAddOpen(false);
-                      onAdd?.(label);
+                      onSelect?.();
+                      onAdd?.(label, id);
                     }}
                     aria-label={label}
                   >
-                    <Icon size={16} aria-hidden />
+                    {icon}
                     <span>{label}</span>
                   </motion.button>
                 );
@@ -127,8 +155,8 @@ export function AddCardsOverlay({
                   e.stopPropagation();
                   setIsAddOpen(false);
                 }}
-                aria-label="Close"
-                title="Close"
+                aria-label={closeMenu}
+                title={closeMenu}
                 className={styles.closeAdd}
               />
             </motion.div>

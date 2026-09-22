@@ -8,6 +8,7 @@ import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { Answer, Question } from "../QuestionCard/types";
 import { useCorrectedRadius } from "../radiusCorrection/useCorrectedRadius";
 import styles from "./QuestionGroup.module.css";
+import { useLabels } from "../labels/labels";
 
 /** Below this, folding saves less room than the summary row costs. */
 export const FOLDABLE_FROM = 3;
@@ -102,7 +103,6 @@ export interface QuestionGroupProps {
 
 /* `hide` went with the pill that used to say it. The header carries the
    section's name in both states now, so there is nothing left to word. */
-const DEFAULT_LABELS = { answers: "answers" };
 
 /**
  * One step of a questionnaire: the surface holding its questions.
@@ -132,7 +132,7 @@ export function QuestionGroup({
   const bodyId = useId();
   const groundRef = useRef<HTMLDivElement>(null);
   const groundRadius = useCorrectedRadius(groundRef);
-  const label = { ...DEFAULT_LABELS, ...labels };
+  const label = useLabels("questionGroup", labels);
   const still = prefersReducedMotion();
   const folded = collapsible && !expanded;
 

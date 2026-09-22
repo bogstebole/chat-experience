@@ -16,6 +16,7 @@ import {
 import type { Answer, Question, QuestionState } from "./types";
 import { useCorrectedRadius } from "../radiusCorrection/useCorrectedRadius";
 import styles from "./QuestionCard.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 export interface QuestionCardProps {
   question: Question;
@@ -28,17 +29,17 @@ export interface QuestionCardProps {
   onEdit?: () => void;
   /** Answers can be read but not changed. */
   readOnly?: boolean;
-  labels?: Partial<Record<"next" | "none" | "edit", string>>;
+  labels?: Partial<LabelsOf<"question">>;
 }
 
-type Labels = Record<"next" | "none" | "edit", string>;
+type Labels = LabelsOf<"question">;
 
-const DEFAULT_LABELS: Labels = { next: "Next", none: "None of these", edit: "Edit answer" };
 
 const SPRING = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-/** a, b, c … — the option's letter. */
-const letterFor = (i: number) => String.fromCharCode(97 + i);
+/** a, b, c … — the option's letter, from the alphabet `labels.letters` gives.
+    Past the end of it, a number: a question with 27 options has other trouble. */
+const letterFor = (i: number, letters: string) => Array.from(letters)[i] ?? String(i + 1);
 
 /** How long a single-select stays visibly picked before it moves on. */
 const PICK_SETTLE = 300;
@@ -156,7 +157,7 @@ function ActiveBody({
         {question.fields.map((field, i) => (
           <QuestionFieldRow
             key={field.id}
-            letter={letterFor(i)}
+            letter={letterFor(i, labels.letters)}
             label={field.label}
             placeholder={field.placeholder}
             value={values[field.id] ?? ""}
@@ -181,7 +182,7 @@ function ActiveBody({
         {question.options.map((option, i) => (
           <QuestionOptionRow
             key={option.id}
-            letter={letterFor(i)}
+            letter={letterFor(i, labels.letters)}
             title={option.title}
             description={option.description}
             selected={picked === option.id}
@@ -221,7 +222,7 @@ function ActiveBody({
       {question.options.map((option, i) => (
         <QuestionOptionRow
           key={option.id}
-          letter={letterFor(i)}
+          letter={letterFor(i, labels.letters)}
           title={option.title}
           description={option.description}
           selected={ids.includes(option.id)}
@@ -234,9 +235,9 @@ function ActiveBody({
       ))}
       {question.allowOther && (
         <QuestionOtherRow
-          letter={letterFor(question.options.length)}
+          letter={letterFor(question.options.length, labels.letters)}
           value={other}
-          placeholder={question.otherPlaceholder ?? "Something else"}
+          placeholder={question.otherPlaceholder ?? labels.other}
           onChange={setOther}
           onEnter={commitMulti}
         />
@@ -264,7 +265,7 @@ export function QuestionCard({
   readOnly = false,
   labels,
 }: QuestionCardProps) {
-  const label = { ...DEFAULT_LABELS, ...labels };
+  const label = useLabels("question", labels);
   const isCard = state !== "upcoming";
   const still = prefersReducedMotion();
   const cardRef = useRef<HTMLDivElement>(null);

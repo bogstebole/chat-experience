@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type Ref } from "react";
+import { memo, type ReactNode, type Ref } from "react";
 import { motion } from "motion/react";
 import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { Branch } from "../Branch/Branch";
@@ -21,6 +21,9 @@ import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { ChatTurn } from "../useChatTurns/useChatTurns";
+import type { CustomPart } from "../turnParts/turnParts";
+import type { ComposerMenuItem } from "../ChatInput/AddCardsOverlay";
+import { LabelsProvider, type ChatLabels } from "../labels/labels";
 import styles from "./ChatTurnRow.module.css";
 
 export interface ChatTurnRowProps {
@@ -115,6 +118,38 @@ export interface ChatTurnRowProps {
    */
   onDecideApproval?: (turnId: string, partId: string, decision: Decision) => void;
 
+  /**
+   * Draws a `{ kind: "custom" }` part — the host's own card, in the answer.
+   *
+   * Called with the part and the turn it is in, and whatever it returns is
+   * drawn where the part sits among the others. Left out, or returning `null`,
+   * the part draws nothing: no placeholder, no error. A part the host does not
+   * recognise is a part it chose not to draw.
+   *
+   * **Keep it stable** — define it outside the component, or wrap it in
+   * `useCallback`. The row is memoised, and a new function every render is a
+   * changed prop on every row, so every finished answer re-renders on every
+   * frame of the one arriving. What the card needs to change — "applied", say
+   * — belongs in the part's `data`, written with `updatePart`, not in a
+   * closure: then only the row that owns it re-renders.
+   */
+  renderPart?: (part: CustomPart, context: { turnId: string }) => ReactNode;
+
+  /**
+   * The live composer's "+" menu. `false` takes the "+" away; a list replaces
+   * the built-in three. See `ChatInput`'s `menu`. Keep it stable, for the
+   * reason `renderPart` has to be.
+   */
+  composerMenu?: ComposerMenuItem[] | false;
+
+  /**
+   * Every word the row and everything in it says. Partial: what is left out
+   * stays English. Compared by content rather than identity, so an object
+   * written inline does not cost the memo anything — though for a whole
+   * conversation, one `LabelsProvider` around the list does the same job once.
+   */
+  labels?: ChatLabels;
+
   className?: string;
 }
 
@@ -140,6 +175,28 @@ const copyToClipboard = (value: string) => {
  * The two halves have to be in place together. Stable objects give React the
  * grounds to skip; `memo` is what makes it skip.
  */
+/**
+ * `memo`'s own comparison, with one exception: `labels` is compared by what it
+ * says. It is the one prop a host naturally writes as an inline literal, and
+ * a translation that has not changed should not re-render a finished answer.
+ */
+const sameRow = (before: ChatTurnRowProps, after: ChatTurnRowProps): boolean => {
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]) as Set<
+    keyof ChatTurnRowProps
+  >;
+  for (const key of keys) {
+    if (key === "labels") {
+      if (before.labels === after.labels) continue;
+      if (JSON.stringify(before.labels ?? null) !== JSON.stringify(after.labels ?? null)) {
+        return false;
+      }
+      continue;
+    }
+    if (!Object.is(before[key], after[key])) return false;
+  }
+  return true;
+};
+
 export const ChatTurnRow = memo(function ChatTurnRow({
   turn,
   isActiveInput = false,
@@ -168,6 +225,9 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onAnswerQuestion,
   onEditQuestion,
   onDecideApproval,
+  renderPart,
+  composerMenu,
+  labels,
   className,
   onTranscribe,
 }: ChatTurnRowProps) {
@@ -180,7 +240,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   const parts = turn.parts ?? [];
   const cited = parts.find((part) => part.kind === "sources")?.sources;
 
-  return (
+  const row = (
     <motion.article
       id={`turn-${turn.id}`}
       className={[styles.turn, className ?? ""].filter(Boolean).join(" ")}
@@ -222,6 +282,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           isEditing={turn.ai.length > 0 && turn.state === "typing"}
           animationConfig={animationConfig}
           placeholder={placeholder}
+          menu={composerMenu}
         />
       </div>
 
@@ -284,6 +345,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                   title={part.title}
                   description={part.description}
                   decision={part.decision ?? null}
+                  choices={part.choices}
                   onDecide={(decision) => onDecideApproval?.(turn.id, part.id, decision)}
                 >
                   {part.tool && (
@@ -337,6 +399,22 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                   onEdit={(index) => onEditQuestion?.(turn.id, part.id, index)}
                 />
               );
+            case "custom": {
+              const drawn = renderPart?.(part, { turnId: turn.id });
+              /* Nothing, rather than a placeholder: a host that has no card for
+                 this type has said what it wants drawn. */
+              if (drawn === null || drawn === undefined || drawn === false) return null;
+              return (
+                <div
+                  key={part.id}
+                  className={styles.custom}
+                  data-part="custom"
+                  data-part-type={part.type}
+                >
+                  {drawn}
+                </div>
+              );
+            }
           }
         })}
 
@@ -386,4 +464,9 @@ export const ChatTurnRow = memo(function ChatTurnRow({
       </div>
     </motion.article>
   );
-});
+
+  /* Only when asked. A row with no labels of its own reads whatever provider
+     is above it — `ChatExperience`'s, usually — and adding one here would be a
+     second context for nothing. */
+  return labels ? <LabelsProvider labels={labels}>{row}</LabelsProvider> : row;
+}, sameRow);

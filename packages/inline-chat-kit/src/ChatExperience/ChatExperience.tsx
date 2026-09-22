@@ -22,11 +22,17 @@ import { EmptyState } from "../EmptyState/EmptyState";
 import { ReplyThreadPopup, type ReplyThreadPopupProps } from "../ReplyThreadPopup/ReplyThreadPopup";
 import { SystemMessage } from "../SystemMessage/SystemMessage";
 import { CustomCursor } from "../CustomCursor/CustomCursor";
-import { useChatTurns, type UseChatTurnsOptions } from "../useChatTurns/useChatTurns";
+import {
+  useChatTurns,
+  type UseChatTurnsOptions,
+  type UseChatTurnsResult,
+} from "../useChatTurns/useChatTurns";
 import { type FoldMotion } from "../QuestionGroup/QuestionGroup";
 import { type InlineAnimConfig, type ChatInputHandle } from "../ChatInput/ChatInput";
 import { type TranscribeHandler } from "../voice/useVoiceInput";
-import { type TurnPartUpdate } from "../turnParts/turnParts";
+import { type CustomPart, type TurnPartUpdate } from "../turnParts/turnParts";
+import { type ComposerMenuItem } from "../ChatInput/AddCardsOverlay";
+import { LabelsProvider, fill, useLabels, type ChatLabels } from "../labels/labels";
 import { type Answer } from "../QuestionCard/types";
 import { type Decision } from "../Approval/Approval";
 import { type Attachment } from "../Attachments/Attachments";
@@ -89,10 +95,54 @@ export interface ChatExperienceArtifact {
 /** A part the host drives, handed the writer for the turn it belongs to. */
 export type PartWriter = (turnId: string, part: TurnPartUpdate) => void;
 
+/** The header's built-in actions, by id. */
+export type ChatExperienceHeaderAction = "theme" | "share";
+
 export interface ChatExperienceProps {
   /** Where answers come from. Return a string, a promise of one, or an async
-      iterable of deltas — see `useChatTurns`. */
-  onSend: UseChatTurnsOptions["onSend"];
+      iterable of deltas — see `useChatTurns`. Required unless `chat` is
+      given, which brings its own. */
+  onSend?: UseChatTurnsOptions["onSend"];
+
+  /**
+   * The conversation, held by the host.
+   *
+   * Left out, this component calls `useChatTurns` itself and nothing outside
+   * can reach the turns. Pass what your own `useChatTurns` returned and the
+   * host has the same handle this does — `updatePart` in particular, which is
+   * how a card in an answer changes after the answer has finished ("Apply" →
+   * "Applied"). `onSend` is ignored then; the hook you called has one.
+   */
+  chat?: UseChatTurnsResult;
+
+  /**
+   * Draws the host's own `{ kind: "custom" }` parts. See `ChatTurnRow`. Keep
+   * it stable — outside the component or in `useCallback` — or every row
+   * re-renders on every frame of an answer arriving.
+   */
+  renderPart?: (part: CustomPart, context: { turnId: string }) => ReactNode;
+
+  /**
+   * Every word the chat says, grouped by the component that says it. Partial:
+   * anything left out stays English. Reaches every piece through context, so
+   * an inline object costs nothing — it is compared by content.
+   */
+  labels?: ChatLabels;
+
+  /**
+   * The header's built-in actions. `true` (the default) is the theme toggle
+   * and Share; `false` is neither; a list keeps only those named. The saved
+   * highlights button is not one of these — it appears only once there is a
+   * highlight, and it is the only way back to them. `actions` still adds your
+   * own after whatever is left.
+   */
+  headerActions?: boolean | ChatExperienceHeaderAction[];
+
+  /**
+   * The composer's "+" menu. `false` takes the "+" away; a list replaces the
+   * built-in three (Add, Design, Connectors). Keep a list stable.
+   */
+  composerMenu?: ComposerMenuItem[] | false;
   /** Speech to text. The kit records; the host transcribes. Omit and the
       microphone does not appear. */
   onTranscribe?: TranscribeHandler;
@@ -171,11 +221,19 @@ interface Highlight {
   text: string;
 }
 
+/** Stands in for a missing `onSend` when the host brought `chat` instead. */
+const silent = () => "";
+
 export function ChatExperience({
   onSend,
+  chat: hostChat,
+  renderPart,
+  labels,
+  headerActions: builtInActions = true,
+  composerMenu,
   onTranscribe,
   onThreadReply,
-  title = "Chat",
+  title: titleProp,
   backHref,
   backLabel,
   actions,
@@ -198,6 +256,10 @@ export function ChatExperience({
   onDecideApproval,
   className,
 }: ChatExperienceProps) {
+  /* Read above the provider this renders, so the outer one (if any) and this
+     component's own `labels` both count. */
+  const text = useLabels("experience", labels?.experience);
+  const title = titleProp ?? text.title;
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [showHighlights, setShowHighlights] = useState(false);
   const [activeReply, setActiveReply] = useState<{ text: string; rect: DOMRect } | null>(null);
@@ -231,8 +293,14 @@ export function ChatExperience({
     [controlled, onThemeChange]
   );
 
+  /* Called either way — a hook cannot be skipped — and ignored when the host
+     holds the conversation. */
+  const ownChat = useChatTurns({
+    onSend: onSend ?? silent,
+    announcements: { responding: text.responding },
+  });
   const { turns, setDraft, submit, showVersion, stop, beginEdit, cancelEdit, updatePart } =
-    useChatTurns({ onSend });
+    hostChat ?? ownChat;
 
   /* The turn the view is held on.
 
@@ -309,8 +377,8 @@ export function ChatExperience({
     announcedFull.current = true;
     /* Through the kit's own region. The component deliberately opens none of
        its own — two live regions say everything twice. */
-    announce("The oldest messages are dropping out of the window.");
-  }, [windowFull]);
+    announce(text.windowFull);
+  }, [windowFull, text.windowFull]);
 
   /* Which artifact the pane is showing. Held here rather than in either the
      card or the pane, because they are in different parts of the tree and both
@@ -341,6 +409,16 @@ export function ChatExperience({
       setHighlights((prev) => [...prev, { turnId, text: text.trim() }]);
     }
   }, []);
+
+  /* Hoisted for the memo. It was an arrow written inline in the row's props,
+     which is a new function every render — so every finished row re-rendered
+     on every frame of the answer arriving, and `ChatTurnRow`'s memo, whose
+     whole job is to stop that, never got the chance. */
+  const toggleArtifact = artifacts.toggle;
+  const openArtifact = useCallback(
+    (_turnId: string, id: string) => toggleArtifact(id),
+    [toggleArtifact]
+  );
 
   const handleReplyInThread = useCallback((text: string, rect: DOMRect) => {
     setActiveReply({ text, rect });
@@ -392,12 +470,15 @@ export function ChatExperience({
     return () => query.removeEventListener("change", read);
   }, [cursor]);
 
+  const offers = (id: ChatExperienceHeaderAction) =>
+    builtInActions === true || (Array.isArray(builtInActions) && builtInActions.includes(id));
+
   const headerActions: ChatHeaderAction[] = [
     ...(highlights.length > 0
       ? [
           {
             id: "bookmarks",
-            label: "Saved highlights",
+            label: text.savedHighlights,
             icon: <Bookmark size={16} aria-hidden />,
             count: highlights.length,
             pinned: true,
@@ -405,20 +486,28 @@ export function ChatExperience({
           },
         ]
       : []),
-    {
-      id: "theme",
-      label: theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme",
-      icon: theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />,
-      active: theme === "dark",
-      onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
-    },
-    {
-      id: "share",
-      label: "Share",
-      icon: <Share size={16} aria-hidden />,
-      onClick: () =>
-        navigator.share?.({ title: conversationTitle, url: window.location.href }),
-    },
+    ...(offers("theme")
+      ? [
+          {
+            id: "theme",
+            label: theme === "dark" ? text.themeToLight : text.themeToDark,
+            icon: theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />,
+            active: theme === "dark",
+            onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
+          },
+        ]
+      : []),
+    ...(offers("share")
+      ? [
+          {
+            id: "share",
+            label: text.share,
+            icon: <Share size={16} aria-hidden />,
+            onClick: () =>
+              navigator.share?.({ title: conversationTitle, url: window.location.href }),
+          },
+        ]
+      : []),
     ...(actions ?? []),
   ];
 
@@ -468,13 +557,13 @@ export function ChatExperience({
         {selectionToggle && (
           /* The kit does not manage this one through `actions`: a segmented
              control has no icon-and-label shape to fold into a menu. */
-          <div className={styles.selectMode} role="group" aria-label="Selection mode">
+          <div className={styles.selectMode} role="group" aria-label={text.selectionMode}>
             <button
               type="button"
               data-active={selectionMode === "marker"}
               onClick={() => setSelectionMode("marker")}
-              aria-label="Freeform marker"
-              title="Freeform marker"
+              aria-label={text.marker}
+              title={text.marker}
             >
               <Highlighter size={16} />
             </button>
@@ -482,8 +571,8 @@ export function ChatExperience({
               type="button"
               data-active={selectionMode === "precise"}
               onClick={() => setSelectionMode("precise")}
-              aria-label="Precise text selection"
-              title="Precise text selection"
+              aria-label={text.precise}
+              title={text.precise}
             >
               <TextCursor size={16} />
             </button>
@@ -538,7 +627,7 @@ export function ChatExperience({
                 animationConfig={animationConfig}
                 foldMotion={foldMotion}
                 openArtifactId={artifacts.openId}
-                onOpenArtifact={(_turnId, id) => artifacts.toggle(id)}
+                onOpenArtifact={openArtifact}
                 placeholder={placeholder}
                 onDraft={setDraft}
                 onSubmit={handleSubmit}
@@ -554,13 +643,15 @@ export function ChatExperience({
                 onAnswerQuestion={answerQuestion}
                 onEditQuestion={editQuestion}
                 onDecideApproval={decideApproval}
+                renderPart={renderPart}
+                composerMenu={composerMenu}
               />
             );
           })}
         </AnimatePresence>
 
         {windowFull && (
-          <SystemMessage>The oldest messages are dropping out of the window.</SystemMessage>
+          <SystemMessage>{text.windowFull}</SystemMessage>
         )}
       </Conversation>
       <div className={styles.bottomBlur} />
@@ -568,7 +659,7 @@ export function ChatExperience({
   );
 
   return (
-    <>
+    <LabelsProvider labels={labels}>
       {cursor && (
         <>
           {/* Hidden from the mouse, and there is no mouse on a phone. Left on,
@@ -622,22 +713,24 @@ export function ChatExperience({
             <motion.div
               className={styles.sheet}
               role="dialog"
-              aria-label="Saved highlights"
+              aria-label={text.savedHighlights}
               initial={{ y: 20, scale: 0.95 }}
               animate={{ y: 0, scale: 1 }}
               exit={{ y: 20, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className={styles.sheetHead}>
-                <h2 className={styles.sheetTitle}>Highlights</h2>
+                <h2 className={styles.sheetTitle}>{text.highlights}</h2>
                 <button className={styles.close} onClick={() => setShowHighlights(false)}>
-                  Close
+                  {text.close}
                 </button>
               </div>
 
               {Array.from(new Set(highlights.map((h) => h.turnId))).map((turnId, index) => (
                 <div key={turnId} className={styles.group}>
-                  <h3 className={styles.groupTitle}>Paragraph {index + 1}</h3>
+                  <h3 className={styles.groupTitle}>
+                    {fill(text.paragraph, { index: index + 1 })}
+                  </h3>
                   <div className={styles.marks}>
                     {highlights
                       .filter((h) => h.turnId === turnId)
@@ -686,6 +779,6 @@ export function ChatExperience({
           />
         )}
       </AnimatePresence>
-    </>
+    </LabelsProvider>
   );
 }

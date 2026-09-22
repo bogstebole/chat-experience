@@ -8,6 +8,7 @@ import { DisclosureHeader } from "../disclosure/DisclosureHeader";
 import { DisclosureBody } from "../disclosure/DisclosureBody";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./TaskList.module.css";
+import { useLabels, type LabelsOf } from "../labels/labels";
 
 /** The same four as a tool call. See `StateGlyph`. */
 export type TaskState = WorkState;
@@ -20,18 +21,7 @@ export interface Task {
   detail?: ReactNode;
 }
 
-type Labels = Record<TaskState, string> & {
-  /** `{done}` and `{total}` are filled in. */
-  progress: string;
-};
-
-const LABELS: Labels = {
-  pending: "Queued",
-  running: "In progress",
-  done: "Done",
-  error: "Failed",
-  progress: "{done} of {total}",
-};
+type Labels = LabelsOf<"tasks">;
 
 export interface TaskListProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   tasks: Task[];
@@ -70,7 +60,7 @@ export function TaskList({
   className,
   ...rest
 }: TaskListProps) {
-  const label = { ...LABELS, ...labels };
+  const label = useLabels("tasks", labels);
   const listId = useId();
   const still = prefersReducedMotion();
 
@@ -89,7 +79,6 @@ export function TaskList({
   const progress = label.progress
     .replace("{done}", String(done))
     .replace("{total}", String(tasks.length));
-
 
   return (
     <section

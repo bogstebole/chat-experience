@@ -3,6 +3,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import type { Source } from "../Sources/Sources";
 import styles from "./InlineCitation.module.css";
+import { useLabels } from "../labels/labels";
 
 export interface InlineCitationProps
   extends Omit<HTMLAttributes<HTMLElement>, "children" | "onSelect"> {
@@ -40,7 +41,7 @@ export function InlineCitation({
   className,
   ...rest
 }: InlineCitationProps) {
-  const cite = labels?.cite ?? "Source";
+  const { cite } = useLabels("citation", labels);
   const name = source ? `${cite} ${index}: ${source.title}` : `${cite} ${index}`;
 
   const marker = onSelect ? (

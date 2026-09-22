@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type HTMLAttributes, type ReactNode } from "react";
 import { Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "../Button/Button";
+import { useLabels } from "../labels/labels";
 import styles from "./ArtifactPane.module.css";
 
 export interface ArtifactPaneProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
@@ -62,12 +63,16 @@ export function ArtifactPane({
   modal = false,
   expanded = false,
   onToggleExpanded,
-  closeLabel = "Close",
-  expandLabel = "Widen",
-  collapseLabel = "Narrow",
+  closeLabel: closeProp,
+  expandLabel: expandProp,
+  collapseLabel: collapseProp,
   className,
   ...rest
 }: ArtifactPaneProps) {
+  const text = useLabels("pane");
+  const closeLabel = closeProp ?? text.close;
+  const expandLabel = expandProp ?? text.expand;
+  const collapseLabel = collapseProp ?? text.collapse;
   const titleId = useId();
   const pane = useRef<HTMLDivElement>(null);
 
