@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect, useState } from "react";
 import { ChatExperience, type ChatExperienceProps } from "../ChatExperience/ChatExperience";
@@ -152,6 +154,51 @@ describe("the default, unchanged", () => {
     await screen.findByRole("complementary", { name: "Plan nege" });
     expect(container.querySelector("[data-pane]")).not.toBeNull();
     expect(card()).toHaveAttribute("aria-expanded", "true");
+  });
+});
+
+describe('surface="panes"', () => {
+  /* Two cards on the page rather than one page with a line down it. The
+     geometry is CSS — jsdom has no layout — so what is checked here is that
+     the mode reaches the layout and that both surfaces are drawn from the same
+     tokens; the story is where the result is looked at. */
+  it("is off by default", async () => {
+    let chat!: UseChatTurnsResult;
+    const { container } = render(<Host onChat={(c) => (chat = c)} />);
+    await answer(() => chat);
+    expect(container.querySelector("[data-surface]")).toBeNull();
+  });
+
+  it("tells the layout, so the conversation becomes a card of its own", async () => {
+    let chat!: UseChatTurnsResult;
+    const { container } = render(<Host surface="panes" onChat={(c) => (chat = c)} />);
+    await answer(() => chat);
+    expect(container.querySelector('[data-surface="panes"]')).not.toBeNull();
+  });
+
+  it("goes with a pane the host draws itself", async () => {
+    let chat!: UseChatTurnsResult;
+    const { container } = render(
+      <Host surface="panes" pane="none" openArtifactId="plan" onChat={(c) => (chat = c)} />
+    );
+    await answer(() => chat);
+    expect(container.querySelector('[data-surface="panes"]')).not.toBeNull();
+    // Still no pane of the kit's own, and still no room made for one.
+    expect(container.querySelector("[data-pane]")).toBeNull();
+  });
+
+  it("draws both surfaces from the same tokens", () => {
+    const css = readFileSync(join(import.meta.dirname, "../Artifact/ChatLayout.module.css"), "utf8");
+    const pane = readFileSync(join(import.meta.dirname, "../Artifact/ArtifactPane.module.css"), "utf8");
+    const tokens = readFileSync(join(import.meta.dirname, "../styles/tokens.css"), "utf8");
+    /* Two panes side by side have to be the same kind of thing. */
+    expect(css).toMatch(/background: var\(--ick-chat-pane-surface\)/);
+    expect(pane).toMatch(/background: var\(--ick-artifact-pane-surface\)/);
+    expect(tokens).toMatch(/--ick-chat-pane-surface: var\(--ick-artifact-pane-surface\)/);
+    expect(tokens).toMatch(/--ick-chat-pane-radius: var\(--ick-artifact-pane-radius\)/);
+    /* And the ring of space around them is the gap between them: one number. */
+    expect(css).toMatch(/padding: var\(--ick-chat-pane-inset\)/);
+    expect(css).toMatch(/margin: 0 0 0 var\(--ick-chat-pane-inset\)/);
   });
 });
 

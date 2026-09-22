@@ -29,6 +29,13 @@ a layout of its own. Nothing changes for a host that passes none of this.
   by hand.
 - **`ArtifactPane` outside `ChatLayout`**, documented and tested: a region with
   focus on its title when it mounts, no trap and no Escape unless `modal`.
+- **`surface="flush" | "panes"` on `ChatExperience` and `ChatLayout`.**
+  `"panes"` makes the conversation a card of its own, so the pane beside it —
+  the kit's or the host's — is a second surface rather than a strip cut off the
+  same one. Both are drawn from the same tokens, and `--ick-chat-pane-inset` is
+  both the ring of space around them and the gap between them. Below the
+  layout's breakpoint the corners and the inset go, where the pane is a sheet.
+  `"flush"` is the default and is what the kit drew before.
 
 ## 0.56.0 — 2026-09-22
 

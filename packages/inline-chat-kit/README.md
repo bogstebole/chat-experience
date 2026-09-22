@@ -1032,6 +1032,7 @@ between products, and the only part.
 | `onOpen` | `(id: string) => void` | Without one the card is a record, not a control |
 | `<ArtifactPane>` `modal` | `boolean` | See below |
 | `<ChatLayout>` `pane` | `({ narrow }) => ReactNode` | |
+| `<ChatLayout>` `surface` | `"flush" \| "panes"` | One surface, or two. See below |
 
 **`modal` is the one prop that changes behaviour, and it is not about
 position.** Covering the conversation changes what the pane *is*: focus has to
@@ -1044,6 +1045,32 @@ without one.
 That is the part worth having in a library rather than the box. On open, focus
 moves to the pane's heading — not into its first control, which would skip what
 the thing is — and it is **not** trapped unless the pane is covering the chat.
+
+#### Two panes, not one page split in half
+
+By default the conversation fills the layout and the pane is the only card on
+it — which is what a chat that owns the whole window wants. `surface="panes"`
+makes the conversation a card of its own instead:
+
+```tsx
+<ChatExperience onSend={send} surface="panes" artifact={artifact} />
+```
+
+Both surfaces are drawn from the same tokens — `--ick-chat-pane-surface` is
+`--ick-artifact-pane-surface`, and the radius follows — because two panes side
+by side have to be the same *kind* of thing, or the chat reads as the
+background and the pane as a dialog over it. One number,
+`--ick-chat-pane-inset`, is the ring of space around both and the gap between
+them, so the frame is even the whole way round. No divider: the gap is what
+says there are two of them.
+
+Below `<ChatLayout>`'s breakpoint the corners and the inset go: the pane is a
+sheet over the conversation there, and a card inside a card with a sheet over
+both is three surfaces for one screen.
+
+Inside the card, `--ick-page` is the card — so the header's tint and the fades
+at both ends end in the colour they are standing on rather than in the ground
+outside it.
 
 #### Drawing the pane yourself
 
@@ -1083,6 +1110,9 @@ const open = openId ? findArtifact(openId) : null;
 - **A custom card opens one too.** `renderPart`'s second argument carries
   `openArtifact(id)` and `closeArtifact()`, next to `turnId`: a caregiver in
   your card opens her profile the way an `ArtifactCard` opens a plan.
+- **`surface="panes"` goes with it.** The conversation becomes a card, your
+  pane is the second one, and the two match without your having to copy the
+  kit's radius and shadow.
 - **`<ArtifactPane>` stands on its own.** Outside `ChatLayout` leave `modal`
   off: it is a region, focus moves to its title when it mounts, and it neither
   traps focus nor takes Escape. Key it by the artifact's id, so opening a

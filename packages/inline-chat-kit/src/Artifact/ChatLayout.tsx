@@ -45,6 +45,19 @@ export interface ChatLayoutProps extends HTMLAttributes<HTMLDivElement> {
    * it out and the sheet has neither, which is a sheet a thumb cannot dismiss.
    */
   onDismiss?: () => void;
+  /**
+   * Whether the conversation is a surface of its own.
+   *
+   * `"flush"` (the default): the conversation fills the layout and the pane is
+   * the only card — which is what a chat that owns the whole window wants.
+   *
+   * `"panes"`: two cards side by side on the page, with the same ring of space
+   * around both and the same gap between them. A divider would have said the
+   * same thing more cheaply and less truthfully: these are two surfaces, not
+   * one surface with a line through it. The pane the host draws itself goes
+   * beside a `"panes"` conversation and looks like it belongs there.
+   */
+  surface?: "flush" | "panes";
 }
 
 /**
@@ -137,6 +150,7 @@ export function ChatLayout({
   children,
   pane,
   onDismiss,
+  surface = "flush",
   className,
   ...rest
 }: ChatLayoutProps) {
@@ -187,6 +201,7 @@ export function ChatLayout({
       ref={root}
       className={[styles.layout, className ?? ""].filter(Boolean).join(" ")}
       data-pane={shown ? "" : undefined}
+      data-surface={surface === "panes" ? "panes" : undefined}
       {...rest}
     >
       <div className={styles.chat}>{children}</div>

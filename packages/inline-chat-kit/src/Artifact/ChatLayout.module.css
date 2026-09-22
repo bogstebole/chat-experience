@@ -55,6 +55,48 @@
   flex: 1;
 }
 
+/* ── Two panes ──────────────────────────────────────────────────────────────
+   The conversation as a card of its own, beside the pane's. Not a divider:
+   two surfaces on the page rather than one surface with a line through it.
+
+   The inset is a padding on the layout rather than a margin on each card, so
+   the ring of space is even and the gap between them is the one the pane's own
+   left margin already draws. `min-height: 0` stays with the flex children;
+   what changes here is only paint and radius. */
+.layout[data-surface="panes"] {
+  padding: var(--ick-chat-pane-inset);
+}
+
+.layout[data-surface="panes"] .chat {
+  border-radius: var(--ick-chat-pane-radius);
+  background: var(--ick-chat-pane-surface);
+  box-shadow: var(--ick-chat-pane-shadow);
+  /* The header and the two fades run to the edges, and the edges are round. */
+  overflow: clip;
+  /* What the fades and the header are painted from. Inside this card the page
+     *is* the card, so a gradient that ends in `--ick-page` ends in the colour
+     it is standing on rather than in the ground outside. */
+  --ick-page: var(--ick-chat-pane-surface);
+}
+
+/* The pane's own margins are the layout's padding now, except the gap. */
+.layout[data-surface="panes"] .card {
+  margin: 0 0 0 var(--ick-chat-pane-inset);
+}
+
+/* Covering the conversation, the sheet is edge to edge again: it is over the
+   whole layout, not inside the chat's card. */
+@container (max-width: 760px) {
+  .layout[data-surface="panes"] {
+    padding: 0;
+  }
+
+  .layout[data-surface="panes"] .chat {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 /* The room. Nothing is drawn here — no padding, no background, no gap — so
    that its width can be animated to and from zero and mean it. */
 .slot {

@@ -32,6 +32,14 @@
   overflow: clip;
 }
 
+/* Inside a card of its own, the height is the card's rather than the window's
+   — the layout has already taken its ring of space out of the window, and a
+   column still claiming 100dvh inside it would hang that much past the bottom.
+   See `ChatLayout surface="panes"`. */
+.paned {
+  height: 100%;
+}
+
 /* The notch, the rounded corners and the home indicator.
 
    On a phone the 32px of side padding is measured from the edge of the glass,

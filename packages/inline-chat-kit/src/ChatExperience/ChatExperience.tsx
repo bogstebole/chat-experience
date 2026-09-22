@@ -189,6 +189,15 @@ export interface ChatExperienceProps {
    * `openArtifactId` and `<ArtifactPane>`.
    */
   pane?: "inline" | "none";
+  /**
+   * Whether the conversation is a card of its own.
+   *
+   * `"flush"` (the default) fills the window, as before. `"panes"` makes it a
+   * surface on the page, so the pane beside it — the kit's or the host's own —
+   * is a second surface rather than a strip cut off the same one. See
+   * `ChatLayout`.
+   */
+  surface?: "flush" | "panes";
 
   /** The theme, if the host keeps it. Left off, this manages its own and puts
       a toggle in the header; `data-theme` on the root element either way, and
@@ -266,6 +275,7 @@ export function ChatExperience({
   openArtifactId: openArtifactProp,
   onOpenArtifactChange,
   pane: paneMode = "inline",
+  surface = "flush",
   theme: themeProp,
   onThemeChange,
   cursor = false,
@@ -565,7 +575,14 @@ export function ChatExperience({
 
   const chat = (
     <motion.div
-      className={[styles.page, "ick-chat-page", className].filter(Boolean).join(" ")}
+      className={[
+        styles.page,
+        surface === "panes" ? styles.paned : "",
+        "ick-chat-page",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{ "--ick-experience-anchor": `${anchorOffset}px` } as CSSProperties}
       initial={{ opacity: 0 }}
       animate={{
@@ -731,6 +748,7 @@ export function ChatExperience({
           a conversation it was meant to sit next to. */}
       <ChatLayout
         className={styles.workspace}
+        surface={surface}
         /* On a phone the pane is a sheet, and a sheet's ways out belong to the
            layout: dragged down, or the conversation behind it pressed. */
         onDismiss={closeArtifact}

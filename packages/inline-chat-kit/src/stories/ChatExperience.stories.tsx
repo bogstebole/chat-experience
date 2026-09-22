@@ -159,12 +159,15 @@ export const HostDrawnPane: Story = {
   render: function HostDrawnPane(args) {
     const [openId, setOpenId] = useState<string | null>(null);
     return (
+      /* The page is the ground; the chat and the host's pane are two cards on
+         it, with the same ring of space around both. */
       <div style={{ display: "flex", height: "100vh", background: "var(--ick-page)" }}>
         <div style={{ flex: 1, minWidth: 0, display: "flex" }}>
           <ChatExperience
             {...args}
             {...Opening.args}
             pane="none"
+            surface="panes"
             openArtifactId={openId}
             onOpenArtifactChange={setOpenId}
           />
@@ -174,9 +177,11 @@ export const HostDrawnPane: Story = {
             style={{
               width: 380,
               flexShrink: 0,
-              padding: 12,
+              /* No divider: the gap is what says these are two panes. The
+                 chat's own ring of space is `--ick-chat-pane-inset`, so the
+                 host's card keeps the same on the three sides it owns. */
+              padding: "var(--ick-chat-pane-inset) var(--ick-chat-pane-inset) var(--ick-chat-pane-inset) 0",
               boxSizing: "border-box",
-              borderLeft: "1px solid var(--ick-border)",
               display: "flex",
             }}
           >
@@ -194,5 +199,19 @@ export const HostDrawnPane: Story = {
         )}
       </div>
     );
+  },
+};
+
+/**
+ * Two panes, drawn by the kit.
+ *
+ * `surface="panes"` makes the conversation a card of its own, so the artifact
+ * pane beside it is a second surface rather than a strip cut off the same one.
+ * Ask for the 5k plan and open its card.
+ */
+export const TwoPanes: Story = {
+  args: {
+    ...Everything.args,
+    surface: "panes",
   },
 };

@@ -609,6 +609,19 @@
        and short enough to leave the last line legible. */
     --ick-artifact-fade: 32px;
 
+    /* ── Two panes, not one page split in half ───────────────────────────
+       `ChatLayout surface="panes"` makes the conversation a card of its own
+       beside the artifact's, floating on the page rather than filling it. The
+       same surface, radius and shadow the artifact pane already uses: two
+       panes side by side have to be the same *kind* of thing, or the chat
+       reads as the background and the pane as a dialog over it. */
+    --ick-chat-pane-surface: var(--ick-artifact-pane-surface);
+    --ick-chat-pane-radius: var(--ick-artifact-pane-radius);
+    --ick-chat-pane-shadow: var(--ick-shadow-float);
+    /* The ring of space around both, and the gap between them: one number, so
+       the frame is even the whole way round. */
+    --ick-chat-pane-inset: var(--ick-artifact-pane-inset);
+
     --ick-artifact-pane-surface: var(--ick-card);
     --ick-artifact-pane-radius: var(--ick-nest-ground);
     /* 24, not the nesting chain's 16. This is the only surface in the kit that
