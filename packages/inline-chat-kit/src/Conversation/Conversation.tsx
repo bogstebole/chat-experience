@@ -101,6 +101,17 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
   /** Switch the whole thing off and it is a plain scroll container. */
   follow?: boolean;
   /**
+   * The last child is a dock.
+   *
+   * Pinned to the bottom edge while the content is shorter than the view, and
+   * held there while it is longer — the composer of a chat that keeps it at
+   * the bottom rather than at the end of the conversation. It is still
+   * content: the end of the scroll is still the last turn's end, and what is
+   * under it scrolls under it, which is what lets that composer become a
+   * bubble in the conversation without being moved between two trees.
+   */
+  dock?: boolean;
+  /**
    * For the element that actually scrolls, which is not the one `className`
    * lands on.
    *
@@ -205,6 +216,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     scrollButton = true,
     scrollButtonLabel: scrollButtonProp,
     follow = true,
+    dock = false,
     className,
     viewportClassName,
     onScroll,
@@ -219,7 +231,29 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
      ref here wants to scroll something, and the root does not scroll. */
   useImperativeHandle(ref, () => viewport.current as HTMLDivElement, []);
   const content = useRef<HTMLDivElement | null>(null);
+  const root = useRef<HTMLDivElement | null>(null);
   const [following, setFollowing] = useState(true);
+
+  /* How tall the dock is, written where the stylesheet can read it: the way
+     back has to float *above* the composer, not on it. Measured rather than
+     guessed — the composer grows as a message is typed into it. */
+  useEffect(() => {
+    if (!dock) return;
+    const inner = content.current;
+    const outer = root.current;
+    if (!inner || !outer || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const last = inner.lastElementChild as HTMLElement | null;
+      outer.style.setProperty("--ick-dock-height", `${last?.offsetHeight ?? 0}px`);
+    };
+    const watch = new ResizeObserver(measure);
+    watch.observe(inner);
+    measure();
+    return () => {
+      watch.disconnect();
+      outer.style.removeProperty("--ick-dock-height");
+    };
+  }, [dock]);
   /**
    * The tail this component last wrote, so it can tell it apart from content
    * and so an unchanged measurement does not touch the DOM on every frame of
@@ -280,15 +314,20 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       return Math.max(0, view.scrollHeight - view.clientHeight);
     }
 
-    const last = inner.lastElementChild as HTMLElement | null;
+    /* The wrapper rather than the last child, when there is a dock: the room
+       is a margin *inside* it now, so its own end is the end of everything,
+       and the dock — whose height is in there too — comes to rest on the
+       bottom edge. No tail to take off, because the wrapper has no padding in
+       that mode. See the stylesheet. */
+    const last = dock ? null : (inner.lastElementChild as HTMLElement | null);
     const bottom = last
       ? flowTop(last, view) + last.offsetHeight
-      : /* No element to measure — a consumer whose children are bare text.
-           The wrapper stands in, less the tail, which is padding this
-           component put there itself and is emphatically not content. */
-        flowTop(inner, view) + inner.offsetHeight - applied.current;
+      : /* No element to measure — a consumer whose children are bare text, or
+           a dock. The wrapper stands in, less its own tail padding where it
+           has one, which this component put there and is not content. */
+        flowTop(inner, view) + inner.offsetHeight - (dock ? 0 : applied.current);
     return Math.max(0, bottom + endOffset - view.clientHeight);
-  }, [endOffset, tail]);
+  }, [dock, endOffset, tail]);
 
   /**
    * The tail, measured rather than guessed. See the `tail` prop.
@@ -329,7 +368,27 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        stands between it and the bottom edge is the whole stack under it. So
        that is what comes off. */
     const stack = flowTop(last, view) + last.offsetHeight - flowTop(held, view);
-    const needed = Math.max(floor, view.clientHeight - anchorOffset - stack - pad);
+    /* Docked, the room is asked for rather than derived.
+
+       The flow arithmetic above cannot see this mode: the room is a margin
+       *above* the dock, and while the conversation is shorter than the view
+       the dock's own `margin-top: auto` swallows it — so the stack does not
+       move, the difference is asked for again, and the room ran to eight
+       thousand pixels in three messages.
+
+       What the room is actually for is one sentence: the end of the scroll
+       has to reach the scroll that puts the anchored turn at the anchor.
+       `target` says what that scroll is; `scrollHeight - clientHeight` says
+       what there is. The difference is what is missing, whatever swallowed
+       the last of it, and one more pass corrects whatever this one got
+       wrong. */
+    const needed = dock
+      ? Math.max(
+          floor,
+          applied.current +
+            (flowTop(held, view) - anchorOffset - (view.scrollHeight - view.clientHeight))
+        )
+      : Math.max(floor, view.clientHeight - anchorOffset - stack - pad);
 
     /* ── While a turn is anchored, the room only grows ────────────────────
        The room's contract is *at least this much* — enough for the anchored
@@ -352,7 +411,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        before the layout is final is raised by the next one rather than
        standing for the whole answer. */
     write(inner, applied, anchorId ? Math.max(needed, applied.current) : needed);
-  }, [tail, anchorOffset, endOffset, anchorId]);
+  }, [tail, anchorOffset, endOffset, anchorId, dock]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
@@ -634,14 +693,18 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
   const detached = follow && !following;
 
   return (
-    <div className={[styles.root, className ?? ""].filter(Boolean).join(" ")}>
+    <div
+      ref={root}
+      className={[styles.root, className ?? ""].filter(Boolean).join(" ")}
+      data-dock={dock || undefined}
+    >
       <div
         ref={viewport}
         className={[styles.viewport, viewportClassName ?? ""].filter(Boolean).join(" ")}
         onScroll={handleScroll}
         {...rest}
       >
-        <div ref={content} className={styles.content}>
+        <div ref={content} className={styles.content} data-dock={dock || undefined}>
           {children}
         </div>
       </div>

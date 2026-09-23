@@ -215,3 +215,49 @@ export const TwoPanes: Story = {
     surface: "panes",
   },
 };
+
+/**
+ * Everything the host has no use for, off.
+ *
+ * All of it is decided in code rather than offered in the interface — a
+ * product either marks passages or it does not, and a switch for it is a
+ * question nobody asked. `highlights={false}` draws answers as prose and
+ * takes the saved highlights and the selection-mode pair with it;
+ * `headerActions={false}` drops the theme toggle and Share;
+ * `composerMenu={false}` takes the "+" away; no `onThreadReply`, no threads.
+ */
+export const Stripped: Story = {
+  args: {
+    ...Opening.args,
+    composer: "docked",
+    highlights: false,
+    headerActions: false,
+    composerMenu: false,
+  },
+};
+
+/**
+ * The composer at the bottom, the way most chats keep it.
+ *
+ * `composer="docked"`: the conversation stacks above the box, the view follows
+ * the answer being written, and the box is always there — the next question
+ * can be typed while this one is answered, and the send waits. Sent, the
+ * message still becomes its bubble: the same element travels up into the
+ * conversation and a fresh composer takes its place.
+ */
+export const Docked: Story = {
+  args: {
+    ...Opening.args,
+    composer: "docked",
+    onTranscribe: scriptedTranscript,
+  },
+};
+
+/** Docked, and a pane of its own beside it. */
+export const DockedTwoPanes: Story = {
+  args: {
+    ...Everything.args,
+    composer: "docked",
+    surface: "panes",
+  },
+};

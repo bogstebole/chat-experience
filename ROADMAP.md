@@ -1134,9 +1134,17 @@ the sixth is the one this week kept charging for.
       in the gate now, and fails on the old behaviour with four assertions
       rather than one.
 
-- [ ] **I2 · A fixed composer at the bottom, as an alternative to the
+- [x] **I2 · A fixed composer at the bottom, as an alternative to the
       inline one.** The whole kit is built on the input *being* the message.
       That is the argument it makes, and some products will not want it.
+
+      Shipped in 0.58.0 as `composer="docked"` on `ChatExperience`. The live
+      input is still the last turn — `Conversation` pins its last child to the
+      bottom edge — so the morph is the one the kit already had, and the
+      travel into the conversation is its `layout` animation once a fresh
+      composer takes the last place. `useChatTurns` opens that next input at
+      send (`nextTurn: "at-send"`), the composer is `busy` while the answer
+      arrives, and a send in flight is refused rather than doubled.
 
       Almost everything survives the switch: `useChatTurns`, every part a turn
       carries, the pane, the highlighter. What changes is where the composer

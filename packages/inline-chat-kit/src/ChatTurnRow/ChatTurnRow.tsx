@@ -51,6 +51,13 @@ export interface ChatTurnRowProps {
   entranceDelay?: number;
   /** Passed through to the highlighter over the answer. */
   selectionMode?: "marker" | "precise";
+  /**
+   * Whether the answer can be marked. `false` draws it as plain prose — no
+   * marker layer, nothing in the tab order, no cursor of its own — and
+   * `onHighlight` and `onReplyInThread` are never called. See
+   * `TextHighlighter`.
+   */
+  highlights?: boolean;
 
   /**
    * Passed through to the composer. Given, this row's live input offers a
@@ -79,6 +86,12 @@ export interface ChatTurnRowProps {
   onDraft?: (id: string, value: string) => void;
   onSubmit?: (id: string, value: string, attachments: Attachment[]) => void;
   onStop?: () => void;
+  /**
+   * An answer is arriving in another turn. Passed to this row's composer,
+   * which stays open to type into and offers a stop instead of a send. See
+   * `ChatInput`.
+   */
+  busy?: boolean;
   onEdit?: (id: string) => void;
   onCancelEdit?: (id: string) => void;
   /** Defaults to writing to the clipboard. */
@@ -215,10 +228,12 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onArtifactChange,
   entranceDelay = 0,
   selectionMode = "marker",
+  highlights = true,
   questionAlign = "end",
   onDraft,
   onSubmit,
   onStop,
+  busy,
   onEdit,
   onCancelEdit,
   onCopy = copyToClipboard,
@@ -280,6 +295,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
              sent message is a record. */
           attachments={turn.attachments}
           onStop={onStop}
+          busy={busy}
           onTranscribe={onTranscribe}
           onCopy={onCopy}
           onEdit={() => onEdit?.(turn.id)}
@@ -444,13 +460,16 @@ export const ChatTurnRow = memo(function ChatTurnRow({
         <div className={styles.answer}>
           <TextHighlighter
             text={turn.ai}
+            marking={highlights}
             selectionMode={selectionMode}
             /* What `[^1]` in the answer points at. The first sources part in
                the turn, because an answer stands on one list — a second would
                make the numbering ambiguous the moment both are non-empty. */
             sources={cited}
-            onHighlightComplete={(text) => onHighlight?.(turn.id, text)}
-            onReplyInThread={onReplyInThread}
+            onHighlightComplete={
+              highlights ? (text) => onHighlight?.(turn.id, text) : undefined
+            }
+            onReplyInThread={highlights ? onReplyInThread : undefined}
           />
 
           {answerActions && turn.state === "resting" && (

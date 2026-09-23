@@ -8,6 +8,47 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.58.0 — 2026-09-23
+
+The composer at the bottom, as an alternative to the inline one — roadmap I2.
+One prop; nothing changes for a host that does not pass it.
+
+### Added
+
+- **`composer="inline" | "docked"` on `ChatExperience`.** `"docked"` keeps the
+  input at the bottom edge and stacks the conversation above it. The live
+  input is still the last turn, so a sent message still becomes its bubble —
+  the same element, carried up into the conversation by its layout animation
+  as a fresh composer takes its place. A sent message is still brought to the
+  top of the view and held there while its answer is written, as it is inline;
+  the composer stays on the bottom edge while that happens, and the workspace
+  gives up whatever a phone's keyboard covers.
+- **`nextTurn: "after-answer" | "at-send"` on `useChatTurns`.** `"at-send"`
+  opens the next input the moment a message goes, so it can be typed into
+  while the answer arrives. A send while one is in flight is now refused in
+  either mode: it used to start a second run and take the first one's abort
+  away.
+- **`busy` on `ChatInput` and `ChatTurnRow`.** Open to type into, closed to
+  send from: Enter does nothing, the send glyph is a stop when there is an
+  `onStop` and inert when there is not.
+- **`dock` on `Conversation`.** The last child is pinned to the bottom of the
+  view — an auto margin while the content is short, `sticky` once it is long —
+  and the room an anchor needs is put above it rather than below, where
+  `sticky` could not hold it.
+
+- **`highlights` and `bookmarks` on `ChatExperience`, `highlights` on
+  `ChatTurnRow`, `marking` on `TextHighlighter`.** `highlights={false}` draws
+  answers as prose — no marker layer, nothing over the text in the tab order,
+  no highlight menu — and takes the saved highlights and the selection-mode
+  pair with it. `bookmarks={false}` keeps marking and drops the keeping. Both
+  are decided in code rather than offered in the interface, which is also how
+  `composer`, `pane`, `surface`, `headerActions` and `composerMenu` work.
+
+### Fixed
+
+- **A responding bubble drew a stop with nothing behind it** when the host
+  had not passed `onStop`. It is drawn only with somewhere to report to.
+
 ## 0.57.0 — 2026-09-22
 
 A pane the host draws itself. `ChatExperience` placed its artifact pane beside

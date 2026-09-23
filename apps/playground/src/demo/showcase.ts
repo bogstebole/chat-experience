@@ -31,6 +31,10 @@ export const showDevTools = () => params().has("dev") && !isShowcase();
  * one theme and the kit's `prefers-color-scheme` rule would never get a turn.
  * Only an explicit choice belongs on the element.
  */
+/** `?composer=docked` shows the composer at the bottom instead of inline. */
+export const requestedComposer = (): "inline" | "docked" =>
+  params().get("composer") === "docked" ? "docked" : "inline";
+
 export const requestedTheme = (): "light" | "dark" | null => {
   const value = params().get("theme");
   return value === "dark" || value === "light" ? value : null;

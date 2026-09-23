@@ -29,6 +29,17 @@ interface SelectionHighlight {
 
 export interface TextHighlighterProps {
   text: string;
+  /**
+   * Whether the answer can be marked at all.
+   *
+   * `false` draws the answer and nothing else: no marker layer, no menu, no
+   * keyboard affordance, no cursor of its own — the text is text, selectable
+   * and copyable the way any page's is. For a product that has no use for
+   * highlights, which should not have to see them switched off in its own
+   * interface. Everything else the component draws — markdown, code blocks,
+   * citations — is unchanged, because that is the answer itself.
+   */
+  marking?: boolean;
   selectionMode?: "marker" | "precise";
   onHighlightComplete?: (highlightedText: string) => void;
   onReplyInThread?: (text: string, rect: DOMRect) => void;
@@ -107,6 +118,7 @@ const getSelectionPathString = (rects: { x: number; y: number; w: number; h: num
 
 export function TextHighlighter({
   text,
+  marking = true,
   selectionMode = "marker",
   onHighlightComplete,
   onReplyInThread,
@@ -738,8 +750,8 @@ export function TextHighlighter({
     <MotionConfig reducedMotion="user">
     <motion.div
       ref={containerRef}
-      data-cursor={selectionMode === "precise" ? "text" : "marker"}
-      data-cursor-active={isDrawing ? "true" : "false"}
+      data-cursor={marking ? (selectionMode === "precise" ? "text" : "marker") : undefined}
+      data-cursor-active={marking ? (isDrawing ? "true" : "false") : undefined}
       animate={{
         scale: 1,
         y: 0,
@@ -747,24 +759,33 @@ export function TextHighlighter({
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       data-drawing={isDrawing || undefined}
       data-menu={!!menuAnchor || undefined}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
       className={styles.surface}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onBlur={clearCursor}
-      aria-describedby={hintId}
+      /* All of it together, or none of it. Not marking, this is a paragraph:
+         nothing to press, nothing in the tab order, nothing described to a
+         screen reader, and no cursor of its own. */
+      {...(marking
+        ? {
+            onPointerDown: handlePointerDown,
+            onPointerMove: handlePointerMove,
+            onPointerUp: handlePointerUp,
+            onPointerCancel: handlePointerCancel,
+            tabIndex: 0,
+            onKeyDown: handleKeyDown,
+            onBlur: clearCursor,
+            "aria-describedby": hintId,
+          }
+        : null)}
     >
       {/* Referenced by aria-describedby, so it is read on focus and nowhere
           else — a directly referenced node is used even when hidden. Without
           this, the keys exist but nothing tells anyone they do. */}
-      <span id={hintId} className={styles.srOnly} aria-hidden="true">
-        {text_.keyboardHint}
-      </span>
+      {marking && (
+        <span id={hintId} className={styles.srOnly} aria-hidden="true">
+          {text_.keyboardHint}
+        </span>
+      )}
 
-      <div className={styles.hitbox} />
+      {marking && <div className={styles.hitbox} />}
 
       {/* Underlying text.
 
@@ -775,6 +796,7 @@ export function TextHighlighter({
       </div>
 
       {/* SVG Canvas overlay */}
+      {marking && (
       <svg className={styles.canvas}>
         <g transform={`skewX(${SKEW_ANGLE})`}>
           {allMarkers.map((marker) => (
@@ -822,6 +844,7 @@ export function TextHighlighter({
           )}
         </g>
       </svg>
+      )}
 
       {/* Every committed highlight, as something the keyboard can reach.
           Real buttons rather than focusable SVG paths — focus on SVG elements
@@ -829,7 +852,7 @@ export function TextHighlighter({
           They are invisible, but focusing one lights up the marker it belongs
           to, so tabbing through them is visible on the page and not only to a
           screen reader. */}
-      {allMarkers.length > 0 && (
+      {marking && allMarkers.length > 0 && (
         <div
           role="group"
           aria-label={fill(allMarkers.length === 1 ? text_.countOne : text_.countMany, {
@@ -859,7 +882,7 @@ export function TextHighlighter({
 
       {/* Floating Action Menu */}
       <AnimatePresence>
-        {menuAnchor && (
+        {marking && menuAnchor && (
           <motion.div
             ref={menuRef}
             role="menu"

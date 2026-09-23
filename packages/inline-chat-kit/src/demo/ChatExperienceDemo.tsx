@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence } from "motion/react";
+import { PanelBottom, PanelBottomClose } from "lucide-react";
 import { ChatExperience, type PartWriter } from "../ChatExperience/ChatExperience";
 import type { InlineAnimConfig } from "../ChatInput/ChatInput";
 import type { FoldMotion } from "../QuestionGroup/QuestionGroup";
@@ -59,6 +60,9 @@ export interface ChatExperienceDemoProps {
   foldMotion?: FoldMotion;
   feedDelay?: number;
   introMotion?: IntroMotion;
+  /** Where the composer starts. See `ChatExperience`. A header action
+      switches it either way, so both can be tried on one page. */
+  composer?: "inline" | "docked";
 }
 
 export function ChatExperienceDemo({
@@ -74,8 +78,14 @@ export function ChatExperienceDemo({
   foldMotion,
   feedDelay,
   introMotion,
+  composer: initialComposer = "inline",
 }: ChatExperienceDemoProps) {
   const [started, setStarted] = useState(skipIntro);
+  /* Where the composer is, and a way to move it. In the header rather than a
+     dial: it is the one setting somebody trying the kit wants to flip and
+     look at, not tune. */
+  const [composer, setComposer] = useState<"inline" | "docked">(initialComposer);
+  const docked = composer === "docked";
 
   /* The landing page gets the theme too, and only when the host is the one
      holding it. `ChatExperience` writes the same attribute from the same value
@@ -172,6 +182,20 @@ export function ChatExperienceDemo({
              like every other answer here. */
           onTranscribe={scriptedTranscript}
           onThreadReply={threadReply}
+          composer={composer}
+          actions={[
+            {
+              id: "composer",
+              label: docked ? "Composer in the conversation" : "Composer at the bottom",
+              icon: docked ? (
+                <PanelBottomClose size={16} aria-hidden />
+              ) : (
+                <PanelBottom size={16} aria-hidden />
+              ),
+              active: docked,
+              onClick: () => setComposer(docked ? "inline" : "docked"),
+            },
+          ]}
           title="inline chat experience"
           backHref={backHref}
           backLabel={backLabel}

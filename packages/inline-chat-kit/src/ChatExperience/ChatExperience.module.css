@@ -32,6 +32,52 @@
   overflow: clip;
 }
 
+/* ── The docked composer ───────────────────────────────────────────────────
+   `composer="docked"`: the live input is the last turn still — `Conversation`
+   pins its last child to the bottom edge — so it becomes the bubble the way it
+   always has, and travels into the conversation when a fresh one takes its
+   place. What this file adds is the room around it. */
+
+/* The viewport's own bottom padding goes, because the two ways the dock is
+   held — the auto margin while the content is short, `sticky` once it is
+   long — have to agree on where the bottom edge is, and only one of them
+   counts the padding. The dock carries its own clearance instead. */
+.page[data-composer="docked"] .feed {
+  padding-bottom: 0;
+}
+
+.dock {
+  width: 100%;
+  padding-bottom: var(--ick-dock-inset, var(--ick-space-6));
+}
+
+/* What the conversation scrolls under has to be the page, not the pill.
+
+   The pill is three percent of ink over whatever is behind it — right on a
+   page, and wrong over a paragraph: the fade under it is a gradient and a
+   blur, and at the pill's height it is three-quarters opaque, so an answer
+   scrolling under the composer showed through it, legibly, in the dark. This
+   is the page painted behind the row, fading in over its top edge so the
+   fade above it still does its job and there is no line where one ends and
+   the other starts. Sideways it covers the bleed the marker strokes use. */
+.dock::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--ick-space-7) * -1);
+  bottom: 0;
+  left: -32px;
+  right: -32px;
+  z-index: -1;
+  background: linear-gradient(to bottom, transparent, var(--ick-page) var(--ick-space-7));
+  pointer-events: none;
+}
+
+/* Centred in the room above the dock: an auto margin on either side of the
+   block, and the dock's own on top of it, share the space three ways. */
+.centred {
+  margin-block: auto;
+}
+
 /* Inside a card of its own, the height is the card's rather than the window's
    — the layout has already taken its ring of space out of the window, and a
    column still claiming 100dvh inside it would hang that much past the bottom.
@@ -235,6 +281,9 @@ div.opening {
 .workspace {
   height: 100vh;
   height: 100dvh;
+  /* Less whatever the software keyboard covers, when a docked composer is
+     under it. Zero everywhere else. See `keyboard` in the component. */
+  height: calc(100dvh - var(--ick-keyboard, 0px));
   box-sizing: border-box;
   /* The experience paints its own ground, and its own ink on it.
 

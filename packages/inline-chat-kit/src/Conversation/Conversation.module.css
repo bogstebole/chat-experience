@@ -47,6 +47,60 @@
   padding-bottom: var(--ick-conversation-tail);
 }
 
+/* ── The dock ─────────────────────────────────────────────────────────────
+   The last child pinned to the bottom of the view. Two rules for two cases,
+   and they have to agree on where the bottom is:
+
+   Content shorter than the view: the wrapper is stretched to the view and the
+   last child is pushed to its end by an auto margin. Sticky does nothing here
+   — an element cannot stick past its own in-flow position.
+
+   Content longer than the view: the last child's in-flow position is below
+   the fold and `sticky` holds it at the edge instead. Both put its bottom on
+   the content box's bottom edge, so nothing moves when the conversation
+   crosses from one case to the other.
+
+   The moment a new last child arrives — a message sent, a fresh composer
+   under it — the old one is neither last nor sticky and goes back into the
+   flow, where it belongs as a bubble. That is the travel a layout animation
+   on it animates. */
+.content[data-dock] {
+  min-height: 100%;
+}
+
+.content[data-dock] > :last-child {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  z-index: var(--ick-z-sticky);
+}
+
+/* The room to scroll into goes **above** the dock, not below it.
+
+   `sticky` only ever pulls an element *up* into view. Left as the wrapper's
+   own padding, the tail sits under the dock: the dock's place in the flow is
+   then the middle of the scrollable area, it is already on screen, nothing
+   sticks, and it scrolls away with the conversation — measured, the composer
+   came to rest 333px from the top of a 700px view with white space under it.
+
+   Between the last turn and the dock instead, the dock is the last thing in
+   the flow again: below the fold until the scroll reaches the end, which is
+   exactly when `sticky` holds it at the bottom edge. The room passes behind
+   it. `Conversation` writes the number; only where it lands changes. */
+.content[data-dock] {
+  padding-bottom: 0;
+}
+
+.content[data-dock] > :nth-last-child(2) {
+  margin-bottom: var(--ick-conversation-tail);
+}
+
+/* The way back floats above the dock rather than on it. The height is
+   measured by the component and written here as a custom property. */
+.root[data-dock] .jump {
+  bottom: calc(var(--ick-dock-height, 0px) + var(--ick-space-6));
+}
+
 /* ── The way back ───────────────────────────────────────────────────────── */
 
 .jump {
