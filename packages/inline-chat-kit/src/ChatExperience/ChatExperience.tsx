@@ -221,6 +221,24 @@ export interface ChatExperienceProps {
    */
   composer?: "inline" | "docked";
 
+  /**
+   * What the chat is as tall as.
+   *
+   * `"window"` (the default): the whole window, which is what a page that is
+   * nothing but the chat wants, and why it needs no height from its host.
+   *
+   * `"container"`: whatever its parent gives it. For a chat embedded in a
+   * card, a sidebar, a split — anywhere smaller than the window, which is
+   * nearly every embed. The parent has to have a height to give; the chat
+   * fills it and scrolls inside it. Measured in a host whose card was inset
+   * 12px top and bottom, `"window"` hung 24px past the card and a docked
+   * composer lost half of itself to the card's clip.
+   *
+   * The software keyboard is the host's to handle here: the chat no longer
+   * knows where the window's bottom edge is relative to itself.
+   */
+  fill?: "window" | "container";
+
   /** The theme, if the host keeps it. Left off, this manages its own and puts
       a toggle in the header; `data-theme` on the root element either way, and
       unset until somebody chooses, so the kit follows the system preference —
@@ -337,6 +355,8 @@ export function ChatExperience({
   pane: paneMode = "inline",
   surface = "flush",
   composer = "inline",
+  /* Renamed: `fill` is also the labels helper that fills in `{index}`. */
+  fill: fillMode = "window",
   theme: themeProp,
   onThemeChange,
   cursor = false,
@@ -471,15 +491,16 @@ export function ChatExperience({
      top edge, which is where a thumb expects it. Inline, the composer is the
      last turn and the browser scrolls it into view itself. */
   const [keyboard, setKeyboard] = useState(0);
+  const fillsWindow = fillMode === "window";
   useEffect(() => {
-    if (!docked) return;
+    if (!docked || !fillsWindow) return;
     const view = window.visualViewport;
     if (!view) return;
     const sync = () => setKeyboard(Math.max(0, Math.round(window.innerHeight - view.height)));
     sync();
     view.addEventListener("resize", sync);
     return () => view.removeEventListener("resize", sync);
-  }, [docked]);
+  }, [docked, fillsWindow]);
 
   /* Regenerating is the same submit: `useChatTurns` rewrites a turn that
      already has an answer in place rather than starting a new one. */
@@ -693,7 +714,7 @@ export function ChatExperience({
     <motion.div
       className={[
         styles.page,
-        surface === "panes" ? styles.paned : "",
+        surface === "panes" || !fillsWindow ? styles.fitted : "",
         "ick-chat-page",
         className,
       ]
@@ -877,7 +898,8 @@ export function ChatExperience({
       <ChatLayout
         className={styles.workspace}
         surface={surface}
-        style={keyboard > 0 ? ({ "--ick-keyboard": `${keyboard}px` } as CSSProperties) : undefined}
+        data-fill={fillsWindow ? undefined : "container"}
+        style={fillsWindow && keyboard > 0 ? ({ "--ick-keyboard": `${keyboard}px` } as CSSProperties) : undefined}
         /* On a phone the pane is a sheet, and a sheet's ways out belong to the
            layout: dragged down, or the conversation behind it pressed. */
         onDismiss={closeArtifact}

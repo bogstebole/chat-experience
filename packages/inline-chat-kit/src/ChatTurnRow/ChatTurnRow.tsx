@@ -21,7 +21,7 @@ import type { Answer } from "../QuestionCard/types";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import type { ChatTurn } from "../useChatTurns/useChatTurns";
-import type { CustomPart, CustomPartContext } from "../turnParts/turnParts";
+import type { CustomPart, CustomPartContext, TurnPart } from "../turnParts/turnParts";
 import type { ComposerMenuItem } from "../ChatInput/AddCardsOverlay";
 import { LabelsProvider, type ChatLabels } from "../labels/labels";
 import styles from "./ChatTurnRow.module.css";
@@ -194,6 +194,44 @@ const copyToClipboard = (value: string) => {
  * The two halves have to be in place together. Stable objects give React the
  * grounds to skip; `memo` is what makes it skip.
  */
+/** A run of the answer's prose, or one of its parts, in the order they came. */
+type Piece =
+  | { kind: "part"; part: TurnPart }
+  | { kind: "prose"; text: string; from: number };
+
+/**
+ * The prose cut at the points the parts arrived, and the parts put back in.
+ *
+ * Stable on ties, so parts that came together keep the order they were sent
+ * in; and a part with no `at` counts as 0, which puts every part before the
+ * prose — what a turn built by hand before positions existed always drew. A
+ * run that is only whitespace is passed over rather than drawn as an empty
+ * block between two cards.
+ */
+const sequence = (ai: string, parts: TurnPart[]): Piece[] => {
+  const placed = parts
+    .map((part, order) => ({
+      part,
+      order,
+      at: Math.min(Math.max(part.at ?? 0, 0), ai.length),
+    }))
+    .sort((a, b) => a.at - b.at || a.order - b.order);
+
+  const pieces: Piece[] = [];
+  let from = 0;
+  const prose = (to: number) => {
+    const text = ai.slice(from, to);
+    if (text.trim()) pieces.push({ kind: "prose", text, from });
+    from = to;
+  };
+  for (const { part, at } of placed) {
+    if (at > from) prose(at);
+    pieces.push({ kind: "part", part });
+  }
+  if (from < ai.length) prose(ai.length);
+  return pieces;
+};
+
 /**
  * `memo`'s own comparison, with one exception: `labels` is compared by what it
  * says. It is the one prop a host naturally writes as an inline literal, and
@@ -262,6 +300,171 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   const parts = turn.parts ?? [];
   const cited = parts.find((part) => part.kind === "sources")?.sources;
 
+  /* The answer as the stream sent it: prose and parts in the order they came.
+     See `PartPosition` and `sequence`. */
+  const pieces = sequence(turn.ai, parts);
+  const settled = answerActions && turn.state === "resting" && pieces.length > 0;
+  /* Where the row of actions goes: inside the last run of prose if the answer
+     ends in one, after everything if it ends in a part, nowhere yet if it has
+     not settled. */
+  const actionsAt = !settled
+    ? -1
+    : pieces[pieces.length - 1].kind === "prose"
+      ? pieces.length - 1
+      : pieces.length;
+  const actionsRow = settled ? (
+    <div className={styles.actions}>
+      {/* Draws nothing until there are two, so a turn answered once looks
+          exactly as it did before there were versions at all. */}
+      <Branch
+        total={turn.versions?.length ?? 0}
+        index={turn.versionIndex ?? 0}
+        onSelect={(index) => onShowVersion?.(turn.id, index)}
+      />
+      <AnswerActions
+        text={turn.ai}
+        onCopy={onCopy}
+        onRegenerate={onRegenerate ? () => onRegenerate(turn.id) : undefined}
+        onFeedback={onFeedback ? (verdict) => onFeedback(turn.id, verdict) : undefined}
+        feedback={feedback}
+      />
+    </div>
+  ) : null;
+
+  /* One part, drawn by the component that owns its kind. */
+  const drawPart = (part: TurnPart): ReactNode => {
+    switch (part.kind) {
+      case "reasoning":
+        return (
+          <Reasoning key={part.id} state={part.state} duration={part.duration}>
+            {part.text ?? ""}
+          </Reasoning>
+        );
+      case "tool":
+        return (
+          <Tool
+            key={part.id}
+            name={part.name ?? ""}
+            state={part.state}
+            summary={part.summary}
+            input={part.input}
+            output={part.output}
+            error={part.error}
+            duration={part.duration}
+          />
+        );
+      case "tasks":
+        return (
+          <TaskList
+            key={part.id}
+            title={part.title}
+            tasks={part.tasks ?? []}
+            collapsible={part.collapsible}
+          />
+        );
+      case "chain":
+        return (
+          <ChainOfThought
+            key={part.id}
+            steps={part.steps ?? []}
+            state={part.state}
+            duration={part.duration}
+          />
+        );
+      case "sources":
+        return (
+          <Sources
+            key={part.id}
+            sources={part.sources ?? []}
+            title={part.title}
+            collapsible={part.collapsible}
+          />
+        );
+      case "approval":
+        return (
+          <Approval
+            key={part.id}
+            title={part.title}
+            description={part.description}
+            decision={part.decision ?? null}
+            choices={part.choices}
+            onDecide={(decision) => onDecideApproval?.(turn.id, part.id, decision)}
+          >
+            {part.tool && (
+              <Tool
+                name={part.tool.name}
+                state="pending"
+                input={part.tool.input}
+                defaultOpen
+              />
+            )}
+          </Approval>
+        );
+      case "artifact":
+        return (
+          <ArtifactCard
+            key={part.id}
+            id={part.id}
+            title={part.title}
+            meta={part.meta}
+            kind={part.preview}
+            lang={part.lang}
+            content={part.content}
+            state={part.state}
+            open={openArtifactId === part.id}
+            onOpen={
+              onOpenArtifact ? (id) => onOpenArtifact(turn.id, id) : undefined
+            }
+          />
+        );
+      case "notice":
+        return (
+          <SystemMessage key={part.id} tone={part.tone}>
+            {part.text}
+          </SystemMessage>
+        );
+      case "question":
+        return (
+          <QuestionGroup
+            key={part.id}
+            id={part.id}
+            title={part.title}
+            questions={part.questions ?? []}
+            answers={part.answers ?? {}}
+            activeIndex={part.activeIndex}
+            collapsible={part.collapsible}
+            readOnly={part.readOnly}
+            foldMotion={foldMotion}
+            onCommit={(questionId, answer) =>
+              onAnswerQuestion?.(turn.id, part.id, questionId, answer)
+            }
+            onEdit={(index) => onEditQuestion?.(turn.id, part.id, index)}
+          />
+        );
+      case "custom": {
+        const drawn = renderPart?.(part, {
+          turnId: turn.id,
+          openArtifact: (id) =>
+            onArtifactChange ? onArtifactChange(id) : onOpenArtifact?.(turn.id, id),
+          closeArtifact: () => onArtifactChange?.(null),
+        });
+        /* Nothing, rather than a placeholder: a host that has no card for
+           this type has said what it wants drawn. */
+        if (drawn === null || drawn === undefined || drawn === false) return null;
+        return (
+          <div
+            key={part.id}
+            className={styles.custom}
+            data-part="custom"
+            data-part-type={part.type}
+          >
+            {drawn}
+          </div>
+        );
+      }
+    }
+  };
+
   const row = (
     <motion.article
       id={`turn-${turn.id}`}
@@ -313,138 +516,35 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           everything the answer is made of — and not between a tool call and
           the sentence it produced, which belong together. */}
       <div className={styles.body}>
-        {parts.map((part) => {
-          switch (part.kind) {
-            case "reasoning":
-              return (
-                <Reasoning key={part.id} state={part.state} duration={part.duration}>
-                  {part.text ?? ""}
-                </Reasoning>
-              );
-            case "tool":
-              return (
-                <Tool
-                  key={part.id}
-                  name={part.name ?? ""}
-                  state={part.state}
-                  summary={part.summary}
-                  input={part.input}
-                  output={part.output}
-                  error={part.error}
-                  duration={part.duration}
-                />
-              );
-            case "tasks":
-              return (
-                <TaskList
-                  key={part.id}
-                  title={part.title}
-                  tasks={part.tasks ?? []}
-                  collapsible={part.collapsible}
-                />
-              );
-            case "chain":
-              return (
-                <ChainOfThought
-                  key={part.id}
-                  steps={part.steps ?? []}
-                  state={part.state}
-                  duration={part.duration}
-                />
-              );
-            case "sources":
-              return (
-                <Sources
-                  key={part.id}
-                  sources={part.sources ?? []}
-                  title={part.title}
-                  collapsible={part.collapsible}
-                />
-              );
-            case "approval":
-              return (
-                <Approval
-                  key={part.id}
-                  title={part.title}
-                  description={part.description}
-                  decision={part.decision ?? null}
-                  choices={part.choices}
-                  onDecide={(decision) => onDecideApproval?.(turn.id, part.id, decision)}
-                >
-                  {part.tool && (
-                    <Tool
-                      name={part.tool.name}
-                      state="pending"
-                      input={part.tool.input}
-                      defaultOpen
-                    />
-                  )}
-                </Approval>
-              );
-            case "artifact":
-              return (
-                <ArtifactCard
-                  key={part.id}
-                  id={part.id}
-                  title={part.title}
-                  meta={part.meta}
-                  kind={part.preview}
-                  lang={part.lang}
-                  content={part.content}
-                  state={part.state}
-                  open={openArtifactId === part.id}
-                  onOpen={
-                    onOpenArtifact ? (id) => onOpenArtifact(turn.id, id) : undefined
-                  }
-                />
-              );
-            case "notice":
-              return (
-                <SystemMessage key={part.id} tone={part.tone}>
-                  {part.text}
-                </SystemMessage>
-              );
-            case "question":
-              return (
-                <QuestionGroup
-                  key={part.id}
-                  id={part.id}
-                  title={part.title}
-                  questions={part.questions ?? []}
-                  answers={part.answers ?? {}}
-                  activeIndex={part.activeIndex}
-                  collapsible={part.collapsible}
-                  readOnly={part.readOnly}
-                  foldMotion={foldMotion}
-                  onCommit={(questionId, answer) =>
-                    onAnswerQuestion?.(turn.id, part.id, questionId, answer)
-                  }
-                  onEdit={(index) => onEditQuestion?.(turn.id, part.id, index)}
-                />
-              );
-            case "custom": {
-              const drawn = renderPart?.(part, {
-                turnId: turn.id,
-                openArtifact: (id) =>
-                  onArtifactChange ? onArtifactChange(id) : onOpenArtifact?.(turn.id, id),
-                closeArtifact: () => onArtifactChange?.(null),
-              });
-              /* Nothing, rather than a placeholder: a host that has no card for
-                 this type has said what it wants drawn. */
-              if (drawn === null || drawn === undefined || drawn === false) return null;
-              return (
-                <div
-                  key={part.id}
-                  className={styles.custom}
-                  data-part="custom"
-                  data-part-type={part.type}
-                >
-                  {drawn}
-                </div>
-              );
-            }
-          }
-        })}
+        {pieces.map((piece, i) =>
+          piece.kind === "part" ? (
+            drawPart(piece.part)
+          ) : (
+            /* Keyed by where the run of prose starts, which does not move as
+               the run grows — so a highlight drawn over it survives the next
+               delta. */
+            <div key={`prose-${piece.from}`} className={styles.answer}>
+              <TextHighlighter
+                text={piece.text}
+                marking={highlights}
+                selectionMode={selectionMode}
+                /* What `[^1]` in the answer points at. The first sources part
+                   in the turn, because an answer stands on one list — a
+                   second would make the numbering ambiguous the moment both
+                   are non-empty. */
+                sources={cited}
+                onHighlightComplete={
+                  highlights ? (text) => onHighlight?.(turn.id, text) : undefined
+                }
+                onReplyInThread={highlights ? onReplyInThread : undefined}
+              />
+              {/* In the last run of prose when the answer ends in prose, so
+                  that answer looks exactly as it did before prose could be
+                  split. */}
+              {actionsAt === i && actionsRow}
+            </div>
+          )
+        )}
 
       {/* Sent, and nothing back yet. Without this the turn is a question with
           a blank space under it, which reads as nothing having happened.
@@ -456,40 +556,12 @@ export const ChatTurnRow = memo(function ChatTurnRow({
         </div>
       )}
 
-      {turn.ai && (
-        <div className={styles.answer}>
-          <TextHighlighter
-            text={turn.ai}
-            marking={highlights}
-            selectionMode={selectionMode}
-            /* What `[^1]` in the answer points at. The first sources part in
-               the turn, because an answer stands on one list — a second would
-               make the numbering ambiguous the moment both are non-empty. */
-            sources={cited}
-            onHighlightComplete={
-              highlights ? (text) => onHighlight?.(turn.id, text) : undefined
-            }
-            onReplyInThread={highlights ? onReplyInThread : undefined}
-          />
-
-          {answerActions && turn.state === "resting" && (
-            <div className={styles.actions}>
-              {/* Draws nothing until there are two, so a turn answered once
-                  looks exactly as it did before there were versions at all. */}
-              <Branch
-                total={turn.versions?.length ?? 0}
-                index={turn.versionIndex ?? 0}
-                onSelect={(index) => onShowVersion?.(turn.id, index)}
-              />
-              <AnswerActions
-                text={turn.ai}
-                onCopy={onCopy}
-                onRegenerate={onRegenerate ? () => onRegenerate(turn.id) : undefined}
-                onFeedback={onFeedback ? (verdict) => onFeedback(turn.id, verdict) : undefined}
-                feedback={feedback}
-              />
-            </div>
-          )}
+      {/* An answer that ends in a part — a card, an approval — still gets its
+          actions. They lived inside the prose block, so an answer made only of
+          parts had no copy, no regenerate, no thumbs at all. */}
+      {actionsAt === pieces.length && (
+        <div className={styles.answer} data-actions-only="">
+          {actionsRow}
         </div>
       )}
       </div>

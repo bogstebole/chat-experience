@@ -86,13 +86,18 @@ export function AnswerActions({
       className={[styles.row, reveal ? styles.reveal : "", className ?? ""].filter(Boolean).join(" ")}
       {...rest}
     >
-      <Button
-        variant="ghost"
-        icon={copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
-        onClick={copy}
-        aria-label={copied ? label.copied : label.copy}
-        title={copied ? label.copied : label.copy}
-      />
+      {/* Only with something to copy. An answer made entirely of parts — a
+          card, an approval — has no prose, and a copy of nothing is a button
+          that pretends. */}
+      {text.trim() && (
+        <Button
+          variant="ghost"
+          icon={copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
+          onClick={copy}
+          aria-label={copied ? label.copied : label.copy}
+          title={copied ? label.copied : label.copy}
+        />
+      )}
 
       {onRegenerate && (
         <Button

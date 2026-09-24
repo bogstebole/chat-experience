@@ -261,3 +261,47 @@ export const DockedTwoPanes: Story = {
     surface: "panes",
   },
 };
+
+/**
+ * Embedded in a host's shell, the way nearly every product places a chat.
+ *
+ * `fill="container"`: the chat is as tall as the card it is in, not the
+ * window. The card here is inset 12px top and bottom and clips what overflows
+ * it — which is exactly where `"window"` hung 24px past the card and cut a
+ * docked composer in half.
+ */
+export const Embedded: Story = {
+  render: function Embedded(args) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          height: "100vh",
+          boxSizing: "border-box",
+          padding: "12px 12px 12px 0",
+          background: "var(--ick-ground)",
+        }}
+      >
+        <nav
+          aria-label="The host's own navigation"
+          style={{ width: 200, flexShrink: 0, padding: 16, color: "var(--ick-ink-soft)" }}
+        >
+          Host app
+        </nav>
+        <div
+          data-host-card=""
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            borderRadius: "var(--ick-chat-pane-radius)",
+            background: "var(--ick-page)",
+            boxShadow: "var(--ick-chat-pane-shadow)",
+          }}
+        >
+          <ChatExperience {...args} {...Opening.args} fill="container" composer="docked" />
+        </div>
+      </div>
+    );
+  },
+};

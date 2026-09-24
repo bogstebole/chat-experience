@@ -349,7 +349,15 @@ export function useChatTurns({
 
   const updatePart = useCallback(
     (turnId: string, part: TurnPartUpdate) => {
-      publishPart(turnId, part);
+      /* A part the turn has not had yet goes where the prose has got to — the
+         end of it, for a card a host adds after the answer. One it already has
+         keeps its place: an update is not a new part. See `PartPosition`. */
+      const turn = turnsRef.current.find((t) => t.id === turnId);
+      const known =
+        turn?.parts?.some((p) => p.id === part.id) ||
+        pendingPartsRef.current.get(turnId)?.some((p) => p.id === part.id);
+      const prose = pendingRef.current.get(turnId) ?? turn?.ai ?? "";
+      publishPart(turnId, known || part.at !== undefined ? part : { ...part, at: prose.length });
     },
     [publishPart]
   );
@@ -475,6 +483,10 @@ export function useChatTurns({
       // Held out here so the announcement can read it in `finally`, whether
       // the answer completed, was stopped, or threw partway through.
       let answer = "";
+      /* The parts this answer has had, so the first appearance of each can be
+         told from an update to one already on screen. Only the first says
+         where a part goes; see `PartPosition`. */
+      const placed = new Set<string>();
       try {
         const result = onSendRef.current(message, {
           signal: controller.signal,
@@ -489,7 +501,16 @@ export function useChatTurns({
               answer += chunk;
               publish(id, answer);
             } else {
-              publishPart(id, chunk);
+              /* Stamped here rather than at the flush: a sentence and the card
+                 it introduces can land in the same frame, and by the flush
+                 only the frame's last text is left to measure against. Here
+                 the prose is exactly as long as it was when the part came. */
+              const first = !placed.has(chunk.id);
+              placed.add(chunk.id);
+              publishPart(
+                id,
+                first && chunk.at === undefined ? { ...chunk, at: answer.length } : chunk
+              );
             }
           }
         } else {

@@ -480,6 +480,31 @@ component that owns it.
 steps that follow from one another. Sending both for one stretch of thinking
 says it twice.
 
+#### Where a part sits in the prose
+
+The answer is drawn in the order the stream sent it. A part remembers how much
+prose had arrived when it did — `at`, in characters of `ai` — and is drawn at
+that point, so a sentence that introduces a card comes before the card:
+
+```tsx
+yield "I suggest this change:";                                   // prose
+yield { kind: "custom", id: "change", type: "plan-diff", data };  // at: 22
+yield " Tell me if it looks right.";                              // prose, after the card
+```
+
+`useChatTurns` stamps `at` on a part's **first** appearance and nothing moves it
+afterwards: an update to a part is not a new part, and a card a host adds with
+`updatePart` after the answer lands at the end. Give `at` yourself to place a
+part — `at: 0` puts it before all the prose. A part with no `at` sits before the
+prose, which is where every part sat before this existed, so turns built by
+hand look as they always have.
+
+The prose is still one string: `ai` is what Copy copies, what a screen reader
+hears and what a version keeps. Only the drawing is cut, at the points the
+parts arrived — each run is its own block of markdown, and a highlight cannot
+cross a card. The row of actions goes after whatever the answer ends with, so an
+answer made only of parts has one too, without a Copy of nothing.
+
 #### Your own cards: `custom`
 
 Every other kind is a component in this package. `custom` is the host's: `type`
@@ -1499,8 +1524,18 @@ not; a control for choosing is a question nobody asked.
   composerMenu={false}           // or your own: [{ id, label, icon?, onSelect }]
   pane="none"                    // draw the artifact pane yourself
   surface="panes"                // the conversation as a card of its own
+  fill="container"               // as tall as its parent, not the window
 />
 ```
+
+**Embedded, use `fill="container"`.** By default the chat is as tall as the
+window, which is what a page that is nothing but the chat wants. Anywhere
+smaller — a card in a shell, a sidebar, a split — it has to take its parent's
+height instead, or it hangs past the bottom of it: measured in a card inset 12px
+top and bottom, the default overran it by 24px and a docked composer lost half
+of itself to the card's clip. The parent has to have a height to give. The
+software keyboard is then the host's to handle, because the chat no longer
+knows where the window's edge is.
 
 | Prop | Off means |
 | --- | --- |

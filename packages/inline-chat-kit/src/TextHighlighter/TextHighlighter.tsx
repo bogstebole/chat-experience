@@ -672,6 +672,10 @@ export function TextHighlighter({
    */
   const renderToken = (index: number): ReactNode => {
     const token = tokens[index];
+    /* Not marking, a token is only its text. The span per word exists for
+       hit-testing, the keyboard cursor and the dimming — all of which are
+       marking — and without them it was 82 elements for four sentences. */
+    if (!marking) return token;
 
     // Both freeform (path) and precise (selection) highlights dim the surrounding tokens.
     let isPartOfActiveHighlight = false;

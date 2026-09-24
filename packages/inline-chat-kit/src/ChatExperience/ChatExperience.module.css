@@ -78,12 +78,21 @@
   margin-block: auto;
 }
 
-/* Inside a card of its own, the height is the card's rather than the window's
-   — the layout has already taken its ring of space out of the window, and a
-   column still claiming 100dvh inside it would hang that much past the bottom.
-   See `ChatLayout surface="panes"`. */
-.paned {
+/* The height of whatever holds the page, rather than the window's.
+
+   Two reasons, one rule. Inside a card of its own (`surface="panes"`) the
+   layout has already taken its ring of space out of the window, and a column
+   still claiming 100dvh would hang that much past the bottom. Embedded
+   (`fill="container"`) the window is simply not the size of anything: a
+   host's card inset 12px top and bottom was overrun by 24px, and a docked
+   composer lost half of itself to the card's clip.
+
+   `min-height: 0` because this is a flex item, and a flex item's floor is its
+   content — without it a long conversation would push the page taller than
+   its box instead of scrolling inside it. */
+.fitted {
   height: 100%;
+  min-height: 0;
 }
 
 /* The notch, the rounded corners and the home indicator.
@@ -278,6 +287,14 @@ div.opening {
    opening the pane slides the conversation across rather than squashing it.
    The kit does not set a height on `ChatLayout`: how tall a chat is belongs to
    the page around it, and here that page is this file. */
+/* Embedded: the parent's height, not the window's. See `.fitted` and the
+   `fill` prop. The attribute selector outranks the plain class below, so the
+   window's height never applies here, whatever order the rules land in. */
+.workspace[data-fill="container"] {
+  height: 100%;
+  min-height: 0;
+}
+
 .workspace {
   height: 100vh;
   height: 100dvh;

@@ -8,6 +8,44 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.59.0 — 2026-09-24
+
+From integrating 0.58 into a host app. Nothing changes for a host that passes
+none of the new props, with one visible difference, below.
+
+### Added
+
+- **`fill="window" | "container"` on `ChatExperience`.** `"container"` makes
+  the chat as tall as its parent instead of the window — both the workspace and
+  the page. Embedded in a card inset 12px top and bottom, the window's height
+  overran the card by 24px and a docked composer lost half of itself to the
+  card's clip. `"window"` is the default and is what the kit did before.
+- **Parts sit in the prose where they arrived.** A part carries `at`, how much
+  prose had arrived when it did, stamped by `useChatTurns` on its first
+  appearance, and the row draws the answer in that order. "I suggest this
+  change:" is drawn before the change it introduces rather than under it. The
+  prose is still one string — Copy, the screen reader and versions read `ai` as
+  before; only the drawing is cut. Hosts can set `at` themselves; a part without
+  one sits before the prose, as every part did.
+
+### Changed
+
+- **Prose sent after a part is now drawn after it.** This is the point of the
+  above, and it is the one thing an existing host will see: a stream that sent
+  text, then a card, then more text used to draw the card on top and all the
+  text under it. Streams that send their parts before their prose — the usual
+  shape, and every stream in the demo — draw exactly as before. The one story
+  that changes is `Localized`, whose sentence now stands above its cards.
+- **The row of actions follows the whole answer.** It lived inside the prose
+  block, so an answer made only of parts had no regenerate and no thumbs.
+  Copy is offered only when there is prose to copy.
+
+### Fixed
+
+- **`highlights={false}` still cut the prose into a span per word.** The spans
+  exist for marking — hit-testing, the keyboard cursor, the dimming — and with
+  marking off they were 82 elements for four sentences. The answer is text now.
+
 ## 0.58.0 — 2026-09-23
 
 The composer at the bottom, as an alternative to the inline one — roadmap I2.
