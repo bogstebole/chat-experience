@@ -8,6 +8,35 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.59.1 — 2026-09-24
+
+### Fixed
+
+- **A sent message goes to the top while the model is still silent.** It
+  waited for the answer: a model that thinks for a few seconds and then
+  answers all at once left the message where it was sent until the answer
+  came. Two causes, either one enough:
+  - **A host's chat published a render late.** A host that keeps its
+    `useChatTurns` in a store and publishes it from an effect hands the kit the
+    turns a render after the press. For that render the turn is still the
+    composer, and docked the composer is on the bottom edge — the anchor moved
+    the view there and was spent. The anchor now waits for the turn to have
+    been sent. Measured before: 399px in a 900px window, 526px in an 844px one.
+  - **The room under a docked conversation came up short.** While the
+    conversation is shorter than the view, the dock's `margin-top: auto`
+    swallows the first of the room, and the correction came a frame after the
+    view had set off for the old end — and the view no longer looked. The room
+    is now settled in one pass, and a travel that was overtaken is looked at
+    again when it lands. Measured before: the second message stopped at 141px
+    in a 680px window.
+
+### Added
+
+- **`ThinksFirst` and `ChatInAStore` stories**, and `npm run silent-check`
+  in the gate: three messages to a model silent for 2.5s, in three windows,
+  each at the anchor 700ms after the send and still there at 2300ms. Without
+  either fix it fails seven of eighteen.
+
 ## 0.59.0 — 2026-09-24
 
 From integrating 0.58 into a host app. Nothing changes for a host that passes

@@ -478,8 +478,21 @@ export function ChatExperience({
      reader wants after pressing send: their question at the top and its answer
      written underneath, rather than both pushed up from below a line at a
      time. The composer stays where it is through all of it — it is `sticky`,
-     so the room the anchor scrolls into passes behind it. */
-  const heldAnchor = anchoredTurn && anchoredTurn.state !== "resting" ? anchorTurnId : null;
+     so the room the anchor scrolls into passes behind it.
+
+     **Held once it has been sent, and not before.** A host that publishes its
+     `chat` from an effect — a store, so that only the chat redraws for every
+     streamed frame — hands the turns over a render after the press. For that
+     render the turn is still the input: docked, it is the composer, stuck to
+     the bottom edge. Anchored then, the view moved to the composer, the move
+     was spent, and the render that brought the sent turn changed nothing the
+     scroll listens to. Measured in that shape, with a model that is silent
+     for three seconds before it answers: the second and third messages stood
+     at 378px for all three, and went to the top only when the answer came.
+     A turn has a version from the moment it is sent — an edit of one keeps
+     its versions, so an answered turn being edited is still held. */
+  const sent = (anchoredTurn?.versions?.length ?? 0) > 0;
+  const heldAnchor = anchoredTurn && sent && anchoredTurn.state !== "resting" ? anchorTurnId : null;
 
   /* The software keyboard, on a phone.
 

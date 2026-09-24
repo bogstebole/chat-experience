@@ -136,6 +136,10 @@ const THRESHOLD = 64;
  */
 const TRAVEL = 500;
 
+/** A frame or three after a travel's ceiling, so it is looked at once it has
+    actually stopped rather than on its last frame. */
+const LANDING = 50;
+
 /**
  * How close to the end counts as having **arrived** there.
  *
@@ -380,15 +384,30 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        has to reach the scroll that puts the anchored turn at the anchor.
        `target` says what that scroll is; `scrollHeight - clientHeight` says
        what there is. The difference is what is missing, whatever swallowed
-       the last of it, and one more pass corrects whatever this one got
-       wrong. */
-    const needed = dock
-      ? Math.max(
-          floor,
-          applied.current +
-            (flowTop(held, view) - anchorOffset - (view.scrollHeight - view.clientHeight))
-        )
-      : Math.max(floor, view.clientHeight - anchorOffset - stack - pad);
+       the last of it. */
+    if (dock) {
+      /* **Until it is right, in this call.** The dock's `margin-top: auto`
+         swallows the first of the room, so a first pass comes up short by
+         exactly the free space there was — and the correction used to wait
+         for the resize that pass caused. It came, but a frame after the view
+         had already set off for where the first pass said the end was, and
+         nothing looked again: the second message of a conversation stopped at
+         141px, room enough under it, for as long as the model was silent.
+         Measured at 1120×680, 319px swallowed, one pass short. Settles in two;
+         growing only ever grows and shrinking only ever shrinks, so it cannot
+         go back and forth. */
+      for (let pass = 0; pass < 3; pass++) {
+        const missing =
+          flowTop(held, view) - anchorOffset - (view.scrollHeight - view.clientHeight);
+        if (Math.abs(missing) < 1) return;
+        const needed = Math.max(floor, applied.current + missing);
+        const before = applied.current;
+        write(inner, applied, anchorId ? Math.max(needed, applied.current) : needed);
+        if (applied.current === before) return;
+      }
+      return;
+    }
+    const needed = Math.max(floor, view.clientHeight - anchorOffset - stack - pad);
 
     /* ── While a turn is anchored, the room only grows ────────────────────
        The room's contract is *at least this much* — enough for the anchored
@@ -520,6 +539,27 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     const inner = content.current;
     if (!view || !inner || typeof ResizeObserver === "undefined") return;
 
+    /* ── Landing ──────────────────────────────────────────────────────────
+       A travel is aimed once, at where the target was when it set off, and
+       everything below stands aside while it is under way. When the target
+       moves in that time the view lands short of it — and nothing looked
+       again until something else resized, which, while a model is thinking
+       and has not said a word, is nothing. So a travel that was stood aside
+       for is looked at again when it lands, and what is left of the way is
+       travelled too rather than snapped. */
+    let landing = 0;
+    const land = () => {
+      travelling.current = 0;
+      const want = target();
+      if (Math.abs(want - view.scrollTop) > threshold && !prefersReducedMotion()) {
+        travelling.current = performance.now() + TRAVEL;
+        view.scrollTo({ top: want, behavior: "smooth" });
+        landing = window.setTimeout(land, TRAVEL + LANDING);
+        return;
+      }
+      view.scrollTop = want;
+    };
+
     const keepUp = () => {
       const want = target();
       /* Let the way-back button's scroll finish rather than snapping past it —
@@ -528,7 +568,12 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
          set for ever and the view stops keeping up with the answer entirely.
          A test said so. */
       if (travelling.current) {
-        if (performance.now() < travelling.current && Math.abs(view.scrollTop - want) > 1) return;
+        const left = travelling.current - performance.now();
+        if (left > 0 && Math.abs(view.scrollTop - want) > 1) {
+          window.clearTimeout(landing);
+          landing = window.setTimeout(land, left + LANDING);
+          return;
+        }
         travelling.current = 0;
       }
 
@@ -588,7 +633,10 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
 
     const observer = new ResizeObserver(keepUp);
     observer.observe(inner);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(landing);
+    };
     /* `anchorId` is in here on purpose: a new turn means the view moves to it,
        and it moves whether or not the reader had scrolled away from the last
        one. Sending a message is asking to be taken to it. */
