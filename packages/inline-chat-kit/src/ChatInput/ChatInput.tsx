@@ -190,6 +190,13 @@ export interface ChatInputProps {
 }
 
 /** Bubble spring used when no animationConfig override is supplied. */
+/** The same spring, critically damped: as quick to arrive, and never past. */
+function withoutOvershoot(spring: Transition): Transition {
+  const { stiffness, damping, mass = 1 } = spring as { stiffness?: number; damping?: number; mass?: number };
+  if (stiffness === undefined) return spring;
+  return { ...spring, damping: Math.max(damping ?? 0, 2 * Math.sqrt(stiffness * mass)) };
+}
+
 const defaultBubbleSpring: Transition = {
   type: "spring",
   stiffness: 600,
@@ -1043,8 +1050,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             visualDuration: ac?.enterButton?.visualDuration ?? 0.18,
                             bounce: ac?.enterButton?.bounce ?? 0.3,
                             opacity: { type: "tween", duration: 0.15 },
-                            width: bubbleSpring,
-                            marginLeft: bubbleSpring
+                            /* The bubble's spring, without its overshoot.
+                               With the text on a line of its own, the group
+                               beside it wraps to a second line at any width
+                               above nothing — and the underdamped spring went
+                               past nothing and back: a margin of −0.33px,
+                               then +0.05px of width. The stop leaving a
+                               settled bubble put the bubble on two lines and
+                               back four times in 40ms, and the whole answer
+                               under it shook by 25px each time. Critically
+                               damped, it reaches nothing once. */
+                            width: withoutOvershoot(bubbleSpring),
+                            marginLeft: withoutOvershoot(bubbleSpring)
                           }
                       }}
                       transition={{

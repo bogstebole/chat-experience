@@ -21,6 +21,12 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* The browser's own scroll anchoring off: this component says where the
+     view is, and a second opinion moved it. When the sent bubble lost the line
+     its stop had stood on, Chrome held the answer below it where it was by
+     scrolling up 25px — so the question dropped by that much and was glided
+     back. Safari never anchored, which is what the rest of this assumes. */
+  overflow-anchor: none;
   padding: var(--ick-conversation-pad-block) var(--ick-conversation-pad-inline);
   box-sizing: border-box;
 }
@@ -83,16 +89,22 @@
    sticks, and it scrolls away with the conversation — measured, the composer
    came to rest 333px from the top of a 700px view with white space under it.
 
-   Between the last turn and the dock instead, the dock is the last thing in
-   the flow again: below the fold until the scroll reaches the end, which is
-   exactly when `sticky` holds it at the bottom edge. The room passes behind
-   it. `Conversation` writes the number; only where it lands changes. */
+   In the last turn instead, the dock is the last thing in the flow again:
+   below the fold until the scroll reaches the end, which is exactly when
+   `sticky` holds it at the bottom edge. The room passes behind it.
+
+   And as that turn's **minimum height**, not a margin under it: the browser
+   keeps a minimum in the same layout that shrinks what is inside, where a
+   margin written after the fact left a frame in which the scroll was clamped
+   and the whole answer dropped. `Conversation` writes the number once it
+   anchors, and it changes only with the view and the dock. */
 .content[data-dock] {
   padding-bottom: 0;
 }
 
 .content[data-dock] > :nth-last-child(2) {
-  margin-bottom: var(--ick-conversation-tail);
+  box-sizing: border-box;
+  min-height: var(--ick-conversation-room, 0px);
 }
 
 /* The way back floats above the dock rather than on it. The height is

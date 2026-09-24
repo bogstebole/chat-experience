@@ -8,6 +8,47 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.59.2 — 2026-09-24
+
+### Fixed
+
+Docked, an answer holds still while it arrives and as it finishes. Measured
+after the frame is painted, in four windows, on every answer the demo gives:
+from 6 failures to none.
+
+- **An answer with a card in it no longer drops and comes back as it
+  settles.** The room under the last turn was a margin written a frame after
+  the answer changed. When anything inside the turn got shorter — the
+  reasoning folding away as a card arrived — the scroll was clamped before
+  the margin caught up, and the whole answer dropped 3–13px for a frame. The
+  room is now the last turn's `min-height`, which the browser holds in the
+  same layout.
+- **A finished answer is no longer nudged up.** Its row of actions was drawn
+  only on settling, 36px of new height at the moment it finished, and an
+  answer near the composer was pushed up by what did not fit — 2px, or 25.
+  The row is now there, hidden, while the answer arrives.
+- **Following the end of a long answer keeps the last line above the
+  composer**, where it went 13px behind it. And when a settled answer does
+  have to move, it glides once to where it ends up instead of travelling to
+  where the end was and creeping back.
+- **An artifact card grows to its content** instead of jumping from 97px to
+  236px in a frame and throwing the answer under it down.
+- **Inline, the sent bubble no longer flickers between one line and two**
+  as its stop leaves: the exit spring overshot zero by a fraction of a pixel,
+  enough to wrap, four times in 40ms. It is critically damped now.
+- **Browser scroll anchoring is off in the conversation** — the component
+  places the view, and Safari never anchored.
+
+### Added
+
+- `npm run still-check` in the gate: no jolt (3px undone within two frames),
+  and an answer that fits is not moved as it settles.
+
+### Known
+
+- Inline, the room is still the measured margin, and a reasoning folding
+  away can still clamp the view for a frame by 3–4px, as it did before.
+
 ## 0.59.1 — 2026-09-24
 
 ### Fixed

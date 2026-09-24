@@ -303,17 +303,33 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   /* The answer as the stream sent it: prose and parts in the order they came.
      See `PartPosition` and `sequence`. */
   const pieces = sequence(turn.ai, parts);
-  const settled = answerActions && turn.state === "resting" && pieces.length > 0;
+  const answering =
+    answerActions &&
+    (turn.state === "resting" || turn.state === "responding") &&
+    pieces.length > 0;
+  const settled = answering && turn.state === "resting";
   /* Where the row of actions goes: inside the last run of prose if the answer
-     ends in one, after everything if it ends in a part, nowhere yet if it has
-     not settled. */
-  const actionsAt = !settled
+     ends in one, after everything if it ends in a part. */
+  const actionsAt = !answering
     ? -1
     : pieces[pieces.length - 1].kind === "prose"
       ? pieces.length - 1
       : pieces.length;
-  const actionsRow = settled ? (
-    <div className={styles.actions}>
+  /* **There while the answer arrives, and seen once it has.** Drawn only on
+     settling, the row made the answer 36px taller at the very moment it
+     finished — and an answer that reached the composer was pushed up by
+     whatever of those pixels did not fit, 2px or 36. Held hidden in its place
+     instead, it is already part of the answer's height, and settling changes
+     what is seen and nothing about where. `visibility` rather than
+     `aria-hidden`: it takes the buttons out of the tab order and the
+     accessibility tree as well, where a hidden label over focusable buttons
+     would leave them reachable. */
+  const actionsRow = answering ? (
+    <div
+      className={styles.actions}
+      data-pending={settled ? undefined : ""}
+      style={settled ? undefined : { visibility: "hidden" }}
+    >
       {/* Draws nothing until there are two, so a turn answered once looks
           exactly as it did before there were versions at all. */}
       <Branch
