@@ -28,7 +28,11 @@ import {
   type UseChatTurnsResult,
 } from "../useChatTurns/useChatTurns";
 import { type FoldMotion } from "../QuestionGroup/QuestionGroup";
-import { type InlineAnimConfig, type ChatInputHandle } from "../ChatInput/ChatInput";
+import {
+  defaultInlineAnimConfig,
+  type InlineAnimConfig,
+  type ChatInputHandle,
+} from "../ChatInput/ChatInput";
 import { type TranscribeHandler } from "../voice/useVoiceInput";
 import {
   type CustomPart,
@@ -199,6 +203,42 @@ export interface ChatExperienceProps {
    */
   surface?: "flush" | "panes";
 
+  /**
+   * Where the composer lives.
+   *
+   * `"inline"` (the default): the input is the message. It stands at the end
+   * of the conversation, and what you type becomes the bubble where you typed
+   * it — the argument this kit makes.
+   *
+   * `"docked"`: the input stays at the bottom of the view, the way most chats
+   * keep it, and the conversation stacks above it. Sent, it still becomes the
+   * bubble — the same element, travelling into the conversation — and a fresh
+   * one takes its place at the bottom straight away, so the next question can
+   * be typed while this one is being answered. Everything else is the same:
+   * the parts, the pane, the highlighter, editing in place.
+   *
+   * With a `chat` of your own, give its `useChatTurns` `nextTurn: "at-send"`.
+   */
+  composer?: "inline" | "docked";
+
+  /**
+   * What the chat is as tall as.
+   *
+   * `"window"` (the default): the whole window, which is what a page that is
+   * nothing but the chat wants, and why it needs no height from its host.
+   *
+   * `"container"`: whatever its parent gives it. For a chat embedded in a
+   * card, a sidebar, a split — anywhere smaller than the window, which is
+   * nearly every embed. The parent has to have a height to give; the chat
+   * fills it and scrolls inside it. Measured in a host whose card was inset
+   * 12px top and bottom, `"window"` hung 24px past the card and a docked
+   * composer lost half of itself to the card's clip.
+   *
+   * The software keyboard is the host's to handle here: the chat no longer
+   * knows where the window's bottom edge is relative to itself.
+   */
+  fill?: "window" | "container";
+
   /** The theme, if the host keeps it. Left off, this manages its own and puts
       a toggle in the header; `data-theme` on the root element either way, and
       unset until somebody chooses, so the kit follows the system preference —
@@ -209,8 +249,33 @@ export interface ChatExperienceProps {
   /** The pointer-following cursor, and the rule that hides the real one. Only
       ever where there is a pointer to replace. */
   cursor?: boolean;
-  /** The freeform-marker / precise-selection pair in the header. */
+  /** The freeform-marker / precise-selection pair in the header. Drawn only
+      where there is marking to choose a mode for. */
   selectionToggle?: boolean;
+
+  /**
+   * Whether an answer can be marked at all.
+   *
+   * On by default: a marker over a passage is how a reader asks about one
+   * sentence rather than the whole answer. `false` draws answers as prose —
+   * no marker layer, no highlight menu, nothing in the tab order over the
+   * text — and takes the saved highlights and the selection-mode pair with
+   * it, because both are about marking. A thread is opened from a highlight,
+   * so `onThreadReply` has nothing to open it from either.
+   *
+   * Set in code, not offered in the interface: a product either works this
+   * way or it does not.
+   */
+  highlights?: boolean;
+  /**
+   * Whether marked passages are kept.
+   *
+   * On by default, and only ever visible once there is one: the header grows
+   * a button with the count, and it opens the sheet that lists them.
+   * `false` keeps marking and threads and drops the keeping — for a host that
+   * would rather store them itself, through `onHighlight`.
+   */
+  bookmarks?: boolean;
 
   /** How far below the top edge a sent message comes to rest. Sets the
       conversation's own top padding too — the two have to agree, so one number
@@ -254,6 +319,19 @@ interface Highlight {
 /** Stands in for a missing `onSend` when the host brought `chat` instead. */
 const silent = () => "";
 
+/**
+ * The spring a sent message travels on, docked.
+ *
+ * Inline, the bubble spring is quick — 600/22/0.3 — because the morph happens
+ * in place and a slow one there reads as lag. Docked, the same spring carries
+ * the message from the bottom edge to its place in the conversation, and at
+ * that speed a 600px journey is over in a hundred milliseconds: measured, the
+ * bubble was at the top before the first frame anybody could see. Softer, it
+ * is a thing moving rather than a thing appearing, and it settles in about a
+ * third of a second. A host that tunes `animationConfig.bubble` still wins.
+ */
+const DOCKED_TRAVEL: InlineAnimConfig["bubble"] = { stiffness: 170, damping: 24, mass: 1 };
+
 export function ChatExperience({
   onSend,
   chat: hostChat,
@@ -276,10 +354,15 @@ export function ChatExperience({
   onOpenArtifactChange,
   pane: paneMode = "inline",
   surface = "flush",
+  composer = "inline",
+  /* Renamed: `fill` is also the labels helper that fills in `{index}`. */
+  fill: fillMode = "window",
   theme: themeProp,
   onThemeChange,
   cursor = false,
   selectionToggle = false,
+  highlights: marking = true,
+  bookmarks = true,
   anchorOffset = 100,
   endOffset = 120,
   animationConfig,
@@ -329,12 +412,36 @@ export function ChatExperience({
 
   /* Called either way — a hook cannot be skipped — and ignored when the host
      holds the conversation. */
+  const docked = composer === "docked";
+  /* One object for every row, or the memo would see a new prop each render. */
+  const rowAnimation = useMemo<InlineAnimConfig | undefined>(
+    () =>
+      docked
+        ? {
+            ...defaultInlineAnimConfig,
+            ...animationConfig,
+            bubble: animationConfig?.bubble ?? DOCKED_TRAVEL,
+          }
+        : animationConfig,
+    [docked, animationConfig]
+  );
   const ownChat = useChatTurns({
     onSend: onSend ?? silent,
     announcements: { responding: text.responding },
+    /* A docked composer is always there, so the next input opens at send. */
+    nextTurn: docked ? "at-send" : "after-answer",
   });
-  const { turns, setDraft, submit, showVersion, stop, beginEdit, cancelEdit, updatePart } =
-    hostChat ?? ownChat;
+  const {
+    turns,
+    setDraft,
+    submit,
+    showVersion,
+    stop,
+    beginEdit,
+    cancelEdit,
+    updatePart,
+    isStreaming,
+  } = hostChat ?? ownChat;
 
   /* The turn the view is held on.
 
@@ -367,7 +474,46 @@ export function ChatExperience({
      and only then. Releasing on `typing` would let go while somebody was still
      editing the question. */
   const anchoredTurn = anchorTurnId ? (turns.find((t) => t.id === anchorTurnId) ?? null) : null;
-  const heldAnchor = anchoredTurn && anchoredTurn.state !== "resting" ? anchorTurnId : null;
+  /* Docked too. The composer moving to the bottom does not change what a
+     reader wants after pressing send: their question at the top and its answer
+     written underneath, rather than both pushed up from below a line at a
+     time. The composer stays where it is through all of it — it is `sticky`,
+     so the room the anchor scrolls into passes behind it.
+
+     **Held once it has been sent, and not before.** A host that publishes its
+     `chat` from an effect — a store, so that only the chat redraws for every
+     streamed frame — hands the turns over a render after the press. For that
+     render the turn is still the input: docked, it is the composer, stuck to
+     the bottom edge. Anchored then, the view moved to the composer, the move
+     was spent, and the render that brought the sent turn changed nothing the
+     scroll listens to. Measured in that shape, with a model that is silent
+     for three seconds before it answers: the second and third messages stood
+     at 378px for all three, and went to the top only when the answer came.
+     A turn has a version from the moment it is sent — an edit of one keeps
+     its versions, so an answered turn being edited is still held. */
+  const sent = (anchoredTurn?.versions?.length ?? 0) > 0;
+  const heldAnchor = anchoredTurn && sent && anchoredTurn.state !== "resting" ? anchorTurnId : null;
+
+  /* The software keyboard, on a phone.
+
+     A docked composer sits on the bottom edge of the view, and on iOS the
+     keyboard comes up *over* that edge: the layout viewport keeps its height
+     and only the visual one shrinks, so a composer pinned to the bottom is
+     pinned behind the keys. `visualViewport` says how much is covered, and the
+     workspace gives that much up — the composer rides up on the keyboard's
+     top edge, which is where a thumb expects it. Inline, the composer is the
+     last turn and the browser scrolls it into view itself. */
+  const [keyboard, setKeyboard] = useState(0);
+  const fillsWindow = fillMode === "window";
+  useEffect(() => {
+    if (!docked || !fillsWindow) return;
+    const view = window.visualViewport;
+    if (!view) return;
+    const sync = () => setKeyboard(Math.max(0, Math.round(window.innerHeight - view.height)));
+    sync();
+    view.addEventListener("resize", sync);
+    return () => view.removeEventListener("resize", sync);
+  }, [docked, fillsWindow]);
 
   /* Regenerating is the same submit: `useChatTurns` rewrites a turn that
      already has an answer in place rather than starting a new one. */
@@ -462,11 +608,15 @@ export function ChatExperience({
       .find((turn) => turn.state !== "idle" && turn.state !== "typing" && turn.user.trim())
       ?.user.trim() ?? title;
 
-  const handleHighlight = useCallback((turnId: string, text: string) => {
-    if (text.trim().length > 0) {
-      setHighlights((prev) => [...prev, { turnId, text: text.trim() }]);
-    }
-  }, []);
+  const handleHighlight = useCallback(
+    (turnId: string, text: string) => {
+      if (!bookmarks) return;
+      if (text.trim().length > 0) {
+        setHighlights((prev) => [...prev, { turnId, text: text.trim() }]);
+      }
+    },
+    [bookmarks]
+  );
 
   /* Hoisted for the memo. It was an arrow written inline in the row's props,
      which is a new function every render — so every finished row re-rendered
@@ -533,7 +683,7 @@ export function ChatExperience({
     builtInActions === true || (Array.isArray(builtInActions) && builtInActions.includes(id));
 
   const headerActions: ChatHeaderAction[] = [
-    ...(highlights.length > 0
+    ...(marking && bookmarks && highlights.length > 0
       ? [
           {
             id: "bookmarks",
@@ -577,13 +727,14 @@ export function ChatExperience({
     <motion.div
       className={[
         styles.page,
-        surface === "panes" ? styles.paned : "",
+        surface === "panes" || !fillsWindow ? styles.fitted : "",
         "ick-chat-page",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
       style={{ "--ick-experience-anchor": `${anchorOffset}px` } as CSSProperties}
+      data-composer={docked ? "docked" : undefined}
       initial={{ opacity: 0 }}
       animate={{
         opacity: activeReply || showHighlights ? 0.4 : 1,
@@ -621,7 +772,7 @@ export function ChatExperience({
           <Context className={styles.context} used={contextUsed} total={contextTotal} />
         )}
 
-        {selectionToggle && (
+        {selectionToggle && marking && (
           /* The kit does not manage this one through `actions`: a segmented
              control has no icon-and-label shape to fold into a menu. */
           <div className={styles.selectMode} role="group" aria-label={text.selectionMode}>
@@ -650,6 +801,7 @@ export function ChatExperience({
       <Conversation
         viewportClassName={`${styles.feed} ick-chat-feed`}
         anchorId={heldAnchor ? `turn-${heldAnchor}` : undefined}
+        dock={docked}
         /* `anchorOffset` has to match the viewport's own `padding-top`, or a
            turn brought to the top lands under the fixed header — so the same
            number sets both, and the stylesheet reads it back out of the custom
@@ -659,13 +811,17 @@ export function ChatExperience({
            input, and flush against the bottom edge of a phone is where the
            browser's own chrome sits, so this is about a composer's height of
            air under it. */
-        endOffset={endOffset}
+        /* Room under the last turn. Docked, the composer is the last child and
+           its own height is already in the flow, so what is asked for here is
+           only the air above it — the conversation's gap does that. */
+        endOffset={docked ? 0 : endOffset}
       >
         {isEmpty && empty && (
           <EmptyState
             /* The opening block and the composer under it share one column, so
-               they read as one thing. See `.opening`. */
-            className={styles.opening}
+               they read as one thing. See `.opening`. Docked, the composer is
+               at the bottom and the block is centred in the room above it. */
+            className={docked ? `${styles.opening} ${styles.centred}` : styles.opening}
             title={empty.title}
             description={empty.description}
             suggestions={empty.suggestions}
@@ -684,14 +840,17 @@ export function ChatExperience({
                 /* Nothing has been asked yet, so this is not a message on its
                    way — it is the box under the openers, and it lines up with
                    them. */
-                questionAlign={isEmpty && i === 0 ? "stretch" : "end"}
-                className={isEmpty && i === 0 ? styles.opening : undefined}
+                questionAlign={(docked && live) || (isEmpty && i === 0) ? "stretch" : "end"}
+                className={
+                  docked && live ? styles.dock : isEmpty && i === 0 ? styles.opening : undefined
+                }
                 onTranscribe={onTranscribe}
                 isActiveInput={live}
                 inputRef={live ? activeInputRef : null}
                 entranceDelay={i === 0 ? feedDelay : 0}
                 selectionMode={selectionMode}
-                animationConfig={animationConfig}
+                highlights={marking}
+                animationConfig={rowAnimation}
                 foldMotion={foldMotion}
                 openArtifactId={openArtifactId}
                 onOpenArtifact={openArtifact}
@@ -703,7 +862,10 @@ export function ChatExperience({
                 onShowVersion={showVersion}
                 onFeedback={handleFeedback}
                 feedback={verdicts[turn.id] ?? null}
-                onStop={stop}
+                /* Docked, the stop is on the composer, which is always in
+                   view; the bubble being answered may have scrolled away. */
+                onStop={!docked || live ? stop : undefined}
+                busy={docked && live ? isStreaming : undefined}
                 onEdit={beginEdit}
                 onCancelEdit={cancelEdit}
                 onHighlight={handleHighlight}
@@ -749,6 +911,8 @@ export function ChatExperience({
       <ChatLayout
         className={styles.workspace}
         surface={surface}
+        data-fill={fillsWindow ? undefined : "container"}
+        style={fillsWindow && keyboard > 0 ? ({ "--ick-keyboard": `${keyboard}px` } as CSSProperties) : undefined}
         /* On a phone the pane is a sheet, and a sheet's ways out belong to the
            layout: dragged down, or the conversation behind it pressed. */
         onDismiss={closeArtifact}

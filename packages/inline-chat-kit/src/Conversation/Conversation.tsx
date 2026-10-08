@@ -101,6 +101,17 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
   /** Switch the whole thing off and it is a plain scroll container. */
   follow?: boolean;
   /**
+   * The last child is a dock.
+   *
+   * Pinned to the bottom edge while the content is shorter than the view, and
+   * held there while it is longer — the composer of a chat that keeps it at
+   * the bottom rather than at the end of the conversation. It is still
+   * content: the end of the scroll is still the last turn's end, and what is
+   * under it scrolls under it, which is what lets that composer become a
+   * bubble in the conversation without being moved between two trees.
+   */
+  dock?: boolean;
+  /**
    * For the element that actually scrolls, which is not the one `className`
    * lands on.
    *
@@ -124,6 +135,17 @@ const THRESHOLD = 64;
  * refusing to track for the rest of the session.
  */
 const TRAVEL = 500;
+
+/** How much of what is left a glide covers in a frame. See `glide`. */
+const GLIDE = 0.2;
+
+/** How long the layout has to be still before a settled answer is glided to:
+    longer than a frame of a fold, shorter than anyone waits for. */
+const QUIET = 120;
+
+/** A frame or three after a travel's ceiling, so it is looked at once it has
+    actually stopped rather than on its last frame. */
+const LANDING = 50;
 
 /**
  * How close to the end counts as having **arrived** there.
@@ -170,6 +192,12 @@ const flowTop = (el: HTMLElement, view: HTMLElement): number => el.offsetTop - v
 const held0 = (view: HTMLElement, id: string | null): HTMLElement | null =>
   id ? view.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"]`) : null;
 
+/** What the dock hides of the view: its own height and the gap above it. */
+const coverOf = (inner: HTMLElement): number => {
+  const dock = inner.lastElementChild as HTMLElement | null;
+  return (dock?.offsetHeight ?? 0) + (parseFloat(getComputedStyle(inner).rowGap) || 0);
+};
+
 /** Written only when it changes, so an answer does not touch the DOM per frame. */
 const write = (inner: HTMLElement, applied: { current: number }, room: number): void => {
   if (room === applied.current) return;
@@ -205,6 +233,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     scrollButton = true,
     scrollButtonLabel: scrollButtonProp,
     follow = true,
+    dock = false,
     className,
     viewportClassName,
     onScroll,
@@ -219,7 +248,29 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
      ref here wants to scroll something, and the root does not scroll. */
   useImperativeHandle(ref, () => viewport.current as HTMLDivElement, []);
   const content = useRef<HTMLDivElement | null>(null);
+  const root = useRef<HTMLDivElement | null>(null);
   const [following, setFollowing] = useState(true);
+
+  /* How tall the dock is, written where the stylesheet can read it: the way
+     back has to float *above* the composer, not on it. Measured rather than
+     guessed — the composer grows as a message is typed into it. */
+  useEffect(() => {
+    if (!dock) return;
+    const inner = content.current;
+    const outer = root.current;
+    if (!inner || !outer || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const last = inner.lastElementChild as HTMLElement | null;
+      outer.style.setProperty("--ick-dock-height", `${last?.offsetHeight ?? 0}px`);
+    };
+    const watch = new ResizeObserver(measure);
+    watch.observe(inner);
+    measure();
+    return () => {
+      watch.disconnect();
+      outer.style.removeProperty("--ick-dock-height");
+    };
+  }, [dock]);
   /**
    * The tail this component last wrote, so it can tell it apart from content
    * and so an unchanged measurement does not touch the DOM on every frame of
@@ -227,6 +278,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
    * still has to be written down the first time.
    */
   const applied = useRef(-1);
+  /** The docked room last written, for the same reason. */
+  const roomApplied = useRef(-1);
   /**
    * The turn the room is measured against: the last one anchored, held on to
    * after the host lets go.
@@ -280,15 +333,20 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       return Math.max(0, view.scrollHeight - view.clientHeight);
     }
 
-    const last = inner.lastElementChild as HTMLElement | null;
+    /* The wrapper rather than the last child, when there is a dock: the room
+       is a margin *inside* it now, so its own end is the end of everything,
+       and the dock — whose height is in there too — comes to rest on the
+       bottom edge. No tail to take off, because the wrapper has no padding in
+       that mode. See the stylesheet. */
+    const last = dock ? null : (inner.lastElementChild as HTMLElement | null);
     const bottom = last
       ? flowTop(last, view) + last.offsetHeight
-      : /* No element to measure — a consumer whose children are bare text.
-           The wrapper stands in, less the tail, which is padding this
-           component put there itself and is emphatically not content. */
-        flowTop(inner, view) + inner.offsetHeight - applied.current;
+      : /* No element to measure — a consumer whose children are bare text, or
+           a dock. The wrapper stands in, less its own tail padding where it
+           has one, which this component put there and is not content. */
+        flowTop(inner, view) + inner.offsetHeight - (dock ? 0 : applied.current);
     return Math.max(0, bottom + endOffset - view.clientHeight);
-  }, [endOffset, tail]);
+  }, [dock, endOffset, tail]);
 
   /**
    * The tail, measured rather than guessed. See the `tail` prop.
@@ -328,6 +386,33 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        What the room is for is lifting the anchored turn to the top, and what
        stands between it and the bottom edge is the whole stack under it. So
        that is what comes off. */
+    /* ── Docked: the room is the last turn's own minimum height ──────────
+       What the room is for is one sentence: the last turn, at the anchor,
+       with the dock under it, fills the view. So that is a height the last
+       turn is never shorter than, and it depends on the view and the dock and
+       nothing else — not on the answer, which is the point.
+
+       It was a margin, measured from the answer and written after it had
+       changed. A frame late, every time: when anything inside the turn got
+       shorter — the reasoning folding away as the answer arrived, a card
+       swapping its placeholder — the scroll was clamped to the shorter end
+       before the margin caught up, and the whole answer dropped and came back.
+       Measured on an approval at 1440×900: 13px down for a frame and up again,
+       at every answer with a card in it. A minimum height is held by the
+       browser in the same layout that shrinks what is inside it, so there is
+       no frame in between to see. And what grows inside it — the row of
+       actions arriving as the answer settles — grows into room that is
+       already there, rather than nudging the view up by the 2px it did not
+       fit. `Conversation.module.css` applies it. */
+    if (dock) {
+      const room = Math.max(0, view.clientHeight - anchorOffset - pad - coverOf(inner));
+      if (room !== roomApplied.current) {
+        roomApplied.current = room;
+        inner.style.setProperty("--ick-conversation-room", `${Math.round(room)}px`);
+      }
+      return write(inner, applied, floor);
+    }
+
     const stack = flowTop(last, view) + last.offsetHeight - flowTop(held, view);
     const needed = Math.max(floor, view.clientHeight - anchorOffset - stack - pad);
 
@@ -352,7 +437,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        before the layout is final is raised by the next one rather than
        standing for the whole answer. */
     write(inner, applied, anchorId ? Math.max(needed, applied.current) : needed);
-  }, [tail, anchorOffset, endOffset, anchorId]);
+  }, [tail, anchorOffset, endOffset, anchorId, dock]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
@@ -386,13 +471,17 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
         const max = Math.max(0, view.scrollHeight - view.clientHeight);
         const from = flowTop(el, view);
         const top = from - anchorOffset;
-        // Where the anchored turn's last pixel sits flush with the bottom.
-        const end = from + el.offsetHeight - view.clientHeight;
+        /* Where the anchored turn's last pixel sits flush with the bottom —
+           of what can be seen, which docked is the top of the dock. Measured
+           to the view's own edge, the line being written went 13px behind the
+           composer before the view moved for it. */
+        const cover = dock && content.current ? coverOf(content.current) : 0;
+        const end = from + el.offsetHeight + cover - view.clientHeight;
         return Math.max(0, Math.min(Math.max(top, end), max));
       }
     }
     return endOfContent();
-  }, [anchorId, anchorOffset, endOfContent]);
+  }, [anchorId, anchorOffset, endOfContent, dock]);
 
   /**
    * True while the way-back button's own scroll is still travelling.
@@ -461,6 +550,27 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     const inner = content.current;
     if (!view || !inner || typeof ResizeObserver === "undefined") return;
 
+    /* ── Landing ──────────────────────────────────────────────────────────
+       A travel is aimed once, at where the target was when it set off, and
+       everything below stands aside while it is under way. When the target
+       moves in that time the view lands short of it — and nothing looked
+       again until something else resized, which, while a model is thinking
+       and has not said a word, is nothing. So a travel that was stood aside
+       for is looked at again when it lands, and what is left of the way is
+       travelled too rather than snapped. */
+    let landing = 0;
+    const land = () => {
+      travelling.current = 0;
+      const want = target();
+      if (Math.abs(want - view.scrollTop) > threshold && !prefersReducedMotion()) {
+        travelling.current = performance.now() + TRAVEL;
+        view.scrollTo({ top: want, behavior: "smooth" });
+        landing = window.setTimeout(land, TRAVEL + LANDING);
+        return;
+      }
+      view.scrollTop = want;
+    };
+
     const keepUp = () => {
       const want = target();
       /* Let the way-back button's scroll finish rather than snapping past it —
@@ -469,7 +579,12 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
          set for ever and the view stops keeping up with the answer entirely.
          A test said so. */
       if (travelling.current) {
-        if (performance.now() < travelling.current && Math.abs(view.scrollTop - want) > 1) return;
+        const left = travelling.current - performance.now();
+        if (left > 0 && Math.abs(view.scrollTop - want) > 1) {
+          window.clearTimeout(landing);
+          landing = window.setTimeout(land, left + LANDING);
+          return;
+        }
         travelling.current = 0;
       }
 
@@ -495,6 +610,33 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
          arriving and must stay instant. Two tests said so, immediately. What
          this is about is an anchoring conversation between turns. */
       const gap = want - view.scrollTop;
+      if (anchors.current && !anchorId && !prefersReducedMotion() && dock) {
+        /* **Glided, not travelled** — docked, where the composer is already
+           at the bottom and what moves the view as an answer settles is the
+           answer itself. Inline the composer arrives at that moment, and the
+           travel below is for that; measured, gliding it there held a sent
+           bubble 26px low for the quiet moment before it moved.
+
+           A smooth scroll is aimed once, and what moves the view between answers is usually still moving: a card
+           arriving as the reasoning above it folds away. Aimed at where the
+           end was when the answer settled, the view went 15px past where it
+           ended up and crept back — measured on an approval at 1280×720 —
+           and a gap under the threshold was snapped, which is what made a
+           settling answer jump. A glide reads the target again every frame,
+           so it follows a target that moves and cannot pass it.
+
+           **And not until the layout has stopped.** A glide still followed
+           the end down while the card was arriving and back up while the
+           reasoning above it folded — two directions for one change. So it
+           waits for a moment without a resize and goes once, to where the
+           end came to rest. Nothing is being read at that instant: the
+           answer has just ended. */
+        if (!gliding && Math.abs(gap) > ARRIVED) {
+          window.clearTimeout(quiet);
+          quiet = window.setTimeout(glide, QUIET);
+        }
+        return;
+      }
       if (anchors.current && !anchorId && Math.abs(gap) > threshold && !prefersReducedMotion()) {
         travelling.current = performance.now() + TRAVEL;
         view.scrollTo({ top: want, behavior: "smooth" });
@@ -502,6 +644,30 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
       }
 
       view.scrollTop = want;
+    };
+
+    /* One frame at a time towards wherever the target is by then: a fifth of
+       the way, never less than a pixel, until it is there. */
+    let gliding = 0;
+    let quiet = 0;
+    const glide = () => {
+      if (gliding) return;
+      if (typeof requestAnimationFrame === "undefined") {
+        view.scrollTop = target();
+        return;
+      }
+      const step = () => {
+        const want = target();
+        const gap = want - view.scrollTop;
+        if (Math.abs(gap) <= 1) {
+          view.scrollTop = want;
+          gliding = 0;
+          return;
+        }
+        view.scrollTop += Math.sign(gap) * Math.max(1, Math.abs(gap) * GLIDE);
+        gliding = requestAnimationFrame(step);
+      };
+      gliding = requestAnimationFrame(step);
     };
 
     /* ── Arriving at a new turn ──────────────────────────────────────────
@@ -529,11 +695,16 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
 
     const observer = new ResizeObserver(keepUp);
     observer.observe(inner);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(landing);
+      if (gliding) cancelAnimationFrame(gliding);
+      window.clearTimeout(quiet);
+    };
     /* `anchorId` is in here on purpose: a new turn means the view moves to it,
        and it moves whether or not the reader had scrolled away from the last
        one. Sending a message is asking to be taken to it. */
-  }, [follow, following, target, anchorId, threshold]);
+  }, [follow, following, target, anchorId, threshold, dock]);
 
   /* ── Letting go ────────────────────────────────────────────────────────
      Intent, read from the input rather than inferred from the scroll event.
@@ -634,14 +805,18 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
   const detached = follow && !following;
 
   return (
-    <div className={[styles.root, className ?? ""].filter(Boolean).join(" ")}>
+    <div
+      ref={root}
+      className={[styles.root, className ?? ""].filter(Boolean).join(" ")}
+      data-dock={dock || undefined}
+    >
       <div
         ref={viewport}
         className={[styles.viewport, viewportClassName ?? ""].filter(Boolean).join(" ")}
         onScroll={handleScroll}
         {...rest}
       >
-        <div ref={content} className={styles.content}>
+        <div ref={content} className={styles.content} data-dock={dock || undefined}>
           {children}
         </div>
       </div>

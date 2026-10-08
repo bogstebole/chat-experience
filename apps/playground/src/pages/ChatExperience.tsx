@@ -3,7 +3,7 @@ import { useDialKit } from "dialkit";
 import { defaultFoldMotion, defaultInlineAnimConfig } from "inline-chat-kit";
 import { ChatExperienceDemo } from "inline-chat-kit/demo";
 import { Logo } from "../demo/Logo";
-import { requestedTheme } from "../demo/showcase";
+import { requestedComposer, requestedTheme } from "../demo/showcase";
 
 /**
  * The playground's view of the demo — which is the demo, plus the dial.
@@ -189,6 +189,7 @@ export function ChatExperience() {
       foldMotion={dial["Question Fold"]}
       feedDelay={dial["Chat Feed"].delay}
       introMotion={introMotion}
+      composer={requestedComposer()}
     />
   );
 }

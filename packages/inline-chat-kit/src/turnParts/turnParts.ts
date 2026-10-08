@@ -21,7 +21,7 @@ import type { ArtifactKind, ArtifactState } from "../Artifact/ArtifactCard";
  * as it grows, then `{ kind: "reasoning", id: "r1", state: "done" }` when it
  * stops, and the text is still there. Only the fields you send change.
  */
-export type TurnPart =
+export type TurnPart = (
   | {
       kind: "reasoning";
       id: string;
@@ -143,7 +143,28 @@ export type TurnPart =
       content?: string;
       state?: ArtifactState;
     }
-  | CustomPart;
+  | CustomPart
+) &
+  PartPosition;
+
+/**
+ * Where a part sits in the answer's prose.
+ *
+ * The prose is one string, and a part used to be drawn above all of it — so a
+ * model that said "I suggest this change:" and then sent the change had its
+ * sentence drawn *under* the thing it introduced. Now a part remembers how
+ * much prose had arrived when it did, and is drawn at that point: the order
+ * the stream sent is the order on screen.
+ *
+ * `useChatTurns` stamps it, on a part's first appearance, and nothing
+ * afterwards moves it — an update to a part is not a new part. A host building
+ * a turn by hand can set it, or leave it out: without one a part sits before
+ * the prose, which is where every part sat before this existed.
+ */
+export interface PartPosition {
+  /** How many characters of `ai` came before this part. Clamped to the prose. */
+  at?: number;
+}
 
 /**
  * A part the kit does not know how to draw, and the host does.
@@ -158,7 +179,7 @@ export type TurnPart =
  * id like everything else, so `{ kind: "custom", id, data }` replaces `data`
  * and leaves `type` alone.
  */
-export interface CustomPart {
+export interface CustomPart extends PartPosition {
   kind: "custom";
   id: string;
   /** Which of the host's cards this is. The kit never reads it. */

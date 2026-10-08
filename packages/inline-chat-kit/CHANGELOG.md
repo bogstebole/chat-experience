@@ -8,6 +8,155 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.59.2 — 2026-09-24
+
+### Fixed
+
+Docked, an answer holds still while it arrives and as it finishes. Measured
+after the frame is painted, in four windows, on every answer the demo gives:
+from 6 failures to none.
+
+- **An answer with a card in it no longer drops and comes back as it
+  settles.** The room under the last turn was a margin written a frame after
+  the answer changed. When anything inside the turn got shorter — the
+  reasoning folding away as a card arrived — the scroll was clamped before
+  the margin caught up, and the whole answer dropped 3–13px for a frame. The
+  room is now the last turn's `min-height`, which the browser holds in the
+  same layout.
+- **A finished answer is no longer nudged up.** Its row of actions was drawn
+  only on settling, 36px of new height at the moment it finished, and an
+  answer near the composer was pushed up by what did not fit — 2px, or 25.
+  The row is now there, hidden, while the answer arrives.
+- **Following the end of a long answer keeps the last line above the
+  composer**, where it went 13px behind it. And when a settled answer does
+  have to move, it glides once to where it ends up instead of travelling to
+  where the end was and creeping back.
+- **An artifact card grows to its content** instead of jumping from 97px to
+  236px in a frame and throwing the answer under it down.
+- **Inline, the sent bubble no longer flickers between one line and two**
+  as its stop leaves: the exit spring overshot zero by a fraction of a pixel,
+  enough to wrap, four times in 40ms. It is critically damped now.
+- **Browser scroll anchoring is off in the conversation** — the component
+  places the view, and Safari never anchored.
+
+### Added
+
+- `npm run still-check` in the gate: no jolt (3px undone within two frames),
+  and an answer that fits is not moved as it settles.
+
+### Known
+
+- Inline, the room is still the measured margin, and a reasoning folding
+  away can still clamp the view for a frame by 3–4px, as it did before.
+
+## 0.59.1 — 2026-09-24
+
+### Fixed
+
+- **A sent message goes to the top while the model is still silent.** It
+  waited for the answer: a model that thinks for a few seconds and then
+  answers all at once left the message where it was sent until the answer
+  came. Two causes, either one enough:
+  - **A host's chat published a render late.** A host that keeps its
+    `useChatTurns` in a store and publishes it from an effect hands the kit the
+    turns a render after the press. For that render the turn is still the
+    composer, and docked the composer is on the bottom edge — the anchor moved
+    the view there and was spent. The anchor now waits for the turn to have
+    been sent. Measured before: 399px in a 900px window, 526px in an 844px one.
+  - **The room under a docked conversation came up short.** While the
+    conversation is shorter than the view, the dock's `margin-top: auto`
+    swallows the first of the room, and the correction came a frame after the
+    view had set off for the old end — and the view no longer looked. The room
+    is now settled in one pass, and a travel that was overtaken is looked at
+    again when it lands. Measured before: the second message stopped at 141px
+    in a 680px window.
+
+### Added
+
+- **`ThinksFirst` and `ChatInAStore` stories**, and `npm run silent-check`
+  in the gate: three messages to a model silent for 2.5s, in three windows,
+  each at the anchor 700ms after the send and still there at 2300ms. Without
+  either fix it fails seven of eighteen.
+
+## 0.59.0 — 2026-09-24
+
+From integrating 0.58 into a host app. Nothing changes for a host that passes
+none of the new props, with one visible difference, below.
+
+### Added
+
+- **`fill="window" | "container"` on `ChatExperience`.** `"container"` makes
+  the chat as tall as its parent instead of the window — both the workspace and
+  the page. Embedded in a card inset 12px top and bottom, the window's height
+  overran the card by 24px and a docked composer lost half of itself to the
+  card's clip. `"window"` is the default and is what the kit did before.
+- **Parts sit in the prose where they arrived.** A part carries `at`, how much
+  prose had arrived when it did, stamped by `useChatTurns` on its first
+  appearance, and the row draws the answer in that order. "I suggest this
+  change:" is drawn before the change it introduces rather than under it. The
+  prose is still one string — Copy, the screen reader and versions read `ai` as
+  before; only the drawing is cut. Hosts can set `at` themselves; a part without
+  one sits before the prose, as every part did.
+
+### Changed
+
+- **Prose sent after a part is now drawn after it.** This is the point of the
+  above, and it is the one thing an existing host will see: a stream that sent
+  text, then a card, then more text used to draw the card on top and all the
+  text under it. Streams that send their parts before their prose — the usual
+  shape, and every stream in the demo — draw exactly as before. The one story
+  that changes is `Localized`, whose sentence now stands above its cards.
+- **The row of actions follows the whole answer.** It lived inside the prose
+  block, so an answer made only of parts had no regenerate and no thumbs.
+  Copy is offered only when there is prose to copy.
+
+### Fixed
+
+- **`highlights={false}` still cut the prose into a span per word.** The spans
+  exist for marking — hit-testing, the keyboard cursor, the dimming — and with
+  marking off they were 82 elements for four sentences. The answer is text now.
+
+## 0.58.0 — 2026-09-23
+
+The composer at the bottom, as an alternative to the inline one — roadmap I2.
+One prop; nothing changes for a host that does not pass it.
+
+### Added
+
+- **`composer="inline" | "docked"` on `ChatExperience`.** `"docked"` keeps the
+  input at the bottom edge and stacks the conversation above it. The live
+  input is still the last turn, so a sent message still becomes its bubble —
+  the same element, carried up into the conversation by its layout animation
+  as a fresh composer takes its place. A sent message is still brought to the
+  top of the view and held there while its answer is written, as it is inline;
+  the composer stays on the bottom edge while that happens, and the workspace
+  gives up whatever a phone's keyboard covers.
+- **`nextTurn: "after-answer" | "at-send"` on `useChatTurns`.** `"at-send"`
+  opens the next input the moment a message goes, so it can be typed into
+  while the answer arrives. A send while one is in flight is now refused in
+  either mode: it used to start a second run and take the first one's abort
+  away.
+- **`busy` on `ChatInput` and `ChatTurnRow`.** Open to type into, closed to
+  send from: Enter does nothing, the send glyph is a stop when there is an
+  `onStop` and inert when there is not.
+- **`dock` on `Conversation`.** The last child is pinned to the bottom of the
+  view — an auto margin while the content is short, `sticky` once it is long —
+  and the room an anchor needs is put above it rather than below, where
+  `sticky` could not hold it.
+
+- **`highlights` and `bookmarks` on `ChatExperience`, `highlights` on
+  `ChatTurnRow`, `marking` on `TextHighlighter`.** `highlights={false}` draws
+  answers as prose — no marker layer, nothing over the text in the tab order,
+  no highlight menu — and takes the saved highlights and the selection-mode
+  pair with it. `bookmarks={false}` keeps marking and drops the keeping. Both
+  are decided in code rather than offered in the interface, which is also how
+  `composer`, `pane`, `surface`, `headerActions` and `composerMenu` work.
+
+### Fixed
+
+- **A responding bubble drew a stop with nothing behind it** when the host
+  had not passed `onStop`. It is drawn only with somewhere to report to.
+
 ## 0.57.0 — 2026-09-22
 
 A pane the host draws itself. `ChatExperience` placed its artifact pane beside

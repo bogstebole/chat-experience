@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useCallback, useMemo, useState } from "react";
-import { ChatExperience } from "../ChatExperience/ChatExperience";
-import { useChatTurns } from "../useChatTurns/useChatTurns";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { ChatExperience, type ChatExperienceProps } from "../ChatExperience/ChatExperience";
+import { useChatTurns, type SendHandler, type UseChatTurnsResult } from "../useChatTurns/useChatTurns";
 import { ArtifactPane } from "../Artifact/ArtifactPane";
 import type { Decision } from "../Approval/Approval";
 import type { PartWriter } from "../ChatExperience/ChatExperience";
@@ -215,3 +215,201 @@ export const TwoPanes: Story = {
     surface: "panes",
   },
 };
+
+/**
+ * Everything the host has no use for, off.
+ *
+ * All of it is decided in code rather than offered in the interface — a
+ * product either marks passages or it does not, and a switch for it is a
+ * question nobody asked. `highlights={false}` draws answers as prose and
+ * takes the saved highlights and the selection-mode pair with it;
+ * `headerActions={false}` drops the theme toggle and Share;
+ * `composerMenu={false}` takes the "+" away; no `onThreadReply`, no threads.
+ */
+export const Stripped: Story = {
+  args: {
+    ...Opening.args,
+    composer: "docked",
+    highlights: false,
+    headerActions: false,
+    composerMenu: false,
+  },
+};
+
+/**
+ * The composer at the bottom, the way most chats keep it.
+ *
+ * `composer="docked"`: the conversation stacks above the box, the view follows
+ * the answer being written, and the box is always there — the next question
+ * can be typed while this one is answered, and the send waits. Sent, the
+ * message still becomes its bubble: the same element travels up into the
+ * conversation and a fresh composer takes its place.
+ */
+export const Docked: Story = {
+  args: {
+    ...Opening.args,
+    composer: "docked",
+    onTranscribe: scriptedTranscript,
+  },
+};
+
+/** Docked, and a pane of its own beside it. */
+export const DockedTwoPanes: Story = {
+  args: {
+    ...Everything.args,
+    composer: "docked",
+    surface: "panes",
+  },
+};
+
+/**
+ * Embedded in a host's shell, the way nearly every product places a chat.
+ *
+ * `fill="container"`: the chat is as tall as the card it is in, not the
+ * window. The card here is inset 12px top and bottom and clips what overflows
+ * it — which is exactly where `"window"` hung 24px past the card and cut a
+ * docked composer in half.
+ */
+export const Embedded: Story = {
+  render: function Embedded(args) {
+    return (
+      <HostShell>
+        <ChatExperience {...args} {...Opening.args} fill="container" composer="docked" />
+      </HostShell>
+    );
+  },
+};
+
+/** A host's shell: its own navigation, and a card inset 12px that clips. */
+function HostShell({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        boxSizing: "border-box",
+        padding: "12px 12px 12px 0",
+        background: "var(--ick-ground)",
+      }}
+    >
+      <nav
+        aria-label="The host's own navigation"
+        style={{ width: 200, flexShrink: 0, padding: 16, color: "var(--ick-ink-soft)" }}
+      >
+        Host app
+      </nav>
+      <div
+        data-host-card=""
+        style={{
+          flex: 1,
+          minWidth: 0,
+          overflow: "hidden",
+          borderRadius: "var(--ick-chat-pane-radius)",
+          background: "var(--ick-page)",
+          boxShadow: "var(--ick-chat-pane-shadow)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A model that says nothing for 2.5 seconds, then the whole answer at once.
+ *
+ * Most real APIs look like this from the composer — a request, a wait, a
+ * response — and the demo's script never did: it starts talking the moment it
+ * is asked, and a view that only moves when the answer grows cannot be told
+ * from one that moves when the message is sent.
+ */
+const thinksFirst: SendHandler = async function* () {
+  await new Promise((resolve) => setTimeout(resolve, 2500));
+  yield "Here is what I would change this week. Two small things, and one that matters.";
+  yield { kind: "notice", id: "saved", text: "Saved to the plan." };
+};
+
+const silentOpening = {
+  title: "How can I help?",
+  suggestions: ["What is waiting on me?", "She walks with a frame now"],
+};
+
+/**
+ * Sent, the message goes to the top at once — not when the answer arrives.
+ * Seconds of silence are when a reader most needs to see what they asked.
+ */
+export const ThinksFirst: Story = {
+  render: function ThinksFirst(args) {
+    return (
+      <HostShell>
+        <ChatExperience
+          {...args}
+          onSend={thinksFirst}
+          empty={silentOpening}
+          fill="container"
+          composer="docked"
+        />
+      </HostShell>
+    );
+  },
+};
+
+/**
+ * The host keeps the chat in a store and publishes it from an effect, so only
+ * the chat redraws for every streamed frame — which hands the kit the turns a
+ * render after the press. The sent message still goes to the top at once.
+ */
+export const ChatInAStore: Story = {
+  render: function ChatInAStore(args) {
+    const [store] = useState(createChatStore);
+    return (
+      <HostShell>
+        <StoreSource store={store} />
+        <StoreChat store={store} {...args} />
+      </HostShell>
+    );
+  },
+};
+
+function createChatStore() {
+  let value: UseChatTurnsResult | null = null;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => value,
+    set: (next: UseChatTurnsResult) => {
+      value = next;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+}
+type ChatStore = ReturnType<typeof createChatStore>;
+
+/* Where the hook lives: mounted once, drawing nothing, publishing its result. */
+function StoreSource({ store }: { store: ChatStore }) {
+  const chat = useChatTurns({ onSend: thinksFirst, nextTurn: "at-send" });
+  useEffect(() => {
+    store.set({ ...chat });
+    // The hook's functions are stable; what changes is the turns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, chat.turns, chat.isStreaming]);
+  return null;
+}
+
+function StoreChat({ store, ...args }: { store: ChatStore } & ChatExperienceProps) {
+  const chat = useSyncExternalStore(store.subscribe, store.get);
+  if (!chat) return null;
+  return (
+    <ChatExperience
+      {...args}
+      onSend={undefined}
+      chat={chat}
+      empty={silentOpening}
+      fill="container"
+      composer="docked"
+    />
+  );
+}

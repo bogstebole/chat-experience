@@ -103,6 +103,19 @@ export interface UseChatTurnsOptions {
   sentencePause?: number;
   /** Override the spoken strings, or pass `false` to say nothing at all. */
   announcements?: ChatAnnouncements | false;
+  /**
+   * When the next input turn appears.
+   *
+   * `"after-answer"` (the default): once the answer settles. The composer *is*
+   * the message here, and there is one message at a time.
+   *
+   * `"at-send"`: the moment a message goes, so a fresh input stands under the
+   * answer while it is still arriving. What a docked composer needs — the box
+   * you type into is always there. Sending from it while an answer is in
+   * flight is refused rather than started on top of the first; queueing it is
+   * a separate thing (see the roadmap, I3).
+   */
+  nextTurn?: "after-answer" | "at-send";
 }
 
 export interface UseChatTurnsResult {
@@ -216,6 +229,7 @@ export function useChatTurns({
   revealSpeed = DEFAULT_REVEAL_SPEED,
   sentencePause = DEFAULT_SENTENCE_PAUSE,
   announcements,
+  nextTurn = "after-answer",
 }: UseChatTurnsOptions): UseChatTurnsResult {
   const [turns, setTurns] = useState<ChatTurn[]>(() => [emptyTurn()]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -335,7 +349,15 @@ export function useChatTurns({
 
   const updatePart = useCallback(
     (turnId: string, part: TurnPartUpdate) => {
-      publishPart(turnId, part);
+      /* A part the turn has not had yet goes where the prose has got to — the
+         end of it, for a card a host adds after the answer. One it already has
+         keeps its place: an update is not a new part. See `PartPosition`. */
+      const turn = turnsRef.current.find((t) => t.id === turnId);
+      const known =
+        turn?.parts?.some((p) => p.id === part.id) ||
+        pendingPartsRef.current.get(turnId)?.some((p) => p.id === part.id);
+      const prose = pendingRef.current.get(turnId) ?? turn?.ai ?? "";
+      publishPart(turnId, known || part.at !== undefined ? part : { ...part, at: prose.length });
     },
     [publishPart]
   );
@@ -348,24 +370,34 @@ export function useChatTurns({
     []
   );
 
+  /**
+   * Make sure there is an input to type the next message into. Idempotent: an
+   * empty idle turn already at the end is that input, so a second is never
+   * added — which is what lets this be called both at send and at settle.
+   */
+  const openInput = useCallback(() => {
+    setTurns((current) => {
+      /* An input with something typed into it is still the input. Counting
+         only empty ones put a second composer under the one the reader was
+         already writing the next question in, the moment the answer settled. */
+      if (current.some((t) => (t.state === "idle" || t.state === "typing") && t.ai === "")) {
+        return current;
+      }
+      const next = [...current, emptyTurn()];
+      turnsRef.current = next;
+      return next;
+    });
+  }, []);
+
   const settle = useCallback(
     (id: string, wasEdit: boolean) => {
       setIsStreaming(false);
       abortRef.current = null;
       patchTurn(id, { state: "resting" });
       // An edited turn already has an input beneath it; a fresh answer needs one.
-      if (!wasEdit) {
-        setTurns((current) => {
-          if (current.some((t) => t.state === "idle" && t.ai === "" && t.user === "")) {
-            return current;
-          }
-          const next = [...current, emptyTurn()];
-          turnsRef.current = next;
-          return next;
-        });
-      }
+      if (!wasEdit) openInput();
     },
-    [patchTurn]
+    [patchTurn, openInput]
   );
 
   const reveal = useCallback(
@@ -444,10 +476,17 @@ export function useChatTurns({
         versionIndex: versions.length - 1,
       });
       speak("responding");
+      /* The next input, now rather than after the answer: the reader can start
+         on the next question while this one is being answered. */
+      if (nextTurn === "at-send" && !wasEdit) openInput();
 
       // Held out here so the announcement can read it in `finally`, whether
       // the answer completed, was stopped, or threw partway through.
       let answer = "";
+      /* The parts this answer has had, so the first appearance of each can be
+         told from an update to one already on screen. Only the first says
+         where a part goes; see `PartPosition`. */
+      const placed = new Set<string>();
       try {
         const result = onSendRef.current(message, {
           signal: controller.signal,
@@ -462,7 +501,16 @@ export function useChatTurns({
               answer += chunk;
               publish(id, answer);
             } else {
-              publishPart(id, chunk);
+              /* Stamped here rather than at the flush: a sentence and the card
+                 it introduces can land in the same frame, and by the flush
+                 only the frame's last text is left to measure against. Here
+                 the prose is exactly as long as it was when the part came. */
+              const first = !placed.has(chunk.id);
+              placed.add(chunk.id);
+              publishPart(
+                id,
+                first && chunk.at === undefined ? { ...chunk, at: answer.length } : chunk
+              );
             }
           }
         } else {
@@ -477,7 +525,7 @@ export function useChatTurns({
         speak("answer", answer);
       }
     },
-    [flush, patchTurn, publish, publishPart, reveal, settle, speak]
+    [flush, nextTurn, openInput, patchTurn, publish, publishPart, reveal, settle, speak]
   );
 
   const setDraft = useCallback(
@@ -489,6 +537,11 @@ export function useChatTurns({
 
   const submit = useCallback(
     (id: string, value?: string, attachments?: Attachment[]) => {
+      /* One answer at a time. A second run would take the abort controller
+         away from the first, which would then stream on with no way to stop
+         it. With `"at-send"` there is an input to type into while an answer
+         arrives; what is typed there waits until it has. */
+      if (abortRef.current) return;
       const turn = turnsRef.current.find((t) => t.id === id);
       if (!turn) return;
       const message = (value ?? turn.user).trim();

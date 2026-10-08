@@ -166,6 +166,16 @@ export interface ChatInputProps {
   onEdit?: (value: string) => void;
   onCancelEdit?: () => void;
   isEditing?: boolean;
+  /**
+   * An answer is still arriving somewhere else.
+   *
+   * The composer stays open to type into and closed to send from: Enter does
+   * nothing, and the send glyph is a stop — the one control that means
+   * anything while an answer is in flight — if there is an `onStop`, and
+   * disabled if there is not. For the composer that stays at the bottom while
+   * the answer it asked for is written above it.
+   */
+  busy?: boolean;
   placeholder?: string;
   /**
    * What the "+" opens. Left out, the built-in three — Add, Design,
@@ -180,6 +190,13 @@ export interface ChatInputProps {
 }
 
 /** Bubble spring used when no animationConfig override is supplied. */
+/** The same spring, critically damped: as quick to arrive, and never past. */
+function withoutOvershoot(spring: Transition): Transition {
+  const { stiffness, damping, mass = 1 } = spring as { stiffness?: number; damping?: number; mass?: number };
+  if (stiffness === undefined) return spring;
+  return { ...spring, damping: Math.max(damping ?? 0, 2 * Math.sqrt(stiffness * mass)) };
+}
+
 const defaultBubbleSpring: Transition = {
   type: "spring",
   stiffness: 600,
@@ -240,6 +257,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onEdit,
       onCancelEdit,
       isEditing = false,
+      busy = false,
       /* A default that can ship. It was "Placeholder text...", a stand-in
          nobody replaced, and a default is what every consumer who has not
          thought about it yet gets in production — which is most of them on
@@ -451,8 +469,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const isReadOnly = isGlass;
     const hasContent = value.trim().length > 0 || attached.length > 0;
     const isInputting = state === "typing" || state === "idle";
-    const showSend = isInputting && hasContent;
-    const showStop = state === "responding";
+    const showSend = isInputting && hasContent && !busy;
+    /* Only with somewhere to report to. A stop that stops nothing was drawn on
+       every responding bubble whose host had not wired one, and pressed. */
+    const showStop = !!onStop && (state === "responding" || (busy && isInputting));
+    /* Busy with nothing to stop it with: the send is there and inert, so what
+       was typed is visibly waiting rather than visibly unsendable. */
+    const showHeldSend = busy && isInputting && hasContent && !onStop;
     const isRestingHovered = state === "resting" && hovered;
     const showActions = isRestingHovered;
     const showReadMore = state === "resting" && isOverflowing;
@@ -477,7 +500,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
      * changed it in site settings.
      */
     const showMic = !!onTranscribe && voice.supported && !isEditing;
-    const showInlineGlyph = showSend || showStop;
+    const showInlineGlyph = showSend || showStop || showHeldSend;
 
     const ac = animationConfig;
     const bubbleSpring: Transition = ac
@@ -664,12 +687,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          if (!e.shiftKey && (value.trim().length > 0 || attachedRef.current.length > 0)) {
+          if (e.shiftKey) {
+            if (!insertTextAtCaret("\n")) handleInput();
+          } else if (busy) {
+            // Typed, and waiting. Enter neither sends nor adds a line.
+            return;
+          } else if (value.trim().length > 0 || attachedRef.current.length > 0) {
             onSubmit(value, attachedRef.current);
-          } else if (e.shiftKey && !insertTextAtCaret("\n")) handleInput();
+          }
         }
       },
-      [value, onSubmit, handleInput]
+      [value, onSubmit, handleInput, busy]
     );
 
     useEffect(() => {
@@ -1022,8 +1050,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             visualDuration: ac?.enterButton?.visualDuration ?? 0.18,
                             bounce: ac?.enterButton?.bounce ?? 0.3,
                             opacity: { type: "tween", duration: 0.15 },
-                            width: bubbleSpring,
-                            marginLeft: bubbleSpring
+                            /* The bubble's spring, without its overshoot.
+                               With the text on a line of its own, the group
+                               beside it wraps to a second line at any width
+                               above nothing — and the underdamped spring went
+                               past nothing and back: a margin of −0.33px,
+                               then +0.05px of width. The stop leaving a
+                               settled bubble put the bubble on two lines and
+                               back four times in 40ms, and the whole answer
+                               under it shook by 25px each time. Critically
+                               damped, it reaches nothing once. */
+                            width: withoutOvershoot(bubbleSpring),
+                            marginLeft: withoutOvershoot(bubbleSpring)
                           }
                       }}
                       transition={{
@@ -1040,8 +1078,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         onClick={(e) => {
                           e.stopPropagation();
                           if (showStop) onStop?.();
-                          else onSubmit(value, attached);
+                          else if (!busy) onSubmit(value, attached);
                         }}
+                        disabled={showHeldSend}
                         aria-label={showStop ? text.stop : isEditing ? text.save : text.send}
                         style={{ flexShrink: 0, width: 28 }}
                       />

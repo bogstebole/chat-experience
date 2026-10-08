@@ -179,6 +179,12 @@
 
 /* ── The window ─────────────────────────────────────────────────────────── */
 
+/* Clips what has arrived while the box is still growing to it. */
+.grows {
+  overflow: hidden;
+  min-width: 0;
+}
+
 .preview {
   position: relative;
   box-sizing: border-box;

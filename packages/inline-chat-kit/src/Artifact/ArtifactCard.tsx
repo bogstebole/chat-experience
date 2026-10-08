@@ -1,8 +1,10 @@
 "use client";
 
-import { type HTMLAttributes, type ReactNode } from "react";
+import { type HTMLAttributes, type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { Loader } from "../Loader/Loader";
+import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import styles from "./ArtifactCard.module.css";
 
 /**
@@ -88,17 +90,19 @@ export function ArtifactCard({
   const clipped = content ? clip(content, lines) : null;
 
   const body = (
-    <div className={styles.preview} data-more={clipped?.more || undefined} aria-hidden>
-      {clipped === null ? (
-        <div className={styles.waiting}>
-          <Loader />
-        </div>
-      ) : kind === "code" ? (
-        <CodeBlock code={clipped.shown} lang={lang} label={false} copyable={false} />
-      ) : (
-        <p className={styles.text}>{clipped.shown}</p>
-      )}
-    </div>
+    <Grows>
+      <div className={styles.preview} data-more={clipped?.more || undefined} aria-hidden>
+        {clipped === null ? (
+          <div className={styles.waiting}>
+            <Loader />
+          </div>
+        ) : kind === "code" ? (
+          <CodeBlock code={clipped.shown} lang={lang} label={false} copyable={false} />
+        ) : (
+          <p className={styles.text}>{clipped.shown}</p>
+        )}
+      </div>
+    </Grows>
   );
 
   /* A ground under the card after all, and the reason is the answer's column
@@ -161,5 +165,37 @@ function Head({
       </span>
       {meta && <span className={styles.meta}>{meta}</span>}
     </span>
+  );
+}
+
+/**
+ * The preview's height, travelled rather than jumped.
+ *
+ * The card arrives before what is in it — a title and a loader — and the
+ * content lands a moment later, eight lines of it at once. Drawn as it came,
+ * the card went from 97px to 236px in one frame and the answer under it was
+ * thrown down by the difference, a second after the reasoning above had
+ * folded it up: measured as the answer shaking, and felt that way. The box
+ * now follows its content's height instead of being it.
+ */
+function Grows({ children }: { children: ReactNode }) {
+  const inner = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | "auto">("auto");
+  useLayoutEffect(() => {
+    const el = inner.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(() => setHeight(el.offsetHeight));
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+  return (
+    <motion.div
+      className={styles.grows}
+      initial={false}
+      animate={{ height }}
+      transition={{ duration: prefersReducedMotion() ? 0 : 0.22, ease: [0.32, 0.72, 0, 1] }}
+    >
+      <div ref={inner}>{children}</div>
+    </motion.div>
   );
 }

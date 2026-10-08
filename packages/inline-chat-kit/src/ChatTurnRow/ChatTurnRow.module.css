@@ -83,6 +83,13 @@
   margin-top: var(--ick-space-4);
 }
 
+/* The row on its own, after a part rather than under a paragraph. The body's
+   gap already separates it from the card above; its own top margin would put
+   it twice as far from the answer as a row under prose sits. */
+.answer[data-actions-only] > .actions {
+  margin-top: 0;
+}
+
 /* Dragging across the answer with the OS selection still reads as marking it,
    so it is marked in the marker's colour. */
 .answer ::selection {

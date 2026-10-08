@@ -33,6 +33,7 @@ export const INLINE_CHAT_FEATURE_STATUS: InlineChatFeatureStatus = {
     "Reasoning and tools",
     "Sources and citations",
     "Light and dark",
+    "A fixed composer",
   ],
   notWorking: [
     "Real model answers",
@@ -40,7 +41,6 @@ export const INLINE_CHAT_FEATURE_STATUS: InlineChatFeatureStatus = {
   ],
   soon: [
     "Mobile",
-    "A fixed composer",
     "Queue a message",
     "Saved conversations",
   ],

@@ -216,6 +216,7 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `onDraft` | `(id, value) => void` | | |
 | `onSubmit` | `(id, value) => void` | | |
 | `onStop` | `() => void` | | |
+| `busy` | `boolean` | | An answer is arriving elsewhere: the composer offers a stop, not a send |
 | `onEdit` | `(id) => void` | | |
 | `onCancelEdit` | `(id) => void` | | |
 | `onCopy` | `(value) => void` | writes to the clipboard | |
@@ -249,6 +250,53 @@ the right edge of a centred block reads as unrelated to the block.
 Every callback is optional; a row with none of them renders and can be marked.
 The row carries `id="turn-<id>"` so a host can scroll to one, and `aria-busy`
 while its answer is arriving.
+
+### The composer at the bottom
+
+The kit's argument is that the input is the message: it stands at the end of
+the conversation and becomes the bubble where you typed it. Some products want
+the shape every other chat has instead — the box at the bottom, the
+conversation stacking above it. That is one prop, not a second kit:
+
+```tsx
+<ChatExperience onSend={send} composer="docked" />
+```
+
+What changes, and what does not:
+
+- **The box stays at the bottom.** `Conversation` pins its last child there —
+  pushed down by an auto margin while the conversation is shorter than the
+  view, held by `position: sticky` once it is longer. Both put its bottom on
+  the same edge, so nothing moves when the conversation crosses from one to
+  the other.
+- **It still becomes the bubble.** The live input *is* the last turn, as it
+  always was, so the morph is the one the kit already has. What is new is the
+  travel: a fresh composer takes the last place, the sent one is no longer
+  last and no longer sticky, and its `layout` animation carries it up into the
+  conversation where it now belongs.
+- **The next question can be typed while this one is answered.**
+  `useChatTurns` opens the next input at send rather than at settle
+  (`nextTurn: "at-send"`), the composer is `busy` while the answer arrives —
+  Enter does nothing and the send glyph is a stop — and a send while an answer
+  is in flight is refused rather than started on top of it. Queueing it is a
+  separate thing.
+- **A sent message still goes to the top.** The same anchor the inline
+  composer uses: your question is brought to the top of the view and held
+  there while its answer is written underneath. The composer does not move
+  with it — it is `sticky`, so the room the anchor scrolls into passes behind
+  it. The room itself goes *above* the dock rather than below: `sticky` only
+  ever pulls an element up, so room underneath would leave the composer
+  stranded in the middle of the view.
+- **The keyboard is allowed for.** On a phone the software keyboard comes up
+  over the bottom edge; the workspace gives up what `visualViewport` says is
+  covered, so the composer rides on the keyboard's top edge.
+- Everything else is the same: the parts, the pane, the highlighter, editing
+  a sent message in place, `labels`, `surface="panes"`.
+
+With a `chat` of your own, give its hook `nextTurn: "at-send"`. Assembling the
+rows by hand, the same shape is `<Conversation dock>` with the live row last,
+`busy={isStreaming}` on it, and `onStop` on it rather than on the bubble being
+answered.
 
 ### Two rules everything follows
 
@@ -431,6 +479,31 @@ component that owns it.
 `reasoning` and `chain` are the same job at two grains — a block of prose, or
 steps that follow from one another. Sending both for one stretch of thinking
 says it twice.
+
+#### Where a part sits in the prose
+
+The answer is drawn in the order the stream sent it. A part remembers how much
+prose had arrived when it did — `at`, in characters of `ai` — and is drawn at
+that point, so a sentence that introduces a card comes before the card:
+
+```tsx
+yield "I suggest this change:";                                   // prose
+yield { kind: "custom", id: "change", type: "plan-diff", data };  // at: 22
+yield " Tell me if it looks right.";                              // prose, after the card
+```
+
+`useChatTurns` stamps `at` on a part's **first** appearance and nothing moves it
+afterwards: an update to a part is not a new part, and a card a host adds with
+`updatePart` after the answer lands at the end. Give `at` yourself to place a
+part — `at: 0` puts it before all the prose. A part with no `at` sits before the
+prose, which is where every part sat before this existed, so turns built by
+hand look as they always have.
+
+The prose is still one string: `ai` is what Copy copies, what a screen reader
+hears and what a version keeps. Only the drawing is cut, at the points the
+parts arrived — each run is its own block of markdown, and a highlight cannot
+cross a card. The row of actions goes after whatever the answer ends with, so an
+answer made only of parts has one too, without a Copy of nothing.
 
 #### Your own cards: `custom`
 
@@ -951,6 +1024,7 @@ instant the reader scrolls away, with a button offering the way back.
 | `scrollButton` | `boolean` | `true` | The way back |
 | `scrollButtonLabel` | `string` | `"Jump to the latest"` | |
 | `follow` | `boolean` | `true` | `false` makes it a plain scroll container |
+| `dock` | `boolean` | `false` | The last child is pinned to the bottom edge — see [The composer at the bottom](#the-composer-at-the-bottom) |
 | `className` | `string` | | Goes on the root, which is the box you lay out |
 | `viewportClassName` | `string` | | Goes on the element that scrolls — padding belongs here |
 
@@ -1436,16 +1510,45 @@ for that one instance.
 
 ### Turning off what you do not use
 
-`ChatExperience` draws a theme toggle and Share in the header and a "+" menu in
-the composer. A host that has none of those says so:
+Everything here is decided **in code**, not offered in the interface. A
+product either marks passages or it does not, keeps a theme toggle or does
+not; a control for choosing is a question nobody asked.
 
 ```tsx
 <ChatExperience
   onSend={send}
+  composer="docked"              // or "inline", the default
+  highlights={false}             // no marker layer, no highlight menu, no saved ones
+  bookmarks={false}              // marking stays, keeping goes
   headerActions={false}          // or ["theme"], or ["share"]
   composerMenu={false}           // or your own: [{ id, label, icon?, onSelect }]
+  pane="none"                    // draw the artifact pane yourself
+  surface="panes"                // the conversation as a card of its own
+  fill="container"               // as tall as its parent, not the window
 />
 ```
+
+**Embedded, use `fill="container"`.** By default the chat is as tall as the
+window, which is what a page that is nothing but the chat wants. Anywhere
+smaller — a card in a shell, a sidebar, a split — it has to take its parent's
+height instead, or it hangs past the bottom of it: measured in a card inset 12px
+top and bottom, the default overran it by 24px and a docked composer lost half
+of itself to the card's clip. The parent has to have a height to give. The
+software keyboard is then the host's to handle, because the chat no longer
+knows where the window's edge is.
+
+| Prop | Off means |
+| --- | --- |
+| `highlights={false}` | Answers are prose: no marker layer, nothing over the text in the tab order, no highlight menu — and no saved highlights or selection-mode pair, since both are about marking |
+| `bookmarks={false}` | A passage can still be marked and replied to; nothing is kept. Use `onHighlight` to keep them yourself |
+| `onThreadReply` omitted | No threads. A thread is opened from a highlight, so `highlights={false}` takes them too |
+| `headerActions={false}` | No theme toggle, no Share. Your own `actions` are unaffected |
+| `composerMenu={false}` | No "+" in the composer |
+| `selectionToggle` omitted | No marker/precise pair in the header (the default) |
+| `cursor` omitted | No pointer-following cursor (the default) |
+
+Assembling the rows by hand, the same switch is `highlights` on
+`<ChatTurnRow>`, which is `marking` on `<TextHighlighter>`.
 
 The saved highlights button is not one of the header's actions — it appears
 only once there is a highlight, and it is the only way back to them. An entry in

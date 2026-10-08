@@ -44,12 +44,16 @@ export const Interactive: Story = {
 
 const STATES: ChatInputState[] = ["idle", "typing", "responding", "resting"];
 
-/** Every state at once, which is the only way to see them next to each other. */
+/**
+ * Every state at once, which is the only way to see them next to each other.
+ * The fifth is not a state but `busy`: a typing composer while an answer is
+ * arriving somewhere else — open to type into, offering a stop, not a send.
+ */
 export const AllStates: Story = {
   parameters: { layout: "padded" },
   render: () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 32, width: 420 }}>
-      {STATES.map((state) => (
+      {[...STATES, "busy" as const].map((state) => (
         <div key={state}>
           <div
             style={{
@@ -62,7 +66,9 @@ export const AllStates: Story = {
             {state}
           </div>
           <ChatInput
-            state={state}
+            state={state === "busy" ? "typing" : state}
+            busy={state === "busy"}
+            onStop={state === "busy" ? () => {} : undefined}
             value={state === "idle" ? "" : "What is a quark?"}
             placeholder="Ask me anything"
             onChange={() => {}}

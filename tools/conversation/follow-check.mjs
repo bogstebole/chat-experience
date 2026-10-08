@@ -37,7 +37,17 @@ const site = await serveStatic(
 const BASE = site.url;
 const beat = (p, ms) => p.waitForTimeout(ms);
 
-const HEIGHT = Number(process.argv[2] ?? 680);
+const HEIGHT = Number(process.argv.find((a) => /^\d+$/.test(a)) ?? 680);
+/**
+ * The composer at the bottom rather than at the end of the conversation.
+ *
+ * Every assertion below holds in both modes but one: docked, the composer is
+ * *supposed* to be on the bottom edge, so "clear of it" is the wrong question
+ * and "still there" is the right one. Everything else — the anchor, where the
+ * turn rests, that the room is spent — is the same promise, which is the
+ * point of checking it here rather than writing a second script.
+ */
+const DOCKED = process.argv.includes("--docked");
 /**
  * The demo's `anchorOffset`, read off the page rather than restated here.
  *
@@ -71,7 +81,7 @@ const check = (ok, line) => {
 
 const browser = await chromium.launch();
 const page = await (await browser.newContext({ viewport: { width: 1120, height: HEIGHT } })).newPage();
-await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/${DOCKED ? "?composer=docked" : ""}`, { waitUntil: "networkidle" });
 await beat(page, 900);
 await page.getByRole("button", { name: /start experience/i }).click();
 await beat(page, 1500);
@@ -110,7 +120,7 @@ const send = async (text) => {
   await page.keyboard.press("Enter");
 };
 
-console.log(`\n  a ${HEIGHT}px window\n`);
+console.log(`\n  a ${HEIGHT}px window, composer ${DOCKED ? "docked" : "inline"}\n`);
 
 for (const [i, q] of QUESTIONS.entries()) {
   await send(q);
@@ -138,8 +148,12 @@ for (const [i, q] of QUESTIONS.entries()) {
     return { under: Math.round(v.bottom - r.bottom), top: Math.round(r.top - v.top), tall: Math.round(v.height) };
   });
   check(
-    rest.under > 0 && rest.top > 0 && rest.top < rest.tall,
-    `after answer ${i + 1} the composer is in view, ${rest.under}px clear of the bottom edge`
+    DOCKED
+      ? Math.abs(rest.under) <= 8 && rest.top > 0 && rest.top < rest.tall
+      : rest.under > 0 && rest.top > 0 && rest.top < rest.tall,
+    DOCKED
+      ? `after answer ${i + 1} the composer is still on the bottom edge, ${rest.under}px off it`
+      : `after answer ${i + 1} the composer is in view, ${rest.under}px clear of the bottom edge`
   );
   restingPlaces.push(rest.under);
 
