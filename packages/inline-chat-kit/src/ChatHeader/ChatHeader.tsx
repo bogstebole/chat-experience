@@ -395,6 +395,8 @@ function OverflowMenu({
   const [byKeyboard, setByKeyboard] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  /** Whether the menu was open when the last press on the trigger began. */
+  const openAtPress = useRef(false);
   const menuId = useId();
 
   const close = useCallback(
@@ -418,6 +420,29 @@ function OverflowMenu({
     );
     items?.[active]?.focus();
   }, [open, active]);
+
+  /* ── Pressed anywhere else, it goes ─────────────────────────────────────
+     The blur below was the only way out with a pointer, and a blur needs
+     focus to move. On iOS a tap on something that does not take focus — the
+     conversation, the page around the chat — moves nothing, so the menu stayed
+     open over whatever the reader had gone on to touch. Reported from a host
+     that had to close it from outside the kit.
+
+     Capture phase, so a host whose own handler stops the event still closes
+     the menu. The trigger is excluded here because it answers for itself: a
+     press on it is a toggle, and closing on the way down would only have the
+     click open it again. */
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: Event) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      close(false);
+    };
+    document.addEventListener("pointerdown", away, true);
+    return () => document.removeEventListener("pointerdown", away, true);
+  }, [open, close]);
 
   const onKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -461,7 +486,29 @@ function OverflowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
+        /* A second press on the trigger closes the menu, and the click has to
+           know that is what it was. The press moves focus from the menu's item
+           to this button, the menu closes on that blur, and by the time the
+           click arrives the menu is already shut — so the click, toggling,
+           opened it straight back. Measured in Chromium and WebKit, by mouse
+           and by touch: the one control that looks like it closes the menu
+           could not.
+
+           So whether it was open is read where the press begins. Focus is
+           left wherever the browser puts it rather than handed back: handed
+           back by script, WebKit rings the button as though a keyboard had
+           been there. A keyboard click has no pointerdown before it, and its
+           `detail` of 0 says so. */
+        onPointerDown={() => {
+          openAtPress.current = open;
+        }}
         onClick={(event) => {
+          const wasOpen = open || (event.detail > 0 && openAtPress.current);
+          openAtPress.current = false;
+          if (wasOpen) {
+            close(false);
+            return;
+          }
           /* `detail` is the click count, and a click synthesised from Enter or
              Space reports 0. Which makes it the one reliable way to tell how a
              button was pressed from inside its own handler — a keydown
@@ -469,7 +516,7 @@ function OverflowMenu({
              with activation behaviour. */
           setByKeyboard(event.detail === 0);
           setIndex(0);
-          setOpen((v) => !v);
+          setOpen(true);
         }}
       />
       {open && (

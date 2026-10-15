@@ -8,6 +8,21 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.60.0 — 2026-10-15
+
+Reported from a host running the kit in production, each one worked around
+outside the kit there. Each was reproduced here before it was changed.
+
+### Fixed
+
+- **The header's "…" menu closes when "…" is pressed again.** The press
+  moved focus from the menu to the button, the menu closed on that blur, and
+  the click toggled it straight back open. Measured in Chromium and WebKit, by
+  mouse and by touch: it could not be closed that way at all.
+- **And on a press anywhere outside it.** It closed only on a blur, and on iOS
+  a tap on something that takes no focus moves none — so the menu stayed open
+  over whatever was touched next.
+
 ## 0.59.2 — 2026-09-24
 
 ### Fixed

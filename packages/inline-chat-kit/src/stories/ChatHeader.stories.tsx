@@ -231,6 +231,10 @@ export const WithCounts: Story = {
  * the menu; `bookmarks` is pinned and stays. This is the whole reason actions
  * are described rather than handed over as children — the header can only
  * summarise what it can read.
+ *
+ * The menu closes the ways a reader expects it to: Escape, an item, the "…"
+ * pressed again, or a press anywhere outside it — including a tap on iOS on
+ * something that takes no focus, where there is no blur to close on.
  */
 export const Collapsing: Story = {
   render: (args) => (

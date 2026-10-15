@@ -308,6 +308,70 @@ describe("the overflow menu", () => {
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
+  /**
+   * A press the way a browser makes one: down, focus moves unless the
+   * mousedown was prevented, then the click. jsdom moves no focus on its own,
+   * and the fault was entirely in that middle step — so a test that fires a
+   * bare click passes against the broken menu.
+   */
+  const press = (el: HTMLElement) => {
+    fireEvent.pointerDown(el);
+    const down = fireEvent.mouseDown(el);
+    if (down && el.tabIndex >= 0) el.focus();
+    else if (down) (document.activeElement as HTMLElement | null)?.blur();
+    fireEvent.click(el, { detail: 1 });
+  };
+
+  it("closes when its trigger is pressed again", () => {
+    const { trigger } = open();
+    press(trigger);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  /* WebKit does not focus a button it was tapped on, so the menu is still
+     open, unblurred, when the click arrives. */
+  it("closes when pressed again where the press moves no focus", () => {
+    const { trigger } = open();
+    fireEvent.pointerDown(trigger);
+    fireEvent.click(trigger, { detail: 1 });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  /* A press that began on the trigger and never became a click must not
+     swallow the next one — and a keyboard click has no press before it. */
+  it("opens on Enter after a press that went nowhere", () => {
+    render(<ChatHeader title="Chat" actions={ACTIONS} collapseActionsAt={520} />);
+    resizeTo(360);
+    const trigger = screen.getByRole("button", { name: "More actions" });
+    fireEvent.click(trigger, { detail: 1 });
+    fireEvent.pointerDown(trigger);
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+    fireEvent.click(trigger, { detail: 0 });
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
+  /* iOS moves no focus on a tap on something that cannot take it, so there
+     is no blur to close on. Pressing outside has to be enough by itself. */
+  it("closes on a press outside it, without needing a blur", () => {
+    render(
+      <>
+        <ChatHeader title="Chat" actions={ACTIONS} collapseActionsAt={520} />
+        <p>The conversation</p>
+      </>
+    );
+    resizeTo(360);
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    fireEvent.pointerDown(screen.getByText("The conversation"));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  it("stays open for a press on one of its own items", () => {
+    const { menu } = open();
+    fireEvent.pointerDown(within(menu).getByRole("menuitem", { name: "Settings" }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
   /** `menuitem` takes no pressed or checked state; a toggle is a checkbox. */
   it("describes a toggle as a menuitemcheckbox", () => {
     render(
