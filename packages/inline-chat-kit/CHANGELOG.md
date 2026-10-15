@@ -40,8 +40,31 @@ outside the kit there. Each was reproduced here before it was changed.
   back compared against that width, so it never returned: 68px tall, its "+"
   on a line of its own, for the rest of the session.
 
+- **A docked composer no longer jumps on a send.** The fresh composer arrived
+  like any new turn — rising 16px into place — so the box at the bottom went
+  up and back every time a message was sent. It fades in where it is now.
+
 ### Added
 
+- **The classic way, docked, as three props on `ChatExperience`.** Every
+  send moved four things, and none of them could be turned off:
+  - **`anchor="end"`** — a sent message goes on the end of the conversation
+    and the view glides down to it and follows the answer, instead of
+    lifting the message to the top with room held empty under it. Nothing
+    shrinks when a short answer arrives, and a reader who scrolls up while
+    it arrives is left there until they send again. `Conversation` takes it
+    as `anchorAt`.
+  - **`travel={false}`** — the sent message is drawn in its place instead of
+    flying up from the composer while the answer's "…" is already loading
+    above it. `ChatInput` and `ChatTurnRow` take `travel` too.
+  - **`retitle={false}`** — the header keeps the host's `title` instead of
+    taking the first question asked.
+
+  The `Classic` story sets all three, and `npm run classic-check` in the gate
+  measures it in three windows: the composer still, the message where it
+  lands, the title kept, nothing held empty, and a reader who scrolls up left
+  alone. Against the defaults it fails 27 times, which is the point of it.
+- **`ChatTurnRow` takes `entrance`** — `"rise"`, `"fade"` or `"none"`.
 - **`OpensWithTheMessage` story**, and `npm run panel-check` in the gate: a
   card's button opens a side panel and sends from it, the answer is ready at
   once. Four failures against 0.59.2, none now — and a long message is

@@ -281,6 +281,35 @@ export const Embedded: Story = {
   },
 };
 
+/**
+ * Docked, and working the way most chats do.
+ *
+ * `anchor="end"`: a sent message goes on the end of the conversation and the
+ * view follows the answer down, rather than lifting the question to the top
+ * with room held under it. `travel={false}`: the message is drawn in its place
+ * and the box at the bottom simply empties. `retitle={false}`: the header
+ * keeps the host's name for the place instead of taking the first question.
+ * The composer stays where it is through all of it.
+ */
+export const Classic: Story = {
+  render: function Classic(args) {
+    return (
+      <HostShell>
+        <ChatExperience
+          {...args}
+          {...Opening.args}
+          title="Assistant"
+          fill="container"
+          composer="docked"
+          anchor="end"
+          travel={false}
+          retitle={false}
+        />
+      </HostShell>
+    );
+  },
+};
+
 /** A host's shell: its own navigation, and a card inset 12px that clips. */
 function HostShell({ children }: { children: ReactNode }) {
   return (

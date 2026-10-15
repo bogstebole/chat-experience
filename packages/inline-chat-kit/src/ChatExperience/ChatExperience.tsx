@@ -222,6 +222,44 @@ export interface ChatExperienceProps {
   composer?: "inline" | "docked";
 
   /**
+   * Where a sent message is held while its answer is written.
+   *
+   * `"top"` (the default): the message is brought to the top of the view and
+   * held there, with room reserved under it for the answer — so what is on
+   * screen is the question and its answer, not the conversation pushed up
+   * from below. The answer before it leaves the view as the message goes up.
+   *
+   * `"end"`: the way most chats work. The message goes on the end of the
+   * conversation, the view travels down to it, and the answer is followed as
+   * it grows; earlier turns scroll up and away a line at a time. Nothing is
+   * reserved, so nothing is empty under a short answer and nothing shrinks
+   * when it arrives. `anchorOffset` still sets the room under the header.
+   */
+  anchor?: "top" | "end";
+
+  /**
+   * Docked only: whether a sent message travels from the composer to its
+   * place in the conversation.
+   *
+   * On by default — the box you typed into becomes the message and carries
+   * it up. `false`: the message is drawn in its place at once and the box at
+   * the bottom simply empties, the way most chats behave. Inline, the message
+   * is typed where it lands, so there is nothing to travel and this does
+   * nothing.
+   */
+  travel?: boolean;
+
+  /**
+   * Whether the header takes the conversation's first question as its title.
+   *
+   * On by default: someone arriving at a conversation already in progress can
+   * see what it is about. `false` keeps `title` — for a host whose chat is a
+   * named place in its own interface ("Assistant", "Conversation") rather
+   * than a document about one question. Share still offers the question.
+   */
+  retitle?: boolean;
+
+  /**
    * What the chat is as tall as.
    *
    * `"window"` (the default): the whole window, which is what a page that is
@@ -355,6 +393,9 @@ export function ChatExperience({
   pane: paneMode = "inline",
   surface = "flush",
   composer = "inline",
+  anchor = "top",
+  travel = true,
+  retitle = true,
   /* Renamed: `fill` is also the labels helper that fills in `{index}`. */
   fill: fillMode = "window",
   theme: themeProp,
@@ -757,7 +798,7 @@ export function ChatExperience({
         /* The first question, so a reader arriving mid-conversation can see
            what it is about. `truncate` is what makes that safe: a question is
            a sentence, not a label. */
-        title={conversationTitle}
+        title={retitle ? conversationTitle : title}
         backHref={backHref}
         backLabel={backLabel}
         /* The page already has its own gradient doing this job. */
@@ -801,6 +842,7 @@ export function ChatExperience({
       <Conversation
         viewportClassName={`${styles.feed} ick-chat-feed`}
         anchorId={heldAnchor ? `turn-${heldAnchor}` : undefined}
+        anchorAt={anchor}
         dock={docked}
         /* `anchorOffset` has to match the viewport's own `padding-top`, or a
            turn brought to the top lands under the fixed header — so the same
@@ -848,6 +890,12 @@ export function ChatExperience({
                 isActiveInput={live}
                 inputRef={live ? activeInputRef : null}
                 entranceDelay={i === 0 ? feedDelay : 0}
+                /* Docked, the fresh composer is not arriving anywhere: it is
+                   the box at the bottom, there a moment ago. Rising into place
+                   moved it 16px up and back on every send. Not travelling,
+                   it does not fade either — the box just empties. */
+                entrance={docked && live ? (travel ? "fade" : "none") : "rise"}
+                travel={docked ? travel : true}
                 selectionMode={selectionMode}
                 highlights={marking}
                 animationConfig={rowAnimation}

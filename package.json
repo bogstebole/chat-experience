@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "pack:kit": "npm run build:kit && npm pack --workspace packages/inline-chat-kit --pack-destination packages/inline-chat-kit && mv packages/inline-chat-kit/inline-chat-kit-*.tgz packages/inline-chat-kit/inline-chat-kit.tgz",
     "test": "npm run test --workspace packages/inline-chat-kit",
-    "verify": "npm run lint && npm run test && npm run build && npm run build-storybook --workspace packages/inline-chat-kit && npm run visual-qa:self-test && npm run visual-qa && npm run visual-qa:dark && npm run zoom-check && npm run reach-check && npm run follow-check && npm run follow-check:docked && npm run follow-check:tall && npm run silent-check && npm run still-check && npm run panel-check && npm run sheet-check && npm pack --workspace packages/inline-chat-kit --dry-run",
+    "verify": "npm run lint && npm run test && npm run build && npm run build-storybook --workspace packages/inline-chat-kit && npm run visual-qa:self-test && npm run visual-qa && npm run visual-qa:dark && npm run zoom-check && npm run reach-check && npm run follow-check && npm run follow-check:docked && npm run follow-check:tall && npm run silent-check && npm run still-check && npm run panel-check && npm run classic-check && npm run sheet-check && npm pack --workspace packages/inline-chat-kit --dry-run",
     "test:watch": "npm run test:watch --workspace packages/inline-chat-kit",
     "showcase": "node tools/showcase/record.mjs",
     "showcase:questions": "node tools/showcase/questions.mjs",
@@ -32,6 +32,7 @@
     "silent-check": "node tools/conversation/silent-check.mjs",
     "still-check": "node tools/conversation/still-check.mjs",
     "panel-check": "node tools/conversation/panel-check.mjs",
+    "classic-check": "node tools/conversation/classic-check.mjs",
     "sheet-check": "node tools/artifact/sheet-check.mjs",
     "visual-qa:self-test": "node tools/visual-qa/self-test.mjs"
   },
