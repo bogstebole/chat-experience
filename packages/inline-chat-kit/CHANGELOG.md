@@ -27,6 +27,25 @@ outside the kit there. Each was reproduced here before it was changed.
   panel the end of every sent message sat under the panel's edge. A host
   with a reset saw nothing change; one without now gets the column the
   playground was designed with — 720px overall, not 784.
+- **A short message is no longer faded, with "Read more" on it, because of
+  the width it had for one frame.** Whether a sent message is long was
+  measured once, a frame after the answer settled. In a host's side panel
+  still opening under an instant answer, that frame had the bubble 27px wide:
+  a one-line message measured 269px tall and stayed faded at 201×25. It is
+  measured again whenever it reflows, and the fade and the button go when it
+  is no longer long. A resting message mounted from history is measured too,
+  so it is clamped the same way a freshly sent one is.
+- **An empty composer is never two lines.** Mounted a few pixels wide in the
+  same panel, the fresh composer decided it needed a second line, and the way
+  back compared against that width, so it never returned: 68px tall, its "+"
+  on a line of its own, for the rest of the session.
+
+### Added
+
+- **`OpensWithTheMessage` story**, and `npm run panel-check` in the gate: a
+  card's button opens a side panel and sends from it, the answer is ready at
+  once. Four failures against 0.59.2, none now — and a long message is
+  checked to still be clamped.
 
 ## 0.59.2 — 2026-09-24
 

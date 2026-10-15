@@ -279,7 +279,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const editorRef = useRef<HTMLDivElement>(null);
     const editorWrapRef = useRef<HTMLDivElement>(null);
     const editorClipRef = useRef<HTMLDivElement>(null);
-    const textScrollHeightRef = useRef(0);
+    /** The sent message's whole height, which is what "Read more" opens to. */
+    const [fullHeight, setFullHeight] = useState(0);
     const internalChangeRef = useRef(false);
     const measureSpanRef = useRef<HTMLSpanElement>(null);
     const [hovered, setHovered] = useState(false);
@@ -570,6 +571,23 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       if (el) singleLineHeight.current = el.scrollHeight || Math.round(12 * 1.45);
     }, []);
 
+    /* And read again when an empty composer changes width. Read only at
+       mount, it was the placeholder's height at that width — and in a panel
+       still opening, that was the placeholder wrapped onto several lines,
+       taken for one line from then on. */
+    useEffect(() => {
+      const el = editorRef.current;
+      if (!el || isGlass) return;
+      let width = el.clientWidth;
+      const watch = new ResizeObserver(() => {
+        if (el.clientWidth === width) return;
+        width = el.clientWidth;
+        if (!el.textContent && el.scrollHeight) singleLineHeight.current = el.scrollHeight;
+      });
+      watch.observe(el);
+      return () => watch.disconnect();
+    }, [isGlass]);
+
     useEffect(() => {
       const el = editorRef.current;
       const span = measureSpanRef.current;
@@ -582,16 +600,26 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         const isMultiline = (wrap?.scrollHeight ?? 0) > singleLineHeight.current + 2;
 
         const ac = animCfgRef.current;
+        /* Nothing typed is never two lines, whatever the box measures.
+
+           A composer mounted inside a panel that was still opening measured
+           itself a few pixels wide: no room at all, so even an empty one
+           "needed" a second line — and the way back out compares against the
+           width it had then, so it never came back. Measured: the fresh
+           composer under a sent message stayed 68px tall, its "+" on a line of
+           its own, for the rest of the session. The placeholder is not text,
+           and cleared, a composer is one line again. */
+        const empty = value.length === 0;
         if (!expandedModeRef.current) {
           compactAvailWidthRef.current = contentW;
-          if (isMultiline || textW >= compactAvailWidthRef.current * (ac?.wrap?.nearThreshold ?? 0.92)) {
+          if (!empty && (isMultiline || textW >= compactAvailWidthRef.current * (ac?.wrap?.nearThreshold ?? 0.92))) {
             expandedModeRef.current = true;
             pendingExpansion.current = true;
             setShowButtons(false);
           }
         } else {
           const wrappedNow = isMultiline || textW >= contentW - 2;
-          if (!wrappedNow && textW < compactAvailWidthRef.current * (ac?.wrap?.exitThreshold ?? 0.75)) {
+          if (empty || (!wrappedNow && textW < compactAvailWidthRef.current * (ac?.wrap?.exitThreshold ?? 0.75))) {
             expandedModeRef.current = false;
             pendingExpansion.current = false;
             setExpandedMode(false);
@@ -639,19 +667,42 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       }
     }, [isGlass, isOverflowing, isExpanded]);
 
+    /* ── Long or not, decided at the width it ends up at ──────────────────
+       It was decided once, a frame after the answer settled, and never again
+       — so whatever width the bubble had in that frame stood for good. A host
+       whose side panel was still opening when an instant answer settled caught
+       it 27px wide: a one-line message measured 269px tall, so it stayed
+       faded, with "Read more" on it, at 201×25. Watched instead, the bubble is
+       measured again whenever it reflows — a window resized, a pane opened
+       beside it — and the fade and the button go when it is no longer long.
+
+       Every resting bubble, not only one answered while this was mounted: a
+       conversation brought back from history is the same message, and is
+       clamped the same way. */
+    useEffect(() => {
+      if (state !== "resting") return;
+      const wrap = editorWrapRef.current;
+      const editor = editorRef.current;
+      if (!wrap || !editor) return;
+      const measure = () => {
+        setFullHeight(wrap.scrollHeight);
+        setIsOverflowing(wrap.scrollHeight > 241);
+        updateFade();
+      };
+      const frame = requestAnimationFrame(measure);
+      // The text, not the box: the box is clamped to 240 and stops changing.
+      const watch = new ResizeObserver(measure);
+      watch.observe(editor);
+      return () => {
+        cancelAnimationFrame(frame);
+        watch.disconnect();
+      };
+    }, [state, updateFade]);
+
     useEffect(() => {
       const prev = prevState.current;
       prevState.current = state;
       if (prev !== "responding" || state !== "resting") return;
-
-      requestAnimationFrame(() => {
-        const wrap = editorWrapRef.current;
-        if (wrap) {
-          textScrollHeightRef.current = wrap.scrollHeight;
-          setIsOverflowing(wrap.scrollHeight > 241);
-          updateFade();
-        }
-      });
 
       setPulsing(true);
       const ac = animCfgRef.current;
@@ -810,7 +861,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""}`}
                   layout="position"
                   animate={isGlass && isOverflowing
-                    ? { maxHeight: isExpanded ? textScrollHeightRef.current : 240 }
+                    ? { maxHeight: isExpanded ? fullHeight : 240 }
                     : undefined
                   }
                   // The text has to travel on the same spring as the box around
