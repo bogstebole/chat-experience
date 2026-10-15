@@ -848,6 +848,13 @@ export function ChatExperience({
                 isActiveInput={live}
                 inputRef={live ? activeInputRef : null}
                 entranceDelay={i === 0 ? feedDelay : 0}
+                /* Docked, the fresh composer is not arriving anywhere: it is
+                   the box at the bottom, there a moment ago. Rising into place
+                   moved it 16px up and back on every send. */
+                entrance={docked && live ? "fade" : "rise"}
+                /* Docked, the question travels up from the bottom edge: it
+                   lands first, and its answer starts under it. */
+                answerAfterTravel={docked}
                 selectionMode={selectionMode}
                 highlights={marking}
                 animationConfig={rowAnimation}

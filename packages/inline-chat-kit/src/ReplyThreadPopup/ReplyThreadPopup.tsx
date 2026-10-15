@@ -315,6 +315,7 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
           <div className={styles.headerActions}>
             <Button
               variant="primary"
+              data-ick-role="thread-save"
               icon={<Save size={16} />}
               onClick={onSave}
             >
@@ -322,6 +323,7 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
             </Button>
             <Button
               variant="secondary"
+              data-ick-role="thread-close"
               icon={<X size={16} />}
               onClick={onClose}
               aria-label={text.close}

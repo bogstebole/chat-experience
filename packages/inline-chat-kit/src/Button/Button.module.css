@@ -18,12 +18,12 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: var(--ick-radius-pill);
+  border-radius: var(--ick-btn-radius);
   cursor: pointer;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
   font-family: var(--ick-font-sans);
-  font-weight: var(--ick-weight-medium);
+  font-weight: var(--ick-btn-weight);
   color: var(--ick-ink);
   transition:
     box-shadow var(--ick-duration-fast) ease,
@@ -110,20 +110,26 @@
   text-overflow: ellipsis;
 }
 
+/* ── Variants ───────────────────────────────────────────────────────────────
+   Every value below is a `--ick-btn-*` token, so a host's own primary is a
+   handful of declarations in its own stylesheet rather than a fight with
+   these selectors. See the Buttons section of `tokens.css`. */
+
 /* ── Primary: glassy at rest ────────────────────────────────────────────── */
 
 .primary {
-  background: var(--ick-glass-gradient);
-  box-shadow: var(--ick-shadow-1);
-  outline: 0.5px solid var(--ick-border-bright);
+  background: var(--ick-btn-primary-bg);
+  color: var(--ick-btn-primary-ink);
+  box-shadow: var(--ick-btn-primary-shadow);
+  outline: 0.5px solid var(--ick-btn-primary-border);
 }
 
 .primary:hover:not(:disabled) {
-  box-shadow: var(--ick-shadow-2);
+  box-shadow: var(--ick-btn-primary-shadow-hover);
 }
 
 .primary:active:not(:disabled) {
-  box-shadow: var(--ick-shadow-inset);
+  box-shadow: var(--ick-btn-primary-shadow-press);
   transform: scale(0.94);
   transition-duration: var(--ick-duration-press);
 }
@@ -131,20 +137,21 @@
 /* ── Secondary: naked until touched ─────────────────────────────────────── */
 
 .secondary {
-  background: transparent;
+  background: var(--ick-btn-secondary-bg);
+  color: var(--ick-btn-secondary-ink);
   outline: 0.5px solid transparent;
 }
 
 .secondary:hover:not(:disabled) {
-  background: var(--ick-glass-gradient);
-  box-shadow: var(--ick-shadow-2);
-  outline-color: var(--ick-border-bright);
+  background: var(--ick-btn-secondary-bg-hover);
+  box-shadow: var(--ick-btn-secondary-shadow-hover);
+  outline-color: var(--ick-btn-secondary-border-hover);
 }
 
 .secondary:active:not(:disabled) {
-  background: var(--ick-glass-gradient);
-  box-shadow: var(--ick-shadow-inset);
-  outline-color: var(--ick-border-bright);
+  background: var(--ick-btn-secondary-bg-hover);
+  box-shadow: var(--ick-btn-secondary-shadow-press);
+  outline-color: var(--ick-btn-secondary-border-hover);
   transform: scale(0.94);
   transition-duration: var(--ick-duration-press);
 }
@@ -160,17 +167,18 @@
    colour being wrong, so the gap is filled rather than worked around again. */
 
 .outline {
-  background: transparent;
-  outline: 1px solid var(--ick-border);
+  background: var(--ick-btn-outline-bg);
+  color: var(--ick-btn-outline-ink);
+  outline: 1px solid var(--ick-btn-outline-border);
 }
 
 .outline:hover:not(:disabled) {
-  background: var(--ick-surface-hover);
-  outline-color: var(--ick-ink-faint);
+  background: var(--ick-btn-outline-bg-hover);
+  outline-color: var(--ick-btn-outline-border-hover);
 }
 
 .outline:active:not(:disabled) {
-  background: var(--ick-surface-press);
+  background: var(--ick-btn-outline-bg-press);
   transform: scale(0.94);
   transition-duration: var(--ick-duration-press);
 }
@@ -179,17 +187,17 @@
 
 .ghost {
   background: transparent;
-  color: var(--ick-ink-soft);
+  color: var(--ick-btn-ghost-ink);
 }
 
 .ghost:hover:not(:disabled) {
-  background: var(--ick-surface-active);
-  color: var(--ick-ink);
+  background: var(--ick-btn-ghost-bg-hover);
+  color: var(--ick-btn-ghost-ink-hover);
 }
 
 .ghost:active:not(:disabled) {
-  background: var(--ick-surface-press);
-  color: var(--ick-ink);
+  background: var(--ick-btn-ghost-bg-press);
+  color: var(--ick-btn-ghost-ink-hover);
   transform: scale(0.92);
   transition-duration: var(--ick-duration-press);
 }
@@ -202,8 +210,8 @@
 .glass {
   font-family: var(--ick-font-mono);
   letter-spacing: -0.01em;
-  color: var(--ick-ink-glass);
-  background: var(--ick-glass-fill);
+  color: var(--ick-btn-glass-ink);
+  background: var(--ick-btn-glass-bg);
   box-shadow: var(--ick-shadow-glass);
   backdrop-filter: blur(var(--ick-glass-blur));
   -webkit-backdrop-filter: blur(var(--ick-glass-blur));
@@ -258,8 +266,8 @@
 }
 
 .glass:hover:not(:disabled) {
-  background: var(--ick-glass-fill-hover);
-  color: var(--ick-ink-glass-strong);
+  background: var(--ick-btn-glass-bg-hover);
+  color: var(--ick-btn-glass-ink-hover);
   box-shadow: var(--ick-shadow-glass-hover);
 }
 
@@ -281,7 +289,7 @@
 }
 
 .glass:active:not(:disabled) {
-  background: var(--ick-glass-fill-press);
+  background: var(--ick-btn-glass-bg-press);
   box-shadow: var(--ick-shadow-glass-press);
   transform: translateY(1px) scale(0.99);
   transition-duration: 80ms;

@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
-import { Button, type ButtonSize } from "../Button/Button";
+import { Button, type ButtonSize, type ButtonVariant } from "../Button/Button";
 import { useLabels } from "../labels/labels";
 import styles from "./ChatHeader.module.css";
 
@@ -53,6 +53,12 @@ export interface ChatHeaderAction {
   disabled?: boolean;
   /** Stays visible when the rest collapse. For the one action that matters. */
   pinned?: boolean;
+  /**
+   * How it is drawn while it is in the header. `"secondary"` — naked until
+   * touched — by default; `"primary"` for the one a host wants to stand out.
+   * Folded into the menu, every action is a menu item and this does not apply.
+   */
+  variant?: Exclude<ButtonVariant, "glass">;
 }
 
 export interface ChatHeaderProps
@@ -269,12 +275,13 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
     >
       <div className={styles.start}>
         {backHref ? (
-          <a href={backHref} className={styles.back} aria-label={backLabel}>
+          <a href={backHref} className={styles.back} aria-label={backLabel} data-ick-role="back">
             <ArrowLeft size={ICON_SIZE[size]} aria-hidden />
           </a>
         ) : onBack ? (
           <Button
             variant="secondary"
+            data-ick-role="back"
             size={BUTTON_SIZE[size]}
             icon={<ArrowLeft size={ICON_SIZE[size]} aria-hidden />}
             aria-label={backLabel}
@@ -332,7 +339,14 @@ function HeaderAction({ action, size }: { action: ChatHeaderAction; size: ChatHe
 
   if (action.href) {
     return (
-      <a href={action.href} className={styles.back} aria-label={name} title={action.label}>
+      <a
+        href={action.href}
+        className={styles.back}
+        aria-label={name}
+        title={action.label}
+        data-ick-role="header-action"
+        data-ick-action={action.id}
+      >
         {action.icon}
         {badge}
       </a>
@@ -342,7 +356,9 @@ function HeaderAction({ action, size }: { action: ChatHeaderAction; size: ChatHe
   return (
     <span className={styles.actionWrap}>
       <Button
-        variant="secondary"
+        variant={action.variant ?? "secondary"}
+        data-ick-role="header-action"
+        data-ick-action={action.id}
         size={BUTTON_SIZE[size]}
         icon={action.icon}
         aria-label={name}
@@ -395,6 +411,8 @@ function OverflowMenu({
   const [byKeyboard, setByKeyboard] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  /** Whether the menu was open when the last press on the trigger began. */
+  const openAtPress = useRef(false);
   const menuId = useId();
 
   const close = useCallback(
@@ -418,6 +436,29 @@ function OverflowMenu({
     );
     items?.[active]?.focus();
   }, [open, active]);
+
+  /* ── Pressed anywhere else, it goes ─────────────────────────────────────
+     The blur below was the only way out with a pointer, and a blur needs
+     focus to move. On iOS a tap on something that does not take focus — the
+     conversation, the page around the chat — moves nothing, so the menu stayed
+     open over whatever the reader had gone on to touch. Reported from a host
+     that had to close it from outside the kit.
+
+     Capture phase, so a host whose own handler stops the event still closes
+     the menu. The trigger is excluded here because it answers for itself: a
+     press on it is a toggle, and closing on the way down would only have the
+     click open it again. */
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: Event) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      close(false);
+    };
+    document.addEventListener("pointerdown", away, true);
+    return () => document.removeEventListener("pointerdown", away, true);
+  }, [open, close]);
 
   const onKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -455,13 +496,36 @@ function OverflowMenu({
       <Button
         ref={triggerRef}
         variant="secondary"
+        data-ick-role="header-more"
         size={BUTTON_SIZE[size]}
         icon={<MoreHorizontal size={ICON_SIZE[size]} aria-hidden />}
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
+        /* A second press on the trigger closes the menu, and the click has to
+           know that is what it was. The press moves focus from the menu's item
+           to this button, the menu closes on that blur, and by the time the
+           click arrives the menu is already shut — so the click, toggling,
+           opened it straight back. Measured in Chromium and WebKit, by mouse
+           and by touch: the one control that looks like it closes the menu
+           could not.
+
+           So whether it was open is read where the press begins. Focus is
+           left wherever the browser puts it rather than handed back: handed
+           back by script, WebKit rings the button as though a keyboard had
+           been there. A keyboard click has no pointerdown before it, and its
+           `detail` of 0 says so. */
+        onPointerDown={() => {
+          openAtPress.current = open;
+        }}
         onClick={(event) => {
+          const wasOpen = open || (event.detail > 0 && openAtPress.current);
+          openAtPress.current = false;
+          if (wasOpen) {
+            close(false);
+            return;
+          }
           /* `detail` is the click count, and a click synthesised from Enter or
              Space reports 0. Which makes it the one reliable way to tell how a
              button was pressed from inside its own handler — a keydown
@@ -469,7 +533,7 @@ function OverflowMenu({
              with activation behaviour. */
           setByKeyboard(event.detail === 0);
           setIndex(0);
-          setOpen((v) => !v);
+          setOpen(true);
         }}
       />
       {open && (
@@ -500,6 +564,8 @@ function OverflowMenu({
               aria-checked={action.active}
               tabIndex={active === i ? 0 : -1}
               className={styles.menuItem}
+              data-ick-role="header-menu-item"
+              data-ick-action={action.id}
               disabled={action.disabled}
               onClick={() => {
                 action.onClick?.();

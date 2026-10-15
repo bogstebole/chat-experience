@@ -149,7 +149,7 @@ function ActiveBody({
       <QuestionShell
         {...shell}
         footer={
-          <Button variant="secondary" size="m" disabled={!complete} onClick={commit}>
+          <Button variant="secondary" size="m" data-ick-role="question-next" disabled={!complete} onClick={commit}>
             {labels.next}
           </Button>
         }
@@ -210,6 +210,7 @@ function ActiveBody({
       {...shell}
       footer={
         <Button
+          data-ick-role="question-next"
           variant="secondary"
           size="m"
           disabled={!question.allowEmpty && empty}

@@ -8,6 +8,80 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.60.0 — 2026-10-15
+
+Reported from a host running the kit in production, each one worked around
+outside the kit there. Each was reproduced here before it was changed.
+
+### Fixed
+
+- **The header's "…" menu closes when "…" is pressed again.** The press
+  moved focus from the menu to the button, the menu closed on that blur, and
+  the click toggled it straight back open. Measured in Chromium and WebKit, by
+  mouse and by touch: it could not be closed that way at all.
+- **And on a press anywhere outside it.** It closed only on a blur, and on iOS
+  a tap on something that takes no focus moves none — so the menu stayed open
+  over whatever was touched next.
+- **`ChatExperience` fits its container on a page with no `box-sizing`
+  reset.** It was `width: 100%` plus 64px of padding, so in a 400px side
+  panel the end of every sent message sat under the panel's edge. A host
+  with a reset saw nothing change; one without now gets the column the
+  playground was designed with — 720px overall, not 784.
+- **A short message is no longer faded, with "Read more" on it, because of
+  the width it had for one frame.** Whether a sent message is long was
+  measured once, a frame after the answer settled. In a host's side panel
+  still opening under an instant answer, that frame had the bubble 27px wide:
+  a one-line message measured 269px tall and stayed faded at 201×25. It is
+  measured again whenever it reflows, and the fade and the button go when it
+  is no longer long. A resting message mounted from history is measured too,
+  so it is clamped the same way a freshly sent one is.
+- **An empty composer is never two lines.** Mounted a few pixels wide in the
+  same panel, the fresh composer decided it needed a second line, and the way
+  back compared against that width, so it never returned: 68px tall, its "+"
+  on a line of its own, for the rest of the session.
+- **A docked composer no longer jumps on a send.** The fresh composer arrived
+  like any new turn — rising 16px into place — so the box at the bottom went
+  up and back every time a message was sent (840 → 824 → 840). It fades in
+  where it is now. A sent message still goes to the top, as before.
+- **Docked, the question lands before its answer starts.** The answer's "…"
+  appeared at the top the moment a message was sent, while the message was
+  still travelling up from the composer — two things moving in opposite
+  directions, an answer begun above a question that had not arrived. The
+  answer now waits, still taking its room so the anchor does not move, until
+  the bubble has stopped: about 0.45s, measured at 1120×700 and 390×844, and
+  for a model that is silent first. Read off the screen rather than from the
+  spring, which rests at 1.2s, and including the scroll that carries a second
+  message most of its way. `ChatTurnRow` takes it as `answerAfterTravel`;
+  `ChatInput` reports it through `onLanded`.
+
+### Added
+
+- **`ChatTurnRow` takes `entrance`** — `"rise"` or `"fade"`.
+- **A host's own buttons.** A host matched the kit's buttons by hashed class
+  name (`[class*='ick-primary-']`), by position (the button in the
+  composer's surface is the send) and by `aria-label` (the stop is the one
+  labelled "Zaustavi"), so translating a label changed its colour.
+  - Every variant is painted from `--ick-btn-<variant>-*` tokens, with
+    `--ick-btn-radius` and `--ick-btn-weight`. The defaults are the values
+    the variants had: compared in both themes, at rest and on hover, 60
+    samples, no difference.
+  - Every button the kit draws says what it is for in `data-ick-role` and
+    what it is in `data-ick-variant`. `send`, `stop` and `save` are three
+    roles, not one button with three labels. A test fails on a `<Button>`
+    drawn without a role.
+  - `ChatHeaderAction` takes `variant`, so one action can be the host's
+    primary.
+  - `HostButtons` story; the tokens and the roles are listed in
+    `theming.md`.
+
+  Not a `components={{ Button }}` slot, though that was asked for: the kit's
+  buttons carry the composer's morphing glyph and its layout animation, and
+  a host component would have to take all of it on to stand in for one.
+- **`OpensWithTheMessage` story**, and `npm run panel-check` in the gate: a
+  card's button opens a side panel and sends from it, the answer is ready at
+  once. Four failures against 0.59.2, none now — and a long message is
+  checked to still be clamped.
+
 ## 0.59.2 — 2026-09-24
 
 ### Fixed

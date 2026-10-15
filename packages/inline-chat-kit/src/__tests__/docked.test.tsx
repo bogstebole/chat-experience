@@ -3,6 +3,7 @@ import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { ChatExperience } from "../ChatExperience/ChatExperience";
 import { ChatInput } from "../ChatInput/ChatInput";
+import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
 import { Conversation } from "../Conversation/Conversation";
 import { useChatTurns, type SendHandler } from "../useChatTurns/useChatTurns";
 
@@ -243,5 +244,27 @@ describe("ChatExperience with a docked composer", () => {
     const { container } = render(<ChatExperience onSend={() => ""} headerActions={false} />);
     expect(container.querySelector("[data-composer]")).toBeNull();
     expect(container.querySelector("[data-dock]")).toBeNull();
+  });
+});
+
+/* The question lands first, then its answer starts under it. The travel itself
+   is measured in a browser; what jsdom can hold is the order: hidden at the
+   send, and let go once the bubble has stopped — at once, here, where
+   nothing moves. */
+describe("the answer waits for the question to land", () => {
+  it("is held at the send and let go once the bubble is still", async () => {
+    const turn = { id: "t", user: "Pitanje", ai: "", state: "typing" as const, parts: [] };
+    const { container, rerender } = render(<ChatTurnRow turn={turn} answerAfterTravel />);
+    rerender(<ChatTurnRow turn={{ ...turn, state: "responding" }} answerAfterTravel />);
+    const body = () => container.querySelector("[data-held]");
+    expect(body(), "held the moment it is sent").not.toBeNull();
+    await waitFor(() => expect(body()).toBeNull(), { timeout: 1000 });
+  });
+
+  it("is never held when nothing asks for it", () => {
+    const turn = { id: "t", user: "Pitanje", ai: "", state: "typing" as const, parts: [] };
+    const { container, rerender } = render(<ChatTurnRow turn={turn} />);
+    rerender(<ChatTurnRow turn={{ ...turn, state: "responding" }} />);
+    expect(container.querySelector("[data-held]")).toBeNull();
   });
 });

@@ -1,9 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { createRef } from "react";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "../Button/Button";
 import GlassButton from "../GlassButton/GlassButton";
+import { ChatInput } from "../ChatInput/ChatInput";
 
 describe("Button", () => {
   it("renders as a real button so it is reachable by keyboard", () => {
@@ -121,5 +124,95 @@ describe("GlassButton", () => {
     render(<GlassButton loading>Continue</GlassButton>);
     const button = screen.getByRole("button", { name: /continue/i });
     expect(button).toHaveAttribute("aria-busy", "true");
+  });
+});
+
+/**
+ * A host's buttons, not the kit's.
+ *
+ * Reported from a host that matched the kit's buttons by hashed class name
+ * (`[class*='ick-primary-']`), by position (the button inside the composer's
+ * surface is the send), and by `aria-label` (the stop is the one whose label
+ * is "Zaustavi") — so translating a label changed its colour. Each button now
+ * says what it is and what it is for, and its paint is tokens.
+ */
+describe("what a button says about itself", () => {
+  const SRC = join(import.meta.dirname, "..");
+  const sources = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        return ["stories", "__tests__", "demo", "examples"].includes(entry.name) ? [] : sources(path);
+      }
+      return entry.name.endsWith(".tsx") ? [path] : [];
+    });
+
+  /* Every `<Button` the kit draws, by the props written on it — up to the
+     closing `>` of its opening tag, which is the first one not inside braces. */
+  const openingTags = (text: string): string[] => {
+    const tags: string[] = [];
+    for (const match of text.matchAll(/<Button(?=[\s/>])/g)) {
+      const at = match.index;
+      let depth = 0;
+      let end = at;
+      for (; end < text.length; end++) {
+        const c = text[end];
+        if (c === "{") depth++;
+        else if (c === "}") depth--;
+        else if (c === ">" && depth === 0) break;
+      }
+      tags.push(text.slice(at, end));
+    }
+    return tags;
+  };
+
+  it("names its role, on every button the kit draws", () => {
+    const missing = sources(SRC)
+      .filter((path) => !/Button\/Button\.tsx$|GlassButton\.tsx$/.test(path))
+      .flatMap((path) =>
+        openingTags(readFileSync(path, "utf8"))
+          .filter((tag) => !tag.includes("data-ick-role"))
+          .map((tag) => `${path.slice(SRC.length + 1)}: ${tag.replace(/\s+/g, " ").slice(0, 80)}`)
+      );
+    expect(missing, `no data-ick-role on:\n${missing.join("\n")}`).toEqual([]);
+  });
+
+  it("names its variant", () => {
+    render(<Button variant="outline">Later</Button>);
+    expect(screen.getByRole("button", { name: "Later" })).toHaveAttribute("data-ick-variant", "outline");
+  });
+
+  /* "Send" and "Stop" were one button with one look, and a host could tell
+     them apart only by the words on them. */
+  it("tells a send from a stop", () => {
+    const props = { onChange: () => {}, onSubmit: () => {}, onStop: () => {} };
+    const { rerender } = render(<ChatInput state="typing" value="Hi" {...props} />);
+    expect(screen.getByRole("button", { name: /send/i })).toHaveAttribute("data-ick-role", "send");
+    rerender(<ChatInput state="responding" value="Hi" {...props} />);
+    expect(screen.getByRole("button", { name: /stop/i })).toHaveAttribute("data-ick-role", "stop");
+  });
+
+  it("paints every variant from its own tokens", () => {
+    const css = readFileSync(join(SRC, "Button", "Button.module.css"), "utf8");
+    const tokens = readFileSync(join(SRC, "styles", "tokens.css"), "utf8");
+    for (const variant of ["primary", "secondary", "outline", "ghost", "glass"]) {
+      /* The button's own states, not its pseudo-elements: the glass rim and
+         edge drawn with ::before and ::after are glass tokens. */
+      const rules = [...css.matchAll(new RegExp(`\\.${variant}((?::[^{]*)?)\\s*\\{([^}]*)\\}`, "g"))]
+        .filter((m) => !m[1].includes("::"))
+        .map((m) => m[2])
+        .join("\n");
+      /* What a variant is painted with — its fill and its ink. The glass
+         shadows and rim are the shared glass tokens, which is their own tier. */
+      const paint = [...rules.matchAll(/(?:^|\n)\s*(background|color):\s*([^;]+);/g)];
+      expect(paint.length, `${variant} paints something`).toBeGreaterThan(0);
+      for (const [, property, value] of paint) {
+        if (value.trim() === "transparent") continue;
+        expect(value, `${variant} ${property}`).toMatch(new RegExp(`var\\(--ick-btn-${variant}-`));
+      }
+      for (const used of rules.match(/--ick-btn-[a-z-]+/g) ?? []) {
+        expect(tokens, `${used} is declared`).toContain(`${used}:`);
+      }
+    }
   });
 });

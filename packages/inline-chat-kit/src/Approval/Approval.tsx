@@ -141,6 +141,7 @@ export function Approval({
           <div className={styles.actions}>
             {offers("deny") && (
               <Button
+                data-ick-role="approval-deny"
                 variant="ghost"
                 size="m"
                 className={styles.deny}
@@ -150,12 +151,12 @@ export function Approval({
               </Button>
             )}
             {offers("always") && (
-              <Button variant="outline" size="m" onClick={() => onDecide?.("always")}>
+              <Button variant="outline" size="m" data-ick-role="approval-always" onClick={() => onDecide?.("always")}>
                 {label.always}
               </Button>
             )}
             {offers("once") && (
-              <Button variant="primary" size="m" onClick={() => onDecide?.("once")}>
+              <Button variant="primary" size="m" data-ick-role="approval-once" onClick={() => onDecide?.("once")}>
                 {label.once}
               </Button>
             )}

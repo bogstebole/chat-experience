@@ -479,6 +479,60 @@
       0 3px 4px 0 rgb(var(--ick-glass-shade-rgb) / 0.04),
       0 1px 2px 0 rgb(var(--ick-glass-shade-rgb) / 0.06);
 
+    /* ═══ Buttons ═══════════════════════════════════════════════════════════
+       Component tier, one set per variant: every button the kit draws reads
+       these, so a host's "primary" is set here once rather than matched by a
+       hashed class name. Every button also says what it is for —
+       `data-ick-role="send"`, `"stop"`, `"suggestion"`, `"header-action"` —
+       so one role can be given its own values by setting these on
+       `[data-ick-role="send"]`.
+
+       None of them is derived from another: a token substituted where it is
+       declared would keep the root's value under a host's scoped override,
+       and a primary set to blue would turn glass on hover. A state that does
+       not change a property by default does not have a token for it, and
+       keeps whatever the resting one is. Heights are `--ick-control-*`. */
+    --ick-btn-radius: var(--ick-radius-pill);
+    --ick-btn-weight: var(--ick-weight-medium);
+
+    /* Glassy at rest; the shadow is what moves. */
+    --ick-btn-primary-bg: var(--ick-glass-gradient);
+    --ick-btn-primary-ink: var(--ick-ink);
+    --ick-btn-primary-border: var(--ick-border-bright);
+    --ick-btn-primary-shadow: var(--ick-shadow-1);
+    --ick-btn-primary-shadow-hover: var(--ick-shadow-2);
+    --ick-btn-primary-shadow-press: var(--ick-shadow-inset);
+
+    /* Naked until touched. */
+    --ick-btn-secondary-bg: transparent;
+    --ick-btn-secondary-ink: var(--ick-ink);
+    --ick-btn-secondary-bg-hover: var(--ick-glass-gradient);
+    --ick-btn-secondary-border-hover: var(--ick-border-bright);
+    --ick-btn-secondary-shadow-hover: var(--ick-shadow-2);
+    --ick-btn-secondary-shadow-press: var(--ick-shadow-inset);
+
+    /* An edge at rest. */
+    --ick-btn-outline-bg: transparent;
+    --ick-btn-outline-ink: var(--ick-ink);
+    --ick-btn-outline-border: var(--ick-border);
+    --ick-btn-outline-bg-hover: var(--ick-surface-hover);
+    --ick-btn-outline-border-hover: var(--ick-ink-faint);
+    --ick-btn-outline-bg-press: var(--ick-surface-press);
+
+    /* Flat. */
+    --ick-btn-ghost-ink: var(--ick-ink-soft);
+    --ick-btn-ghost-ink-hover: var(--ick-ink);
+    --ick-btn-ghost-bg-hover: var(--ick-surface-active);
+    --ick-btn-ghost-bg-press: var(--ick-surface-press);
+
+    /* The concave glass. Its rim and its thirteen shadows are the glass
+       tokens above, shared with everything else made of it. */
+    --ick-btn-glass-bg: var(--ick-glass-fill);
+    --ick-btn-glass-ink: var(--ick-ink-glass);
+    --ick-btn-glass-bg-hover: var(--ick-glass-fill-hover);
+    --ick-btn-glass-ink-hover: var(--ick-ink-glass-strong);
+    --ick-btn-glass-bg-press: var(--ick-glass-fill-press);
+
     /* ═══ Header ════════════════════════════════════════════════════════════
        Component tier. The three heights are the sizes; everything else is
        what a brand would reach for first. */

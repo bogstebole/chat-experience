@@ -142,6 +142,7 @@ export function Attachments({
               <span className={styles.remove}>
                 <Button
                   variant="glass"
+                  data-ick-role="remove-attachment"
                   size="s"
                   onClick={() => onRemove(file.id)}
                   /* In the composer this sits on the highlighter's surface,

@@ -150,6 +150,7 @@ export function AddCardsOverlay({
             >
               <Button
                 variant="ghost"
+                data-ick-role="add-close"
                 icon={<X size={14} aria-hidden />}
                 onClick={(e) => {
                   e.stopPropagation();

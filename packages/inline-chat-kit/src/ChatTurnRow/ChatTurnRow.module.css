@@ -32,6 +32,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--ick-space-7);
+  transition: opacity var(--ick-duration-base) var(--ick-ease);
+}
+
+/* Waiting for the question above it to land. Still laid out, so the room the
+   view is anchored against is the same before and after; only not seen. */
+.body[data-held] {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
 }
 
 /* A host's own card. Nothing but the room: what it looks like is the host's,

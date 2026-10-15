@@ -57,6 +57,7 @@ export function HoverActionsRow({
             >
               <Button
                 variant="ghost"
+                data-ick-role="read-more"
                 icon={isExpanded ? text.readLess : text.readMore}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -79,7 +80,15 @@ export function HoverActionsRow({
                 exit: {},
               }}
             >
-              <Button variant="ghost" icon={icon} onClick={onClick} aria-label={label} title={label} />
+              <Button
+                variant="ghost"
+                data-ick-role="message-action"
+                data-ick-action={id}
+                icon={icon}
+                onClick={onClick}
+                aria-label={label}
+                title={label}
+              />
             </motion.div>
           ))}
         </motion.div>

@@ -92,6 +92,8 @@ export function AnswerActions({
       {text.trim() && (
         <Button
           variant="ghost"
+          data-ick-role="answer-action"
+          data-ick-action="copy"
           icon={copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
           onClick={copy}
           aria-label={copied ? label.copied : label.copy}
@@ -102,6 +104,8 @@ export function AnswerActions({
       {onRegenerate && (
         <Button
           variant="ghost"
+          data-ick-role="answer-action"
+          data-ick-action="regenerate"
           icon={<RotateCcw size={14} aria-hidden />}
           onClick={onRegenerate}
           disabled={busy}
@@ -115,6 +119,8 @@ export function AnswerActions({
         <>
           <Button
             variant="ghost"
+          data-ick-role="answer-action"
+          data-ick-action="up"
             icon={<ThumbsUp size={14} aria-hidden />}
             onClick={() => vote("up")}
             aria-pressed={feedback === "up"}
@@ -123,6 +129,8 @@ export function AnswerActions({
           />
           <Button
             variant="ghost"
+          data-ick-role="answer-action"
+          data-ick-action="down"
             icon={<ThumbsDown size={14} aria-hidden />}
             onClick={() => vote("down")}
             aria-pressed={feedback === "down"}

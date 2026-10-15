@@ -151,6 +151,7 @@ export function ArtifactPane({
         {onToggleExpanded && !modal && (
           <Button
             variant="ghost"
+            data-ick-role="pane-expand"
             size="s"
             icon={
               expanded ? <Minimize2 size={15} aria-hidden /> : <Maximize2 size={15} aria-hidden />
@@ -163,6 +164,7 @@ export function ArtifactPane({
         {onClose && (
           <Button
             variant="ghost"
+            data-ick-role="pane-close"
             size="s"
             icon={<X size={15} aria-hidden />}
             aria-label={closeLabel}

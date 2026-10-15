@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type R
 import { ChatExperience, type ChatExperienceProps } from "../ChatExperience/ChatExperience";
 import { useChatTurns, type SendHandler, type UseChatTurnsResult } from "../useChatTurns/useChatTurns";
 import { ArtifactPane } from "../Artifact/ArtifactPane";
+import { Button } from "../Button/Button";
 import type { Decision } from "../Approval/Approval";
 import type { PartWriter } from "../ChatExperience/ChatExperience";
 import { hostRenderer, serbianApi, serbianLabels } from "./hostCards";
@@ -243,7 +244,8 @@ export const Stripped: Story = {
  * the answer being written, and the box is always there — the next question
  * can be typed while this one is answered, and the send waits. Sent, the
  * message still becomes its bubble: the same element travels up into the
- * conversation and a fresh composer takes its place.
+ * conversation and a fresh composer takes its place. The answer starts once
+ * the question has landed at the top, not while it is still on its way.
  */
 export const Docked: Story = {
   args: {
@@ -413,3 +415,68 @@ function StoreChat({ store, ...args }: { store: ChatStore } & ChatExperienceProp
     />
   );
 }
+
+/**
+ * A host's side panel that opens with the message: a card's button opens the
+ * assistant and sends from it, and the answer is the host's own, ready at
+ * once — so the answer settles while the panel is still opening.
+ *
+ * Measured in that shape, every width the kit read in those frames stuck: the
+ * one-line message came out faded, with "Read more" on it, and the fresh
+ * composer under it stayed on two lines. Both are measured again as they
+ * reflow now. `npm run panel-check` presses the button.
+ */
+export const OpensWithTheMessage: Story = {
+  render: function OpensWithTheMessage(args) {
+    const chat = useChatTurns({
+      onSend: () => "Noted. We will look at the change and come back to you.",
+      nextTurn: "at-send",
+      /* The host's own answer is there at once; a typewriter would give the
+         panel time to finish opening first. */
+      revealSpeed: 1e6,
+      sentencePause: 0,
+    });
+    const [open, setOpen] = useState(false);
+    const live = chat.turns[chat.turns.length - 1];
+    return (
+      <div style={{ display: "flex", height: "100vh", background: "var(--ick-ground)" }}>
+        <main style={{ flex: 1, minWidth: 0, padding: 24 }}>
+          <div
+            style={{
+              maxWidth: 360,
+              padding: 16,
+              borderRadius: 16,
+              background: "var(--ick-card)",
+              color: "var(--ick-ink)",
+            }}
+          >
+            <p style={{ margin: "0 0 12px" }}>Visit on Thursday, 10:00</p>
+            <Button
+              variant="outline"
+              size="m"
+              onClick={() => {
+                setOpen(true);
+                chat.submit(live.id, "Something changed on this card.");
+              }}
+            >
+              Report a change
+            </Button>
+          </div>
+        </main>
+        <aside
+          aria-label="Assistant"
+          style={{
+            width: open ? 400 : 44,
+            transition: "width 400ms ease",
+            flexShrink: 0,
+            height: "100%",
+            overflow: "hidden",
+            background: "var(--ick-page)",
+          }}
+        >
+          <ChatExperience {...args} chat={chat} onSend={undefined} title="Assistant" fill="container" composer="docked" />
+        </aside>
+      </div>
+    );
+  },
+};
