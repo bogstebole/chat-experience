@@ -913,6 +913,8 @@ export function TextHighlighter({
               <Button
                 variant="primary"
                 role="menuitem"
+                data-ick-role="highlight-action"
+                data-ick-action="reply"
                 tabIndex={menuIndex === 0 ? 0 : -1}
                 icon={<MessageCircle size={14} />}
                 onClick={(e) => {
@@ -933,6 +935,8 @@ export function TextHighlighter({
               <Button
                 variant="primary"
                 role="menuitem"
+                data-ick-role="highlight-action"
+                data-ick-action="remove"
                 tabIndex={menuIndex === 1 ? 0 : -1}
                 icon={<Trash2 size={14} />}
                 onClick={(e) => {

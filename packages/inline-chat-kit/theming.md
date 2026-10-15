@@ -245,6 +245,75 @@ paper and one acid yellow. Six tokens turn that into a palette:
 The markdown gaps are in `em` rather than pixels, so they scale with whatever
 size the answer is set at instead of drifting away from it.
 
+## Buttons
+
+Every button the kit draws is one of five variants, and each variant is painted
+from its own `--ick-btn-<variant>-*` tokens — so a host's primary is set once,
+in its own stylesheet, rather than matched by a hashed class name:
+
+```css
+:root {
+  --ick-btn-radius: 10px;
+  --ick-btn-primary-bg: #1d4ed8;
+  --ick-btn-primary-ink: #fff;
+  --ick-btn-primary-border: transparent;
+  --ick-btn-primary-shadow: none;
+  --ick-btn-primary-shadow-hover: 0 2px 6px rgb(29 78 216 / 0.35);
+  --ick-btn-primary-shadow-press: none;
+}
+```
+
+| Variant | Tokens |
+| --- | --- |
+| `primary` | `-bg` `-ink` `-border` `-shadow` `-shadow-hover` `-shadow-press` |
+| `secondary` | `-bg` `-ink` `-bg-hover` `-border-hover` `-shadow-hover` `-shadow-press` |
+| `outline` | `-bg` `-ink` `-border` `-bg-hover` `-border-hover` `-bg-press` |
+| `ghost` | `-ink` `-ink-hover` `-bg-hover` `-bg-press` |
+| `glass` | `-bg` `-ink` `-bg-hover` `-ink-hover` `-bg-press` — its rim and shadows are the glass tokens |
+
+A state that does not change a property by default has no token for it, and
+keeps the resting value: set `--ick-btn-primary-bg` and the hover is that
+colour too, rather than turning back into glass.
+
+**Every button also says what it is for**, in `data-ick-role`, and what it is
+in `data-ick-variant`. Set the same tokens on a role and only that role
+changes:
+
+```css
+[data-ick-role="stop"] { --ick-btn-primary-bg: #dc2626; }
+```
+
+| Role | Where |
+| --- | --- |
+| `send`, `stop`, `save` | The composer's glyph — three roles, not one button with three labels |
+| `add`, `dictate`, `cancel-edit`, `add-close` | The composer's other controls |
+| `read-more`, `message-action` | On a sent message (`data-ick-action`: `copy`, `edit`) |
+| `answer-action` | Under an answer (`data-ick-action`: `copy`, `regenerate`, `up`, `down`) |
+| `suggestion` | The openers in an empty conversation |
+| `back`, `header-action`, `header-more`, `header-menu-item` | The header; an action carries its `id` as `data-ick-action` |
+| `approval-once`, `approval-always`, `approval-deny` | An approval |
+| `question-next` | A question card |
+| `highlight-action` | The highlight menu (`data-ick-action`: `reply`, `remove`) |
+| `thread-save`, `thread-close` | A thread |
+| `pane-expand`, `pane-close` | The artifact pane |
+| `remove-attachment` | An attachment's X |
+
+A header action can be drawn as a primary with `variant: "primary"` on it.
+
+**Bigger buttons on a phone.** Heights are `--ick-control-xs` … `-xl`. On a
+coarse pointer the kit already raises them a step and gives every control an
+invisible 44px hit area, so a 38px header button already answers to a 44px
+thumb. A product that wants the buttons themselves drawn at 44 says so:
+
+```css
+@media (pointer: coarse) {
+  :root { --ick-control-m: 44px; }
+}
+```
+
+The composer's own three controls are 28px in a row whose layout is animated,
+and are not sized from these yet.
+
 ## Motion
 
 `--ick-ease`, `--ick-ease-overshoot`, and the `--ick-duration-*` scale. The kit

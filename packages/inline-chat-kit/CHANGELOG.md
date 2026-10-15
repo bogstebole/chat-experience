@@ -65,6 +65,26 @@ outside the kit there. Each was reproduced here before it was changed.
   lands, the title kept, nothing held empty, and a reader who scrolls up left
   alone. Against the defaults it fails 27 times, which is the point of it.
 - **`ChatTurnRow` takes `entrance`** — `"rise"`, `"fade"` or `"none"`.
+- **A host's own buttons.** A host matched the kit's buttons by hashed class
+  name (`[class*='ick-primary-']`), by position (the button in the
+  composer's surface is the send) and by `aria-label` (the stop is the one
+  labelled "Zaustavi"), so translating a label changed its colour.
+  - Every variant is painted from `--ick-btn-<variant>-*` tokens, with
+    `--ick-btn-radius` and `--ick-btn-weight`. The defaults are the values
+    the variants had: compared in both themes, at rest and on hover, 60
+    samples, no difference.
+  - Every button the kit draws says what it is for in `data-ick-role` and
+    what it is in `data-ick-variant`. `send`, `stop` and `save` are three
+    roles, not one button with three labels. A test fails on a `<Button>`
+    drawn without a role.
+  - `ChatHeaderAction` takes `variant`, so one action can be the host's
+    primary.
+  - `HostButtons` story; the tokens and the roles are listed in
+    `theming.md`.
+
+  Not a `components={{ Button }}` slot, though that was asked for: the kit's
+  buttons carry the composer's morphing glyph and its layout animation, and
+  a host component would have to take all of it on to stand in for one.
 - **`OpensWithTheMessage` story**, and `npm run panel-check` in the gate: a
   card's button opens a side panel and sends from it, the answer is ready at
   once. Four failures against 0.59.2, none now — and a long message is

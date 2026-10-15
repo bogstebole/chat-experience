@@ -59,7 +59,13 @@ export function EmptyState({
                until it is hovered, which for an opener means it reads as a
                line of bold text rather than as something to press — and an
                opener nobody recognises as pressable is one nobody presses. */
-            <Button key={text} variant="primary" size="m" onClick={() => onSuggestion?.(text)}>
+            <Button
+              key={text}
+              variant="primary"
+              size="m"
+              data-ick-role="suggestion"
+              onClick={() => onSuggestion?.(text)}
+            >
               {text}
             </Button>
           ))}

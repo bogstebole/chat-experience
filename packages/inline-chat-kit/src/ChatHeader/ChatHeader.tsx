@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
-import { Button, type ButtonSize } from "../Button/Button";
+import { Button, type ButtonSize, type ButtonVariant } from "../Button/Button";
 import { useLabels } from "../labels/labels";
 import styles from "./ChatHeader.module.css";
 
@@ -53,6 +53,12 @@ export interface ChatHeaderAction {
   disabled?: boolean;
   /** Stays visible when the rest collapse. For the one action that matters. */
   pinned?: boolean;
+  /**
+   * How it is drawn while it is in the header. `"secondary"` — naked until
+   * touched — by default; `"primary"` for the one a host wants to stand out.
+   * Folded into the menu, every action is a menu item and this does not apply.
+   */
+  variant?: Exclude<ButtonVariant, "glass">;
 }
 
 export interface ChatHeaderProps
@@ -269,12 +275,13 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
     >
       <div className={styles.start}>
         {backHref ? (
-          <a href={backHref} className={styles.back} aria-label={backLabel}>
+          <a href={backHref} className={styles.back} aria-label={backLabel} data-ick-role="back">
             <ArrowLeft size={ICON_SIZE[size]} aria-hidden />
           </a>
         ) : onBack ? (
           <Button
             variant="secondary"
+            data-ick-role="back"
             size={BUTTON_SIZE[size]}
             icon={<ArrowLeft size={ICON_SIZE[size]} aria-hidden />}
             aria-label={backLabel}
@@ -332,7 +339,14 @@ function HeaderAction({ action, size }: { action: ChatHeaderAction; size: ChatHe
 
   if (action.href) {
     return (
-      <a href={action.href} className={styles.back} aria-label={name} title={action.label}>
+      <a
+        href={action.href}
+        className={styles.back}
+        aria-label={name}
+        title={action.label}
+        data-ick-role="header-action"
+        data-ick-action={action.id}
+      >
         {action.icon}
         {badge}
       </a>
@@ -342,7 +356,9 @@ function HeaderAction({ action, size }: { action: ChatHeaderAction; size: ChatHe
   return (
     <span className={styles.actionWrap}>
       <Button
-        variant="secondary"
+        variant={action.variant ?? "secondary"}
+        data-ick-role="header-action"
+        data-ick-action={action.id}
         size={BUTTON_SIZE[size]}
         icon={action.icon}
         aria-label={name}
@@ -480,6 +496,7 @@ function OverflowMenu({
       <Button
         ref={triggerRef}
         variant="secondary"
+        data-ick-role="header-more"
         size={BUTTON_SIZE[size]}
         icon={<MoreHorizontal size={ICON_SIZE[size]} aria-hidden />}
         aria-label={label}
@@ -547,6 +564,8 @@ function OverflowMenu({
               aria-checked={action.active}
               tabIndex={active === i ? 0 : -1}
               className={styles.menuItem}
+              data-ick-role="header-menu-item"
+              data-ick-action={action.id}
               disabled={action.disabled}
               onClick={() => {
                 action.onClick?.();

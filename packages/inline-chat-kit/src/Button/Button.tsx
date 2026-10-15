@@ -76,6 +76,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       /* Stated either way rather than only when true: "not busy" is a fact
          worth having, and it is the contract the glass button already had. */
       aria-busy={loading}
+      /* Which variant this is, where a host's selector can reach it — the
+         class names are hashed. What it is *for* is `data-ick-role`, set by
+         whoever draws it. */
+      data-ick-variant={variant}
       {...rest}
     >
       {icon && <span className={styles.icon}>{icon}</span>}

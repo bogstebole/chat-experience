@@ -1425,7 +1425,9 @@ handful of things you can do to the whole thread.
 | `landmark` | `boolean` | `true` | `false` inside a panel, where `banner` would be a lie |
 | `children` | `ReactNode` | | Anything the kit should not manage. Never collapses |
 
-Each action is `{ id, label, icon, onClick?, href?, count?, active?, disabled?, pinned? }`.
+Each action is `{ id, label, icon, onClick?, href?, count?, active?, disabled?, pinned?, variant? }`.
+`variant` is how one action stands out — `"primary"` for the host's own — and
+only applies while it is in the header rather than folded into the menu.
 `label` is required because an icon has no name of its own, and `count` is
 folded into that name — the badge is decorative, so a reader who cannot see it
 still hears "Saved highlights, 3".

@@ -468,3 +468,23 @@ describe("the materials, read out of the stylesheet", () => {
     expect(rule).toContain("backdrop-filter");
   });
 });
+
+describe("a host's own primary", () => {
+  it("draws an action in the variant it asks for, and secondary otherwise", () => {
+    render(
+      <ChatHeader
+        title="Chat"
+        collapseActionsAt={false}
+        actions={[
+          { id: "new", label: "New conversation", icon, variant: "primary" },
+          { id: "share", label: "Share", icon },
+        ]}
+      />
+    );
+    const primary = screen.getByRole("button", { name: "New conversation" });
+    expect(primary).toHaveAttribute("data-ick-variant", "primary");
+    expect(primary).toHaveAttribute("data-ick-role", "header-action");
+    expect(primary).toHaveAttribute("data-ick-action", "new");
+    expect(screen.getByRole("button", { name: "Share" })).toHaveAttribute("data-ick-variant", "secondary");
+  });
+});

@@ -956,6 +956,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     >
                       <Button
                         variant="ghost"
+                        data-ick-role="dictate"
                         data-voice={voice.state}
                         icon={
                           <>
@@ -1067,6 +1068,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                           >
                             <Button
                               variant="ghost"
+                              data-ick-role="cancel-edit"
                               icon={<X size={14} aria-hidden />}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1088,6 +1090,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                           >
                             <Button
                               variant="ghost"
+                              data-ick-role="add"
                               icon={<Plus size={14} aria-hidden />}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1143,6 +1146,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     >
                       <Button
                         variant="primary"
+                        /* Two roles, not one button with two looks: a host
+                           can draw the stop apart from the send. */
+                        data-ick-role={showStop ? "stop" : isEditing ? "save" : "send"}
                         icon={<MorphGlyph mode={showStop ? "stop" : isEditing ? "check" : "send"} />}
                         onClick={(e) => {
                           e.stopPropagation();
