@@ -89,21 +89,3 @@ describe("the composer's menu", () => {
     expect(click).toHaveBeenCalled();
   });
 });
-
-describe("the header's title", () => {
-  const empty = { title: "Kako mogu da pomognem?", suggestions: ["Šta me čeka danas?"] };
-
-  it("becomes the first question asked, by default", async () => {
-    render(<ChatExperience onSend={send} title="Asistent" empty={empty} />);
-    fireEvent.click(screen.getByRole("button", { name: "Šta me čeka danas?" }));
-    expect(await screen.findByRole("heading", { level: 2, name: "Šta me čeka danas?" })).toBeInTheDocument();
-  });
-
-  /* A host whose chat is a named place in its own interface keeps the name. */
-  it("stays the host's with retitle={false}", async () => {
-    render(<ChatExperience onSend={send} title="Asistent" empty={empty} retitle={false} />);
-    fireEvent.click(screen.getByRole("button", { name: "Šta me čeka danas?" }));
-    await screen.findByText("Одговор.", undefined, { timeout: 3000 });
-    expect(screen.getByRole("heading", { level: 2, name: "Asistent" })).toBeInTheDocument();
-  });
-});

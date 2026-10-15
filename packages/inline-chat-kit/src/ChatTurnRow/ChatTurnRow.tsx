@@ -50,23 +50,16 @@ export interface ChatTurnRowProps {
   /** Stagger for the entrance, in seconds. */
   entranceDelay?: number;
   /**
-   * How the row arrives.
+   * How the row arrives. `"rise"` (the default): it fades in from a little
+   * above its place, which is how a new turn reads as arriving. `"fade"`: in
+   * place, opacity only.
    *
-   * `"rise"` (the default): it fades in from a little above its place, which
-   * is how a new turn reads as arriving in a conversation. `"fade"`: in place,
-   * opacity only. `"none"`: it is simply there.
-   *
-   * A composer docked at the bottom edge is the reason for the other two. It
-   * is not arriving anywhere — it is the box the reader types into, and it was
-   * there a moment ago — so rising into place read as the input jumping 16px
-   * up and back on every send.
+   * A composer docked at the bottom edge is what the second is for. It is not
+   * arriving anywhere — it is the box the reader types into, there a moment
+   * ago — so rising into place read as the input jumping 16px up and back on
+   * every send.
    */
-  entrance?: "rise" | "fade" | "none";
-  /**
-   * Whether the sent message travels to its place in the conversation. See
-   * `ChatInput`'s `travel`.
-   */
-  travel?: boolean;
+  entrance?: "rise" | "fade";
   /** Passed through to the highlighter over the answer. */
   selectionMode?: "marker" | "precise";
   /**
@@ -284,7 +277,6 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onArtifactChange,
   entranceDelay = 0,
   entrance = "rise",
-  travel = true,
   selectionMode = "marker",
   highlights = true,
   questionAlign = "end",
@@ -315,7 +307,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   // fade stays: without it a turn would appear with no transition at all,
   // which reads as a glitch rather than as calm.
   const still = prefersReducedMotion();
-  const offset = still || entrance !== "rise" ? 0 : -16;
+  const offset = still || entrance === "fade" ? 0 : -16;
   // A turn a host built by hand may not have any.
   const parts = turn.parts ?? [];
   const cited = parts.find((part) => part.kind === "sources")?.sources;
@@ -514,7 +506,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
          washed-out composer reads as one you are not allowed to use. */
       data-active-input={isActiveInput || undefined}
       aria-busy={turn.state === "responding" || undefined}
-      initial={entrance === "none" ? false : { opacity: 0, y: offset }}
+      initial={{ opacity: 0, y: offset }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: offset }}
       transition={{ duration: still ? 0.15 : 0.4, ease: [0.22, 1, 0.36, 1], delay: entranceDelay }}
@@ -542,7 +534,6 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           // An edit, rather than a first draft: there is already an answer
           // under this input, so the buttons say save and cancel.
           isEditing={turn.ai.length > 0 && turn.state === "typing"}
-          travel={travel}
           animationConfig={animationConfig}
           placeholder={placeholder}
           menu={composerMenu}

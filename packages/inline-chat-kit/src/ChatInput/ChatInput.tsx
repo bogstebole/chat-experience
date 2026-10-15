@@ -185,16 +185,6 @@ export interface ChatInputProps {
   menu?: ComposerMenuItem[] | false;
   /** Every word the composer says. See `ChatLabels`. */
   labels?: Partial<ChatInputLabels>;
-  /**
-   * Whether a sent message travels to where it lands.
-   *
-   * On by default: sent, the bubble carries its spring from where it was
-   * typed to its place in the conversation — the input becoming the message
-   * is the argument this kit makes. `false` draws it where it lands, at once,
-   * and leaves the rest of the morph alone: a docked chat that should work the
-   * way most chats do, where the box empties and the message is simply there.
-   */
-  travel?: boolean;
   animationConfig?: InlineAnimConfig;
   style?: React.CSSProperties;
 }
@@ -276,7 +266,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       placeholder: placeholderProp,
       menu,
       labels,
-      travel = true,
       animationConfig,
       style,
     },
@@ -518,11 +507,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const bubbleSpring: Transition = ac
       ? { type: "spring", stiffness: ac.bubble.stiffness, damping: ac.bubble.damping, mass: ac.bubble.mass }
       : defaultBubbleSpring;
-    /* Not travelling, a sent bubble's layout moves are drawn where they land.
-       Only its *layout* — the box and the text riding it — and only once it is
-       sent: typing a second line still grows the composer on its spring. */
-    const landing: Transition | undefined =
-      !travel && isGlass ? { layout: { duration: 0 } } : undefined;
 
     const updateFade = useCallback(() => {
       const wrap = editorWrapRef.current;
@@ -805,7 +789,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             transition={{
               ...bubbleSpring,
               filter: { type: "tween", duration: 0.2, ease: "easeOut" },
-              ...landing,
             }}
           >
               <motion.div
@@ -890,7 +873,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   transition={{
                     ...bubbleSpring,
                     maxHeight: { type: "spring", stiffness: 300, damping: 35, mass: 0.8 },
-                    ...landing,
                   }}
                 >
                   <div

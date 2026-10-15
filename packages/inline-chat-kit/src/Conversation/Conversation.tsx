@@ -42,21 +42,6 @@ export interface ConversationProps extends HTMLAttributes<HTMLDivElement> {
    */
   anchorId?: string;
   /**
-   * Which edge of the anchor is held.
-   *
-   * `"top"` (the default): the anchored turn is brought to the top and held
-   * there, with room reserved under it so it can get there — a reader sees
-   * their question and its answer and nothing else.
-   *
-   * `"end"`: the way most chats work. The anchored turn's **end** is kept in
-   * view, so the conversation runs on from the bottom as the answer is written
-   * and everything before it scrolls up and away. Nothing is reserved, because
-   * nothing has to be lifted. The move to a new anchor is still a journey
-   * rather than a jump, and the view still lets go of the end the moment the
-   * reader scrolls away from it.
-   */
-  anchorAt?: "top" | "end";
-  /**
    * How far below the top edge the anchor sits, in pixels. A fixed header over
    * the conversation is the usual reason — without it the turn is scrolled
    * neatly underneath and out of sight.
@@ -241,7 +226,6 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
   {
     children,
     anchorId,
-    anchorAt = "top",
     anchorOffset = 0,
     endOffset = 0,
     tail = "auto",
@@ -388,18 +372,6 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        jammed against it. */
     const floor = Math.max(0, endOffset - pad);
 
-    /* Held by its end, nothing is lifted, so there is nothing to make room
-       for — and the end of the scroll is the end of the content. A room left
-       over from a host switching modes goes with it. */
-    if (anchorAt === "end") {
-      sized.current = false;
-      if (dock && roomApplied.current !== 0) {
-        roomApplied.current = 0;
-        inner.style.setProperty("--ick-conversation-room", "0px");
-      }
-      return write(inner, applied, floor);
-    }
-
     const last = inner.lastElementChild as HTMLElement | null;
     const held = held0(view, anchors.current);
     sized.current = !!last && !!held;
@@ -465,7 +437,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        before the layout is final is raised by the next one rather than
        standing for the whole answer. */
     write(inner, applied, anchorId ? Math.max(needed, applied.current) : needed);
-  }, [tail, anchorOffset, endOffset, anchorId, anchorAt, dock]);
+  }, [tail, anchorOffset, endOffset, anchorId, dock]);
 
   /**
    * Where the view wants to be: the anchor's top — unless holding it there
@@ -505,13 +477,11 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
            composer before the view moved for it. */
         const cover = dock && content.current ? coverOf(content.current) : 0;
         const end = from + el.offsetHeight + cover - view.clientHeight;
-        /* Held by its end, the top has no say: a short turn sits wherever
-           the conversation above it leaves it, as the last thing in view. */
-        return Math.max(0, Math.min(anchorAt === "end" ? end : Math.max(top, end), max));
+        return Math.max(0, Math.min(Math.max(top, end), max));
       }
     }
     return endOfContent();
-  }, [anchorId, anchorAt, anchorOffset, endOfContent, dock]);
+  }, [anchorId, anchorOffset, endOfContent, dock]);
 
   /**
    * True while the way-back button's own scroll is still travelling.
@@ -574,15 +544,8 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        turn to hold, so it is honoured whether or not the reader was following
        the end. Gating it on `following` meant that pressing anything — which
        now releases the follow, see below — also stopped the next message from
-       being taken to the top.
-
-       Held by its end, an anchor is the end being followed, and a reader who
-       scrolls up during an answer to read what came before has left it — as
-       in any chat that works this way. Only a new one, a message just sent,
-       takes them back down. */
-    const freshAnchor = !!anchorId && anchorId !== moved.current;
-    const holds = !!anchorId && (anchorAt !== "end" || freshAnchor);
-    if (!follow || (!following && !holds)) return;
+       being taken to the top. */
+    if (!follow || (!following && !anchorId)) return;
     const view = viewport.current;
     const inner = content.current;
     if (!view || !inner || typeof ResizeObserver === "undefined") return;
@@ -623,19 +586,6 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
           return;
         }
         travelling.current = 0;
-      }
-
-      /* ── Held by its end: glided ───────────────────────────────────────
-         Following the end means every growth moves the view, and at the top
-         nothing did — a card arriving under the question grew into room that
-         was already there. Snapped, the same card moved the whole
-         conversation 188px in a frame. A glide reads the target again every
-         frame, so it keeps up with an answer still arriving and cannot pass
-         it; what it costs is the last line catching up over a few frames
-         rather than one. */
-      if (anchorAt === "end" && anchorId && !prefersReducedMotion()) {
-        if (Math.abs(want - view.scrollTop) > 1) glide();
-        return;
       }
 
       /* ── Growth while nothing is being written ────────────────────────
@@ -734,12 +684,9 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
        So the one move that is a **decision** gets to be a journey, and the
        thousand that are tracking stay instant. Only when it is far enough to
        be worth watching — a short hop reads better snapped than eased. */
-    const fresh = freshAnchor;
+    const fresh = anchorId !== null && anchorId !== undefined && anchorId !== moved.current;
     if (anchorId) moved.current = anchorId;
-    /* Held by its end, the journey is the same glide as everything after it,
-       which `keepUp` starts — one motion from the send to the answer's last
-       line, rather than a smooth scroll aimed at where the end was. */
-    if (fresh && anchorAt !== "end" && !prefersReducedMotion() && Math.abs(view.scrollTop - target()) > threshold) {
+    if (fresh && !prefersReducedMotion() && Math.abs(view.scrollTop - target()) > threshold) {
       travelling.current = performance.now() + TRAVEL;
       view.scrollTo({ top: target(), behavior: "smooth" });
     } else {
@@ -757,7 +704,7 @@ export const Conversation = forwardRef<HTMLDivElement, ConversationProps>(functi
     /* `anchorId` is in here on purpose: a new turn means the view moves to it,
        and it moves whether or not the reader had scrolled away from the last
        one. Sending a message is asking to be taken to it. */
-  }, [follow, following, target, anchorId, anchorAt, threshold, dock]);
+  }, [follow, following, target, anchorId, threshold, dock]);
 
   /* ── Letting go ────────────────────────────────────────────────────────
      Intent, read from the input rather than inferred from the scroll event.

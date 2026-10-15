@@ -192,7 +192,6 @@ choreography by moving between these values:
 | `onCancelEdit` | `() => void` | Paired with `isEditing` |
 | `isEditing` | `boolean` | Shows save/cancel instead of send |
 | `placeholder` | `string` | |
-| `travel` | `boolean` | `false` draws a sent bubble where it lands instead of carrying it there on its spring |
 | `animationConfig` | `InlineAnimConfig` | Spring and stagger overrides — see below |
 | `style` | `React.CSSProperties` | |
 
@@ -212,8 +211,7 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `placeholder` | `string` | | |
 | `animationConfig` | `InlineAnimConfig` | | Passed to the input |
 | `entranceDelay` | `number` | `0` | Stagger, in seconds |
-| `entrance` | `"rise" \| "fade" \| "none"` | `"rise"` | How the row arrives — a docked composer fades, or is simply there |
-| `travel` | `boolean` | `true` | Passed to the input |
+| `entrance` | `"rise" \| "fade"` | `"rise"` | How the row arrives — a docked composer fades in place |
 | `selectionMode` | `"marker" \| "precise"` | `"marker"` | Passed to the highlighter |
 | `questionAlign` | `"end" \| "stretch"` | `"end"` | Where the composer sits — see below |
 | `onDraft` | `(id, value) => void` | | |
@@ -300,34 +298,6 @@ With a `chat` of your own, give its hook `nextTurn: "at-send"`. Assembling the
 rows by hand, the same shape is `<Conversation dock>` with the live row last,
 `busy={isStreaming}` on it, and `onStop` on it rather than on the bubble being
 answered.
-
-#### The classic way
-
-Three props turn the rest of the kit's argument off, one at a time, for a
-product whose chat should behave the way most chats do:
-
-```tsx
-<ChatExperience
-  onSend={send}
-  composer="docked"
-  anchor="end"       // the message goes on the end and the view follows it down
-  travel={false}     // drawn in its place; the box at the bottom just empties
-  retitle={false}    // the header keeps `title` rather than the first question
-/>
-```
-
-- **`anchor="end"`** — nothing is lifted to the top and nothing is held empty
-  under a short answer, so nothing shrinks when it arrives. The view glides to
-  the new message and follows the answer as it grows; scroll up while it
-  arrives and you are left where you are, with the way back offered, until
-  you send again.
-- **`travel={false}`** — the sent message does not fly from the composer to
-  its place. The morph from box to bubble still happens where it lands.
-- **`retitle={false}`** — for a chat that is a named place in the product
-  ("Assistant") rather than a document about one question.
-
-The composer itself does not move on a send in either mode. It used to rise
-16px into place like any new turn, which read as the box jumping.
 
 ### Two rules everything follows
 
@@ -1050,7 +1020,6 @@ instant the reader scrolls away, with a button offering the way back.
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `anchorId` | `string` | | Hold this element at the top instead of following the end |
-| `anchorAt` | `"top" \| "end"` | `"top"` | `"end"` holds the anchor's end in view instead — nothing reserved, followed by a glide, let go when the reader scrolls away |
 | `anchorOffset` | `number` | `0` | How far below the top edge it sits — leave room for a fixed header |
 | `threshold` | `number` | `64` | How close still counts as following |
 | `scrollButton` | `boolean` | `true` | The way back |
@@ -1552,9 +1521,6 @@ not; a control for choosing is a question nobody asked.
 <ChatExperience
   onSend={send}
   composer="docked"              // or "inline", the default
-  anchor="end"                   // follow the end, rather than lift a sent message to the top
-  travel={false}                 // docked: the sent message does not fly up from the box
-  retitle={false}                // the header keeps `title`
   highlights={false}             // no marker layer, no highlight menu, no saved ones
   bookmarks={false}              // marking stays, keeping goes
   headerActions={false}          // or ["theme"], or ["share"]
