@@ -366,6 +366,11 @@
     --ick-control-m: 32px;
     --ick-control-l: 40px;
     --ick-control-xl: 48px;
+    /* The composer's own controls — its send / stop / save glyph, the "+",
+       the microphone — at `s`, like every other small control: 28 on a
+       pointer, 32 under the touch block below. Its own token so a product can
+       move the composer's row without moving every `s` button with it. */
+    --ick-composer-control: var(--ick-control-s);
 
     --ick-duration-press: 70ms;
     --ick-duration-fast: 160ms;

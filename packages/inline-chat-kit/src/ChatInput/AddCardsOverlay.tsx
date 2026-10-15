@@ -3,7 +3,8 @@
 import React, { type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Paperclip, Palette, Link2, X } from "lucide-react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
+import { COMPOSER_CONTROL } from "./useComposerControl";
 import styles from "./ChatInput.module.css";
 import type { InlineAnimConfig } from "./ChatInput";
 import { useLabels } from "../labels/labels";
@@ -41,6 +42,8 @@ export interface AddCardsOverlayProps {
   showInlineGlyph: boolean;
   showButtons: boolean;
   ac: InlineAnimConfig | undefined;
+  /** How big the composer's controls are, in pixels — `--ick-composer-control`. 28 by default. */
+  control?: number;
 }
 
 export function AddCardsOverlay({
@@ -49,6 +52,7 @@ export function AddCardsOverlay({
   onAdd,
   items,
   showInlineGlyph,
+  control = COMPOSER_CONTROL,
   showButtons,
   ac,
 }: AddCardsOverlayProps) {
@@ -93,7 +97,7 @@ export function AddCardsOverlay({
                     key={id}
                     className={styles.addCardFan}
                     style={{
-                      right: showInlineGlyph && showButtons ? 36 : 0,
+                      right: showInlineGlyph && showButtons ? 8 + control : 0,
                       bottom: 1,
                       transformOrigin: "calc(100% - 22px) 50%",
                       zIndex: cards.length - i,
@@ -137,10 +141,11 @@ export function AddCardsOverlay({
               transition={{ duration: 0.12, ease: "easeOut" }}
               style={{
                 position: "absolute",
-                right: showInlineGlyph && showButtons ? 44 : 8,
+                /* The send glyph's place and its gap, then this one's. */
+                right: showInlineGlyph && showButtons ? 8 + control + 8 : 8,
                 bottom: 8,
-                width: 28,
-                height: 28,
+                width: control,
+                height: control,
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
@@ -148,9 +153,9 @@ export function AddCardsOverlay({
                 zIndex: 10,
               }}
             >
-              <Button
+              <KitButton
                 variant="ghost"
-                data-ick-role="add-close"
+                kitRole="add-close"
                 icon={<X size={14} aria-hidden />}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -159,6 +164,8 @@ export function AddCardsOverlay({
                 aria-label={closeMenu}
                 title={closeMenu}
                 className={styles.closeAdd}
+                style={{ minWidth: "var(--ick-composer-control)" }}
+                boxStyle={{ width: "100%", height: "100%" }}
               />
             </motion.div>
           </motion.div>

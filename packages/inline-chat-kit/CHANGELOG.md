@@ -8,6 +8,61 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.61.0 — 2026-10-15
+
+A host's own button, which 0.60.0 turned down. The reason it was turned down
+still holds for one button, and only that one is kept back. Nothing changes for
+a host that passes nothing: every story screenshotted against 0.60.0 in both
+themes, 138 stories, identical but for the one that sets its own
+`--ick-btn-radius` — its composer is concentric now, which is the point — and,
+on a touch screen, the composer's "+" and microphone, below.
+
+### Added
+
+- **`components={{ Button }}` on `ChatExperience`**, and `ComponentsProvider`
+  for pieces assembled by hand, in the way of `LabelsProvider`. The host's
+  button is drawn for every role in theming.md's table but one: the
+  composer's send / stop / save, whose glyph morphs between the three inside
+  the button. That one stays the kit's and is themed by the tokens, as before.
+  - The kit keeps the layout and the behaviour, the host's button paints. It
+    is drawn inside a box the kit sizes from `--ick-control-*` (square when
+    it is only an icon), places, animates, and gives the 44px touch area —
+    the ring past the button's edge is the box's, and a press there is handed
+    to the button. The box sets the button's height over the host's own.
+  - `KitButtonProps` is the contract: `kitRole`, `variant`, `size`, `shape`
+    (`square`, `pill`, `default`), `icon`, `iconRight`, `children`,
+    `disabled`, `loading`, `pressed`, `type="button"`, the handlers, the
+    `aria-*` and `data-ick-*` attributes, and the ref. `kitRole` rather than
+    `role`, because a button that spread a `role` of `"send"` onto itself
+    would be an ARIA error — the ARIA `role` still arrives where there is one,
+    `menuitem` in the header's menu.
+  - The header's menu items go through it too. Its back control and an
+    action with an `href` are links and stay `<a>`.
+  - In development, a host's button that does not forward its ref, is not a
+    `<button>`, drops the `aria-*` or `data-ick-*` it was given, or looks no
+    different with keyboard focus is named in the console, once per role.
+    `process.env.NODE_ENV === "production"` returns before any of it.
+- **`--ick-composer-control`**: the composer's send glyph, "+" and
+  microphone, which were 28px written into the component — four widths
+  Motion springs open, and an overlay offset by 36 and 44 — are
+  `--ick-control-s` now, and a host can move them on their own.
+- **The composer's corner is concentric with its buttons**: `--ick-input-radius`
+  is `--ick-btn-radius` plus the surface's 8px padding, up to
+  `--ick-radius-xl`. A pill button leaves it at the 24 it was; a host's 6px
+  button gets a 14px composer instead of a 6px button in a 24px pill.
+- **`BringYourOwnButton` stories** — the chat and the hand-assembled pieces
+  with a shadcn-style button (a 6px corner, 36px tall, its own focus ring),
+  and the same pieces with nothing provided — and "Bring your own button" in
+  theming.md: tokens, then per-role CSS, then the component.
+
+### Fixed
+
+- **On a touch screen the "+" and the microphone are round.** Their boxes
+  were 28 written in and their buttons as wide as `size="s"`, which the touch
+  block raises to 32: a 32 × 28 oval beside a 32 × 32 send, overflowing its
+  slot by 4px. All three are 32 × 32 there now, in 32px slots. On a pointer
+  nothing moves.
+
 ## 0.60.0 — 2026-10-15
 
 Reported from a host running the kit in production, each one worked around

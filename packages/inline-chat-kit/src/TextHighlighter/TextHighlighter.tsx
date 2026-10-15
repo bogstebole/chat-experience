@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback, useId, createElement, type ReactNode } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import { CodeBlock } from "../CodeBlock/CodeBlock";
 import { parseMarkdown, type MdNode } from "../markdown/parseMarkdown";
 import { InlineCitation } from "../InlineCitation/InlineCitation";
@@ -910,11 +910,12 @@ export function TextHighlighter({
               animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 400, damping: 25 } }}
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
             >
-              <Button
+              <KitButton
                 variant="primary"
                 role="menuitem"
-                data-ick-role="highlight-action"
+                kitRole="highlight-action"
                 data-ick-action="reply"
+                shape="pill"
                 tabIndex={menuIndex === 0 ? 0 : -1}
                 icon={<MessageCircle size={14} />}
                 onClick={(e) => {
@@ -924,7 +925,7 @@ export function TextHighlighter({
                 title={text_.reply}
               >
                 {text_.reply}
-              </Button>
+              </KitButton>
             </motion.div>
 
             <motion.div
@@ -932,10 +933,10 @@ export function TextHighlighter({
               animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 400, damping: 25 } }}
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
             >
-              <Button
+              <KitButton
                 variant="primary"
                 role="menuitem"
-                data-ick-role="highlight-action"
+                kitRole="highlight-action"
                 data-ick-action="remove"
                 tabIndex={menuIndex === 1 ? 0 : -1}
                 icon={<Trash2 size={14} />}

@@ -1,0 +1,74 @@
+/* ─────────────────────────────────────────────
+   The box a host's button is drawn in.
+
+   The kit owns layout, the host owns paint. This is the layout: how tall the
+   button is, from the same `--ick-control-*` step the kit's own would have
+   been; how wide, when it is an icon on its own; and the 44px a finger gets on
+   a touch screen. Nothing here paints — no colour, no radius, no border, no
+   ring. Those are the host's button's.
+
+   Only drawn when a host has given the kit a button. The kit's own `Button`
+   is not wrapped, so nothing about the default changes.
+   ───────────────────────────────────────────── */
+
+.box {
+  --ick-box-h: var(--ick-control-s);
+
+  position: relative;
+  /* The hit area below sits behind the host's button and in front of
+     whatever is behind the box — a stacking context of its own does both. */
+  isolation: isolate;
+  display: inline-flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  height: var(--ick-box-h);
+  min-width: var(--ick-box-h);
+  vertical-align: middle;
+}
+
+.xs { --ick-box-h: var(--ick-control-xs); }
+.s  { --ick-box-h: var(--ick-control-s); }
+.m  { --ick-box-h: var(--ick-control-m); }
+.l  { --ick-box-h: var(--ick-control-l); }
+.xl { --ick-box-h: var(--ick-control-xl); }
+
+.box[data-shape="square"] {
+  width: var(--ick-box-h);
+}
+
+/* The host's button fills the box. The class twice, because a host's button
+   usually arrives with a height of its own in a single utility class —
+   shadcn's is `h-9` — and the size is the one thing here that is the kit's to
+   say. Its width, padding, radius and everything it paints are left alone. */
+.box.box > * {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+}
+
+.box.box[data-shape="square"] > * {
+  width: auto;
+  min-width: 0;
+}
+
+/* The 44px rule. The same invisible box `touch.module.css` gives every other
+   control, hung off the layout box rather than the host's button, which is
+   not the kit's to put pseudo-elements on. Behind the button, so a press on
+   the button is a press on the button; a press on the ring around it lands on
+   the box, which hands it on. */
+@media (pointer: coarse) {
+  .box::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--ick-touch-target));
+    height: max(100%, var(--ick-touch-target));
+    transform: translate(-50%, -50%);
+  }
+}

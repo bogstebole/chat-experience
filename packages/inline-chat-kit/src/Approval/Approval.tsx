@@ -2,7 +2,7 @@
 
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { Check, X } from "lucide-react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import { useLabels, type ApprovalLabels } from "../labels/labels";
 import styles from "./Approval.module.css";
 
@@ -140,25 +140,25 @@ export function Approval({
         !readOnly && (
           <div className={styles.actions}>
             {offers("deny") && (
-              <Button
-                data-ick-role="approval-deny"
+              <KitButton
+                kitRole="approval-deny"
                 variant="ghost"
                 size="m"
                 className={styles.deny}
                 onClick={() => onDecide?.("denied")}
               >
                 {label.deny}
-              </Button>
+              </KitButton>
             )}
             {offers("always") && (
-              <Button variant="outline" size="m" data-ick-role="approval-always" onClick={() => onDecide?.("always")}>
+              <KitButton variant="outline" size="m" kitRole="approval-always" onClick={() => onDecide?.("always")}>
                 {label.always}
-              </Button>
+              </KitButton>
             )}
             {offers("once") && (
-              <Button variant="primary" size="m" data-ick-role="approval-once" onClick={() => onDecide?.("once")}>
+              <KitButton variant="primary" size="m" kitRole="approval-once" onClick={() => onDecide?.("once")}>
                 {label.once}
-              </Button>
+              </KitButton>
             )}
           </div>
         )

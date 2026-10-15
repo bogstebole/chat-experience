@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { FileText, Film, Music, Image as ImageIcon, File } from "lucide-react";
 import type { HTMLAttributes } from "react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import styles from "./Attachments.module.css";
 import { useLabels, type LabelsOf } from "../labels/labels";
 
@@ -140,9 +140,9 @@ export function Attachments({
 
             {onRemove && (
               <span className={styles.remove}>
-                <Button
+                <KitButton
                   variant="glass"
-                  data-ick-role="remove-attachment"
+                  kitRole="remove-attachment"
                   size="s"
                   onClick={() => onRemove(file.id)}
                   /* In the composer this sits on the highlighter's surface,

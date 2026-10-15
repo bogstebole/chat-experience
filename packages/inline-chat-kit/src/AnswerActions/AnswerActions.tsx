@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { Check, Copy, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import { announce } from "../announce/announce";
 import styles from "./AnswerActions.module.css";
 import { useLabels } from "../labels/labels";
@@ -90,9 +90,9 @@ export function AnswerActions({
           card, an approval — has no prose, and a copy of nothing is a button
           that pretends. */}
       {text.trim() && (
-        <Button
+        <KitButton
           variant="ghost"
-          data-ick-role="answer-action"
+          kitRole="answer-action"
           data-ick-action="copy"
           icon={copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
           onClick={copy}
@@ -102,9 +102,9 @@ export function AnswerActions({
       )}
 
       {onRegenerate && (
-        <Button
+        <KitButton
           variant="ghost"
-          data-ick-role="answer-action"
+          kitRole="answer-action"
           data-ick-action="regenerate"
           icon={<RotateCcw size={14} aria-hidden />}
           onClick={onRegenerate}
@@ -117,9 +117,9 @@ export function AnswerActions({
 
       {onFeedback && (
         <>
-          <Button
+          <KitButton
             variant="ghost"
-          data-ick-role="answer-action"
+          kitRole="answer-action"
           data-ick-action="up"
             icon={<ThumbsUp size={14} aria-hidden />}
             onClick={() => vote("up")}
@@ -127,9 +127,9 @@ export function AnswerActions({
             aria-label={label.up}
             title={label.up}
           />
-          <Button
+          <KitButton
             variant="ghost"
-          data-ick-role="answer-action"
+          kitRole="answer-action"
           data-ick-action="down"
             icon={<ThumbsDown size={14} aria-hidden />}
             onClick={() => vote("down")}

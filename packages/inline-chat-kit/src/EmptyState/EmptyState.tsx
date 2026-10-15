@@ -1,7 +1,7 @@
 "use client";
 
 import type { HTMLAttributes, ReactNode } from "react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import { useLabels } from "../labels/labels";
 import styles from "./EmptyState.module.css";
 
@@ -59,15 +59,16 @@ export function EmptyState({
                until it is hovered, which for an opener means it reads as a
                line of bold text rather than as something to press — and an
                opener nobody recognises as pressable is one nobody presses. */
-            <Button
+            <KitButton
               key={text}
               variant="primary"
               size="m"
-              data-ick-role="suggestion"
+              kitRole="suggestion"
+              shape="pill"
               onClick={() => onSuggestion?.(text)}
             >
               {text}
-            </Button>
+            </KitButton>
           ))}
         </div>
       )}

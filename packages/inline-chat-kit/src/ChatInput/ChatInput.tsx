@@ -59,6 +59,8 @@ import { AnimatePresence, LayoutGroup, MotionConfig, animate, motion, useAnimati
 import { Plus, X } from "lucide-react";
 import { Attachments, type Attachment } from "../Attachments/Attachments";
 import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
+import { useComposerControl } from "./useComposerControl";
 import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
 import { AddCardsOverlay, type ComposerMenuItem } from "./AddCardsOverlay";
@@ -288,6 +290,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const editorWrapRef = useRef<HTMLDivElement>(null);
     const editorClipRef = useRef<HTMLDivElement>(null);
     const rootRef = useRef<HTMLDivElement>(null);
+    /* How big the composer's own controls are — `--ick-composer-control`, in
+       pixels, for the widths Motion springs open. */
+    const control = useComposerControl(rootRef);
     /** The sent message's whole height, which is what "Read more" opens to. */
     const [fullHeight, setFullHeight] = useState(0);
     const internalChangeRef = useRef(false);
@@ -953,7 +958,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     <motion.div
                       key="mic"
                       initial={{ opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 2 }}
+                      animate={{ opacity: 1, scale: 1, width: control, marginLeft: 2 }}
                       exit={{
                         opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0,
                         transition: pendingExpansion.current
@@ -976,11 +981,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                          inside it collapses, and `zoom-check` found the plus
                          invisible. Constant, it holds the row's alignment and
                          costs nothing per frame. */
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: 28 }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: "var(--ick-composer-control)" }}
                     >
-                      <Button
+                      <KitButton
                         variant="ghost"
-                        data-ick-role="dictate"
+                        kitRole="dictate"
+                        boxStyle={{ width: "100%", height: "100%" }}
                         data-voice={voice.state}
                         icon={
                           <>
@@ -1037,7 +1043,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                                 ? text.microphoneBlocked
                                 : text.dictate
                         }
-                        style={{ width: "100%", height: "100%", position: "relative" }}
+                        style={{ width: "100%", minWidth: "var(--ick-composer-control)", height: "100%", position: "relative" }}
                       />
                     </motion.div>
                   )}
@@ -1058,7 +1064,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     <motion.div
                       key="lead"
                       initial={{ opacity: 0, scale: ARRIVES_AT, width: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28 }}
+                      animate={{ opacity: 1, scale: 1, width: control }}
                       exit={{
                         opacity: 0, scale: ARRIVES_AT, width: 0,
                         transition: pendingExpansion.current
@@ -1078,7 +1084,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                          inside it collapses, and `zoom-check` found the plus
                          invisible. Constant, it holds the row's alignment and
                          costs nothing per frame. */
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: 28 }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: "var(--ick-composer-control)" }}
                     >
                       <AnimatePresence mode="popLayout" initial={false}>
                         {isEditing ? (
@@ -1090,9 +1096,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             transition={{ duration: 0.14, ease: "easeOut" }}
                             style={{ position: "absolute", inset: 0 }}
                           >
-                            <Button
+                            <KitButton
                               variant="ghost"
-                              data-ick-role="cancel-edit"
+                              kitRole="cancel-edit"
+                              boxStyle={{ width: "100%", height: "100%" }}
                               icon={<X size={14} aria-hidden />}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1100,7 +1107,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                               }}
                               aria-label={text.cancelEdit}
                               title={text.cancelEdit}
-                              style={{ width: "100%", height: "100%" }}
+                              style={{ width: "100%", minWidth: "var(--ick-composer-control)", height: "100%" }}
                             />
                           </motion.div>
                         ) : hasMenu && !isAddOpen ? (
@@ -1112,9 +1119,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                             transition={{ duration: 0.12, ease: "easeOut" }}
                             style={{ position: "absolute", inset: 0 }}
                           >
-                            <Button
+                            <KitButton
                               variant="ghost"
-                              data-ick-role="add"
+                              kitRole="add"
+                              boxStyle={{ width: "100%", height: "100%" }}
                               icon={<Plus size={14} aria-hidden />}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1122,7 +1130,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                               }}
                               aria-label={text.add}
                               title={text.add}
-                              style={{ width: "100%", height: "100%" }}
+                              style={{ width: "100%", minWidth: "var(--ick-composer-control)", height: "100%" }}
                             />
                           </motion.div>
                         ) : null}
@@ -1133,7 +1141,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     <motion.div
                       key="inline-action"
                       initial={{ opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: 28, marginLeft: 8 }}
+                      animate={{ opacity: 1, scale: 1, width: control, marginLeft: 8 }}
                       exit={{
                         opacity: 0,
                         scale: ARRIVES_AT,
@@ -1166,7 +1174,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         bounce: ac?.enterButton?.bounce ?? 0.5,
                         opacity: { type: "tween", duration: 0.15 }
                       }}
-                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "visible", transformOrigin: "right", height: 28 }}
+                      style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, overflow: "visible", transformOrigin: "right", height: "var(--ick-composer-control)" }}
                     >
                       <Button
                         variant="primary"
@@ -1181,7 +1189,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         }}
                         disabled={showHeldSend}
                         aria-label={showStop ? text.stop : isEditing ? text.save : text.send}
-                        style={{ flexShrink: 0, width: 28 }}
+                        /* Square, from the token. Its width was 28 written
+                           in, and `size="s"`'s min-width overrode it on a
+                           touch screen, where `s` is 32. */
+                        style={{ flexShrink: 0, width: "var(--ick-composer-control)", minWidth: "var(--ick-composer-control)", height: "var(--ick-composer-control)" }}
                       />
                     </motion.div>
                   )}
@@ -1208,6 +1219,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             }}
             showInlineGlyph={showInlineGlyph}
             showButtons={showButtons}
+            control={control}
             ac={ac}
           />
 

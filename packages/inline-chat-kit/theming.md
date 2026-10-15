@@ -311,8 +311,137 @@ thumb. A product that wants the buttons themselves drawn at 44 says so:
 }
 ```
 
-The composer's own three controls are 28px in a row whose layout is animated,
-and are not sized from these yet.
+The composer's own controls — the send / stop / save glyph, the "+", the
+microphone — are `--ick-composer-control`, which is `--ick-control-s`: 28 on a
+pointer, 32 on a touch screen. Its own token so the composer's row can move
+without every other `s` button moving with it:
+
+```css
+@media (pointer: coarse) {
+  :root { --ick-composer-control: var(--ick-control-l); }
+}
+```
+
+## Bring your own button
+
+Three levels, each one further than the last. Stop at the first that is
+enough.
+
+**1. Tokens.** The `--ick-btn-<variant>-*` tokens above, `--ick-btn-radius`,
+`--ick-btn-weight` and the `--ick-control-*` heights. Every button the kit
+draws reads them, the composer's glyph included. Most hosts need nothing else.
+
+**2. Per role, in CSS.** The same tokens on a `[data-ick-role]`, or your own
+rules on it — the role table above is what to select on. A role is what the
+button is for, so it survives a translation; a class name is hashed and a
+label is not yours to match on.
+
+**3. Your component.** Give `ChatExperience` your button and it draws it in
+place of its own, everywhere but one place:
+
+```tsx
+<ChatExperience components={{ Button: MyButton }} onSend={send} />
+```
+
+Pieces assembled by hand — `ChatTurnRow`, `ChatHeader`, `Approval`,
+`ArtifactPane` — take it from `ComponentsProvider`, as they take words from
+`LabelsProvider`:
+
+```tsx
+<ComponentsProvider components={{ Button: MyButton }}>
+  <ChatHeader title="Chat" actions={actions} />
+  {turns.map((turn) => <ChatTurnRow key={turn.id} turn={turn} />)}
+</ComponentsProvider>
+```
+
+Declare `MyButton` outside a render. A component made inside one is a new
+component every time, and every button in the chat remounts with it.
+
+### Who owns what
+
+The kit owns **layout and behaviour**: the box each button sits in, its height
+from `--ick-control-*` (and on an icon-only button its width), where it goes,
+how it arrives and leaves, the 44px it answers to under a finger, focus moving
+to it, and what pressing it does. Your button **paints**: colour, border,
+radius, font, shadow, what hover and press look like, its icons, and the focus
+ring.
+
+So your button fills the box it is given — the kit sets its height over yours,
+a `h-9` included, and its width when it is an icon on its own; its padding,
+radius and everything it paints are left alone — and it never animates or
+positions itself.
+
+### The contract
+
+Your component is called with `KitButtonProps`:
+
+| Prop | |
+| --- | --- |
+| `kitRole` | What it is for — a role from the table above. Switch on it to pick your own variant |
+| `variant` | What the kit would have drawn: `primary`, `secondary`, `outline`, `ghost`, `glass`. A hint |
+| `size` | `xs` … `xl`: the step of `--ick-control-*` the box already is |
+| `shape` | `square` (an icon on its own), `pill` (a chip: an opener, "Read more", a highlight's action) or `default` (a text button among others). A hint |
+| `icon`, `iconRight`, `children` | The content. An icon-only button is named by its `aria-label` |
+| `disabled`, `loading`, `pressed` | `loading` also sets `disabled` and `aria-busy`; `pressed` also sets `aria-pressed` |
+| `type` | Always `"button"` |
+| `onClick` | And every other handler the kit needs |
+| `aria-*`, `title`, `role`, `tabIndex` | A menu's items arrive with `role="menuitem"` and a roving `tabIndex` |
+| `data-ick-role`, `data-ick-variant`, `data-ick-action` | So the CSS above still reaches your button |
+| `ref` | The `<button>` itself. The kit focuses it and anchors the header's menu to it |
+
+Three rules, and the words in the first column of the table are the kit's,
+not attributes — take them out before spreading the rest:
+
+1. **Forward the ref** — `forwardRef`, or in React 19 pass `ref` through.
+2. **Render a `<button>`.** The keyboard behaviour is the button's.
+3. **Spread what you do not use** onto it: the `aria-*`, `data-*`, `role`,
+   `tabIndex`, `title` and handlers.
+
+```tsx
+const MyButton = forwardRef<HTMLButtonElement, KitButtonProps>(function MyButton(
+  { kitRole, variant, size, shape, icon, iconRight, loading, pressed, children, ...rest },
+  ref
+) {
+  const look = kitRole === "approval-once" ? "default" : variant === "primary" ? "secondary" : "ghost";
+  return (
+    <Button ref={ref} variant={look} size={shape === "square" ? "icon" : "sm"} {...rest}>
+      {loading ? <Spinner /> : icon}
+      {children}
+      {iconRight}
+    </Button>
+  );
+});
+```
+
+In development the kit checks each role's button once and says so in the
+console when it does not forward its ref, is not a `<button>`, drops the
+`aria-*` or `data-ick-*` it was given, or looks no different with keyboard
+focus. One warning per role; none in a production build.
+
+### The one exception: the send glyph
+
+The composer's send / stop / save button is always the kit's. It is one button
+whose glyph morphs between the three as the composer changes state, and that
+animation lives inside the button — a host component would have to take it on
+to stand in for it. It follows the tokens instead: `--ick-btn-radius`,
+`--ick-btn-primary-*` (on `[data-ick-role="send"]`, `"stop"` or `"save"` to
+tell them apart) and `--ick-composer-control`.
+
+Two more stay the kit's for a different reason: the header's back control and
+a header action given an `href` are links, not buttons, and draw as `<a>`.
+
+### One radius
+
+Set `--ick-btn-radius` to your buttons' corner even when you bring your own
+button. It is how the kit's own glyph matches yours, and how the surfaces
+around buttons match them: the composer's corner is the button's plus the
+composer's 8px padding — concentric — up to its own ceiling of
+`--ick-radius-xl`. A 6px button sits in a 14px composer; the default pill sits
+in the 24px composer it always has.
+
+```css
+:root { --ick-btn-radius: 6px; }
+```
 
 ## Motion
 

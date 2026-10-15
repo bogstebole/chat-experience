@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Pencil } from "lucide-react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import { Chip } from "../Chip/Chip";
 import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
 import {
@@ -149,9 +149,9 @@ function ActiveBody({
       <QuestionShell
         {...shell}
         footer={
-          <Button variant="secondary" size="m" data-ick-role="question-next" disabled={!complete} onClick={commit}>
+          <KitButton variant="secondary" size="m" kitRole="question-next" disabled={!complete} onClick={commit}>
             {labels.next}
-          </Button>
+          </KitButton>
         }
       >
         {question.fields.map((field, i) => (
@@ -209,15 +209,15 @@ function ActiveBody({
     <QuestionShell
       {...shell}
       footer={
-        <Button
-          data-ick-role="question-next"
+        <KitButton
+          kitRole="question-next"
           variant="secondary"
           size="m"
           disabled={!question.allowEmpty && empty}
           onClick={commitMulti}
         >
           {question.allowEmpty && empty ? labels.none : labels.next}
-        </Button>
+        </KitButton>
       }
     >
       {question.options.map((option, i) => (

@@ -41,6 +41,7 @@ import {
 } from "../turnParts/turnParts";
 import { type ComposerMenuItem } from "../ChatInput/AddCardsOverlay";
 import { LabelsProvider, fill, useLabels, type ChatLabels } from "../labels/labels";
+import { ComponentsProvider, type ChatComponents } from "../components/components";
 import { type Answer } from "../QuestionCard/types";
 import { type Decision } from "../Approval/Approval";
 import { type Attachment } from "../Attachments/Attachments";
@@ -136,6 +137,16 @@ export interface ChatExperienceProps {
    * an inline object costs nothing — it is compared by content.
    */
   labels?: ChatLabels;
+
+  /**
+   * The host's own components, drawn in place of the kit's. `Button` is used
+   * for every button the chat draws except the composer's send / stop / save
+   * glyph, whose animation lives in the button. The kit keeps the layout —
+   * size, place, motion, hit area — and your button paints. It must forward
+   * its ref and render a `<button>`; see `KitButtonProps`. Keep it stable:
+   * declared outside a render, not inside one.
+   */
+  components?: ChatComponents;
 
   /**
    * The header's built-in actions. `true` (the default) is the theme toggle
@@ -337,6 +348,7 @@ export function ChatExperience({
   chat: hostChat,
   renderPart,
   labels,
+  components,
   headerActions: builtInActions = true,
   composerMenu,
   onTranscribe,
@@ -897,6 +909,7 @@ export function ChatExperience({
 
   return (
     <LabelsProvider labels={labels}>
+    <ComponentsProvider components={components}>
       {cursor && (
         <>
           {/* Hidden from the mouse, and there is no mouse on a phone. Left on,
@@ -1019,6 +1032,7 @@ export function ChatExperience({
           />
         )}
       </AnimatePresence>
+    </ComponentsProvider>
     </LabelsProvider>
   );
 }
