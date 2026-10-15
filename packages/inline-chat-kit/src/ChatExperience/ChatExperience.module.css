@@ -28,6 +28,13 @@
   max-width: var(--ick-experience-width, 720px);
   margin: 0 auto;
   padding: 0 32px;
+  /* Stated, like every padded box in this kit: there is no global reset, and
+     a host without one of its own got `width: 100%` *plus* the padding — the
+     page 64px wider than whatever held it. In a 400px side panel that put the
+     right-hand end of every sent message under the panel's edge. A host with
+     a reset never saw it, which is how the column was designed at 720 wide
+     overall in the playground and drawn 784 wide in Storybook. */
+  box-sizing: border-box;
   position: relative;
   overflow: clip;
 }

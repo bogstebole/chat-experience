@@ -22,6 +22,11 @@ outside the kit there. Each was reproduced here before it was changed.
 - **And on a press anywhere outside it.** It closed only on a blur, and on iOS
   a tap on something that takes no focus moves none — so the menu stayed open
   over whatever was touched next.
+- **`ChatExperience` fits its container on a page with no `box-sizing`
+  reset.** It was `width: 100%` plus 64px of padding, so in a 400px side
+  panel the end of every sent message sat under the panel's edge. A host
+  with a reset saw nothing change; one without now gets the column the
+  playground was designed with — 720px overall, not 784.
 
 ## 0.59.2 — 2026-09-24
 
