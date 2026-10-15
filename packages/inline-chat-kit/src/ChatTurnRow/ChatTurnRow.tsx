@@ -61,7 +61,8 @@ export interface ChatTurnRowProps {
    */
   entrance?: "rise" | "fade";
   /**
-   * Hold the answer back until the sent message has finished travelling.
+   * Hold the answer back until the sent message has finished travelling to
+   * the top — docked from the bottom edge, inline from where it was typed.
    *
    * Docked, a sent message travels from the composer at the bottom to the top
    * of the view, and its answer's "…" appeared at the top the moment it was

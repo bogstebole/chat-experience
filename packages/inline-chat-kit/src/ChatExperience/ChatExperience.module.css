@@ -285,7 +285,9 @@
   margin-inline: auto;
 }
 
-div.opening {
+/* The block itself, inside the column above. Its own bottom padding came on
+   top of the conversation's gap. */
+.openingBlock {
   padding-bottom: 0;
 }
 
