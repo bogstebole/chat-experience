@@ -8,7 +8,30 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
-## 0.61.0 — 2026-10-15
+## 0.61.1 — 2026-10-15
+
+### Fixed
+
+The opening of a conversation, measured in the playground at 1280×800.
+
+- **The openers stay while somebody types.** They went at the first letter —
+  title, description and seven openers in one frame — and inline the
+  composer jumped with them, from the middle of the page to its top-right
+  corner, 560px wide to 320. They stay now until a message is sent, and the
+  composer stays in their column.
+- **Then they step out of the way.** On a send — typed, or an opener pressed
+  — the openers leave to the left, blurred, one after another: 160ms each,
+  25ms apart, ease-out. They leave the layout at once, so the message goes
+  straight to where it belongs instead of waiting for them.
+- **Pinning the composer to the bottom moves the openers with it.** They
+  jumped 93px in a frame while the composer travelled; they ride its spring
+  now. And the composer arrives without going past: it overshot the bottom
+  edge by 12px and came back. A box that is still a box moves on its spring
+  critically damped; a sent message keeps the spring it had.
+- **Inline too, an answer starts once its question has landed.** The first
+  one was drawn under openers that were still leaving. 0.60.0 did this
+  docked only.
+
 
 A host's own button, which 0.60.0 turned down. The reason it was turned down
 still holds for one button, and only that one is kept back. Nothing changes for

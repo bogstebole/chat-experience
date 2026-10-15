@@ -42,3 +42,8 @@
   gap: var(--ick-space-3);
   margin-top: var(--ick-space-2);
 }
+
+/* Each opener's own box, so it can leave on its own. Draws nothing. */
+.chip {
+  display: inline-flex;
+}

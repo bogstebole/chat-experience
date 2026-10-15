@@ -7,7 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, MotionConfig, type Transition } from "motion/react";
 import { Bookmark, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
 
 import { ChatHeader, type ChatHeaderAction } from "../ChatHeader/ChatHeader";
@@ -29,7 +29,9 @@ import {
 } from "../useChatTurns/useChatTurns";
 import { type FoldMotion } from "../QuestionGroup/QuestionGroup";
 import {
+  defaultBubbleSpring,
   defaultInlineAnimConfig,
+  withoutOvershoot,
   type InlineAnimConfig,
   type ChatInputHandle,
 } from "../ChatInput/ChatInput";
@@ -537,8 +539,25 @@ export function ChatExperience({
     [submit]
   );
 
-  /* Nothing asked yet: one turn, and it is still blank. */
-  const isEmpty = turns.length === 1 && !turns[0].user && !turns[0].ai;
+  /* Nothing sent yet: one turn, still being written.
+
+     Not "nothing typed". Keyed on the text, the openers went the moment the
+     first letter was — all of them, in one frame, and inline the composer
+     jumped with them from the middle of the page to its top-right corner,
+     560px wide to 320. Typing is not a decision; sending is. Until then the
+     openers stay, and the composer stays in their column. */
+  const opening =
+    turns.length === 1 &&
+    !turns[0].ai &&
+    (turns[0].state === "idle" || turns[0].state === "typing");
+
+  /* How the opening block moves when the composer does — pinned to the
+     bottom, let go of — so the two go as one. It jumped 93px in a frame
+     while the composer travelled. The composer's own spring, without the
+     overshoot it no longer has either. */
+  const openingMoves: Transition = withoutOvershoot(
+    rowAnimation?.bubble ? { type: "spring", ...rowAnimation.bubble } : defaultBubbleSpring
+  );
 
   /* What the conversation has spent so far, counted off the text at four
      characters to the token — close enough for a meter and costing nothing. */
@@ -828,18 +847,34 @@ export function ChatExperience({
            only the air above it — the conversation's gap does that. */
         endOffset={docked ? 0 : endOffset}
       >
-        {isEmpty && empty && (
-          <EmptyState
-            /* The opening block and the composer under it share one column, so
-               they read as one thing. See `.opening`. Docked, the composer is
-               at the bottom and the block is centred in the room above it. */
-            className={docked ? `${styles.opening} ${styles.centred}` : styles.opening}
-            title={empty.title}
-            description={empty.description}
-            suggestions={empty.suggestions}
-            onSuggestion={(text) => handleSubmit(turns[0].id, text)}
-          />
-        )}
+        {/* Out of the flow the moment it starts leaving (`popLayout`), so the
+            message just sent moves to where it belongs straight away rather
+            than when the openers have finished going. */}
+        <MotionConfig reducedMotion="user">
+          <AnimatePresence mode="popLayout">
+            {opening && empty && (
+              <motion.div
+                key="opening"
+                /* The opening block and the composer under it share one
+                   column, so they read as one thing. See `.opening`. Docked,
+                   the composer is at the bottom and the block is centred in
+                   the room above it. */
+                className={docked ? `${styles.opening} ${styles.centred}` : styles.opening}
+                layout="position"
+                transition={{ layout: openingMoves }}
+                exit="leave"
+              >
+                <EmptyState
+                  className={styles.openingBlock}
+                  title={empty.title}
+                  description={empty.description}
+                  suggestions={empty.suggestions}
+                  onSuggestion={(text) => handleSubmit(turns[0].id, text)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </MotionConfig>
 
         <AnimatePresence>
           {turns.map((turn, i) => {
@@ -852,9 +887,9 @@ export function ChatExperience({
                 /* Nothing has been asked yet, so this is not a message on its
                    way — it is the box under the openers, and it lines up with
                    them. */
-                questionAlign={(docked && live) || (isEmpty && i === 0) ? "stretch" : "end"}
+                questionAlign={(docked && live) || (opening && i === 0) ? "stretch" : "end"}
                 className={
-                  docked && live ? styles.dock : isEmpty && i === 0 ? styles.opening : undefined
+                  docked && live ? styles.dock : opening && i === 0 ? styles.opening : undefined
                 }
                 onTranscribe={onTranscribe}
                 isActiveInput={live}
@@ -864,9 +899,12 @@ export function ChatExperience({
                    the box at the bottom, there a moment ago. Rising into place
                    moved it 16px up and back on every send. */
                 entrance={docked && live ? "fade" : "rise"}
-                /* Docked, the question travels up from the bottom edge: it
-                   lands first, and its answer starts under it. */
-                answerAfterTravel={docked}
+                /* A sent question goes to the top — docked from the bottom
+                   edge, inline from wherever it was typed, the first one from
+                   the middle of the openers. It lands first, and its answer
+                   starts under it: begun at once, the first answer was drawn
+                   under openers that were still on their way out. */
+                answerAfterTravel
                 selectionMode={selectionMode}
                 highlights={marking}
                 animationConfig={rowAnimation}

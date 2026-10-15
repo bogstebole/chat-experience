@@ -49,6 +49,9 @@ const answer = async (chat: () => UseChatTurnsResult) => {
   const id = chat().turns[0].id;
   act(() => chat().submit(id, "Napravi plan"));
   await waitFor(() => expect(chat().turns[0].state).toBe("resting"));
+  /* The answer is shown once the question has landed — at once here, where
+     nothing moves, but a frame or two after the answer itself. */
+  await waitFor(() => expect(document.querySelector("[data-held]")).toBeNull());
 };
 
 const card = () => screen.getByRole("button", { name: /Plan nege/ });

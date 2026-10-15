@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ChatExperience } from "../ChatExperience/ChatExperience";
 import { ChatInput } from "../ChatInput/ChatInput";
 
@@ -87,5 +87,31 @@ describe("the composer's menu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
     fireEvent.click(screen.getByRole("button", { name: "Priloži" }));
     expect(click).toHaveBeenCalled();
+  });
+});
+
+/* Typing is not a decision; sending is. The openers went at the first
+   letter, and inline the composer jumped from their column to the corner. */
+describe("the openers", () => {
+  const empty = { title: "Kako mogu da pomognem?", suggestions: ["Šta me čeka danas?"] };
+
+  it("stay while somebody types, and so does the composer's column", () => {
+    const { container } = render(<ChatExperience onSend={send} empty={empty} />);
+    const editor = container.querySelector("[contenteditable]") as HTMLElement;
+    editor.textContent = "Kada je";
+    fireEvent.input(editor);
+    expect(screen.getByRole("button", { name: "Šta me čeka danas?" })).toBeInTheDocument();
+    expect(screen.getByText("Kako mogu da pomognem?")).toBeInTheDocument();
+  });
+
+  it("leave once a message is sent", async () => {
+    const { container } = render(<ChatExperience onSend={send} empty={empty} />);
+    const editor = container.querySelector("[contenteditable]") as HTMLElement;
+    editor.textContent = "Kada je sledeća poseta?";
+    fireEvent.input(editor);
+    fireEvent.keyDown(editor, { key: "Enter" });
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Šta me čeka danas?" })).toBeNull()
+    );
   });
 });

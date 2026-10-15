@@ -198,15 +198,15 @@ export interface ChatInputProps {
   style?: React.CSSProperties;
 }
 
-/** Bubble spring used when no animationConfig override is supplied. */
 /** The same spring, critically damped: as quick to arrive, and never past. */
-function withoutOvershoot(spring: Transition): Transition {
+export function withoutOvershoot(spring: Transition): Transition {
   const { stiffness, damping, mass = 1 } = spring as { stiffness?: number; damping?: number; mass?: number };
   if (stiffness === undefined) return spring;
   return { ...spring, damping: Math.max(damping ?? 0, 2 * Math.sqrt(stiffness * mass)) };
 }
 
-const defaultBubbleSpring: Transition = {
+/** Bubble spring used when no animationConfig override is supplied. */
+export const defaultBubbleSpring: Transition = {
   type: "spring",
   stiffness: 600,
   damping: 21.5,
@@ -521,6 +521,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const bubbleSpring: Transition = ac
       ? { type: "spring", stiffness: ac.bubble.stiffness, damping: ac.bubble.damping, mass: ac.bubble.mass }
       : defaultBubbleSpring;
+    /* Where the box goes while it is still a box — pinned to the bottom,
+       let go of, a second line grown — it gets there without going past.
+       Underdamped, pinning it carried it 12px beyond the bottom edge and back,
+       which is a bounce on a control that only changed where it lives. A sent
+       message keeps the spring as it is: that travel is the morph, and the
+       morph is the kit's. */
+    const boxMoves: Transition = isGlass ? bubbleSpring : withoutOvershoot(bubbleSpring);
 
     const updateFade = useCallback(() => {
       const wrap = editorWrapRef.current;
@@ -836,6 +843,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             transition={{
               ...bubbleSpring,
               filter: { type: "tween", duration: 0.2, ease: "easeOut" },
+              layout: boxMoves,
             }}
           >
               <motion.div
@@ -920,6 +928,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   transition={{
                     ...bubbleSpring,
                     maxHeight: { type: "spring", stiffness: 300, damping: 35, mass: 0.8 },
+                    layout: boxMoves,
                   }}
                 >
                   <div

@@ -40,7 +40,9 @@ type Story = StoryObj<typeof ChatExperience>;
 export const Bare: Story = {};
 
 /** Before anybody has asked: the opening block, and the composer under it in
-    the same column so the two read as one thing. */
+    the same column so the two read as one thing. Typing leaves both where
+    they are; sending is what moves them — the openers step out to the left,
+    one after another, and the message goes to the top. */
 export const Opening: Story = {
   args: {
     empty: {

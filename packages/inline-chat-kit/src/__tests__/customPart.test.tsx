@@ -70,6 +70,9 @@ const setup = () => {
     await waitFor(() =>
       expect(chat.turns.find((t) => t.id === id)?.state).toBe("resting")
     );
+    /* And shown: an answer waits for its question to land, and letting it
+       go is the row's own redraw, not one an update caused. */
+    await waitFor(() => expect(document.querySelector("[data-held]")).toBeNull());
     return id;
   };
   return { view, renderPart, ask, chat: () => chat };
