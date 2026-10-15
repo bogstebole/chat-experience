@@ -11,7 +11,9 @@ import {
   type ReactNode,
 } from "react";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
-import { Button, type ButtonSize, type ButtonVariant } from "../Button/Button";
+import { type ButtonSize, type ButtonVariant } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
+import { useChatComponents } from "../components/components";
 import { useLabels } from "../labels/labels";
 import styles from "./ChatHeader.module.css";
 
@@ -279,9 +281,9 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
             <ArrowLeft size={ICON_SIZE[size]} aria-hidden />
           </a>
         ) : onBack ? (
-          <Button
+          <KitButton
             variant="secondary"
-            data-ick-role="back"
+            kitRole="back"
             size={BUTTON_SIZE[size]}
             icon={<ArrowLeft size={ICON_SIZE[size]} aria-hidden />}
             aria-label={backLabel}
@@ -355,9 +357,9 @@ function HeaderAction({ action, size }: { action: ChatHeaderAction; size: ChatHe
 
   return (
     <span className={styles.actionWrap}>
-      <Button
+      <KitButton
         variant={action.variant ?? "secondary"}
-        data-ick-role="header-action"
+        kitRole="header-action"
         data-ick-action={action.id}
         size={BUTTON_SIZE[size]}
         icon={action.icon}
@@ -388,6 +390,7 @@ function OverflowMenu({
   size: ChatHeaderSize;
   label: string;
 }) {
+  const HostButton = useChatComponents().Button;
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   /**
@@ -493,10 +496,10 @@ function OverflowMenu({
 
   return (
     <span className={styles.overflow}>
-      <Button
+      <KitButton
         ref={triggerRef}
         variant="secondary"
-        data-ick-role="header-more"
+        kitRole="header-more"
         size={BUTTON_SIZE[size]}
         icon={<MoreHorizontal size={ICON_SIZE[size]} aria-hidden />}
         aria-label={label}
@@ -553,32 +556,55 @@ function OverflowMenu({
             }
           }}
         >
-          {actions.map((action, i) => (
-            <button
-              key={action.id}
-              type="button"
-              /* A toggle inside a menu is a `menuitemcheckbox`. `menuitem`
-                 does not take a pressed or checked state, so saying it that
-                 way is an ARIA error, not a shortcut. */
-              role={action.active === undefined ? "menuitem" : "menuitemcheckbox"}
-              aria-checked={action.active}
-              tabIndex={active === i ? 0 : -1}
-              className={styles.menuItem}
-              data-ick-role="header-menu-item"
-              data-ick-action={action.id}
-              disabled={action.disabled}
-              onClick={() => {
+          {actions.map((action, i) => {
+            /* A toggle inside a menu is a `menuitemcheckbox`. `menuitem`
+               does not take a pressed or checked state, so saying it that
+               way is an ARIA error, not a shortcut. */
+            const item = {
+              role: action.active === undefined ? "menuitem" : "menuitemcheckbox",
+              "aria-checked": action.active,
+              tabIndex: active === i ? 0 : -1,
+              "data-ick-action": action.id,
+              disabled: action.disabled,
+              onClick: () => {
                 action.onClick?.();
                 close(true);
-              }}
-            >
-              <span className={styles.menuIcon}>{action.icon}</span>
-              <span>{action.label}</span>
-              {action.count !== undefined && action.count > 0 && (
+              },
+            } as const;
+            const count =
+              action.count !== undefined && action.count > 0 ? (
                 <span className={styles.menuCount}>{action.count}</span>
-              )}
-            </button>
-          ))}
+              ) : null;
+            /* A host's button draws the row; the kit's own is a plain one,
+               styled as a menu row rather than as a button. */
+            return HostButton ? (
+              <KitButton
+                key={action.id}
+                kitRole="header-menu-item"
+                variant="ghost"
+                size="m"
+                shape="default"
+                boxClassName={styles.menuItemBox}
+                icon={action.icon}
+                iconRight={count}
+                {...item}
+              >
+                {action.label}
+              </KitButton>
+            ) : (
+              <button
+                key={action.id}
+                type="button"
+                className={styles.menuItem}
+                data-ick-role="header-menu-item"
+                {...item}
+              >
+                <span className={styles.menuIcon}>{action.icon}</span>
+                <span>{action.label}</span>
+                {count}
+              </button>
+            );
+          })}
         </div>
       )}
     </span>

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type HTMLAttributes, type ReactNode } from "react";
 import { Maximize2, Minimize2, X } from "lucide-react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import { useLabels } from "../labels/labels";
 import styles from "./ArtifactPane.module.css";
 
@@ -149,9 +149,9 @@ export function ArtifactPane({
         {/* Widening is meaningless while it is covering the conversation:
             there is nothing left to take. */}
         {onToggleExpanded && !modal && (
-          <Button
+          <KitButton
             variant="ghost"
-            data-ick-role="pane-expand"
+            kitRole="pane-expand"
             size="s"
             icon={
               expanded ? <Minimize2 size={15} aria-hidden /> : <Maximize2 size={15} aria-hidden />
@@ -162,9 +162,9 @@ export function ArtifactPane({
           />
         )}
         {onClose && (
-          <Button
+          <KitButton
             variant="ghost"
-            data-ick-role="pane-close"
+            kitRole="pane-close"
             size="s"
             icon={<X size={15} aria-hidden />}
             aria-label={closeLabel}

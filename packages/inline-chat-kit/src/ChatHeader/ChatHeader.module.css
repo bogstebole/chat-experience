@@ -284,6 +284,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* A host's button drawing a row: the kit says how wide, the button the rest. */
+.menuItemBox {
+  display: flex;
+  width: 100%;
+}
+
 .menuItem:hover:not(:disabled) {
   background: var(--ick-surface-active);
 }

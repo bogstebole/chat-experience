@@ -32,6 +32,7 @@ const EXPECTED_EXPORTS = [
   "FOLDABLE_FROM",
   "InlineCitation",
   "LabelsProvider",
+  "ComponentsProvider",
   "defaultLabels",
   "Loader",
   "Sources",

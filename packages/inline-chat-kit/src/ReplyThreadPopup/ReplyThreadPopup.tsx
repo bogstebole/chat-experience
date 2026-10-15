@@ -8,7 +8,7 @@ import { useChatTurns, type ChatTurn, type SendContext } from "../useChatTurns/u
 
 /** @deprecated Use `ChatTurn`. Kept so existing imports keep resolving. */
 export type Turn = ChatTurn;
-import { Button } from '../Button/Button';
+import { KitButton } from '../Button/KitButton';
 import { placePanel } from "./placePanel";
 import styles from "./ReplyThreadPopup.module.css";
 import { useLabels } from "../labels/labels";
@@ -313,17 +313,17 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
             <p className={styles.headerText}>{text.title}</p>
           </div>
           <div className={styles.headerActions}>
-            <Button
+            <KitButton
               variant="primary"
-              data-ick-role="thread-save"
+              kitRole="thread-save"
               icon={<Save size={16} />}
               onClick={onSave}
             >
               {text.save}
-            </Button>
-            <Button
+            </KitButton>
+            <KitButton
               variant="secondary"
-              data-ick-role="thread-close"
+              kitRole="thread-close"
               icon={<X size={16} />}
               onClick={onClose}
               aria-label={text.close}

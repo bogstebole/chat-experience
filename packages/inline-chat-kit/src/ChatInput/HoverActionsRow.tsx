@@ -3,7 +3,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Copy, Pencil } from "lucide-react";
-import { Button } from "../Button/Button";
+import { KitButton } from "../Button/KitButton";
 import styles from "./ChatInput.module.css";
 import type { InlineAnimConfig } from "./ChatInput";
 import { useLabels } from "../labels/labels";
@@ -55,10 +55,14 @@ export function HoverActionsRow({
                 exit: {},
               }}
             >
-              <Button
+              <KitButton
                 variant="ghost"
-                data-ick-role="read-more"
+                kitRole="read-more"
+                shape="pill"
                 icon={isExpanded ? text.readLess : text.readMore}
+                /* The kit draws its words in the icon's place, at its own
+                   small size; a host's button is given them as words. */
+                hostProps={{ icon: undefined, children: isExpanded ? text.readLess : text.readMore }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded((v) => !v);
@@ -80,9 +84,9 @@ export function HoverActionsRow({
                 exit: {},
               }}
             >
-              <Button
+              <KitButton
                 variant="ghost"
-                data-ick-role="message-action"
+                kitRole="message-action"
                 data-ick-action={id}
                 icon={icon}
                 onClick={onClick}

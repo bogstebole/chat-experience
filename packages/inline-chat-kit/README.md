@@ -1472,6 +1472,18 @@ existing call sites keep working. Its `s` / `m` / `l` map to `m` / `l` / `xl`.
 Neither takes a dark-mode prop: the theme is a token swap on an ancestor. See
 [theming.md](./theming.md).
 
+**Your own button.** `components={{ Button }}` on `ChatExperience` — or
+`ComponentsProvider` around pieces assembled by hand — draws your button
+wherever the kit draws one, except the composer's send / stop / save glyph,
+which morphs inside its button and stays the kit's. The kit keeps the layout
+(the box, its size from `--ick-control-*`, motion, the 44px touch area) and
+your button paints. It must forward its `ref`, render a `<button>` and spread
+the `aria-*` and `data-*` it is given; the props it receives are
+`KitButtonProps`, and `kitRole` says what each one is for. Set
+`--ick-btn-radius` to your corner too: the kit's glyph and the composer around
+it follow it. Tokens first, per-role CSS second, the component third — see
+"Bring your own button" in [theming.md](./theming.md#bring-your-own-button).
+
 ## Labels: every word the kit says
 
 Every component takes a `labels` prop, and `ChatExperience` and `ChatTurnRow`

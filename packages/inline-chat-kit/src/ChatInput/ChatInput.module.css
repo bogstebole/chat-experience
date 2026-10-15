@@ -9,7 +9,11 @@
      touching anything else. `--slot` went with this rewrite — declared, never
      read, by either this file or any other. */
   --ick-input-h: 36px;
-  --ick-input-radius: var(--ick-radius-xl);
+  /* Concentric with the controls inside it: their corner plus the surface's
+     padding, up to the composer's own ceiling. A pill button makes that the
+     ceiling, which is what it always was; a host's 6px button gets a 14px
+     composer around it rather than a 24px one. */
+  --ick-input-radius: min(var(--ick-btn-radius) + var(--ick-space-4), var(--ick-radius-xl));
   --ick-input-fill: rgb(var(--ick-ink-rgb) / 0.03);
   --ick-input-fill-hover: rgb(var(--ick-ink-rgb) / 0.05);
   --ick-input-text: var(--ick-ink-soft);
@@ -313,7 +317,7 @@
    so it reads against the fanned cards behind it. */
 .closeAdd {
   flex-shrink: 0;
-  width: 28px;
+  width: var(--ick-composer-control);
   background-color: var(--ick-surface-active);
   color: var(--ick-ink);
 }

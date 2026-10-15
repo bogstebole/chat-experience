@@ -46,6 +46,19 @@ export type {
   ToolLabels,
   VoiceLabels,
 } from "./labels/labels";
+
+/* A host's own components, drawn in place of the kit's. `ChatExperience`
+   takes them as `components`; `ComponentsProvider` hands them to anything
+   assembled by hand. One so far: `Button`, for every button but the
+   composer's morphing send / stop / save glyph. */
+export { ComponentsProvider } from "./components/components";
+export type {
+  ChatComponents,
+  KitButtonComponent,
+  KitButtonProps,
+  KitButtonRole,
+  KitButtonShape,
+} from "./components/components";
 export type {
   ChatAnnouncements,
   ChatTurn,
