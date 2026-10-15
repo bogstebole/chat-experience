@@ -212,6 +212,7 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `animationConfig` | `InlineAnimConfig` | | Passed to the input |
 | `entranceDelay` | `number` | `0` | Stagger, in seconds |
 | `entrance` | `"rise" \| "fade"` | `"rise"` | How the row arrives — a docked composer fades in place |
+| `answerAfterTravel` | `boolean` | `false` | The answer waits until the sent question has landed — docked, set by `ChatExperience` |
 | `selectionMode` | `"marker" \| "precise"` | `"marker"` | Passed to the highlighter |
 | `questionAlign` | `"end" \| "stretch"` | `"end"` | Where the composer sits — see below |
 | `onDraft` | `(id, value) => void` | | |

@@ -244,7 +244,8 @@ export const Stripped: Story = {
  * the answer being written, and the box is always there — the next question
  * can be typed while this one is answered, and the send waits. Sent, the
  * message still becomes its bubble: the same element travels up into the
- * conversation and a fresh composer takes its place.
+ * conversation and a fresh composer takes its place. The answer starts once
+ * the question has landed at the top, not while it is still on its way.
  */
 export const Docked: Story = {
   args: {

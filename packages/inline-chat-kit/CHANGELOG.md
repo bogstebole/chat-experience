@@ -43,6 +43,16 @@ outside the kit there. Each was reproduced here before it was changed.
   like any new turn — rising 16px into place — so the box at the bottom went
   up and back every time a message was sent (840 → 824 → 840). It fades in
   where it is now. A sent message still goes to the top, as before.
+- **Docked, the question lands before its answer starts.** The answer's "…"
+  appeared at the top the moment a message was sent, while the message was
+  still travelling up from the composer — two things moving in opposite
+  directions, an answer begun above a question that had not arrived. The
+  answer now waits, still taking its room so the anchor does not move, until
+  the bubble has stopped: about 0.45s, measured at 1120×700 and 390×844, and
+  for a model that is silent first. Read off the screen rather than from the
+  spring, which rests at 1.2s, and including the scroll that carries a second
+  message most of its way. `ChatTurnRow` takes it as `answerAfterTravel`;
+  `ChatInput` reports it through `onLanded`.
 
 ### Added
 

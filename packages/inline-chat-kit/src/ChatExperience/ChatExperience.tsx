@@ -852,6 +852,9 @@ export function ChatExperience({
                    the box at the bottom, there a moment ago. Rising into place
                    moved it 16px up and back on every send. */
                 entrance={docked && live ? "fade" : "rise"}
+                /* Docked, the question travels up from the bottom edge: it
+                   lands first, and its answer starts under it. */
+                answerAfterTravel={docked}
                 selectionMode={selectionMode}
                 highlights={marking}
                 animationConfig={rowAnimation}

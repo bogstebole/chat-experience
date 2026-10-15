@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type ReactNode, type Ref } from "react";
+import { memo, useCallback, useEffect, useState, type ReactNode, type Ref } from "react";
 import { motion } from "motion/react";
 import { AnswerActions, type Verdict } from "../AnswerActions/AnswerActions";
 import { Branch } from "../Branch/Branch";
@@ -60,6 +60,17 @@ export interface ChatTurnRowProps {
    * every send.
    */
   entrance?: "rise" | "fade";
+  /**
+   * Hold the answer back until the sent message has finished travelling.
+   *
+   * Docked, a sent message travels from the composer at the bottom to the top
+   * of the view, and its answer's "…" appeared at the top the moment it was
+   * sent — two things moving in opposite directions, the answer starting
+   * above a question that had not arrived yet. Held, the question lands
+   * first and the answer begins under it. The answer still takes its room the
+   * whole time, invisibly, so where the view is anchored does not change.
+   */
+  answerAfterTravel?: boolean;
   /** Passed through to the highlighter over the answer. */
   selectionMode?: "marker" | "precise";
   /**
@@ -277,6 +288,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onArtifactChange,
   entranceDelay = 0,
   entrance = "rise",
+  answerAfterTravel = false,
   selectionMode = "marker",
   highlights = true,
   questionAlign = "end",
@@ -308,6 +320,30 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   // which reads as a glitch rather than as calm.
   const still = prefersReducedMotion();
   const offset = still || entrance === "fade" ? 0 : -16;
+
+  /* Sent just now, and still on its way up. Set where the send is seen —
+     during render, from the state it was in last — rather than in an effect,
+     which would draw the answer for one frame before hiding it. */
+  const [held, setHeld] = useState(false);
+  const [lastState, setLastState] = useState(turn.state);
+  if (lastState !== turn.state) {
+    setLastState(turn.state);
+    if (
+      answerAfterTravel &&
+      !still &&
+      turn.state === "responding" &&
+      (lastState === "typing" || lastState === "idle")
+    ) {
+      setHeld(true);
+    }
+  }
+  const land = useCallback(() => setHeld(false), []);
+  /* A ceiling, in case the bubble never reports landing. */
+  useEffect(() => {
+    if (!held) return;
+    const id = window.setTimeout(() => setHeld(false), 1200);
+    return () => window.clearTimeout(id);
+  }, [held]);
   // A turn a host built by hand may not have any.
   const parts = turn.parts ?? [];
   const cited = parts.find((part) => part.kind === "sources")?.sources;
@@ -534,6 +570,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           // An edit, rather than a first draft: there is already an answer
           // under this input, so the buttons say save and cancel.
           isEditing={turn.ai.length > 0 && turn.state === "typing"}
+          onLanded={held ? land : undefined}
           animationConfig={animationConfig}
           placeholder={placeholder}
           menu={composerMenu}
@@ -543,7 +580,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
       {/* One block, so the row's generous gap sits between the question and
           everything the answer is made of — and not between a tool call and
           the sentence it produced, which belong together. */}
-      <div className={styles.body}>
+      <div className={styles.body} data-held={held || undefined} aria-hidden={held || undefined}>
         {pieces.map((piece, i) =>
           piece.kind === "part" ? (
             drawPart(piece.part)

@@ -185,6 +185,13 @@ export interface ChatInputProps {
   menu?: ComposerMenuItem[] | false;
   /** Every word the composer says. See `ChatLabels`. */
   labels?: Partial<ChatInputLabels>;
+  /**
+   * Given, watched for: called once the bubble has come to rest at its place
+   * — within a few pixels of it, which the eye reads as arrived, rather than
+   * when the spring finally stops, most of a second later. Called at once if
+   * it never moves. Keep it stable. See `ChatTurnRow`'s `answerAfterTravel`.
+   */
+  onLanded?: () => void;
   animationConfig?: InlineAnimConfig;
   style?: React.CSSProperties;
 }
@@ -266,6 +273,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       placeholder: placeholderProp,
       menu,
       labels,
+      onLanded,
       animationConfig,
       style,
     },
@@ -279,6 +287,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const editorRef = useRef<HTMLDivElement>(null);
     const editorWrapRef = useRef<HTMLDivElement>(null);
     const editorClipRef = useRef<HTMLDivElement>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
     /** The sent message's whole height, which is what "Read more" opens to. */
     const [fullHeight, setFullHeight] = useState(0);
     const internalChangeRef = useRef(false);
@@ -699,6 +708,38 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       };
     }, [state, updateFade]);
 
+    /* ── Landing ───────────────────────────────────────────────────────────
+       Read off the screen, frame by frame: landed is where the bubble stops
+       moving. Two things carry it there, and neither says when it is done in
+       time — its own layout spring, whose completion comes when the spring
+       rests (measured, 1.2s after the send for a bubble within 2px of its
+       place at 0.55), and the conversation scrolling it the rest of the way
+       up, which on a second message is most of the journey. A bubble that
+       never moves has landed already. */
+    useEffect(() => {
+      const el = rootRef.current;
+      if (!onLanded || !el) return;
+      const started = performance.now();
+      let last = el.getBoundingClientRect().top;
+      let travelled = 0;
+      let still = 0;
+      let frame = 0;
+      const step = () => {
+        const top = el.getBoundingClientRect().top;
+        const moved = Math.abs(top - last);
+        last = top;
+        travelled += moved;
+        still = moved < 0.5 ? still + 1 : 0;
+        if ((travelled > 3 && still >= 2) || (travelled <= 3 && performance.now() - started > 150)) {
+          onLanded();
+          return;
+        }
+        frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(frame);
+    }, [onLanded]);
+
     useEffect(() => {
       const prev = prevState.current;
       prevState.current = state;
@@ -777,6 +818,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         >
           <motion.div
             className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`}
+            ref={rootRef}
             layout
             animate={{
               filter: isAddOpen ? `blur(${ac?.addCards?.inputBlur ?? 2}px)` : "blur(0px)",
