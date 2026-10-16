@@ -8,6 +8,50 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.62.0 — 2026-10-16
+
+### Changed
+
+- **An answer's words start on the cards' edge.** `--ick-answer-column` is
+  now `var(--ick-nest-ground-pad)` (16) instead of
+  `calc(var(--ick-nest-ground-pad) + var(--ick-nest-column))` (32). The prose
+  lines up with the left edge of a part's white card — a tool call, an
+  approval, a question, an artifact — rather than with the words inside it.
+  The grey grounds hang 16px outside the column, as they did; only what stood
+  on the column moves.
+
+  Measured in Storybook, from the turn's left edge, at 1280 and 390 wide, both
+  themes, inline and docked, with the artifact pane open:
+
+  |                         | before | after |
+  | ----------------------- | -----: | ----: |
+  | a part's ground         |      0 |     0 |
+  | its card                |     16 |    16 |
+  | the words in the card   |     32 |    32 |
+  | the answer's prose      |     32 |    16 |
+
+  Moved with it, all by 16 to the left, because they read the column:
+  the actions row under an answer, `<Reasoning>` (its glyph is on the column,
+  its label 20 in), `<ChainOfThought>`, `<TaskList>` and `<Sources>`.
+  `<SystemMessage>` moved too — its words stood on the old column, a ground's
+  padding plus a card's, and now take `--ick-answer-column` straight, so a note
+  between turns reads on the same line as the prose around it. The right-hand
+  margin mirrors the column, so on a phone the prose now ends on the card's
+  right edge (16 in) rather than 32 in. The four disclosures take the mirror
+  too — they padded the left only, so a plan's or a source list's chevron sat
+  on the ground's right edge, 16 past the card beside it. It is on the card's
+  right edge now, the way its label is on the left one. Nothing inside a box
+  moved: `<Tool>`, `<Approval>`, `<QuestionGroup>` and `<ArtifactCard>` keep
+  their grounds, cards and columns to the pixel. Light and dark measure
+  identically, and the visual QA finds nothing out of place in 141 stories in
+  either theme.
+
+  A host whose own prose or cards stand on `var(--ick-answer-column)` follows
+  without a change. One that wrote 32, or `--ick-nest-ground-pad` plus
+  `--ick-nest-column`, to line up with the answer now stands 16 inside it —
+  read the token instead. A host that wants the old line back can set
+  `--ick-answer-column: calc(var(--ick-nest-ground-pad) + var(--ick-nest-column))`.
+
 ## 0.61.1 — 2026-10-15
 
 ### Fixed

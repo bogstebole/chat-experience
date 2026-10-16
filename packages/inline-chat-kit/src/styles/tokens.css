@@ -273,11 +273,18 @@
        anything in a box began at the box's ground plus its card's column. Two
        families, 32px apart, down one answer.
 
-       One column instead. The boxes keep their full width and bleed past it —
-       a card is allowed to be wider than the words about it — and everything
-       that draws begins here. It is the same 32 the boxed family already
-       reached, so the two most complicated components do not move. */
-    --ick-answer-column: calc(var(--ick-nest-ground-pad) + var(--ick-nest-column));
+       One column instead, and it is the card's edge. The words of an answer
+       line up with the white card of a part beside them — not with the grey
+       ground behind it, and not with the words inside the card. The grounds
+       hang a ground's padding outside the column, the cards stand on it, and
+       what a card holds is indented inside its own edge the way a card's
+       content always is.
+
+       It was the card's *content* until 0.62.0: the ground's padding plus the
+       card's column, 32. That read as the prose being indented under nothing —
+       a paragraph 32 in from a card that started at 16 — and it lined the
+       answer up with something inside a box rather than with the box. */
+    --ick-answer-column: var(--ick-nest-ground-pad);
 
     /* ═══ Elevation ════════════════════════════════════════════════════════
        Named by how far off the page a thing sits, not by how it is drawn. */

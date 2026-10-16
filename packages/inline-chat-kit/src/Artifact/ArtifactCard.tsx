@@ -111,9 +111,9 @@ export function ArtifactCard({
      It was taken away when the prose still began at the turn's own edge: a
      ground under a single card was 32px of indent that put the card's words on
      a different line from the answer's. Now everything in an answer begins on
-     one column and the boxes bleed wider than it — so the ground is what puts
-     this card's words *on* that column, the same way a tool call's does. See
-     `--ick-answer-column`. */
+     one column — the cards' edge — and the grounds bleed wider than it, so the
+     ground is what stands this card *on* that column, the same way a tool
+     call's does. See `--ick-answer-column`. */
   const inside = (
     <>
       <Head title={title} meta={meta} writing={writing} />

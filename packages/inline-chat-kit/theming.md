@@ -200,7 +200,10 @@ these to move one thing without moving its neighbours:
   --ick-nest-inner: 8px;         /* the seed: a badge, a chip, a fenced value */
   --ick-nest-pad: 8px;           /* inside a card, and inside a row */
   --ick-nest-ground-pad: 16px;   /* around a card, on its ground */
-  /* derived: --ick-nest-row 16, --ick-nest-card 24, --ick-nest-ground 40 */
+  /* derived: --ick-nest-row 16, --ick-nest-card 24, --ick-nest-ground 40,
+     and --ick-answer-column 16 — where an answer's words start: the cards'
+     edge, one --ick-nest-ground-pad in. Widen the ground pad and the prose
+     moves with the cards. */
   --ick-chip-fill: var(--ick-surface-active);
   --ick-empty-pad: 40px;               /* around the empty state */
   --ick-conversation-pad-block: 24px;  /* inside the scroll */
