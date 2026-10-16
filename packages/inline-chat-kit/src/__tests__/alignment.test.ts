@@ -236,19 +236,21 @@ describe("columns", () => {
   });
 
   /**
-   * A note between turns stands where a ground stands, so its words need the
-   * ground's own padding *plus* the column to land where a card's words land.
+   * A note between turns stands where a ground stands, so its words land on
+   * the answer's column — the cards' edges, a ground's padding in.
    *
-   * With only the column it measured 32 against a tool call's 48 — lined up
-   * with the cards' edges instead of with the words in them, which is the one
-   * alignment rule this kit has, stated backwards.
+   * Until 0.62.0 that column was where a card's *words* started, and the note
+   * took the ground's padding plus a card's column to reach it. The answer's
+   * prose moved out to the cards' edge and the note moved with it: a note on
+   * the old line would stand 16 inside every paragraph around it.
    */
-  it("stands a system message's words on the column a card's words start on", async () => {
+  it("stands a system message's words on the answer's column", async () => {
     const tokens = await load("../styles/tokens.css?raw");
     const css = await load("../SystemMessage/SystemMessage.module.css?raw");
 
     const pad = padding(tokens, css, ".message");
-    const column = px(tokens, "var(--ick-nest-ground-pad)") + px(tokens, "var(--ick-nest-column)");
+    const column = px(tokens, "var(--ick-answer-column)");
+    expect(column).toBe(px(tokens, "var(--ick-nest-ground-pad)"));
     expect({ left: pad.left, right: pad.right }).toEqual({ left: column, right: column });
 
     /* The same breathing a folded row has, so a one-liner sits at about its
@@ -272,18 +274,21 @@ describe("columns", () => {
    * down one answer, which is what "the text does not line up with the card"
    * turned out to be.
    *
-   * The boxes keep their full width and bleed past the column; everything that
-   * draws begins on it.
+   * The column is the cards' edge. The grounds keep their full width and
+   * bleed a ground's padding past it; the cards stand on it; everything in the
+   * flow — prose, actions, the four quiet disclosures — begins on it.
    */
   it("starts everything in an answer on one column", async () => {
     const tokens = await load("../styles/tokens.css?raw");
     const column = px(tokens, "var(--ick-answer-column)");
 
-    /* The value the boxed family already reached, so the two most complicated
-       components did not have to move: a ground's padding plus a card's. */
-    expect(column).toBe(
-      px(tokens, "var(--ick-nest-ground-pad)") + px(tokens, "var(--ick-nest-column)")
-    );
+    /* A card's left edge, measured from the ground it stands on: the ground's
+       own padding. Until 0.62.0 it was that plus a card's column — the words
+       *inside* the card — and the prose read as indented under nothing. Derived
+       from the nesting tokens rather than written as 16, so a host that widens
+       a ground moves the prose with its cards. */
+    expect(tokens).toMatch(/--ick-answer-column:\s*var\(--ick-nest-ground-pad\)/);
+    expect(column).toBe(px(tokens, "var(--ick-nest-ground-pad)"));
 
     /* The prose. The actions row is inside it and needs none of its own —
        giving it one put the icons at 64, an indent applied twice. */
@@ -302,7 +307,10 @@ describe("columns", () => {
       ["../Sources/Sources.module.css?raw", ".sources"],
     ] as const) {
       const css = await load(file);
-      expect(px(tokens, decl(css, selector, "padding-left")), selector).toBe(column);
+      expect(px(tokens, decl(css, selector, "padding-inline")), selector).toBe(column);
+      /* Both ends, like the prose: a chevron at the ground's right edge sat 16
+         past the card it was meant to line up with. */
+      expect(css, `${selector} pads one side only`).not.toMatch(/padding-(left|right):\s*var\(--ick-answer-column\)/);
       /* They really do carry none — the moment one grows a ground it belongs
          to the other family and this rule stops applying to it. */
       expect(
@@ -329,11 +337,15 @@ describe("columns", () => {
     /* Ground, card, and what the card holds. The ground was taken away while
        the prose still began at the turn's edge — there it was 32px of indent
        putting the card's words on a different line from the answer's. With one
-       column it is what puts them *on* it. */
+       column it is what stands the card *on* it. */
     const ground = px(tokens, decl(css, ".artifact", "padding"));
     const cardPad = px(tokens, decl(css, ".card", "padding"));
     const headPad = px(tokens, split(decl(css, ".head", "padding"))[1]);
-    expect(ground + cardPad + headPad).toBe(px(tokens, "var(--ick-answer-column)"));
+    expect(ground, "the card's edge is the answer's column").toBe(
+      px(tokens, "var(--ick-answer-column)")
+    );
+    /* And its words sit a card's column inside that edge, like every card's. */
+    expect(cardPad + headPad).toBe(px(tokens, "var(--ick-nest-column)"));
   });
 
   /**
@@ -482,18 +494,23 @@ describe("the answer's column", () => {
   });
 
   /**
-   * And the boxes still bleed wider than it, which is the other half of the
+   * And the grounds still bleed wider than it, which is the other half of the
    * rule and the reason the column is a token rather than padding on a
-   * wrapper. A ground under a card reaches the turn's own edge; only the words
-   * are inset.
+   * wrapper. A ground under a card reaches the turn's own edge; its card
+   * stands on the column, level with the prose.
    */
-  it("still lets the boxes bleed wider than the words", async () => {
+  it("still lets the grounds bleed wider than the words", async () => {
     const tokens = await load("../styles/tokens.css?raw");
     const artifact = await load("../Artifact/ArtifactCard.module.css?raw");
+    const tool = await load("../Tool/Tool.module.css?raw");
 
     expect(
       px(tokens, decl(artifact, ".artifact", "padding")),
-      "a ground's own padding is narrower than the column its words land on"
-    ).toBeLessThan(px(tokens, "var(--ick-answer-column)"));
+      "an artifact's card stands on the column, its ground a padding outside"
+    ).toBe(px(tokens, "var(--ick-answer-column)"));
+    expect(px(tokens, "var(--ick-tool-ground-pad)"), "and a tool call's").toBe(
+      px(tokens, "var(--ick-answer-column)")
+    );
+    expect(tool).toMatch(/var\(--ick-tool-ground-pad\)/);
   });
 });

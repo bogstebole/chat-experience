@@ -14,14 +14,12 @@
 .message {
   box-sizing: border-box;
   width: 100%;
-  /* The column every card's *content* starts on — which from out here is the
-     ground's own padding plus that column, because this row stands where a
-     ground stands rather than where a card does. Measured with only the column
-     it read 32 against a tool call's 48: a note lined up with the cards' edges
-     instead of with the words in them, which is the one alignment rule this
-     kit has. */
-  padding: var(--ick-space-4)
-    calc(var(--ick-nest-ground-pad) + var(--ick-nest-column));
+  /* On the answer's column: this row stands where a ground stands, so its
+     words land where an answer's do — on the cards' edges, a ground's padding
+     in from its own. Until 0.62.0 it was the ground's padding plus a card's
+     column, the line a card's *content* starts on, because that was where the
+     answer's prose started too. See `--ick-answer-column`. */
+  padding: var(--ick-space-4) var(--ick-answer-column);
   border-radius: var(--ick-system-radius);
   background: var(--ick-system-surface);
   font-family: var(--ick-font-sans);

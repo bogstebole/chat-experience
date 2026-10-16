@@ -393,6 +393,17 @@ question folded shut are now the same row, to the pixel: 40 tall, 16 in from the
 left, the glyph riding in the box a badge sits in. There is a story that stacks
 the two on one ground, and a test that compares every step of the two chains.
 
+**An answer's words start on the cards' edge.** Everything in an answer's flow
+— the prose, the actions under it, `<Reasoning>`, `<ChainOfThought>`,
+`<TaskList>`, `<Sources>`, and a `<SystemMessage>` between turns — begins on
+`--ick-answer-column`, which is `--ick-nest-ground-pad` (16): the left edge of
+the white card of a tool call, an approval, a question or an artifact. The grey
+grounds hang that padding outside it, and a card's own words are indented inside
+the card the way a card's content always is. The prose ends on the mirror of
+it, so on a phone it stops at the card's right edge too. A host card in
+`turn.parts`, or hand-written prose beside the kit's, lines up by reading the
+same token.
+
 A short box takes the corner it can. A row folded shut is 40px tall and a 24px
 corner on it clamps to a pill — both of them, equally, which is the point.
 
