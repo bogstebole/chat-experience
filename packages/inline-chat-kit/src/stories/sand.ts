@@ -133,9 +133,9 @@ const mulberry = (seed: number) => () => {
 /** Tuning, all in plate units (the figure's radius is 1) and seconds. */
 const TUNE = {
   /** Grains per css px² of the figure's disc. */
-  density: 0.24,
+  density: 0.34,
   minGrains: 5000,
-  maxGrains: 22000,
+  maxGrains: 30000,
   /** How far a grain on the loudest part of the plate is thrown per √s. */
   kick: 0.1,
   /** How hard grains slide toward stillness. Low: a figure takes seconds to gather. */
@@ -407,7 +407,7 @@ export class Sand {
     if (!this.colours || now - this.colours.at > 500) {
       this.colours = { at: now, grain: channel(canvas, "--ick-ink-rgb", [0.07, 0.07, 0.07]) };
       const [r, g, b] = this.colours.grain;
-      this.weight = r + g + b < 1.5 ? 0.72 : 1;
+      this.weight = r + g + b < 1.5 ? 0.95 : 1;
     }
 
     gl.useProgram(this.program);
@@ -436,9 +436,9 @@ export class Sand {
     gl.uniform2f(this.u.uCenter, this.center.x, this.center.y);
     gl.uniform1f(this.u.uRadius, this.radius);
     gl.uniform1f(this.u.uPour, this.pour);
-    gl.uniform1f(this.u.uSize, 1.5 * dpr);
+    gl.uniform1f(this.u.uSize, 1.7 * dpr);
     // Waiting, the sand lies scattered and faint — present, not a disc.
-    gl.uniform1f(this.u.uAlpha, (0.2 + 0.65 * frame.live) * this.weight);
+    gl.uniform1f(this.u.uAlpha, (0.22 + 0.73 * frame.live) * this.weight);
     gl.uniform3f(this.u.uGrain, ...this.colours.grain);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
