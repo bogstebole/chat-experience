@@ -123,13 +123,11 @@ function CymaticsDemo({
   promptMs,
   still: forceStill,
   look,
-  transition = "swell",
 }: {
   source: "simulated" | "microphone";
   promptMs: number;
   still: boolean;
   look: Look;
-  transition?: "swell" | "none";
 }) {
   const reduced = useReducedMotion() ?? false;
   const still = forceStill || reduced;
@@ -235,7 +233,6 @@ function CymaticsDemo({
     if (!canvas) return;
     if (!gl) return;
     engine.current = makeField(canvas, look);
-    if (engine.current instanceof Sand) engine.current.transition = transition;
     // For poking at from the console while this is an exploration.
     (window as unknown as { __cymatics?: unknown }).__cymatics = { engine: engine.current, drive: drive.current };
     place();
@@ -246,7 +243,7 @@ function CymaticsDemo({
       engine.current?.dispose();
       engine.current = null;
     };
-  }, [place, gl, look, transition]);
+  }, [place, gl, look]);
 
   useEffect(() => warmEarcons(), []);
 
@@ -694,8 +691,6 @@ function CymaticsDemo({
 
 interface Args {
   look: Look;
-  /** Sand only: whether the plate loosens the sand when the figure changes. */
-  transition: "swell" | "none";
   source: "simulated" | "microphone";
   permission: "prompt" | "granted";
   reducedMotion: boolean;
@@ -703,10 +698,9 @@ interface Args {
 
 export const J_Cymatics: StoryObj<Args> = {
   name: "J · Cymatics",
-  args: { look: "sand", transition: "swell", source: "simulated", permission: "prompt", reducedMotion: false },
+  args: { look: "sand", source: "simulated", permission: "prompt", reducedMotion: false },
   argTypes: {
     look: { control: "inline-radio", options: LOOK_NAMES },
-    transition: { control: "inline-radio", options: ["swell", "none"] },
     source: { control: "inline-radio", options: ["simulated", "microphone"] },
     permission: { control: "inline-radio", options: ["prompt", "granted"] },
     reducedMotion: { control: "boolean" },
@@ -714,9 +708,8 @@ export const J_Cymatics: StoryObj<Args> = {
   render: (a) => (
     <MotionConfig reducedMotion="user">
       <CymaticsDemo
-        key={`${a.look}-${a.transition}`}
+        key={a.look}
         look={a.look}
-        transition={a.transition}
         source={a.source}
         promptMs={a.permission === "prompt" ? 1800 : 60}
         still={a.reducedMotion}
