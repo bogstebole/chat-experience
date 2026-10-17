@@ -238,7 +238,7 @@ const mulberry = (seed: number) => () => {
 };
 
 /** Tuning, all in plate units (the figure's radius is 1) and seconds. */
-const TUNE = {
+export const SAND_DEFAULTS = {
   /** Grains per css px² of the figure's disc. */
   density: 0.6,
   minGrains: 5000,
@@ -265,9 +265,25 @@ const TUNE = {
   calm: 0.04,
   /** Frame cost, in ms of main thread, past which the sand thins itself. */
   budget: 5,
+  /** How fast grains close on a line: 1 is what it was tuned to. */
+  gather: 1,
+  /**
+   * How differently grains move: 0, all at one speed; 1, the quickest a few
+   * times the slowest. Real sand is not uniform — light grains skate to a
+   * line, heavy ones trail after.
+   */
+  speedSpread: 0.6,
+  /** Grain size in css px, and how strong a grain is at rest and while waiting. */
+  grainSize: 1.6,
+  strength: 0.85,
+  waiting: 0.2,
 };
 
+export type SandTune = typeof SAND_DEFAULTS;
+
 export class Sand {
+  /** Live tuning: every value here is read each frame, so a panel can move it. */
+  tune: SandTune = { ...SAND_DEFAULTS };
   readonly canvas: HTMLCanvasElement;
   center = { x: 0, y: 0 };
   mic = { x: 0, y: 0 };
@@ -295,6 +311,8 @@ export class Sand {
   private calm = new Uint8Array(0);
   /** How firmly each grain is drawn to the lines: most fully, the dust hardly. */
   private grip = new Float32Array(0);
+  /** Each grain's own draw of how quick it is, as a normal deviate. */
+  private pace = new Float32Array(0);
   private frameNo = 0;
   private cost = 0;
   private costFrames = 0;
@@ -369,7 +387,7 @@ export class Sand {
   }
 
   private ensure() {
-    const want = Math.round(Math.min(TUNE.maxGrains, Math.max(TUNE.minGrains, Math.PI * this.radius * this.radius * TUNE.density)));
+    const want = Math.round(Math.min(this.tune.maxGrains, Math.max(this.tune.minGrains, Math.PI * this.radius * this.radius * this.tune.density)));
     if (want === this.size) return;
     this.size = want;
     this.count = want;
@@ -377,7 +395,13 @@ export class Sand {
     this.meta = new Float32Array(want * 2);
     this.calm = new Uint8Array(want);
     this.grip = new Float32Array(want);
-    for (let i = 0; i < want; i++) this.grip[i] = this.rand() < TUNE.dust ? 0.12 : 1;
+    this.pace = new Float32Array(want);
+    for (let i = 0; i < want; i++) {
+      // A draw kept rather than a grip fixed, so the dust share can be tuned live.
+      this.grip[i] = this.rand();
+      const u = Math.max(1e-6, this.rand());
+      this.pace[i] = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * this.rand());
+    }
     for (let i = 0; i < want; i++) this.meta[i * 2] = 0.55 + 0.45 * this.rand();
     this.launch = new Float32Array(want * 2);
     for (let i = 0; i < want; i++) {
@@ -397,7 +421,7 @@ export class Sand {
     let r = 0;
     for (let tries = 0; tries < 8; tries++) {
       r = 1.25 * Math.sqrt(this.rand());
-      if (this.rand() < 1 - smooth(TUNE.edgeFrom, TUNE.edgeTo, r)) break;
+      if (this.rand() < 1 - smooth(this.tune.edgeFrom, this.tune.edgeTo, r)) break;
     }
     const t = this.rand() * Math.PI * 2;
     this.pos[i * 2] = Math.cos(t) * r;
@@ -425,9 +449,9 @@ export class Sand {
     const here = this.here;
     // A square root, so ordinary speech already shakes the plate properly: a
     // quiet voice left the figures half-gathered when the next one came.
-    const shake = live * (TUNE.idle + (1 - TUNE.idle) * Math.sqrt(Math.max(0, drive)));
-    const kick = TUNE.kick * shake * Math.sqrt(dt);
-    const drift = TUNE.drift * shake * dt * 60 * 0.02;
+    const shake = live * (this.tune.idle + (1 - this.tune.idle) * Math.sqrt(Math.max(0, drive)));
+    const kick = this.tune.kick * shake * Math.sqrt(dt);
+    const drift = this.tune.drift * shake * dt * 60 * 0.02;
     // A settled grain is stepped one frame in three, with three frames' worth.
     const kickCalm = kick * Math.sqrt(3);
     const driftCalm = drift * 3;
@@ -444,7 +468,7 @@ export class Sand {
       const fx = here[1];
       const fy = here[2];
       const amp = Math.min(1, Math.abs(f));
-      calm[i] = amp < TUNE.calm ? 1 : 0;
+      calm[i] = amp < this.tune.calm ? 1 : 0;
       // Never quite still: a floor under the kick keeps the grains on a line
       // jostling, so a line is a band of sand with strays around it, the way
       // it is on a real plate, rather than a pencil stroke one grain wide.
@@ -453,7 +477,11 @@ export class Sand {
       // read as the same strong uniform beat before every figure. The grains
       // only walk from where they are to the nearest new line, which is
       // calmer and leaves some of the last figure behind, as sand does.
-      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle);
+      // Lognormal around 1, so the spread changes how different grains are
+      // without changing how fast the sand is on average.
+      const sp = this.tune.speedSpread;
+      const mobility = Math.exp(sp * this.pace[i] - (sp * sp) / 2);
+      const k = (settled && !every ? kickCalm : kick) * (amp + this.tune.jostle) * Math.sqrt(mobility);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
@@ -465,8 +493,9 @@ export class Sand {
       // Toward the edge the plate barely gathers: the last grains lie loose,
       // scattered, instead of drawing lines that stop at a circle.
       // Never wholly: loose grains spread evenly and read as a grey ring.
-      const loose = 1 - 0.75 * smooth(TUNE.edgeFrom + 0.05, TUNE.edgeTo, Math.sqrt(x * x + y * y));
-      const pull = ((d * 150) / (fx * fx + fy * fy + 4)) * this.grip[i] * loose;
+      const loose = 1 - 0.75 * smooth(this.tune.edgeFrom + 0.05, this.tune.edgeTo, Math.sqrt(x * x + y * y));
+      const grip = this.grip[i] < this.tune.dust ? 0.12 : 1;
+      const pull = ((d * 150 * this.tune.gather * mobility) / (fx * fx + fy * fy + 4)) * grip * loose;
       nx -= pull * f * fx;
       ny -= pull * f * fy;
       if (nx * nx + ny * ny > 1.35 * 1.35) {
@@ -491,7 +520,7 @@ export class Sand {
     // The sand keeps its own time: about a second to settle, under half a
     // second to lift off — arriving is the event, leaving is not.
     const target = frame.open > 0.5 ? 1 : 0;
-    if (dt > 0) this.pour = target ? Math.min(1, this.pour + dt / TUNE.pourOut) : Math.max(0, this.pour - dt / TUNE.pourBack);
+    if (dt > 0) this.pour = target ? Math.min(1, this.pour + dt / this.tune.pourOut) : Math.max(0, this.pour - dt / this.tune.pourBack);
     // No time passing is a still frame — reduced motion, a vocabulary cell:
     // the sand is simply where it is going.
     else this.pour = target;
@@ -501,7 +530,7 @@ export class Sand {
     } else {
       this.scattered = false;
     }
-    if (this.pending && frame.time - this.changedAt >= TUNE.hold) {
+    if (this.pending && frame.time - this.changedAt >= this.tune.hold) {
       this.plate = this.pending;
       this.pending = null;
       this.changedAt = frame.time;
@@ -571,9 +600,10 @@ export class Sand {
     gl.uniform2f(this.u.uCenter, this.center.x, this.center.y);
     gl.uniform1f(this.u.uRadius, this.radius);
     gl.uniform1f(this.u.uPour, this.pour);
-    gl.uniform1f(this.u.uSize, 1.6 * dpr);
+    gl.uniform1f(this.u.uSize, this.tune.grainSize * dpr);
     // Waiting, the sand lies scattered and faint — present, not a disc.
-    gl.uniform1f(this.u.uAlpha, (0.2 + 0.65 * frame.live) * this.weight);
+    const { waiting, strength } = this.tune;
+    gl.uniform1f(this.u.uAlpha, (waiting + (strength - waiting) * frame.live) * this.weight);
     gl.uniform3f(this.u.uGrain, ...this.colours.grain);
     gl.enable(gl.BLEND);
     if (this.minmax) {
@@ -590,8 +620,8 @@ export class Sand {
     const spent = performance.now() - started;
     this.cost = this.costFrames === 0 ? spent : this.cost * 0.9 + spent * 0.1;
     this.costFrames++;
-    if (this.costFrames > 30 && this.cost > TUNE.budget && this.count > TUNE.minGrains) {
-      this.count = Math.max(TUNE.minGrains, Math.floor(this.count * 0.8));
+    if (this.costFrames > 30 && this.cost > this.tune.budget && this.count > this.tune.minGrains) {
+      this.count = Math.max(this.tune.minGrains, Math.floor(this.count * 0.8));
       this.costFrames = 0;
     }
   }

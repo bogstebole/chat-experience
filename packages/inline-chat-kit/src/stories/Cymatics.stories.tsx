@@ -7,7 +7,9 @@ import composer from "../ChatInput/ChatInput.module.css";
 import { Cymatics, modeForOrder } from "./cymatics";
 import { BANDS, ToneTracker, detectPitch, simulatedTone } from "./voiceTone";
 import { LOOKS } from "./water";
-import { Sand } from "./sand";
+import { SAND_DEFAULTS, Sand } from "./sand";
+import { DialRoot, useDialKit } from "dialkit";
+import "dialkit/styles.css";
 
 /** Sand first: grains on an invisible plate. The rest are the water shaders, kept to compare. */
 const LOOK_NAMES = ["sand", ...Object.keys(LOOKS)] as ("sand" | keyof typeof LOOKS)[];
@@ -118,6 +120,63 @@ function SwapIcon({ name, children, still }: { name: string; children: ReactNode
   );
 }
 
+/**
+ * Every number the sand, the tone and the layout run on, on a DialKit panel,
+ * kept across reloads. "Copy values" puts them on the clipboard as JSON, to
+ * paste back into the defaults once they are right.
+ */
+function useSandDials(onCopy: () => void) {
+  const d = SAND_DEFAULTS;
+  return useDialKit(
+    "Dictation · sand",
+    {
+      Movement: {
+        gather: [d.gather, 0.2, 4, 0.05],
+        speedSpread: [d.speedSpread, 0, 1.5, 0.05],
+        kick: [d.kick, 0, 0.4, 0.005],
+        jostle: [d.jostle, 0, 0.5, 0.01],
+        idle: [d.idle, 0, 1, 0.01],
+        dust: [d.dust, 0, 0.5, 0.01],
+      },
+      Figures: {
+        hold: [d.hold, 0.3, 6, 0.1],
+        monotoneSeconds: [4, 1, 12, 0.5],
+      },
+      Grains: {
+        density: [d.density, 0.1, 1.5, 0.02],
+        maxGrains: [d.maxGrains, 5000, 80000, 1000],
+        grainSize: [d.grainSize, 0.6, 4, 0.1],
+        strength: [d.strength, 0.1, 1, 0.01],
+        waiting: [d.waiting, 0, 1, 0.01],
+      },
+      Edge: {
+        edgeFrom: [d.edgeFrom, 0, 1.2, 0.01],
+        edgeTo: [d.edgeTo, 0.4, 1.6, 0.01],
+      },
+      Sprinkle: {
+        pourOut: [d.pourOut, 0.1, 4, 0.05],
+        pourBack: [d.pourBack, 0.1, 3, 0.05],
+      },
+      Tone: {
+        follow: [0.6, 0.1, 3, 0.05],
+        learn: [8, 1, 30, 0.5],
+        range: [3.5, 1, 9, 0.25],
+        margin: [0.045, 0, 0.2, 0.005],
+        levelSmoothing: [0.45, 0.05, 2, 0.05],
+      },
+      Layout: {
+        size: [0.267, 0.1, 0.5, 0.005],
+        maxRadius: [187, 60, 400, 1],
+        lift: [0, -120, 200, 1],
+      },
+      copy: { type: "action", label: "Copy values" },
+    },
+    { id: "i4-sand", persist: true, onAction: (path) => path === "copy" && onCopy() }
+  );
+}
+
+type SandDials = ReturnType<typeof useSandDials>;
+
 function CymaticsDemo({
   source,
   promptMs,
@@ -131,6 +190,15 @@ function CymaticsDemo({
 }) {
   const reduced = useReducedMotion() ?? false;
   const still = forceStill || reduced;
+  const dialsRef = useRef<SandDials | null>(null);
+  const dials = useSandDials(() => {
+    const v = dialsRef.current;
+    if (v) void navigator.clipboard?.writeText(JSON.stringify(v, null, 2));
+  });
+  // Read by the frame loop and by place(), which run outside render.
+  useEffect(() => {
+    dialsRef.current = dials;
+  });
   const [phase, setPhase] = useState<Phase>("idle");
   const [text, setText] = useState("");
   const [heard, setHeard] = useState("");
@@ -209,7 +277,8 @@ function CymaticsDemo({
     const dockTop = dock ? dock.top - box.top : box.height - 64;
     // A third smaller than it was: at 40% of the width the sand ran under
     // the words and the composer on a phone. 104px of radius there.
-    const radius = Math.min(box.width * 0.267, (box.height - 160) * 0.267, 187);
+    const L = dialsRef.current?.Layout ?? { size: 0.267, maxRadius: 187, lift: 0 };
+    const radius = Math.min(box.width * L.size, (box.height - 160) * L.size, L.maxRadius);
     e.radius = radius;
     // The last loose grains reach about 1.15 radii; they stop just above a
     // transcript of three lines. Measured from the composer's own type, which
@@ -217,7 +286,7 @@ function CymaticsDemo({
     const editor = dockRef.current?.querySelector<HTMLElement>("[data-placeholder]");
     const type = editor ? parseFloat(getComputedStyle(editor).fontSize) : 14;
     const words = 22 + 3 * 1.6 * type + 10;
-    e.center = { x: box.width / 2, y: dockTop - words - radius * 1.15 };
+    e.center = { x: box.width / 2, y: dockTop - words - radius * 1.15 - L.lift };
     const mic = micRef.current?.getBoundingClientRect();
     e.mic = mic ? { x: mic.left - box.left + mic.width / 2, y: mic.top - box.top + mic.height / 2 } : { ...e.center };
     setGeo({ wordsBottom: dock ? box.bottom - dock.top + 22 : 96, full: dock ? dock.width : 358 });
@@ -246,6 +315,12 @@ function CymaticsDemo({
   }, [place, gl, look]);
 
   useEffect(() => warmEarcons(), []);
+
+  // The layout dials move the figure; the rest are read by the frame loop.
+  const { size, maxRadius, lift } = dials.Layout;
+  useEffect(() => {
+    place();
+  }, [size, maxRadius, lift, place]);
 
   const isOpen = phase !== "idle";
   useEffect(() => {
@@ -298,7 +373,7 @@ function CymaticsDemo({
         }
         // Followed over about half a second, not per syllable: the voice
         // swells the figure, it does not make it flicker.
-        d.level += (level - d.level) * (1 - Math.exp(-dt / 0.45));
+        d.level += (level - d.level) * (1 - Math.exp(-dt / (dialsRef.current?.Tone.levelSmoothing ?? 0.45)));
       }
       if (p === "listening") {
         setElapsed(Math.floor((now - startedAt.current) / 1000));
@@ -306,7 +381,7 @@ function CymaticsDemo({
         // A voice that holds one pitch — or one the tracker cannot hear —
         // still moves the figure on: after a few seconds of talking on the
         // same band, the next figure near it.
-        const monotone = d.level > 0.06 && now - lastFigureAt.current > 4000;
+        const monotone = d.level > 0.06 && now - lastFigureAt.current > (dialsRef.current?.Figures.monotoneSeconds ?? 4) * 1000;
         if ((band !== shownBand.current || monotone) && engine.current) {
           shownBand.current = band;
           lastFigureAt.current = now;
@@ -318,6 +393,19 @@ function CymaticsDemo({
         }
         const hz = tracker.current.heard;
         setToneReading({ tone: Math.round(tracker.current.tone * 100) / 100, band, hz: hz == null ? null : Math.round(hz), level: Math.round(d.level * 100) / 100 });
+      }
+      // The panel's values, every frame: cheap, and a slider moves the sand
+      // while it is on screen.
+      const v = dialsRef.current;
+      if (v) {
+        if (engine.current instanceof Sand) {
+          Object.assign(engine.current.tune, v.Movement, v.Grains, v.Edge, v.Sprinkle, { hold: v.Figures.hold });
+        }
+        const tr = tracker.current;
+        tr.follow = v.Tone.follow;
+        tr.learn = v.Tone.learn;
+        tr.range = v.Tone.range;
+        tr.margin = v.Tone.margin;
       }
       const changed = before.open !== d.open || before.live !== d.live || before.level !== d.level;
       // The sand's stream outlives the composer's spring; keep drawing while it runs.
@@ -707,6 +795,7 @@ export const J_Cymatics: StoryObj<Args> = {
   },
   render: (a) => (
     <MotionConfig reducedMotion="user">
+      <DialRoot />
       <CymaticsDemo
         key={a.look}
         look={a.look}

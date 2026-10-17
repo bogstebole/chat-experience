@@ -87,6 +87,14 @@ export class ToneTracker {
   private bandNow = Math.floor(BANDS / 2);
   /** 0..1: low for this speaker to high for this speaker. */
   tone = 0.5;
+  /** Seconds to follow the voice's pitch. */
+  follow = 0.6;
+  /** Seconds to learn where the speaker's middle is. */
+  learn = 8;
+  /** Semitones either side of the middle that span the six figures. */
+  range = 3.5;
+  /** How far past a band's edge the tone must go before the figure changes (0..0.2). */
+  margin = 0.045;
 
   get band() {
     return this.bandNow;
@@ -116,13 +124,13 @@ export class ToneTracker {
     if (this.readings < 20) this.centre += (s - this.centre) * 0.25;
     // About half a second to follow the voice, about eight to learn where its
     // middle is.
-    this.semis += (s - this.semis) * (1 - Math.exp(-dt / 0.6));
-    this.centre += (s - this.centre) * (1 - Math.exp(-dt / 8));
+    this.semis += (s - this.semis) * (1 - Math.exp(-dt / this.follow));
+    this.centre += (s - this.centre) * (1 - Math.exp(-dt / this.learn));
     // ±3.5 semitones around the speaker's middle spans the scale: well inside
     // the reach of ordinary intonation, so a question climbs it and a
     // statement settles back down. ±4.5 with a second's smoothing was
     // measured on real speech moving only between two of the six figures.
-    this.setTone(0.5 + (this.semis - this.centre) / 7);
+    this.setTone(0.5 + (this.semis - this.centre) / (2 * this.range));
   }
 
   /** Set the tone directly — for the simulated voice. */
@@ -130,7 +138,7 @@ export class ToneTracker {
     this.tone = Math.min(1, Math.max(0, value));
     const edge = (band: number) => band / BANDS;
     // Move a band only when the tone is clearly past its edge.
-    const margin = 0.045;
+    const margin = this.margin;
     while (this.bandNow < BANDS - 1 && this.tone > edge(this.bandNow + 1) + margin) this.bandNow++;
     while (this.bandNow > 0 && this.tone < edge(this.bandNow) - margin) this.bandNow--;
   }

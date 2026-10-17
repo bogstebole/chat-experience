@@ -216,3 +216,15 @@
   pointer-events: none;
 }
 
+
+/* DialKit's panel scrolls rather than running off the bottom — the same rule
+   the playground has, for the same panel. */
+:global(.dialkit-panel[data-position="top-right"]) {
+  top: 0;
+  max-height: 100dvh;
+}
+
+:global(.dialkit-panel[data-position="top-right"] .dialkit-panel-inner) {
+  max-height: 100dvh;
+  overflow-y: auto;
+}
