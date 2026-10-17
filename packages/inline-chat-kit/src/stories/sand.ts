@@ -260,8 +260,8 @@ const TUNE = {
   edgeFrom: 0.55,
   edgeTo: 1.2,
   /** How hard, and for how long, the plate shakes everything when the figure changes. */
-  scatter: 2.4,
-  scatterFor: 0.55,
+  scatter: 1.5,
+  scatterFor: 1.2,
   /** The share of grains that barely gather — the dust left lying across a real plate. */
   dust: 0.1,
   /** Below this, a grain is on a line and only needs stepping now and then. */
@@ -512,8 +512,11 @@ export class Sand {
       // Every grain is on new ground now; none of them is settled.
       this.calm.fill(0);
     }
-    const scatter = Math.max(0, 1 - (frame.time - this.changedAt) / TUNE.scatterFor);
-    if (dt > 0) this.step(dt, frame.level, frame.live, false, scatter * scatter);
+    // The loosening rises and falls as a swell, not a blow: starting at full
+    // strength on the change read as a pulse before every figure.
+    const since = (frame.time - this.changedAt) / TUNE.scatterFor;
+    const swell = since >= 0 && since < 1 ? Math.sin(Math.PI * since) ** 2 : 0;
+    if (dt > 0) this.step(dt, frame.level, frame.live, false, swell);
 
     // Fresh grains fade in over about a third of a second.
     if (this.growing > 0 && dt > 0) {
