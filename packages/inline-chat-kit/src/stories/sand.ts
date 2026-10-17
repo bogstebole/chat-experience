@@ -96,7 +96,7 @@ void main() {
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
   gl_PointSize = uSize * mix(2.1, 1.0, k);
   // Thinning toward the outside, never stopping at a line.
-  float fade = 1.0 - smoothstep(0.3, 1.0, r);
+  float fade = 1.0 - smoothstep(0.45, 1.05, r);
   vAlpha = uAlpha * fade * aMeta.y * k;
   vShade = aMeta.x;
 }
@@ -133,22 +133,24 @@ const mulberry = (seed: number) => () => {
 /** Tuning, all in plate units (the figure's radius is 1) and seconds. */
 const TUNE = {
   /** Grains per css px² of the figure's disc. */
-  density: 0.34,
+  density: 0.6,
   minGrains: 5000,
-  maxGrains: 30000,
+  maxGrains: 42000,
   /** How far a grain on the loudest part of the plate is thrown per √s. */
-  kick: 0.1,
+  kick: 0.12,
   /** How hard grains slide toward stillness. Low: a figure takes seconds to gather. */
-  drift: 0.028,
+  drift: 0.05,
   /** What silence still does while listening: barely anything. */
-  idle: 0.08,
+  idle: 0.2,
   /** The shortest time a figure holds before the next word may change it. */
-  hold: 2.2,
+  hold: 1.6,
   /** Seconds for the stream to pour out of the microphone, and back into it. */
   pourOut: 1.1,
   pourBack: 0.45,
   /** Sand is scattered as a soft heap of this width. */
   spread: 0.62,
+  /** The kick a grain gets even where the plate is still, as a share of the full kick. */
+  jostle: 0.07,
   /** Below this, a grain is on a line and only needs stepping now and then. */
   calm: 0.04,
   /** Frame cost, in ms of main thread, past which the sand thins itself. */
@@ -300,7 +302,9 @@ export class Sand {
     const { a, b, s } = this.plate;
     const pa = Math.PI * a;
     const pb = Math.PI * b;
-    const shake = live * (TUNE.idle + (1 - TUNE.idle) * drive);
+    // A square root, so ordinary speech already shakes the plate properly: a
+    // quiet voice left the figures half-gathered when the next one came.
+    const shake = live * (TUNE.idle + (1 - TUNE.idle) * Math.sqrt(Math.max(0, drive)));
     const kick = TUNE.kick * shake * Math.sqrt(dt);
     const drift = TUNE.drift * shake * dt * 60 * 0.02;
     // A settled grain is stepped one frame in three, with three frames' worth.
@@ -328,7 +332,10 @@ export class Sand {
       const fy = -pb * ca * sb + s * pa * cbx * say;
       const amp = Math.min(1, Math.abs(f) * 0.5);
       calm[i] = amp < TUNE.calm ? 1 : 0;
-      const k = (settled && !every ? kickCalm : kick) * amp;
+      // Never quite still: a floor under the kick keeps the grains on a line
+      // jostling, so a line is a band of sand with strays around it, the way
+      // it is on a real plate, rather than a pencil stroke one grain wide.
+      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
@@ -407,7 +414,7 @@ export class Sand {
     if (!this.colours || now - this.colours.at > 500) {
       this.colours = { at: now, grain: channel(canvas, "--ick-ink-rgb", [0.07, 0.07, 0.07]) };
       const [r, g, b] = this.colours.grain;
-      this.weight = r + g + b < 1.5 ? 0.95 : 1;
+      this.weight = r + g + b < 1.5 ? 0.72 : 1;
     }
 
     gl.useProgram(this.program);
@@ -436,9 +443,9 @@ export class Sand {
     gl.uniform2f(this.u.uCenter, this.center.x, this.center.y);
     gl.uniform1f(this.u.uRadius, this.radius);
     gl.uniform1f(this.u.uPour, this.pour);
-    gl.uniform1f(this.u.uSize, 1.7 * dpr);
+    gl.uniform1f(this.u.uSize, 1.6 * dpr);
     // Waiting, the sand lies scattered and faint — present, not a disc.
-    gl.uniform1f(this.u.uAlpha, (0.22 + 0.73 * frame.live) * this.weight);
+    gl.uniform1f(this.u.uAlpha, (0.2 + 0.65 * frame.live) * this.weight);
     gl.uniform3f(this.u.uGrain, ...this.colours.grain);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
