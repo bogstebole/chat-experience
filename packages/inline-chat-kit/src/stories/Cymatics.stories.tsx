@@ -8,7 +8,7 @@ import { Cymatics, modeForOrder } from "./cymatics";
 import { BANDS, ToneTracker, detectPitch, simulatedTone } from "./voiceTone";
 import { LOOKS } from "./water";
 import { SAND_DEFAULTS, Sand } from "./sand";
-import { DialRoot, useDialKit } from "dialkit";
+import { DialRoot, useDialKitController } from "dialkit";
 import "dialkit/styles.css";
 
 /** Sand first: grains on an invisible plate. The rest are the water shaders, kept to compare. */
@@ -122,12 +122,16 @@ function SwapIcon({ name, children, still }: { name: string; children: ReactNode
 
 /**
  * Every number the sand, the tone and the layout run on, on a DialKit panel,
- * kept across reloads. "Copy values" puts them on the clipboard as JSON, to
- * paste back into the defaults once they are right.
+ * kept across reloads. "Reset" brings back these defaults; "Copy values"
+ * puts the current ones on the clipboard as JSON, to paste back here once
+ * they are right. The id carries a version: bump it when the defaults move,
+ * or the values saved in a browser keep overriding them.
  */
-function useSandDials(onCopy: () => void) {
+const DIAL_ID = "i4-sand-v2";
+
+function useSandDials(onAction: (path: string) => void) {
   const d = SAND_DEFAULTS;
-  return useDialKit(
+  return useDialKitController(
     "Dictation · sand",
     {
       Movement: {
@@ -137,13 +141,14 @@ function useSandDials(onCopy: () => void) {
         jostle: [d.jostle, 0, 0.5, 0.01],
         idle: [d.idle, 0, 1, 0.01],
         dust: [d.dust, 0, 0.5, 0.01],
+        refresh: [d.refresh, 0, 0.3, 0.01],
       },
       Figures: {
         hold: [d.hold, 0.3, 6, 0.1],
-        monotoneSeconds: [4, 1, 12, 0.5],
+        monotoneSeconds: [4.5, 1, 12, 0.5],
       },
       Grains: {
-        density: [d.density, 0.1, 1.5, 0.02],
+        density: [d.density, 0.1, 2.5, 0.02],
         maxGrains: [d.maxGrains, 5000, 80000, 1000],
         grainSize: [d.grainSize, 0.6, 4, 0.1],
         strength: [d.strength, 0.1, 1, 0.01],
@@ -162,20 +167,21 @@ function useSandDials(onCopy: () => void) {
         learn: [8, 1, 30, 0.5],
         range: [3.5, 1, 9, 0.25],
         margin: [0.045, 0, 0.2, 0.005],
-        levelSmoothing: [0.45, 0.05, 2, 0.05],
+        levelSmoothing: [0.8, 0.05, 2, 0.05],
       },
       Layout: {
-        size: [0.267, 0.1, 0.5, 0.005],
-        maxRadius: [187, 60, 400, 1],
-        lift: [0, -120, 200, 1],
+        size: [0.21, 0.1, 0.5, 0.005],
+        maxRadius: [150, 60, 400, 1],
+        lift: [12, -120, 200, 1],
       },
+      reset: { type: "action", label: "Reset to defaults" },
       copy: { type: "action", label: "Copy values" },
     },
-    { id: "i4-sand", persist: true, onAction: (path) => path === "copy" && onCopy() }
+    { id: DIAL_ID, persist: true, onAction }
   );
 }
 
-type SandDials = ReturnType<typeof useSandDials>;
+type SandDials = ReturnType<typeof useSandDials>["values"];
 
 function CymaticsDemo({
   source,
@@ -191,13 +197,19 @@ function CymaticsDemo({
   const reduced = useReducedMotion() ?? false;
   const still = forceStill || reduced;
   const dialsRef = useRef<SandDials | null>(null);
-  const dials = useSandDials(() => {
-    const v = dialsRef.current;
-    if (v) void navigator.clipboard?.writeText(JSON.stringify(v, null, 2));
+  const resetRef = useRef<() => void>(() => {});
+  const controller = useSandDials((path) => {
+    if (path === "reset") resetRef.current();
+    if (path === "copy") {
+      const v = dialsRef.current;
+      if (v) void navigator.clipboard?.writeText(JSON.stringify(v, null, 2));
+    }
   });
+  const dials = controller.values;
   // Read by the frame loop and by place(), which run outside render.
   useEffect(() => {
     dialsRef.current = dials;
+    resetRef.current = controller.resetValues;
   });
   const [phase, setPhase] = useState<Phase>("idle");
   const [text, setText] = useState("");
@@ -278,7 +290,7 @@ function CymaticsDemo({
     const dockTop = dock ? dock.top - box.top : box.height - 64;
     // A third smaller than it was: at 40% of the width the sand ran under
     // the words and the composer on a phone. 104px of radius there.
-    const L = dialsRef.current?.Layout ?? { size: 0.267, maxRadius: 187, lift: 0 };
+    const L = dialsRef.current?.Layout ?? { size: 0.21, maxRadius: 150, lift: 12 };
     const radius = Math.min(box.width * L.size, (box.height - 160) * L.size, L.maxRadius);
     e.radius = radius;
     // The last loose grains reach about 1.15 radii; they stop just above a
@@ -374,7 +386,7 @@ function CymaticsDemo({
         }
         // Followed over about half a second, not per syllable: the voice
         // swells the figure, it does not make it flicker.
-        d.level += (level - d.level) * (1 - Math.exp(-dt / (dialsRef.current?.Tone.levelSmoothing ?? 0.45)));
+        d.level += (level - d.level) * (1 - Math.exp(-dt / (dialsRef.current?.Tone.levelSmoothing ?? 0.8)));
       }
       if (p === "listening") {
         setElapsed(Math.floor((now - startedAt.current) / 1000));
@@ -382,7 +394,7 @@ function CymaticsDemo({
         // A voice that holds one pitch — or one the tracker cannot hear —
         // still moves the figure on: after a few seconds of talking on the
         // same band, the next figure near it.
-        const monotone = d.level > 0.06 && now - lastFigureAt.current > (dialsRef.current?.Figures.monotoneSeconds ?? 4) * 1000;
+        const monotone = d.level > 0.06 && now - lastFigureAt.current > (dialsRef.current?.Figures.monotoneSeconds ?? 4.5) * 1000;
         if ((band !== shownBand.current || monotone) && engine.current) {
           shownBand.current = band;
           lastFigureAt.current = now;
@@ -786,6 +798,8 @@ function CymaticsDemo({
 
 interface Args {
   look: Look;
+  /** The tuning panel. Closed to a button on a narrow screen, where open it covers the composer. */
+  panel: boolean;
   source: "simulated" | "microphone";
   permission: "prompt" | "granted";
   reducedMotion: boolean;
@@ -793,16 +807,17 @@ interface Args {
 
 export const J_Cymatics: StoryObj<Args> = {
   name: "J · Cymatics",
-  args: { look: "sand", source: "simulated", permission: "prompt", reducedMotion: false },
+  args: { look: "sand", panel: true, source: "simulated", permission: "prompt", reducedMotion: false },
   argTypes: {
     look: { control: "inline-radio", options: LOOK_NAMES },
+    panel: { control: "boolean" },
     source: { control: "inline-radio", options: ["simulated", "microphone"] },
     permission: { control: "inline-radio", options: ["prompt", "granted"] },
     reducedMotion: { control: "boolean" },
   },
   render: (a) => (
     <MotionConfig reducedMotion="user">
-      <DialRoot />
+      {a.panel && <DialRoot defaultOpen={typeof window === "undefined" || window.innerWidth >= 720} />}
       <CymaticsDemo
         key={a.look}
         look={a.look}

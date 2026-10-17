@@ -240,43 +240,45 @@ const mulberry = (seed: number) => () => {
 /** Tuning, all in plate units (the figure's radius is 1) and seconds. */
 export const SAND_DEFAULTS = {
   /** Grains per css px² of the figure's disc. */
-  density: 0.6,
+  density: 1.2,
   minGrains: 5000,
-  maxGrains: 42000,
+  maxGrains: 60000,
   /** How far a grain on the loudest part of the plate is thrown per √s. */
-  kick: 0.12,
+  kick: 0.08,
   /** How hard grains slide toward stillness. Low: a figure takes seconds to gather. */
   drift: 0.05,
   /** What silence still does while listening: barely anything. */
-  idle: 0.2,
+  idle: 0.22,
   /** The shortest time a figure holds before the next word may change it. */
-  hold: 1.6,
+  hold: 1,
   /** Seconds for the stream to pour out of the microphone, and back into it. */
-  pourOut: 1.1,
-  pourBack: 0.45,
+  pourOut: 0.8,
+  pourBack: 0.4,
   /** The kick a grain gets even where the plate is still, as a share of the full kick. */
-  jostle: 0.15,
+  jostle: 0.12,
   /** Where the sand starts to run out, and where there is none left (the figure's radius is 1). */
   edgeFrom: 0.55,
-  edgeTo: 1.2,
+  edgeTo: 1.15,
   /** The share of grains that barely gather — the dust left lying across a real plate. */
-  dust: 0.1,
+  dust: 0.12,
   /** Below this, a grain is on a line and only needs stepping now and then. */
   calm: 0.04,
   /** Frame cost, in ms of main thread, past which the sand thins itself. */
   budget: 5,
-  /** How fast grains close on a line: 1 is what it was tuned to. */
-  gather: 1,
+  /** How fast grains close on a line. At 3 a figure is 90% gathered in about 0.6 s. */
+  gather: 3,
   /**
    * How differently grains move: 0, all at one speed; 1, the quickest a few
    * times the slowest. Real sand is not uniform — light grains skate to a
    * line, heavy ones trail after.
    */
-  speedSpread: 0.6,
+  speedSpread: 0.35,
+  /** The share of grains poured afresh each second, to keep the plate evenly covered. */
+  refresh: 0.06,
   /** Grain size in css px, and how strong a grain is at rest and while waiting. */
-  grainSize: 1.6,
-  strength: 0.85,
-  waiting: 0.2,
+  grainSize: 1.8,
+  strength: 0.7,
+  waiting: 0.22,
 };
 
 export type SandTune = typeof SAND_DEFAULTS;
@@ -458,7 +460,19 @@ export class Sand {
     const driftCalm = drift * 3;
     const slot = this.frameNo++ % 3;
     const { pos, calm, meta } = this;
+    const refresh = this.tune.refresh * dt;
     for (let i = 0; i < this.count; i++) {
+      // A slow, constant sprinkle: a few grains a second are lifted and
+      // poured again at random. Without it the sand walked to the nearest
+      // line on every change and grew lumpier figure by figure; with it the
+      // plate stays evenly covered and nothing is seen to happen.
+      if (refresh > 0 && this.rand() < refresh) {
+        this.drop(i);
+        if (meta[i * 2 + 1] >= 1) this.growing++;
+        meta[i * 2 + 1] = 0;
+        this.metaDirty = true;
+        continue;
+      }
       const settled = calm[i] === 1;
       if (settled && !every && i % 3 !== slot) continue;
       const x = pos[i * 2];
