@@ -177,28 +177,6 @@
   color: var(--ick-ink-faint);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
-  width: min(940px, calc(100vw - 32px));
-}
-
-.cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--ick-font-mono);
-  font-size: 11px;
-  color: var(--ick-ink-faint);
-}
-
-.cellCanvas {
-  width: 220px;
-  height: 160px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .word {
     transition: none;
