@@ -259,9 +259,6 @@ const TUNE = {
   /** Where the sand starts to run out, and where there is none left (the figure's radius is 1). */
   edgeFrom: 0.55,
   edgeTo: 1.2,
-  /** How hard, and for how long, the plate shakes everything when the figure changes. */
-  scatter: 1.5,
-  scatterFor: 1.2,
   /** The share of grains that barely gather — the dust left lying across a real plate. */
   dust: 0.1,
   /** Below this, a grain is on a line and only needs stepping now and then. */
@@ -422,7 +419,7 @@ export class Sand {
    * One step of the plate. `drive` is how hard it is shaken (the voice);
    * `live` is whether it is shaken at all.
    */
-  private step(dt: number, drive: number, live: number, every = false, scatter = 0) {
+  private step(dt: number, drive: number, live: number, every = false) {
     if (live <= 0) return;
     const plate = this.plate;
     const here = this.here;
@@ -451,13 +448,12 @@ export class Sand {
       // Never quite still: a floor under the kick keeps the grains on a line
       // jostling, so a line is a band of sand with strays around it, the way
       // it is on a real plate, rather than a pencil stroke one grain wide.
-      // A syllable jostles every grain a little, even on a line; the plate
-      // gathers them back within the next few frames.
-      // Just after a change the whole plate shakes hard for a moment, lines
-      // and all, so the sand spreads out again before it gathers. Without it
-      // grains walked only to the nearest new line: those piled up dark and
-      // the lines further off stayed empty.
-      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + TUNE.scatter * scatter);
+      // A new figure is not announced. The plate does not shake everything
+      // loose when it changes — tried both as a blow and as a swell, and both
+      // read as the same strong uniform beat before every figure. The grains
+      // only walk from where they are to the nearest new line, which is
+      // calmer and leaves some of the last figure behind, as sand does.
+      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
@@ -512,11 +508,7 @@ export class Sand {
       // Every grain is on new ground now; none of them is settled.
       this.calm.fill(0);
     }
-    // The loosening rises and falls as a swell, not a blow: starting at full
-    // strength on the change read as a pulse before every figure.
-    const since = (frame.time - this.changedAt) / TUNE.scatterFor;
-    const swell = since >= 0 && since < 1 ? Math.sin(Math.PI * since) ** 2 : 0;
-    if (dt > 0) this.step(dt, frame.level, frame.live, false, swell);
+    if (dt > 0) this.step(dt, frame.level, frame.live);
 
     // Fresh grains fade in over about a third of a second.
     if (this.growing > 0 && dt > 0) {
