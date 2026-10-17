@@ -202,9 +202,9 @@ void main() {
   vec2 clip = css / uView * 2.0 - 1.0;
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
   gl_PointSize = uSize * mix(2.1, 1.0, k);
-  // Thinning toward the outside, never stopping at a line.
-  float fade = 1.0 - smoothstep(0.6, 1.1, r);
-  vAlpha = uAlpha * fade * aMeta.y * k;
+  // No fade: every grain is sand at full strength. The edge is made by there
+  // being fewer grains, lying loose — see drop() and step().
+  vAlpha = uAlpha * aMeta.y * k;
   vShade = aMeta.x;
 }
 `;
@@ -256,6 +256,9 @@ const TUNE = {
   pourBack: 0.45,
   /** The kick a grain gets even where the plate is still, as a share of the full kick. */
   jostle: 0.15,
+  /** Where the sand starts to run out, and where there is none left (the figure's radius is 1). */
+  edgeFrom: 0.55,
+  edgeTo: 1.2,
   /** How hard, and for how long, the plate shakes everything when the figure changes. */
   scatter: 2.4,
   scatterFor: 0.55,
@@ -390,10 +393,15 @@ export class Sand {
 
   /** A grain dropped somewhere on the heap: dense in the middle, thinning out, no edge. */
   private drop(i: number) {
-    // Evenly over the whole plate, as sand is poured on a real one. A heap
-    // dense in the middle left the outer lines with nothing to gather from,
-    // and they came out broken.
-    const r = 1.12 * Math.sqrt(this.rand());
+    // Evenly over the middle of the plate, as sand is poured on a real one —
+    // a heap dense in the middle left the outer lines with nothing to gather
+    // from. Past that, ever fewer grains, out to nothing: the edge of the
+    // figure is sand running out, not sand fading.
+    let r = 0;
+    for (let tries = 0; tries < 8; tries++) {
+      r = 1.25 * Math.sqrt(this.rand());
+      if (this.rand() < 1 - smooth(TUNE.edgeFrom, TUNE.edgeTo, r)) break;
+    }
     const t = this.rand() * Math.PI * 2;
     this.pos[i * 2] = Math.cos(t) * r;
     this.pos[i * 2 + 1] = Math.sin(t) * r;
@@ -458,7 +466,11 @@ export class Sand {
       // so a grain closes on its line at the same pace however steep the
       // plate is there: steep places used to pull the sand into a hairline
       // while gentle ones left a wide smear.
-      const pull = ((d * 150) / (fx * fx + fy * fy + 4)) * this.grip[i];
+      // Toward the edge the plate barely gathers: the last grains lie loose,
+      // scattered, instead of drawing lines that stop at a circle.
+      // Never wholly: loose grains spread evenly and read as a grey ring.
+      const loose = 1 - 0.75 * smooth(TUNE.edgeFrom + 0.05, TUNE.edgeTo, Math.sqrt(x * x + y * y));
+      const pull = ((d * 150) / (fx * fx + fy * fy + 4)) * this.grip[i] * loose;
       nx -= pull * f * fx;
       ny -= pull * f * fy;
       if (nx * nx + ny * ny > 1.35 * 1.35) {
@@ -592,4 +604,9 @@ export class Sand {
   dispose() {
     this.gl.getExtension("WEBGL_lose_context")?.loseContext();
   }
+}
+
+function smooth(e0: number, e1: number, x: number) {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
 }

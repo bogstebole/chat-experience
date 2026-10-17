@@ -191,7 +191,6 @@ export function modeFor(word: string, pitch = 0.5): Mode {
 
 export class Cymatics {
   private gl: WebGLRenderingContext;
-  private program: WebGLProgram;
   private uniforms: Record<string, WebGLUniformLocation | null> = {};
   private from: Mode = { n: 0, k: 12, phase: 0 };
   private to: Mode = { n: 0, k: 12, phase: 0 };
@@ -239,7 +238,6 @@ export class Cymatics {
     gl.attachShader(program, compile(gl.FRAGMENT_SHADER, frag));
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) ?? "link");
-    this.program = program;
     gl.useProgram(program);
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
