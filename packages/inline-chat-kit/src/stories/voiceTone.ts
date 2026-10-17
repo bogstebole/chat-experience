@@ -11,47 +11,64 @@
 
 /**
  * The fundamental of one window of audio, in Hz, or null when it is not
- * voiced. YIN, cut down: the difference function, its cumulative-mean
- * normalisation, the first dip under a threshold, a parabola through it.
+ * voiced. YIN: the difference function from the first lag, its
+ * cumulative-mean normalisation, the first dip under a threshold — or, for a
+ * breathy or noisy voice that never dips that far, the deepest dip if it is
+ * deep enough — and a parabola through it.
+ *
+ * The first version normalised from the shortest lag considered rather than
+ * from the first, and wanted a dip under 0.18: a clean synthetic tone passed
+ * and a real voice through a laptop microphone mostly did not, so the figure
+ * never changed. The window is halved first (two samples averaged), which
+ * keeps every voice and quarters the cost.
  */
-export function detectPitch(buf: Float32Array, sampleRate: number, lowHz = 70, highHz = 420): number | null {
-  const size = buf.length;
+export function detectPitch(input: Float32Array, sampleRate: number, lowHz = 70, highHz = 500): number | null {
+  const size = input.length >> 1;
+  const rate = sampleRate / 2;
+  const buf = new Float32Array(size);
   let energy = 0;
-  for (let i = 0; i < size; i++) energy += buf[i] * buf[i];
-  // Too quiet to be a voice.
-  if (Math.sqrt(energy / size) < 0.012) return null;
-  const minLag = Math.floor(sampleRate / highHz);
-  const maxLag = Math.min(Math.floor(sampleRate / lowHz), Math.floor(size / 2));
-  const half = size - maxLag;
+  for (let i = 0; i < size; i++) {
+    const v = (input[2 * i] + input[2 * i + 1]) * 0.5;
+    buf[i] = v;
+    energy += v * v;
+  }
+  // Below this it is the room, not a voice.
+  if (Math.sqrt(energy / size) < 0.004) return null;
+  const minLag = Math.max(2, Math.floor(rate / highHz));
+  const maxLag = Math.min(Math.floor(rate / lowHz), Math.floor(size / 2));
+  const span = size - maxLag;
   const d = new Float32Array(maxLag + 1);
-  for (let lag = minLag; lag <= maxLag; lag++) {
+  let running = 0;
+  d[0] = 1;
+  for (let lag = 1; lag <= maxLag; lag++) {
     let sum = 0;
-    for (let i = 0; i < half; i++) {
+    for (let i = 0; i < span; i++) {
       const delta = buf[i] - buf[i + lag];
       sum += delta * delta;
     }
-    d[lag] = sum;
+    running += sum;
+    d[lag] = running > 0 ? (sum * lag) / running : 1;
   }
-  // Cumulative-mean normalisation, from the first lag considered.
-  let running = 0;
   let best = -1;
   for (let lag = minLag; lag <= maxLag; lag++) {
-    running += d[lag];
-    const norm = running > 0 ? (d[lag] * (lag - minLag + 1)) / running : 1;
-    d[lag] = norm;
-    if (best < 0 && norm < 0.18 && lag > minLag) {
-      // Walk to the bottom of this dip.
+    if (d[lag] < 0.2) {
+      while (lag + 1 <= maxLag && d[lag + 1] < d[lag]) lag++;
       best = lag;
-    } else if (best > 0 && lag === best + 1 && norm < d[best]) {
-      best = lag;
+      break;
     }
   }
+  if (best < 0) {
+    let low = minLag;
+    for (let lag = minLag; lag <= maxLag; lag++) if (d[lag] < d[low]) low = lag;
+    if (d[low] < 0.45) best = low;
+  }
   if (best < 0) return null;
-  const a = d[best - 1] ?? d[best];
+  const a = d[best - 1];
   const b = d[best];
   const c = best + 1 <= maxLag ? d[best + 1] : d[best];
-  const shift = (a - c) / (2 * (a - 2 * b + c) || 1);
-  return sampleRate / (best + (Number.isFinite(shift) ? Math.max(-1, Math.min(1, shift)) : 0));
+  const bend = a - 2 * b + c;
+  const shift = bend !== 0 ? Math.max(-1, Math.min(1, (a - c) / (2 * bend))) : 0;
+  return rate / (best + shift);
 }
 
 /** Six figures, simplest to most intricate. */
@@ -75,22 +92,37 @@ export class ToneTracker {
     return this.bandNow;
   }
 
+  private recent: number[] = [];
+  private readings = 0;
+  /** The last pitch heard, in Hz, for showing; null in a gap. */
+  heard: number | null = null;
+
   /** One reading: a pitch in Hz, or null for a gap. `dt` in seconds. */
   push(hz: number | null, dt: number) {
+    this.heard = hz;
     if (hz == null || dt <= 0) return;
-    const s = 12 * Math.log2(hz / 55);
+    // The median of the last five: one reading an octave off (the commonest
+    // mistake a pitch tracker makes) cannot move the figure.
+    this.recent.push(12 * Math.log2(hz / 55));
+    if (this.recent.length > 5) this.recent.shift();
+    const s = [...this.recent].sort((x, y) => x - y)[this.recent.length >> 1];
+    this.readings++;
     if (this.semis < 0) {
       this.semis = s;
       this.centre = s;
     }
-    // About a second to follow the voice, about eight to learn where its
+    // The middle is learned fast over the first second of voice, then slowly:
+    // a first reading at the top of a sentence no longer sets it.
+    if (this.readings < 20) this.centre += (s - this.centre) * 0.25;
+    // About half a second to follow the voice, about eight to learn where its
     // middle is.
-    this.semis += (s - this.semis) * (1 - Math.exp(-dt / 1.0));
+    this.semis += (s - this.semis) * (1 - Math.exp(-dt / 0.6));
     this.centre += (s - this.centre) * (1 - Math.exp(-dt / 8));
-    // ±4.5 semitones around the speaker's middle spans the scale: about the
-    // reach of ordinary intonation, so a question climbs it and a statement
-    // settles back down.
-    this.setTone(0.5 + (this.semis - this.centre) / 9);
+    // ±3.5 semitones around the speaker's middle spans the scale: well inside
+    // the reach of ordinary intonation, so a question climbs it and a
+    // statement settles back down. ±4.5 with a second's smoothing was
+    // measured on real speech moving only between two of the six figures.
+    this.setTone(0.5 + (this.semis - this.centre) / 7);
   }
 
   /** Set the tone directly — for the simulated voice. */

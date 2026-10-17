@@ -177,7 +177,8 @@ function CymaticsDemo({
   /** Counts the figures shown, so returning to a band brings a new figure, not the last one. */
   const variant = useRef(0);
   const pitchAt = useRef(0);
-  const [toneReading, setToneReading] = useState<{ tone: number; band: number } | null>(null);
+  const [toneReading, setToneReading] = useState<{ tone: number; band: number; hz: number | null; level: number } | null>(null);
+  const lastFigureAt = useRef(0);
   const dirty = useRef(true);
   /** Set on the way out; the microphone is inert until the dish has closed. */
   const returnFocus = useRef(false);
@@ -301,15 +302,21 @@ function CymaticsDemo({
       if (p === "listening") {
         setElapsed(Math.floor((now - startedAt.current) / 1000));
         const band = tracker.current.band;
-        if (band !== shownBand.current && engine.current) {
+        // A voice that holds one pitch — or one the tracker cannot hear —
+        // still moves the figure on: after a few seconds of talking on the
+        // same band, the next figure near it.
+        const monotone = d.level > 0.06 && now - lastFigureAt.current > 4000;
+        if ((band !== shownBand.current || monotone) && engine.current) {
           shownBand.current = band;
+          lastFigureAt.current = now;
           variant.current += 1;
           const mode = modeForOrder(band / (BANDS - 1), variant.current);
           if (still) engine.current.setModeNow(mode);
           else engine.current.setMode(mode);
           dirty.current = true;
         }
-        setToneReading({ tone: Math.round(tracker.current.tone * 100) / 100, band });
+        const hz = tracker.current.heard;
+        setToneReading({ tone: Math.round(tracker.current.tone * 100) / 100, band, hz: hz == null ? null : Math.round(hz), level: Math.round(d.level * 100) / 100 });
       }
       const changed = before.open !== d.open || before.live !== d.live || before.level !== d.level;
       // The sand's stream outlives the composer's spring; keep drawing while it runs.
@@ -344,6 +351,7 @@ function CymaticsDemo({
     tracker.current = new ToneTracker();
     pitchAt.current = 0;
     shownBand.current = tracker.current.band;
+    lastFigureAt.current = performance.now();
     const first = modeForOrder(tracker.current.band / (BANDS - 1));
     if (still) engine.current?.setModeNow(first);
     else engine.current?.setMode(first);
@@ -673,7 +681,7 @@ function CymaticsDemo({
       {/* For the exploration only: what the voice's tone is doing. */}
       {open && toneReading && (
         <div className={s.readout} data-tone={toneReading.tone} data-band={toneReading.band}>
-          tone {toneReading.tone.toFixed(2)} · figure {toneReading.band + 1}/{BANDS}
+          {toneReading.hz == null ? "— Hz" : `${toneReading.hz} Hz`} · level {toneReading.level.toFixed(2)} · tone {toneReading.tone.toFixed(2)} · figure {toneReading.band + 1}/{BANDS}
         </div>
       )}
     </div>
