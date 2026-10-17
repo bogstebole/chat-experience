@@ -51,8 +51,6 @@ export interface Frame {
   live: number;
   /** 0..1: how far the dish has opened out of the microphone. */
   open: number;
-  /** 0..1, fast: jumps on each syllable and falls away in about a tenth of a second. */
-  pulse?: number;
 }
 
 const VERT = `
