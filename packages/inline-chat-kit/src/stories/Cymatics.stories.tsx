@@ -63,7 +63,9 @@ const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds
 interface Recogniser {
   continuous: boolean;
   interimResults: boolean;
+  lang: string;
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror?: ((event: { error: string }) => void) | null;
   onend?: (() => void) | null;
   start: () => void;
   stop: () => void;
@@ -80,6 +82,28 @@ const recogniserFor = (): Recogniser | null => {
     (window as unknown as { SpeechRecognition?: new () => Recogniser }).SpeechRecognition ??
     (window as unknown as { webkitSpeechRecognition?: new () => Recogniser }).webkitSpeechRecognition;
   return Ctor ? new Ctor() : null;
+};
+
+/**
+ * Why the browser's recogniser gave no words, said on the page: with no
+ * handler for its errors it failed silently, and the sand moving to the
+ * voice made it look as though only the words were broken.
+ */
+const recogniserTrouble = (error: string, lang: string): string | null => {
+  switch (error) {
+    case "not-allowed":
+    case "service-not-allowed":
+      return "This browser won't let the page use its speech recogniser. In Safari, Dictation must be on (System Settings → Keyboard); Chrome needs the microphone allowed for this site.";
+    case "network":
+      return "This browser has no speech service behind its recogniser — Arc, Brave, Dia, Electron and other Chromium builds without Google's keys don't. Try Chrome or Safari.";
+    case "language-not-supported":
+      return `This browser cannot recognise ${lang}. Pick another language in the controls.`;
+    case "audio-capture":
+      return "The recogniser could not get the microphone.";
+    default:
+      // "no-speech" and "aborted" are a pause and a stop, not trouble.
+      return null;
+  }
 };
 
 interface Geometry {
@@ -188,11 +212,14 @@ function CymaticsDemo({
   promptMs,
   still: forceStill,
   look,
+  language,
 }: {
   source: "simulated" | "microphone";
   promptMs: number;
   still: boolean;
   look: Look;
+  /** A BCP 47 tag for the browser's recogniser, or "browser" for the browser's own language. */
+  language: string;
 }) {
   const reduced = useReducedMotion() ?? false;
   const still = forceStill || reduced;
@@ -257,6 +284,8 @@ function CymaticsDemo({
   /** Counts the figures shown, so returning to a band brings a new figure, not the last one. */
   const variant = useRef(0);
   const pitchAt = useRef(0);
+  /** Pitch readings that found a voice in this recording: whether anyone has spoken yet. */
+  const voiced = useRef(0);
   const [toneReading, setToneReading] = useState<{ tone: number; band: number; hz: number | null; level: number; grains: number | null } | null>(null);
   const readAt = useRef(0);
   const lastFigureAt = useRef(0);
@@ -376,7 +405,9 @@ function CymaticsDemo({
             if (now - pitchAt.current > 50) {
               const since = pitchAt.current ? (now - pitchAt.current) / 1000 : 0.05;
               pitchAt.current = now;
-              tracker.current.push(detectPitch(buf, m.ctx.sampleRate), since);
+              const hz = detectPitch(buf, m.ctx.sampleRate);
+              if (hz != null) voiced.current += 1;
+              tracker.current.push(hz, since);
             }
           } else {
             level = speech(t);
@@ -457,6 +488,7 @@ function CymaticsDemo({
     // Every recording learns its speaker afresh, and starts in the middle.
     tracker.current = new ToneTracker();
     pitchAt.current = 0;
+    voiced.current = 0;
     shownBand.current = tracker.current.band;
     lastFigureAt.current = performance.now();
     const first = modeForOrder(tracker.current.band / (BANDS - 1));
@@ -504,17 +536,54 @@ function CymaticsDemo({
       if (recogniser) {
         recogniser.continuous = true;
         recogniser.interimResults = true;
+        // Unset, it recognises the page's language — English here — and a
+        // sentence in Serbian came back as nothing at all.
+        recogniser.lang = language === "browser" ? navigator.language : language;
+        /** What earlier sessions heard: Chrome ends one after a long pause, and the next starts with no results. */
+        let kept = "";
+        let broken = false;
         recogniser.onresult = (event) => {
-          let all = "";
-          for (let i = 0; i < event.results.length; i++) all += event.results[i][0].transcript;
+          let all = kept;
+          // Chrome starts each later result with a space and Safari doesn't.
+          for (let i = 0; i < event.results.length; i++) all += ` ${event.results[i][0].transcript}`;
           heardRef.current = all.trim().replace(/\s+/g, " ");
           setHeard(heardRef.current);
+        };
+        recogniser.onerror = (event) => {
+          const trouble = recogniserTrouble(event.error, recogniser.lang);
+          if (!trouble) return;
+          broken = true;
+          setNote(trouble);
+        };
+        // Until Done replaces this, an end is the browser stopping on its own
+        // after a pause: start again, keeping what it heard.
+        recogniser.onend = () => {
+          if (broken || phaseRef.current !== "listening" || media.current?.recogniser !== recogniser) return;
+          kept = heardRef.current;
+          try {
+            recogniser.start();
+          } catch {
+            // Already starting again.
+          }
         };
         try {
           recogniser.start();
         } catch {
           // Some browsers refuse a second recogniser; the level still works.
         }
+        // A Chromium build without Google's speech service can fail with no
+        // error at all: it hears nothing and says nothing. Five seconds of a
+        // voice and not one word is that.
+        later(() => {
+          if (broken || phaseRef.current !== "listening" || media.current?.recogniser !== recogniser) return;
+          // About a second of voice, so silence alone does not set it off.
+          if (heardRef.current || voiced.current < 15) return;
+          setNote(
+            "Five seconds of your voice and no words from this browser's recogniser. Chromium browsers other than Chrome (Arc, Dia, Brave) may ship it without a working speech service — try Chrome or Safari."
+          );
+        }, 5000);
+      } else {
+        setNote("This browser has no speech recogniser (Firefox doesn't). The sand still follows your voice; the words won't come.");
       }
       media.current = { stream, ctx, analyser, recogniser };
       begin();
@@ -780,8 +849,13 @@ function CymaticsDemo({
             </div>
           </motion.div>
         </div>
-        {note && <p className={s.answer} style={{ marginTop: 8, color: "var(--ick-danger)" }}>{note}</p>}
       </div>
+
+      {note && (
+        <p className={s.note} role="status">
+          {note}
+        </p>
+      )}
 
       {!gl && open && <div className={s.fallback}>This browser cannot draw the water.</div>}
 
@@ -801,17 +875,20 @@ interface Args {
   /** The tuning panel. Closed to a button on a narrow screen, where open it covers the composer. */
   panel: boolean;
   source: "simulated" | "microphone";
+  /** For the browser's recogniser, with the microphone. */
+  language: "sr-RS" | "en-US" | "browser";
   permission: "prompt" | "granted";
   reducedMotion: boolean;
 }
 
 export const J_Cymatics: StoryObj<Args> = {
   name: "J · Cymatics",
-  args: { look: "sand", panel: true, source: "simulated", permission: "prompt", reducedMotion: false },
+  args: { look: "sand", panel: true, source: "simulated", language: "sr-RS", permission: "prompt", reducedMotion: false },
   argTypes: {
     look: { control: "inline-radio", options: LOOK_NAMES },
     panel: { control: "boolean" },
     source: { control: "inline-radio", options: ["simulated", "microphone"] },
+    language: { control: "inline-radio", options: ["sr-RS", "en-US", "browser"] },
     permission: { control: "inline-radio", options: ["prompt", "granted"] },
     reducedMotion: { control: "boolean" },
   },
@@ -824,6 +901,7 @@ export const J_Cymatics: StoryObj<Args> = {
         source={a.source}
         promptMs={a.permission === "prompt" ? 1800 : 60}
         still={a.reducedMotion}
+        language={a.language}
       />
     </MotionConfig>
   ),

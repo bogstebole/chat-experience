@@ -205,6 +205,25 @@
   }
 }
 
+/* Over the page, not in the dock: in the dock it pushed the composer up and
+   the words, placed from the bottom, ended up under it. */
+.note {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  z-index: 5;
+  box-sizing: border-box;
+  width: min(560px, calc(100% - 32px));
+  margin: 0;
+  padding: 10px 14px;
+  transform: translateX(-50%);
+  border-radius: var(--ick-radius-lg);
+  background: var(--ick-surface-sunken);
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-danger);
+}
+
 .readout {
   position: absolute;
   top: 10px;
