@@ -159,7 +159,7 @@ function CymaticsDemo({
   /** When this page opened, set once mounted. */
   const epoch = useRef(0);
   const engine = useRef<Cymatics | Sand | null>(null);
-  const drive = useRef({ level: 0, live: 0, open: 0 });
+  const drive = useRef({ level: 0, live: 0, open: 0, pulse: 0 });
   /**
    * How far the field has opened, on Motion's clock rather than the loop's:
    * the composer and the conversation are Motion animations that start after
@@ -293,6 +293,10 @@ function CymaticsDemo({
         // Followed over about half a second, not per syllable: the voice
         // swells the figure, it does not make it flicker.
         d.level += (level - d.level) * (1 - Math.exp(-dt / 0.45));
+        // A syllable: the voice rising above its own running level. It
+        // leaps at once and lets go in about a tenth of a second.
+        const onset = Math.min(1, Math.max(0, (level - d.level) * 2.4));
+        d.pulse = Math.max(onset, d.pulse * Math.exp(-dt / 0.12));
       }
       if (p === "listening") {
         setElapsed(Math.floor((now - startedAt.current) / 1000));
@@ -313,7 +317,7 @@ function CymaticsDemo({
       if (engine.current && (d.open > 0.001 || running || changed || dirty.current) && (!still || changed || dirty.current)) {
         // Seconds since this page opened, so the shader never sees a time
         // large enough to lose precision.
-        engine.current.draw({ time: still ? 0.9 : (now - epoch.current) / 1000, level: d.level, live: d.live, open: d.open }, now);
+        engine.current.draw({ time: still ? 0.9 : (now - epoch.current) / 1000, level: d.level, live: d.live, open: d.open, pulse: still ? 0 : d.pulse }, now);
         dirty.current = false;
       }
       frame = requestAnimationFrame(tick);

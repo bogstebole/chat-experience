@@ -179,8 +179,12 @@ uniform float uRadius;  // css px
 uniform float uPour;    // 0..1: how far the sprinkling has got, on the sand's own clock
 uniform float uSize;    // device px
 uniform float uAlpha;
+uniform float uPulse;   // 0..1, a syllable just landed
+uniform float uStir;    // 0..1, the figure just changed and the sand is on the move
+uniform float uTick;    // a counter, about nine a second: which grains catch the light now
 varying float vAlpha;
 varying float vShade;
+varying float vGlint;
 void main() {
   // Sprinkled from above, seen from above: each grain lands at its own
   // random moment, a little large and a little off its place — still in the
@@ -193,12 +197,23 @@ void main() {
   float turn = aLaunch.y * 3.14159;
   vec2 home = uCenter + aPos * uRadius;
   vec2 css = home + vec2(cos(turn), sin(turn)) * 7.0 * (1.0 - k);
+  // A syllable makes the sand hop: seen from above, a grain in the air is a
+  // little larger and a little further from the middle. Each by its own
+  // amount, so the figure shivers rather than pulsing as one.
+  float hop = uPulse * (0.3 + 0.7 * fract(aLaunch.x * 13.7 + aLaunch.y * 7.1));
+  css += (home - uCenter) / max(uRadius, 1.0) * 2.0 * hop;
+  // A few grains catch the light at any moment — more on a syllable, more
+  // while the sand is crossing to a new figure. A hash of the grain and the
+  // tick, so each glint is brief and lands somewhere new.
+  float seed = fract(sin(dot(vec2(aLaunch.x * 91.3 + uTick * 0.37, aLaunch.y * 47.7 + uTick), vec2(12.9898, 78.233))) * 43758.5453);
+  float chance = 0.004 + 0.05 * uPulse + 0.025 * uStir;
+  vGlint = step(1.0 - chance, seed) * k;
   vec2 clip = css / uView * 2.0 - 1.0;
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
-  gl_PointSize = uSize * mix(2.1, 1.0, k);
+  gl_PointSize = uSize * mix(2.1, 1.0, k) * (1.0 + 0.55 * hop) * (1.0 + 0.7 * vGlint);
   // Thinning toward the outside, never stopping at a line.
   float fade = 1.0 - smoothstep(0.45, 1.05, r);
-  vAlpha = uAlpha * fade * aMeta.y * k;
+  vAlpha = max(uAlpha * fade * aMeta.y * k, vGlint * fade);
   vShade = aMeta.x;
 }
 `;
@@ -206,13 +221,17 @@ void main() {
 const FRAG = `
 precision mediump float;
 uniform vec3 uGrain;
+uniform vec3 uGlint;
 varying float vAlpha;
 varying float vShade;
+varying float vGlint;
 void main() {
-  // A soft round grain rather than a square pixel.
+  // A soft round grain rather than a square pixel; a glint has a hard bright
+  // core, the way a crystal of salt catches a light.
   float d = length(gl_PointCoord - 0.5);
-  float a = vAlpha * smoothstep(0.5, 0.15, d);
-  gl_FragColor = vec4(uGrain * vShade * a, a);
+  float a = vAlpha * mix(smoothstep(0.5, 0.15, d), smoothstep(0.5, 0.05, d), vGlint);
+  vec3 c = mix(uGrain * vShade, uGlint, vGlint);
+  gl_FragColor = vec4(c * a, a);
 }
 `;
 
@@ -326,7 +345,7 @@ export class Sand {
     this.posBuffer = gl.createBuffer()!;
     this.metaBuffer = gl.createBuffer()!;
     this.launchBuffer = gl.createBuffer()!;
-    for (const name of ["uView", "uCenter", "uRadius", "uPour", "uSize", "uAlpha", "uGrain"]) this.u[name] = gl.getUniformLocation(program, name);
+    for (const name of ["uView", "uCenter", "uRadius", "uPour", "uSize", "uAlpha", "uGrain", "uGlint", "uPulse", "uStir", "uTick"]) this.u[name] = gl.getUniformLocation(program, name);
   }
 
   /** Still drawing: the stream runs on after the composer has settled. */
@@ -399,7 +418,7 @@ export class Sand {
    * One step of the plate. `drive` is how hard it is shaken (the voice);
    * `live` is whether it is shaken at all.
    */
-  private step(dt: number, drive: number, live: number, every = false) {
+  private step(dt: number, drive: number, live: number, every = false, pulse = 0) {
     if (live <= 0) return;
     const plate = this.plate;
     const here = this.here;
@@ -428,7 +447,9 @@ export class Sand {
       // Never quite still: a floor under the kick keeps the grains on a line
       // jostling, so a line is a band of sand with strays around it, the way
       // it is on a real plate, rather than a pencil stroke one grain wide.
-      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle);
+      // A syllable jostles every grain a little, even on a line; the plate
+      // gathers them back within the next few frames.
+      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + 0.5 * pulse);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
@@ -479,7 +500,7 @@ export class Sand {
       // Every grain is on new ground now; none of them is settled.
       this.calm.fill(0);
     }
-    if (dt > 0) this.step(dt, frame.level, frame.live);
+    if (dt > 0) this.step(dt, frame.level, frame.live, false, frame.pulse ?? 0);
 
     // Fresh grains fade in over about a third of a second.
     if (this.growing > 0 && dt > 0) {
@@ -544,6 +565,15 @@ export class Sand {
     // Waiting, the sand lies scattered and faint — present, not a disc.
     gl.uniform1f(this.u.uAlpha, (0.2 + 0.65 * frame.live) * this.weight);
     gl.uniform3f(this.u.uGrain, ...this.colours.grain);
+    // On a dark page a glint is light; on a light page white would vanish,
+    // so there it is the grain at full strength, crisp and a little larger.
+    const [gr, gg, gb] = this.colours.grain;
+    if (gr + gg + gb > 1.5) gl.uniform3f(this.u.uGlint, 1, 1, 1);
+    else gl.uniform3f(this.u.uGlint, gr, gg, gb);
+    const pulse = Math.min(1, Math.max(0, frame.pulse ?? 0)) * frame.live;
+    gl.uniform1f(this.u.uPulse, pulse);
+    gl.uniform1f(this.u.uStir, Math.max(0, 1 - (frame.time - this.changedAt) / 1.2) * frame.live);
+    gl.uniform1f(this.u.uTick, Math.floor(frame.time * 9) % 997);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.drawArrays(gl.POINTS, 0, this.count);
