@@ -207,12 +207,17 @@ function CymaticsDemo({
     const box = page.getBoundingClientRect();
     const dock = dockRef.current?.getBoundingClientRect();
     const dockTop = dock ? dock.top - box.top : box.height - 64;
-    // Small enough that the sand thins out before the screen's edge on a phone.
-    const radius = Math.min(box.width * 0.4, (box.height - 160) * 0.4, 280);
+    // A third smaller than it was: at 40% of the width the sand ran under
+    // the words and the composer on a phone. 104px of radius there.
+    const radius = Math.min(box.width * 0.267, (box.height - 160) * 0.267, 187);
     e.radius = radius;
-    // Close above the words: room for two lines, and the figure's own faded
-    // edge takes the rest.
-    e.center = { x: box.width / 2, y: dockTop - 94 - radius * 0.9 };
+    // The last loose grains reach about 1.15 radii; they stop just above a
+    // transcript of three lines. Measured from the composer's own type, which
+    // is 12px on a desktop and 16px on a phone.
+    const editor = dockRef.current?.querySelector<HTMLElement>("[data-placeholder]");
+    const type = editor ? parseFloat(getComputedStyle(editor).fontSize) : 14;
+    const words = 22 + 3 * 1.6 * type + 10;
+    e.center = { x: box.width / 2, y: dockTop - words - radius * 1.15 };
     const mic = micRef.current?.getBoundingClientRect();
     e.mic = mic ? { x: mic.left - box.left + mic.width / 2, y: mic.top - box.top + mic.height / 2 } : { ...e.center };
     setGeo({ wordsBottom: dock ? box.bottom - dock.top + 22 : 96, full: dock ? dock.width : 358 });
