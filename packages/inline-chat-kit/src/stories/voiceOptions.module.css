@@ -1,0 +1,813 @@
+/* ── I4 exploration: three ways for the microphone to feel like it started.
+   Mock-ups standing in the composer's own classes; the winner moves into
+   ChatInput.module.css and the rest of this file goes. */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: min(420px, calc(100vw - 32px));
+}
+
+.caption {
+  margin-bottom: 8px;
+  font-family: var(--ick-font-mono);
+  font-size: 11px;
+  color: var(--ick-ink-faint);
+}
+
+.lead {
+  max-width: 52ch;
+  margin: 0 0 6px;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-sm);
+  line-height: 1.5;
+  color: var(--ick-ink-soft);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--ick-composer-control);
+  height: var(--ick-composer-control);
+  margin-left: 2px;
+}
+
+/* ── Shared pieces ─────────────────────────────────────────────────────── */
+
+/* The microphone held down: the press has been received, before anything
+   else is known. Shown from the first frame of `requesting`. */
+[data-ick-variant].held {
+  background: var(--ick-surface-active);
+  color: var(--ick-ink);
+}
+
+[data-ick-variant].held:hover:not(:disabled) {
+  background: var(--ick-surface-press);
+}
+
+/* Waiting on the browser. A slow breath, not a pulse, and nothing red: it is
+   not recording. */
+.breathe {
+  animation: breathe 1.6s var(--ick-ease) infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ick-danger);
+  animation: rec 1.2s ease-in-out infinite;
+}
+
+@keyframes rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.timer {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ick-ink);
+}
+
+/* Newest on the right; the oldest fall off the left edge. */
+.bars {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  height: 18px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ick-ink-soft);
+}
+
+.bars > span {
+  --v: 0;
+
+  flex: 0 0 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform: scaleY(max(0.11, var(--v)));
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--ick-ink-faint) 0%,
+    var(--ick-ink-faint) 40%,
+    var(--ick-ink) 50%,
+    var(--ick-ink-faint) 60%,
+    var(--ick-ink-faint) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
+
+/* `still` is the reduced-motion presentation, forced on for the board's own
+   row and taken whenever the reader asks for it. */
+.still .breathe,
+.still .dot,
+.still .shimmer {
+  animation: none;
+}
+
+.still .shimmer {
+  background: none;
+  color: var(--ick-ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe,
+  .dot,
+  .shimmer {
+    animation: none;
+  }
+
+  .shimmer {
+    background: none;
+    color: var(--ick-ink-faint);
+  }
+}
+
+/* ── A · The composer becomes the recorder ─────────────────────────────── */
+
+.surfaceLive.surfaceLive,
+.surfaceLive.surfaceLive:hover,
+.surfaceLive.surfaceLive:focus-within {
+  --ick-input-fill: color-mix(in srgb, var(--ick-marker) 18%, rgb(var(--ick-ink-rgb) / 0.03));
+}
+
+/* The same box as the editor, so swapping one for the other moves nothing. */
+.takeover {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: var(--ick-space-2) var(--ick-space-4);
+  line-height: 1.45;
+  color: var(--ick-ink-soft);
+}
+
+.takeover .bars {
+  flex: 1;
+  color: var(--ick-ink);
+}
+
+/* ── B · The microphone grows into a recorder ──────────────────────────── */
+
+.capsule {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--ick-composer-control);
+  margin-left: 2px;
+  padding: 0 4px 0 11px;
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-surface-active);
+  color: var(--ick-ink);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--ick-duration-fast) var(--ick-ease),
+    transform var(--ick-duration-fast) var(--ick-ease);
+}
+
+.capsule:hover {
+  background: var(--ick-surface-press);
+}
+
+.capsule:active {
+  transform: scale(0.96);
+  transition-duration: var(--ick-duration-press);
+}
+
+.capsule:focus-visible {
+  outline: 2px solid var(--ick-focus-ring);
+  outline-offset: var(--ick-space-1);
+}
+
+.capsule .bars {
+  width: 38px;
+  height: 14px;
+}
+
+.capsuleWaiting {
+  padding-right: 11px;
+  color: var(--ick-ink-soft);
+}
+
+.capsuleStop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ick-ink);
+  color: var(--ick-surface);
+}
+
+/* ── C · A line under the words ────────────────────────────────────────── */
+
+.status {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 2px var(--ick-space-4) var(--ick-space-1);
+  font-size: var(--ick-text-sm);
+  line-height: 1.45;
+  color: var(--ick-ink-soft);
+}
+
+.status .bars {
+  flex: 1;
+  max-width: 132px;
+  margin-left: auto;
+  height: 14px;
+}
+
+.statusWord {
+  color: var(--ick-ink);
+}
+
+/* ══ Round two: immersive ═══════════════════════════════════════════════════
+   All three show the words while they are still being said, which is what
+   makes a fast transcriber feel fast. That needs `onTranscribe` to stream
+   during the recording — see the story's notes. */
+
+/* A slice of a conversation, so the composer has somewhere to be. */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16px;
+  overflow: hidden;
+  border-radius: var(--ick-radius-xl);
+  background: var(--ick-surface);
+  box-shadow: inset 0 0 0 1px var(--ick-border);
+}
+
+.prior {
+  margin: 0 0 auto;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-md);
+  line-height: 1.55;
+  color: var(--ick-ink-soft);
+}
+
+.word {
+  display: inline-block;
+  white-space: pre;
+}
+
+.typed {
+  color: var(--ick-ink-soft);
+}
+
+/* ── D · The composer opens into a voice field ─────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 4px 0;
+}
+
+.fieldWords {
+  min-height: calc(1.5em * 2);
+  max-height: calc(1.5em * 4);
+  margin: 0;
+  padding: 4px var(--ick-space-4) 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-size: var(--ick-text-lg);
+  line-height: 1.5;
+  color: var(--ick-ink);
+}
+
+.hint {
+  color: var(--ick-ink-faint);
+}
+
+.fieldWave {
+  --level: 0;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  margin: 0 var(--ick-space-4);
+}
+
+/* The marker, swelling behind the level. */
+.fieldWave::before {
+  content: "";
+  position: absolute;
+  inset: -18px 10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--ick-marker-glow), transparent);
+  opacity: calc(0.15 + var(--level) * 0.85);
+  transform: scaleX(calc(0.7 + var(--level) * 0.3));
+  pointer-events: none;
+}
+
+.fieldWave[data-flat]::before {
+  opacity: 0;
+}
+
+.fieldWave .bars {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  gap: 3px;
+  color: var(--ick-ink);
+}
+
+.fieldWave .bars > span {
+  flex-basis: 3px;
+  border-radius: 2px;
+}
+
+.fieldWave[data-flat] .bars {
+  opacity: 0.3;
+}
+
+.fieldControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 4px;
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink-soft);
+}
+
+.fieldControls .spacer {
+  flex: 1;
+}
+
+/* ── E · The page gives way to the voice ───────────────────────────────── */
+
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: var(--ick-z-overlay);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 24px 20px 18px;
+  background: color-mix(in srgb, var(--ick-surface) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.orbWrap {
+  --level: 0;
+
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  margin-top: auto;
+}
+
+.orb {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--ick-marker-sheen), var(--ick-marker) 45%, var(--ick-marker-deep));
+  transform: scale(calc(1 + var(--level) * 0.28));
+  transition: transform 60ms linear;
+}
+
+.orbWrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--ick-marker-glow), transparent);
+  opacity: calc(0.2 + var(--level) * 0.8);
+  transform: scale(calc(1 + var(--level) * 0.35));
+}
+
+/* Waiting: a ring with nothing in it. Same place, same size — it fills when
+   the browser says yes. */
+.orbWrap[data-waiting]::before {
+  opacity: 0;
+}
+
+.orbWrap[data-waiting] .orb {
+  box-sizing: border-box;
+  background: transparent;
+  border: 1.5px solid var(--ick-ink-faint);
+  transform: none;
+}
+
+.bigWords {
+  max-width: 30ch;
+  min-height: calc(1.4em * 2);
+  max-height: calc(1.4em * 3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 0;
+  font-family: var(--ick-font-sans);
+  font-size: 18px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--ick-ink);
+}
+
+.veilControls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  font-size: var(--ick-text-sm);
+  color: var(--ick-ink-soft);
+}
+
+/* ── F · The words write themselves where they will be ─────────────────── */
+
+.glow.glow,
+.glow.glow:hover,
+.glow.glow:focus-within {
+  --level: 0;
+
+  box-shadow:
+    0 0 0 1px var(--ick-marker),
+    0 0 calc(2px + var(--level) * 22px) var(--ick-marker-glow);
+  transition: box-shadow 90ms linear;
+}
+
+.newest {
+  border-radius: 3px;
+  background: var(--ick-marker-tint);
+  box-shadow: 0 0 0 2px var(--ick-marker-tint);
+  transition: background var(--ick-duration-fast) var(--ick-ease);
+}
+
+.inlineTimer {
+  margin-right: 4px;
+  font-size: var(--ick-text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ick-ink-soft);
+}
+
+/* ══ Round three: out of the box ════════════════════════════════════════════ */
+
+.stageTall {
+  padding-bottom: 40px;
+}
+
+/* ── G · Hold to talk ──────────────────────────────────────────────────── */
+
+.holdSlot {
+  position: relative;
+  touch-action: none;
+}
+
+.blob {
+  --level: 0;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: var(--ick-z-raised);
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin: -46px 0 0 -46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, var(--ick-marker-sheen), var(--ick-marker) 55%);
+  color: var(--ick-marker-ink);
+  box-shadow: 0 0 calc(10px + var(--level) * 40px) var(--ick-marker-glow);
+  pointer-events: none;
+}
+
+.blobInner {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transform: scale(calc(1 + var(--level) * 0.22));
+  transition: transform 70ms linear;
+}
+
+.blob[data-waiting] {
+  background: var(--ick-surface);
+  box-shadow: inset 0 0 0 1.5px var(--ick-ink-faint);
+  color: var(--ick-ink-soft);
+}
+
+.blob[data-cancel] {
+  background: var(--ick-ink);
+  box-shadow: none;
+  color: var(--ick-surface);
+}
+
+.lockRail {
+  position: absolute;
+  bottom: calc(50% + 54px);
+  left: 50%;
+  z-index: var(--ick-z-raised);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 30px;
+  margin-left: -15px;
+  padding: 7px 0 5px;
+  border-radius: var(--ick-radius-pill);
+  background: var(--ick-surface-raised);
+  box-shadow: var(--ick-shadow-float);
+  color: var(--ick-ink-soft);
+  pointer-events: none;
+}
+
+.slideHint {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 40px);
+  z-index: var(--ick-z-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 28px;
+  transform: translateY(-50%);
+  /* The words run under it and fade out rather than stopping short. */
+  background: linear-gradient(to right, transparent, var(--ick-surface) 26px);
+  color: var(--ick-ink-faint);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.lockedStop.lockedStop {
+  background: var(--ick-marker);
+  color: var(--ick-marker-ink);
+}
+
+.lockedStop.lockedStop:hover:not(:disabled) {
+  background: var(--ick-marker-glow);
+}
+
+/* ── H · The room goes quiet ───────────────────────────────────────────── */
+
+@property --edge-turn {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: auto;
+  transform-origin: 50% 0;
+  transition:
+    transform 600ms var(--ick-ease),
+    filter 600ms var(--ick-ease),
+    opacity 600ms var(--ick-ease);
+}
+
+.room[data-quiet="waiting"] {
+  transform: scale(0.98);
+  opacity: 0.7;
+}
+
+.room[data-quiet="live"] {
+  transform: scale(0.93) translateY(-4px);
+  filter: blur(2.5px);
+  opacity: 0.35;
+}
+
+.bubble {
+  align-self: flex-end;
+  max-width: 75%;
+  padding: 7px 12px;
+  border-radius: var(--ick-radius-lg);
+  background: var(--ick-surface-sunken);
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-text-md);
+  color: var(--ick-ink);
+}
+
+.edge {
+  --level: 0;
+
+  position: absolute;
+  inset: 0;
+  z-index: var(--ick-z-raised);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 500ms var(--ick-ease);
+  box-shadow: inset 0 0 calc(16px + var(--level) * 44px) calc(var(--level) * 8px) var(--ick-marker-glow);
+}
+
+.edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--edge-turn),
+    var(--ick-marker),
+    transparent 22%,
+    var(--ick-marker-deep) 45%,
+    transparent 62%,
+    var(--ick-marker-glow) 80%,
+    var(--ick-marker)
+  );
+  /* Stencils, not colours. */
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  animation: edge-turn 3.2s linear infinite;
+}
+
+.edge[data-on] {
+  opacity: 1;
+}
+
+/* Waiting: a grey ring that breathes. Nothing in the marker until it hears. */
+.edge[data-waiting] {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px var(--ick-ink-faint);
+  animation: breathe 1.6s var(--ick-ease) infinite;
+}
+
+.edge[data-waiting]::before {
+  display: none;
+}
+
+@keyframes edge-turn {
+  to { --edge-turn: 360deg; }
+}
+
+.lifted {
+  transform: scale(1.025);
+  transition: transform 500ms var(--ick-ease);
+}
+
+.lifted > div > div {
+  box-shadow: var(--ick-shadow-float);
+}
+
+.still .room,
+.still .edge,
+.still .edge::before {
+  transition: none;
+  animation: none;
+}
+
+.still .room[data-quiet="live"] {
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room,
+  .edge,
+  .edge::before,
+  .lifted {
+    transition: none;
+    animation: none;
+  }
+
+  .room[data-quiet="live"] {
+    filter: none;
+    transform: none;
+  }
+}
+
+/* ── I · The caret listens ─────────────────────────────────────────────── */
+
+.caretWave {
+  --level: 0;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 1.1em;
+  margin: 0 2px;
+  vertical-align: -0.2em;
+}
+
+.caretWave > span {
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--ick-ink);
+  transform: scaleY(calc(0.22 + var(--level) * var(--k)));
+  transition: transform 70ms linear;
+}
+
+.caretWaiting {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin: 0 3px 0 1px;
+  vertical-align: -0.2em;
+  border-radius: 1px;
+  background: var(--ick-ink-faint);
+  animation: breathe 1.2s var(--ick-ease) infinite;
+}
+
+.glyph {
+  color: var(--ick-ink-faint);
+  font-family: var(--ick-font-mono);
+}
+
+/* The marker stroke that sweeps under a word as it settles, then fades. */
+.inked {
+  background-image: linear-gradient(var(--ick-marker-tint), var(--ick-marker-tint));
+  background-repeat: no-repeat;
+  background-position: 0 85%;
+  background-size: 100% 70%;
+  border-radius: 2px;
+  animation: ink-sweep 320ms var(--ick-ease) both;
+}
+
+.inkFaded {
+  background-image: linear-gradient(var(--ick-marker-tint), var(--ick-marker-tint));
+  background-repeat: no-repeat;
+  background-position: 0 85%;
+  background-size: 100% 70%;
+  animation: ink-fade 900ms var(--ick-ease) both;
+}
+
+@keyframes ink-sweep {
+  from { background-size: 0% 70%; }
+}
+
+@keyframes ink-fade {
+  to { background-size: 100% 0%; }
+}
+
+.still .caretWaiting,
+.still .inked,
+.still .inkFaded {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caretWaiting,
+  .inked,
+  .inkFaded {
+    animation: none;
+  }
+}
