@@ -320,6 +320,13 @@ export class Sand {
     }
   }
 
+  /**
+   * How a new figure arrives. "swell": the plate loosens all the sand for a
+   * moment, so it spreads before it gathers. "none": the grains only walk to
+   * the nearest new line — calmer, and the figure comes out less complete.
+   */
+  transition: "swell" | "none" = "swell";
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const gl = canvas.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false });
@@ -457,7 +464,8 @@ export class Sand {
       // and all, so the sand spreads out again before it gathers. Without it
       // grains walked only to the nearest new line: those piled up dark and
       // the lines further off stayed empty.
-      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + TUNE.scatter * scatter);
+      const loosen = this.transition === "swell" ? TUNE.scatter * scatter : 0;
+      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + loosen);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
