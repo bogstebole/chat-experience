@@ -517,6 +517,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
      * so that spring is the recorder's own and not the plus's bouncier one.
      */
     const [recorderWidth, setRecorderWidth] = useState<number | null>(null);
+    /** Set when the actions move to the second line under a focused recorder; it takes focus back on arrival. */
+    const refocusMic = useRef(false);
+    const micButton = useCallback((el: HTMLButtonElement | null) => {
+      if (!el || !refocusMic.current) return;
+      refocusMic.current = false;
+      el.focus({ preventScroll: true });
+    }, []);
     const onRecorderWidth = useCallback((width: number) => setRecorderWidth(width), []);
     const recording = dictationLook === "recorder";
     const recorderOpen = recording && face !== "mic" && recorderWidth != null;
@@ -682,17 +689,19 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
            its own, for the rest of the session. The placeholder is not text,
            and cleared, a composer is one line again. */
         const empty = value.length === 0;
-        /* Not while dictating, either way. Going to two lines takes the
-           buttons away and brings them back on the second, and words
-           arriving at the caret did that mid-sentence: the recorder vanished
-           while it was recording and focus fell to the page. The words wrap
-           beside it instead, and the composer settles when it is done. */
-        if (voiceBusy) return;
         if (!expandedModeRef.current) {
           compactAvailWidthRef.current = contentW;
           if (!empty && (isMultiline || textW >= compactAvailWidthRef.current * (ac?.wrap?.nearThreshold ?? 0.92))) {
             expandedModeRef.current = true;
             pendingExpansion.current = true;
+            /* Dictated words reach the actions like typed ones, and the
+               actions go to the second line the same way — which takes the
+               recorder away for a moment. Focus goes with it; this brings
+               it back when the recorder arrives on the new line, so Enter
+               still finishes the dictation. */
+            if (rootRef.current?.contains(document.activeElement) && document.activeElement?.getAttribute("data-ick-role") === "dictate") {
+              refocusMic.current = true;
+            }
             setShowButtons(false);
           }
         } else {
@@ -709,7 +718,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           }
         }
       });
-    }, [value, voiceBusy]);
+    }, [value]);
 
     useEffect(() => {
       if (!isGlass) return;
@@ -1066,6 +1075,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: "var(--ick-composer-control)" }}
                     >
                       <KitButton
+                        ref={micButton}
                         variant="ghost"
                         kitRole="dictate"
                         boxStyle={{ width: "100%", height: "100%" }}

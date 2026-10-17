@@ -64,6 +64,14 @@
   --ick-input-text: var(--ick-ink);
 }
 
+/* Dictating is the composer at work, wherever focus is. When the words reach
+   the actions and they move to the second line, the recorder is gone for a
+   moment and focus with it; the words greyed out for that moment. */
+.surface:not(.glass):has([data-dictating]) {
+  --ick-input-fill: var(--ick-input-fill-hover);
+  --ick-input-text: var(--ick-ink);
+}
+
 /* ── Glass surface variant (responding / resting bubble) ──
    Mirrors GlassButton.module.css concave-glass shadow stack so
    the morph is purely a CSS state change on the SAME element. */
