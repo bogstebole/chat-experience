@@ -185,7 +185,6 @@ uniform float uRadius;  // css px
 uniform float uPour;    // 0..1: how far the sprinkling has got, on the sand's own clock
 uniform float uSize;    // device px
 uniform float uAlpha;
-uniform float uPulse;   // 0..1, a syllable just landed
 uniform float uStir;    // 0..1, the figure just changed and the sand is on the move
 uniform float uTick;    // a counter, about nine a second: which grains catch the light now
 varying float vAlpha;
@@ -203,20 +202,17 @@ void main() {
   float turn = aLaunch.y * 3.14159;
   vec2 home = uCenter + aPos * uRadius;
   vec2 css = home + vec2(cos(turn), sin(turn)) * 7.0 * (1.0 - k);
-  // A syllable makes the sand hop: seen from above, a grain in the air is a
-  // little larger and a little further from the middle. Each by its own
-  // amount, so the figure shivers rather than pulsing as one.
-  float hop = uPulse * (0.3 + 0.7 * fract(aLaunch.x * 13.7 + aLaunch.y * 7.1));
-  css += (home - uCenter) / max(uRadius, 1.0) * 2.0 * hop;
-  // A few grains catch the light at any moment — more on a syllable, more
-  // while the sand is crossing to a new figure. A hash of the grain and the
-  // tick, so each glint is brief and lands somewhere new.
+  // A few grains catch the light at any moment, more while the sand is
+  // crossing to a new figure. Not tied to the syllables: that, with the
+  // grains hopping on each one, was a constant pulse and tiring to watch.
+  // A hash of the grain and the tick, so each glint is brief and lands
+  // somewhere new.
   float seed = fract(sin(dot(vec2(aLaunch.x * 91.3 + uTick * 0.37, aLaunch.y * 47.7 + uTick), vec2(12.9898, 78.233))) * 43758.5453);
-  float chance = 0.004 + 0.05 * uPulse + 0.025 * uStir;
+  float chance = 0.004 + 0.025 * uStir;
   vGlint = step(1.0 - chance, seed) * k;
   vec2 clip = css / uView * 2.0 - 1.0;
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
-  gl_PointSize = uSize * mix(2.1, 1.0, k) * (1.0 + 0.55 * hop) * (1.0 + 0.7 * vGlint);
+  gl_PointSize = uSize * mix(2.1, 1.0, k) * (1.0 + 0.7 * vGlint);
   // Thinning toward the outside, never stopping at a line.
   float fade = 1.0 - smoothstep(0.6, 1.1, r);
   vAlpha = max(uAlpha * fade * aMeta.y * k, vGlint * fade);
@@ -358,7 +354,7 @@ export class Sand {
     this.metaBuffer = gl.createBuffer()!;
     this.launchBuffer = gl.createBuffer()!;
     this.minmax = gl.getExtension("EXT_blend_minmax");
-    for (const name of ["uView", "uCenter", "uRadius", "uPour", "uSize", "uAlpha", "uGrain", "uGlint", "uPulse", "uStir", "uTick"]) this.u[name] = gl.getUniformLocation(program, name);
+    for (const name of ["uView", "uCenter", "uRadius", "uPour", "uSize", "uAlpha", "uGrain", "uGlint", "uStir", "uTick"]) this.u[name] = gl.getUniformLocation(program, name);
   }
 
   /** Still drawing: the stream runs on after the composer has settled. */
@@ -433,7 +429,7 @@ export class Sand {
    * One step of the plate. `drive` is how hard it is shaken (the voice);
    * `live` is whether it is shaken at all.
    */
-  private step(dt: number, drive: number, live: number, every = false, pulse = 0, scatter = 0) {
+  private step(dt: number, drive: number, live: number, every = false, scatter = 0) {
     if (live <= 0) return;
     const plate = this.plate;
     const here = this.here;
@@ -468,7 +464,7 @@ export class Sand {
       // and all, so the sand spreads out again before it gathers. Without it
       // grains walked only to the nearest new line: those piled up dark and
       // the lines further off stayed empty.
-      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + 0.3 * pulse + TUNE.scatter * scatter);
+      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + TUNE.scatter * scatter);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
@@ -520,7 +516,7 @@ export class Sand {
       this.calm.fill(0);
     }
     const scatter = Math.max(0, 1 - (frame.time - this.changedAt) / TUNE.scatterFor);
-    if (dt > 0) this.step(dt, frame.level, frame.live, false, frame.pulse ?? 0, scatter * scatter);
+    if (dt > 0) this.step(dt, frame.level, frame.live, false, scatter * scatter);
 
     // Fresh grains fade in over about a third of a second.
     if (this.growing > 0 && dt > 0) {
@@ -592,8 +588,6 @@ export class Sand {
     const [gr, gg, gb] = this.colours.grain;
     if (gr + gg + gb > 1.5) gl.uniform3f(this.u.uGlint, 1, 1, 1);
     else gl.uniform3f(this.u.uGlint, gr, gg, gb);
-    const pulse = Math.min(1, Math.max(0, frame.pulse ?? 0)) * frame.live;
-    gl.uniform1f(this.u.uPulse, pulse);
     gl.uniform1f(this.u.uStir, Math.max(0, 1 - (frame.time - this.changedAt) / 1.2) * frame.live);
     gl.uniform1f(this.u.uTick, Math.floor(frame.time * 9) % 997);
     gl.enable(gl.BLEND);
