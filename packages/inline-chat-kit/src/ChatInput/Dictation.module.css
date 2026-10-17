@@ -133,6 +133,57 @@
   color: var(--ick-ink);
 }
 
+/* ── field ─────────────────────────────────────────────────────────────── */
+
+/* The composer as a pill while something above it draws the voice: only as
+   wide as what it holds — the state, Cancel and Done. Its width moves by the
+   root's own layout animation, the one the bubble morph uses. */
+.fieldRoot {
+  width: auto;
+}
+
+/* The field's words are kept, not shown: they come back when it is done. */
+.away {
+  display: none;
+}
+
+.fieldStatus {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: var(--ick-space-2) var(--ick-input-text-inset);
+  line-height: 1.45;
+  color: var(--ick-ink-soft);
+}
+
+/* One line, always: a status that wrapped made the pill jump a line taller. */
+.fieldStatus > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldStatus > span[data-live]::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 8px 1px 0;
+  border-radius: 50%;
+  background: var(--ick-danger);
+  vertical-align: middle;
+}
+
+.swap {
+  display: inline-grid;
+  place-items: center;
+}
+
+.glyph {
+  display: inline-flex;
+}
+
 /* ── shared ────────────────────────────────────────────────────────────── */
 
 /* Newest on the right; a breath is a run of dots. */

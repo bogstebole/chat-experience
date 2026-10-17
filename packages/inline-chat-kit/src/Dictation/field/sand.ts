@@ -1,4 +1,4 @@
-import type { Frame, Mode } from "./cymatics";
+import type { Frame, Mode } from "./water";
 
 /**
  * Chladni sand: fine grains on an invisible vibrating plate.

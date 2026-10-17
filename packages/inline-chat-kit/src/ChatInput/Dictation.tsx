@@ -14,12 +14,35 @@ import styles from "./Dictation.module.css";
  * stop where the microphone was. What was typed stays in view, and the words
  * land at the caret. `surface` is the field itself becoming the recorder: the
  * count and the level across the whole line, louder, at the cost of what was
- * typed being out of sight until it is done.
+ * typed being out of sight until it is done. `field` is the composer
+ * narrowing to a pill — the count, Cancel and Done — while something above it
+ * draws the voice: what `ChatExperience` uses for `sand`, `plane` and
+ * `ripple`, and hands over to `onDictation` for anyone else.
  *
  * Both change what they show **in turn**: what was there leaves under a short
  * blur, then what comes in arrives. Two at once read as a smear.
  */
-export type ComposerDictation = "recorder" | "surface";
+export type ComposerDictation = "recorder" | "surface" | "field";
+
+/**
+ * What a dictation in `field` is doing, for whatever draws the field above
+ * the composer — `ChatExperience`, for `sand`, `plane` and `ripple`. Handed
+ * over every time it changes; `null` once it is over.
+ */
+export interface DictationSnapshot {
+  state: "requesting" | "listening" | "transcribing";
+  /** The words so far, from `onTranscribeLive`. Empty with only `onTranscribe`. */
+  transcript: string;
+  /** Seconds since it started listening. */
+  elapsed: number;
+  /** The level, 0 to 1. Read it in a frame loop. */
+  getLevel: () => number;
+  /** The microphone's analyser, for the voice's pitch. */
+  getAnalyser: () => AnalyserNode | null;
+}
+
+/** How a dictation ended: kept, or thrown away. */
+export type DictationEnd = "done" | "cancel";
 
 /** Which of its faces the recorder is showing. */
 export type DictationPhase = "mic" | "wait" | "live" | "busy";

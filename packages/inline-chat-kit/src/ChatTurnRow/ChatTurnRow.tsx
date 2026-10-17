@@ -7,7 +7,7 @@ import { Branch } from "../Branch/Branch";
 import { ChatInput, type ChatInputHandle, type InlineAnimConfig } from "../ChatInput/ChatInput";
 import type { Attachment } from "../Attachments/Attachments";
 import type { LiveTranscribeHandler, TranscribeHandler } from "../voice/useVoiceInput";
-import type { ComposerDictation } from "../ChatInput/Dictation";
+import type { ComposerDictation, DictationEnd, DictationSnapshot } from "../ChatInput/Dictation";
 import { Loader } from "../Loader/Loader";
 import { Reasoning } from "../Reasoning/Reasoning";
 import { Tool } from "../Tool/Tool";
@@ -92,6 +92,8 @@ export interface ChatTurnRowProps {
   onTranscribeLive?: LiveTranscribeHandler;
   /** What the composer looks like while it listens. See `ChatInput`. */
   dictation?: ComposerDictation;
+  /** With `dictation="field"`: what it hears, for whatever draws the field. See `ChatInput`. */
+  onDictation?: (snapshot: DictationSnapshot | null, ended?: DictationEnd) => void;
 
   /**
    * Where the composer sits in the row.
@@ -322,6 +324,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onTranscribe,
   onTranscribeLive,
   dictation,
+  onDictation,
 }: ChatTurnRowProps) {
   // A row arriving is travel, and this reader has asked for less of it. The
   // fade stays: without it a turn would appear with no transition at all,
@@ -574,6 +577,7 @@ export const ChatTurnRow = memo(function ChatTurnRow({
           onTranscribe={onTranscribe}
           onTranscribeLive={onTranscribeLive}
           dictation={dictation}
+          onDictation={onDictation}
           onCopy={onCopy}
           onEdit={() => onEdit?.(turn.id)}
           onCancelEdit={() => onCancelEdit?.(turn.id)}

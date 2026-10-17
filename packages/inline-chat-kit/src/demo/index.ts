@@ -24,4 +24,5 @@ export {
   scriptedApi,
   threadReply,
   scriptedTranscript,
+  scriptedLiveTranscript,
 } from "./scriptedApi";

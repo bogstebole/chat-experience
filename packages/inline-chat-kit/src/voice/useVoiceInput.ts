@@ -512,6 +512,10 @@ export function useVoiceInput({
     if (canRecord()) setPhase("idle");
   }, []);
 
+  // Stable, so a frame loop or an effect can hold them.
+  const getLevel = useCallback(() => levelRef.current, []);
+  const getAnalyser = useCallback(() => analyserRef.current, []);
+
   return {
     state,
     supported,
@@ -521,7 +525,7 @@ export function useVoiceInput({
     cancel,
     toggle,
     reset,
-    getLevel: () => levelRef.current,
-    getAnalyser: () => analyserRef.current,
+    getLevel,
+    getAnalyser,
   };
 }

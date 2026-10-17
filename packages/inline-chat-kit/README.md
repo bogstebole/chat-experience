@@ -193,7 +193,8 @@ choreography by moving between these values:
 | `isEditing` | `boolean` | Shows save/cancel instead of send |
 | `onTranscribe` | `TranscribeHandler` | The recording in, the words out. See [Dictation](#dictation) |
 | `onTranscribeLive` | `LiveTranscribeHandler` | The microphone's stream in, the words so far out, while they are said |
-| `dictation` | `"recorder" \| "surface"` | What the composer looks like while it listens. `"recorder"` by default |
+| `dictation` | `"recorder" \| "surface" \| "field"` | What the composer looks like while it listens. `"recorder"` by default; `"field"` is the pill `ChatExperience` uses under `sand`, `plane` and `ripple` |
+| `onDictation` | `(snapshot \| null, ended?) => void` | With `"field"`: what it hears, for whatever you draw above it |
 | `placeholder` | `string` | |
 | `animationConfig` | `InlineAnimConfig` | Spring and stagger overrides — see below |
 | `style` | `React.CSSProperties` | |
@@ -456,8 +457,23 @@ used here, as the Storybook story does.)
 
 | `dictation` | |
 | --- | --- |
-| `"recorder"` (default) | The microphone unrolls to the left into a recorder — a count, the level, a stop where the microphone was — and the whole of it is the stop. What was typed stays in view and the words land at the caret. While the words come back it is a spinner the size of the microphone again. |
+| `"recorder"` (default) | The microphone unrolls to the left into a recorder — a count, the level, a stop where the microphone was — and the whole of it is the stop. What was typed stays in view and the words land at the caret; when they reach the actions, the actions move to the second line, as they do for typing. While the words come back it is a spinner the size of the microphone again. |
 | `"surface"` | The field itself becomes the recorder: the count and the level across the whole line. Louder; what was typed is out of sight until it is done. |
+| `"sand"` | `ChatExperience` only. The composer narrows to a pill — the count, Cancel and Done — the conversation steps back, and above it sand is sprinkled onto a plate the voice shakes. The speaker's tone, followed over seconds rather than syllables, picks the figure the grains gather into: low and steady is simple, a question climbing is intricate. The words come up between the figure and the pill, the newest one marked; on Done they leave, and then they arrive in the composer. Escape throws it away. |
+| `"plane"` | The same, as water standing on the surface in the same figures. |
+| `"ripple"` | The same, as rings of water spreading from the middle. |
+
+```tsx
+<ChatExperience onSend={send} onTranscribeLive={live} dictation="sand" />
+```
+
+The last three are WebGL — two engines and two shaders, a chunk of their own
+of 36 kB (13 kB gzipped), loaded the first time a dictation opens (and fetched ahead in an idle moment), so a chat
+that never asks for them never downloads them. Where there is no WebGL they
+are the recorder. They draw the words while they are said, so they want
+`onTranscribeLive`; with only `onTranscribe`, the figure is there and the words
+arrive when it is done. Under reduced motion the conversation dims without
+blurring, the figure stands still, and the words appear rather than rise.
 
 Both share the rules that make a press feel like something started: the
 button is held from the first frame of the press; while the browser's prompt
@@ -470,8 +486,9 @@ says something in words, under the composer, because a blocked microphone
 looks exactly like an idle one. Every word of it is in `labels.input` and
 `labels.voice`.
 
-The Storybook story `Components/ChatInput/Dictation` has both looks and all
-three ways to attach a service — the Chrome one live, if you are in Chrome.
+In Storybook, `Components/ChatExperience/Dictation…` has the five looks, and
+`Components/ChatInput/Dictation` has all three ways to attach a service — the
+Chrome one live, if you are in Chrome.
 
 For a composer of your own, `useVoiceInput` is the same machinery without the
 drawing: `start`, `stop` (done), `cancel` (thrown away), `toggle`, the `state`,

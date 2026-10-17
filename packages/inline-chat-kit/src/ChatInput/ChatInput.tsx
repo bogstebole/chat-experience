@@ -56,7 +56,7 @@ function placeCursorAt(el: HTMLElement, offset: number) {
   sel?.addRange(range);
 }
 import { AnimatePresence, LayoutGroup, MotionConfig, animate, motion, useAnimationControls, type Transition } from "motion/react";
-import { Plus, X } from "lucide-react";
+import { Check, Mic, Plus, X } from "lucide-react";
 import { Attachments, type Attachment } from "../Attachments/Attachments";
 import { Button } from "../Button/Button";
 import { KitButton } from "../Button/KitButton";
@@ -65,7 +65,8 @@ import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
 import { AddCardsOverlay, type ComposerMenuItem } from "./AddCardsOverlay";
 import { useVoiceInput, type LiveTranscribeHandler, type TranscribeHandler } from "../voice/useVoiceInput";
-import { RECORDER_GROW, RecorderFace, SurfaceFace, useElapsed, useWaited, type ComposerDictation, type DictationPhase } from "./Dictation";
+import { prefersReducedMotion } from "../reducedMotion/reducedMotion";
+import { RECORDER_GROW, RecorderFace, SurfaceFace, useElapsed, useWaited, type ComposerDictation, type DictationEnd, type DictationPhase, type DictationSnapshot } from "./Dictation";
 import dictationStyles from "./Dictation.module.css";
 import styles from "./ChatInput.module.css";
 import { useLabels, type ChatInputLabels } from "../labels/labels";
@@ -109,6 +110,8 @@ export interface InlineAnimConfig {
  * did; it is the glyph that stops vanishing.
  */
 const ARRIVES_AT = 0.9;
+/** `field`: the narrowing, the two buttons turning and the field opening above, on one spring. */
+const FIELD_SPRING = { type: "spring", stiffness: 320, damping: 32, mass: 1 } as const;
 
 export const defaultInlineAnimConfig: InlineAnimConfig = {
   bubble: { stiffness: 600, damping: 22, mass: 0.3 },
@@ -177,9 +180,17 @@ export interface ChatInputProps {
    * What the composer looks like while it listens. `"recorder"`, the default:
    * the microphone unrolls into a recorder — a count, the level, a stop —
    * and what was typed stays in view. `"surface"`: the field itself becomes
-   * the recorder until it is done.
+   * the recorder until it is done. `"field"`: the composer narrows to a pill
+   * — the count, Cancel and Done — and hands what it hears to `onDictation`,
+   * for something above it to draw; `ChatExperience` does, for `sand`,
+   * `plane` and `ripple`.
    */
   dictation?: ComposerDictation;
+  /**
+   * With `dictation="field"`: what the dictation is doing, every time it
+   * changes, and `null` with how it ended once it is over.
+   */
+  onDictation?: (snapshot: DictationSnapshot | null, ended?: DictationEnd) => void;
   onCopy?: (value: string) => void;
   onEdit?: (value: string) => void;
   onCancelEdit?: () => void;
@@ -280,6 +291,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       onTranscribe,
       onTranscribeLive,
       dictation: dictationLook = "recorder",
+      onDictation,
       onCopy,
       onEdit,
       onCancelEdit,
@@ -491,17 +503,59 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       [onChange]
     );
 
-    const voice = useVoiceInput({
-      onTranscribe,
-      onTranscribeLive,
-      onTranscript: putTranscript,
-      onDone: (said) => {
+    /**
+     * `field`: the words are shown above the composer while they are said,
+     * not put in it — and when it is done they arrive in turn, once the
+     * transcript above has gone: two states seen at once read as two things.
+     */
+    const fieldMode = dictationLook === "field";
+    const [heard, setHeard] = useState("");
+    /** Between the transcript leaving and the words arriving: the field says nothing, not even its placeholder. */
+    const [arriving, setArriving] = useState(false);
+    const ended = useRef<DictationEnd>("done");
+    const landing = useRef(0);
+    useEffect(() => () => clearTimeout(landing.current), []);
+    const settle = useCallback(
+      (said: string) => {
         const where = dictation.current;
         dictation.current = null;
         const el = editorRef.current;
         if (!el) return;
         el.focus();
         if (where) placeCursorAt(el, where.at + said.length);
+      },
+      []
+    );
+
+    const voice = useVoiceInput({
+      onTranscribe,
+      onTranscribeLive,
+      onTranscript: fieldMode ? setHeard : putTranscript,
+      onDone: (said) => {
+        if (!fieldMode) {
+          settle(said);
+          return;
+        }
+        ended.current = "done";
+        clearTimeout(landing.current);
+        setArriving(true);
+        landing.current = window.setTimeout(() => {
+          setArriving(false);
+          setHeard("");
+          putTranscript(said);
+          settle(said);
+          // Not everywhere has the Web Animations API — jsdom does not.
+          const wrap = editorWrapRef.current;
+          if (wrap && typeof wrap.animate === "function" && !prefersReducedMotion()) {
+            wrap.animate(
+              [
+                { opacity: 0, transform: "translateY(4px)", filter: "blur(4px)" },
+                { opacity: 1, transform: "none", filter: "blur(0px)" },
+              ],
+              { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" }
+            );
+          }
+        }, 170);
       },
       labels: voiceLabels,
     });
@@ -526,6 +580,58 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, []);
     const onRecorderWidth = useCallback((width: number) => setRecorderWidth(width), []);
     const recording = dictationLook === "recorder";
+    const fieldOpen = fieldMode && (voice.state === "listening" || voice.state === "requesting" || voice.state === "transcribing");
+    const cancelField = () => {
+      ended.current = "cancel";
+      dictation.current = null;
+      setHeard("");
+      voice.cancel();
+    };
+
+    // Handed over as it changes, and once more, empty, with how it ended.
+    const onDictationRef = useRef(onDictation);
+    useEffect(() => {
+      onDictationRef.current = onDictation;
+    });
+    const wasOpen = useRef(false);
+    const { getLevel, getAnalyser } = voice;
+    useEffect(() => {
+      if (!fieldMode) return;
+      if (fieldOpen) {
+        wasOpen.current = true;
+        onDictationRef.current?.({
+          state: voice.state as DictationSnapshot["state"],
+          transcript: heard,
+          elapsed,
+          getLevel,
+          getAnalyser,
+        });
+      } else if (wasOpen.current) {
+        wasOpen.current = false;
+        onDictationRef.current?.(null, ended.current);
+        ended.current = "done";
+      }
+    }, [fieldMode, fieldOpen, voice.state, heard, elapsed, getLevel, getAnalyser]);
+
+    const cancelFieldRef = useRef(cancelField);
+    useEffect(() => {
+      cancelFieldRef.current = cancelField;
+    });
+    // Escape throws it away, wherever focus is.
+    useEffect(() => {
+      if (!fieldOpen) return;
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") cancelFieldRef.current();
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [fieldOpen]);
+    const fieldStatus =
+      voice.state === "listening"
+        ? text.listeningFor.replace("{time}", `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`)
+        : voice.state === "transcribing"
+          ? text.writingItDown
+          : text.waitingForMicrophoneShort;
     const recorderOpen = recording && face !== "mic" && recorderWidth != null;
     const recorderMoving = recording && recorderWidth != null;
     /** `surface`: the field is the recorder while it listens. Not on a sent bubble. */
@@ -890,20 +996,24 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       <LayoutGroup id={instanceId}>
         <div
           className={styles.wrap}
+          data-field={fieldOpen || undefined}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={style}
         >
           <motion.div
-            className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""}`}
+            className={`${styles.root} ${isGlass ? styles.isGlassRoot : ""} ${fieldOpen ? dictationStyles.fieldRoot : ""}`}
             ref={rootRef}
+            /* For whatever draws the field above: this is where the words go. */
+            data-ick-dictating={fieldOpen || undefined}
             layout
             animate={{
               filter: isAddOpen ? `blur(${ac?.addCards?.inputBlur ?? 2}px)` : "blur(0px)",
             }}
             style={{
               pointerEvents: isAddOpen ? "none" : "auto",
-              width: style?.width === "100%" ? "100%" : undefined,
+              /* A docked composer is told to fill its row; a pill is not. */
+              width: style?.width === "100%" && !fieldOpen ? "100%" : undefined,
               maxWidth: style?.maxWidth,
             }}
             transition={{
@@ -978,6 +1088,11 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     style={{ flexBasis: expandedMode ? "100%" : undefined, position: surfaced ? "relative" : undefined }}
                     data-dictating={voiceBusy || undefined}
                   >
+                {fieldOpen && (
+                  <motion.div layout="position" className={dictationStyles.fieldStatus} transition={boxMoves}>
+                    <span data-live={voice.state === "listening" || undefined}>{fieldStatus}</span>
+                  </motion.div>
+                )}
                 {surfaced && (
                   <SurfaceFace
                     phase={face}
@@ -989,7 +1104,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                 )}
                 <motion.div
                   ref={editorWrapRef}
-                  className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""} ${surfaced ? (face === "mic" ? dictationStyles.uncovered : dictationStyles.covered) : ""}`}
+                  className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""} ${surfaced ? (face === "mic" ? dictationStyles.uncovered : dictationStyles.covered) : ""} ${fieldOpen ? dictationStyles.away : ""}`}
                   layout="position"
                   animate={isGlass && isOverflowing
                     ? { maxHeight: isExpanded ? fullHeight : 240 }
@@ -1019,7 +1134,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     role="textbox"
                     aria-multiline="true"
                     aria-label={placeholder}
-                    data-placeholder={isReadOnly ? "" : placeholder}
+                    data-placeholder={isReadOnly || arriving ? "" : placeholder}
                   />
                 </motion.div>
               </div>
@@ -1077,15 +1192,33 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       <KitButton
                         ref={micButton}
                         variant="ghost"
-                        kitRole="dictate"
+                        kitRole={fieldOpen ? "cancel-edit" : "dictate"}
                         boxStyle={{ width: "100%", height: "100%" }}
                         data-voice={voice.state}
                         data-dictation={dictationLook}
                         /* Held from the first frame of the press, before
-                           anything else is known. */
-                        className={voiceBusy ? dictationStyles.held : undefined}
+                           anything else is known. In `field` it is Cancel,
+                           and Cancel is not held. */
+                        className={voiceBusy && !fieldMode ? dictationStyles.held : undefined}
                         icon={
-                          recording ? (
+                          fieldMode ? (
+                            /* The microphone turns into Cancel in place — the
+                               same button, so focus is already on the way
+                               out. No cross-fade: the old icon is gone and the
+                               new one turns into place. */
+                            <AnimatePresence initial={false} mode="popLayout">
+                              <motion.span
+                                key={fieldOpen ? "cancel" : "mic"}
+                                className={dictationStyles.swap}
+                                initial={{ scale: 0.4, rotate: -60 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                exit={{ opacity: 0, transition: { duration: 0 } }}
+                                transition={FIELD_SPRING}
+                              >
+                                {fieldOpen ? <X size={14} strokeWidth={1.8} aria-hidden /> : <Mic size={14} strokeWidth={1.8} aria-hidden />}
+                              </motion.span>
+                            </AnimatePresence>
+                          ) : recording ? (
                             <RecorderFace
                               phase={face}
                               elapsed={elapsed}
@@ -1099,7 +1232,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                                it is busy instead — a stop button over a
                                permission dialog claims a recording that has not
                                started. */
-                            <span className={voice.state === "requesting" ? dictationStyles.breathe : undefined}>
+                            /* A flex box, never an inline one: inline, the glyph
+                               sat on the line's baseline, 2px above the plus. */
+                            <span className={`${dictationStyles.glyph} ${voice.state === "requesting" ? dictationStyles.breathe : ""}`}>
                               <MorphGlyph
                                 mode={voice.state === "listening" || voice.state === "transcribing" ? "stop" : "mic"}
                                 size={14}
@@ -1110,6 +1245,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         onClick={(e) => {
                           e.stopPropagation();
                           if (voice.state === "denied") return;
+                          if (fieldOpen) {
+                            cancelField();
+                            return;
+                          }
                           if (!voiceBusy) {
                             // Fixed here rather than read when the transcript
                             // arrives: by then focus has been on a button for
@@ -1127,7 +1266,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         aria-pressed={voice.state === "listening"}
                         disabled={voice.state === "denied"}
                         aria-label={
-                          voice.state === "listening"
+                          fieldOpen
+                            ? text.cancelDictation
+                            : voice.state === "listening"
                             ? text.stopListening
                             : voice.state === "requesting"
                             ? text.waitingForMicrophone
@@ -1154,7 +1295,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     }, animCfgRef.current?.wrap?.slideInDelay ?? 120);
                   }}
                 >
-                  {!isGlass && showButtons && (hasMenu || isEditing) && (
+                  {!isGlass && showButtons && (hasMenu || isEditing || fieldOpen) && (
                     <motion.div
                       key="lead"
                       initial={{ opacity: 0, scale: ARRIVES_AT, width: 0 }}
@@ -1181,7 +1322,33 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                       style={{ display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0, position: "relative", height: "var(--ick-composer-control)" }}
                     >
                       <AnimatePresence mode="popLayout" initial={false}>
-                        {isEditing ? (
+                        {fieldOpen ? (
+                          /* The plus becomes Done, right beside Cancel: it
+                             turns into place rather than fading over it. */
+                          <motion.div
+                            key="done-btn"
+                            initial={{ scale: 0.5, rotate: -60 }}
+                            animate={{ scale: 1, rotate: 0, opacity: voice.state === "requesting" ? 0.4 : 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={FIELD_SPRING}
+                            style={{ position: "absolute", inset: 0 }}
+                          >
+                            <KitButton
+                              variant="primary"
+                              kitRole="dictate"
+                              boxStyle={{ width: "100%", height: "100%" }}
+                              icon={<Check size={14} strokeWidth={2.2} aria-hidden />}
+                              disabled={voice.state === "requesting"}
+                              loading={voice.state === "transcribing"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                voice.stop();
+                              }}
+                              aria-label={text.doneDictating}
+                              style={{ width: "100%", minWidth: "var(--ick-composer-control)", height: "100%" }}
+                            />
+                          </motion.div>
+                        ) : isEditing ? (
                           <motion.div
                             key="cancel-btn"
                             initial={{ opacity: 0, scale: 0.5, rotate: -90 }}

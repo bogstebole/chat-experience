@@ -237,7 +237,7 @@ function DictatedChatInput({ dictation, transcriber, language }: DictationArgs) 
 export const Dictation: StoryObj<DictationArgs> = {
   args: { dictation: "recorder", transcriber: "live", language: "en-US" },
   argTypes: {
-    dictation: { control: "inline-radio", options: ["recorder", "surface"] },
+    dictation: { control: "inline-radio", options: ["recorder", "surface", "field"] },
     transcriber: { control: "inline-radio", options: ["after", "live", "chrome"] },
     language: { control: "text" },
   },

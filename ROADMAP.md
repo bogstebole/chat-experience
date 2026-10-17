@@ -1168,12 +1168,32 @@ the sixth is the one this week kept charging for.
       holds — a bubble that is there but not yet said needs a state of its own,
       because a bubble that looks sent and is not is worse than no queue.
 
-- [ ] **I4 · Pressing the microphone has to feel like something started.**
+- [x] **I4 · Pressing the microphone has to feel like something started.**
 
-      What exists is a ring that swells with the room's volume. It is honest
-      and it is nearly invisible: nothing marks the moment recording begins,
-      and the browser's permission prompt puts a silent gap in front of it the
-      first time. A reader presses, nothing appears to happen, and presses
+      Shipped in 0.63.0 as `dictation` — five looks, chosen out of a dozen
+      drawn as stories first. `recorder`, the default: the microphone unrolls
+      into a recorder — a count, the level, a stop where the microphone was —
+      on one spring, and the words land at the caret as they are said.
+      `surface`: the field itself becomes the recorder. `sand`, `plane` and
+      `ripple` on `ChatExperience`: the composer narrows to a pill with Cancel
+      and Done, the conversation steps back, and above the words the voice is
+      drawn — grains gathering on a plate's figures, or water standing in
+      them — the figure picked by the speaker's tone, followed over seconds.
+      The press lands on the first frame; `requesting` claims nothing; reduced
+      motion keeps every state legible and holds the figure still.
+
+      Two things were wrong underneath, and are fixed with it: a second press
+      while the browser was asking cancelled nothing, and words arriving took
+      focus off the stop, so Enter sent the message. And the contract is
+      written down: the kit draws and records, the host attaches the service —
+      `onTranscribe` for the recording, `onTranscribeLive` for words while they
+      are said. The browser's own recogniser answers only in Google Chrome,
+      which is why it is an example in the README and not the default.
+
+      What existed was a ring that swelled with the room's volume. It was
+      honest and nearly invisible: nothing marked the moment recording began,
+      and the browser's permission prompt put a silent gap in front of it the
+      first time. A reader pressed, nothing appeared to happen, and pressed
       again.
 
       Worth a real interaction rather than a louder ring — the composer

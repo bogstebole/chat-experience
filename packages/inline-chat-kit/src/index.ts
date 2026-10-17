@@ -12,7 +12,7 @@ export type {
   ChatInputState,
   InlineAnimConfig,
 } from "./ChatInput/ChatInput";
-export type { ComposerDictation } from "./ChatInput/Dictation";
+export type { ComposerDictation, DictationEnd, DictationSnapshot } from "./ChatInput/Dictation";
 
 /* Input internals — exported so consumers can recompose the input */
 export { AddCardsOverlay } from "./ChatInput/AddCardsOverlay";
@@ -99,6 +99,7 @@ export type {
   ChatExperienceEmpty,
   ChatExperienceArtifact,
   ChatExperienceHeaderAction,
+  ExperienceDictation,
   PartWriter,
 } from "./ChatExperience/ChatExperience";
 

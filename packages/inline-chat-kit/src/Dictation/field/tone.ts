@@ -143,11 +143,3 @@ export class ToneTracker {
     while (this.bandNow > 0 && this.tone < edge(this.bandNow) - margin) this.bandNow--;
   }
 }
-
-/**
- * A made-up speaker's intonation, for the simulated voice: a sentence that
- * rises, wanders and falls over twelve seconds or so.
- */
-export function simulatedTone(t: number) {
-  return 0.5 + 0.32 * Math.sin(t * 0.52 - 0.6) + 0.12 * Math.sin(t * 1.37 + 1.1) + 0.06 * Math.sin(t * 3.1);
-}

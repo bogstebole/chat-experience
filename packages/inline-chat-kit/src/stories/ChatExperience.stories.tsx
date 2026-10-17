@@ -7,7 +7,7 @@ import { Button } from "../Button/Button";
 import type { Decision } from "../Approval/Approval";
 import type { PartWriter } from "../ChatExperience/ChatExperience";
 import { hostRenderer, serbianApi, serbianLabels } from "./hostCards";
-import { scriptedApi, threadReply, scriptedTranscript, RUNNING_PLAN } from "../demo/scriptedApi";
+import { scriptedApi, threadReply, scriptedTranscript, scriptedLiveTranscript, RUNNING_PLAN } from "../demo/scriptedApi";
 
 /**
  * The assembled experience — every other story here is a piece of it.
@@ -255,6 +255,56 @@ export const Docked: Story = {
     composer: "docked",
     onTranscribe: scriptedTranscript,
   },
+};
+
+/**
+ * Dictating. The kit draws it and records; the host attaches the service —
+ * here a scripted live one, so the words are always the same sentence while
+ * the microphone and its level are real. The five looks are the stories
+ * below; this one is the default, `recorder`: the microphone unrolls into a
+ * count, the level and a stop, and the words land at the caret as they are
+ * said. When they reach the actions, the actions move to the second line.
+ */
+export const Dictation: Story = {
+  args: {
+    ...Opening.args,
+    composer: "docked",
+    onTranscribeLive: scriptedLiveTranscript,
+  },
+  argTypes: {
+    dictation: { control: "inline-radio", options: ["recorder", "surface", "sand", "plane", "ripple"] },
+  },
+};
+
+/** `dictation="surface"`: the field itself becomes the recorder — the count and the level across the whole line — until it is done. */
+export const DictationSurface: Story = {
+  ...Dictation,
+  args: { ...Dictation.args, dictation: "surface" },
+};
+
+/**
+ * `dictation="sand"`: the composer narrows to a pill — the count, Cancel and
+ * Done — the conversation steps back, and above the words sand is sprinkled
+ * onto a plate the voice shakes. Its tone, followed over seconds rather than
+ * syllables, picks the figure the grains gather into: low and steady is
+ * simple, a question climbing is intricate. Send a question first to see the
+ * conversation step back. Needs WebGL; without it, this is the recorder.
+ */
+export const DictationSand: Story = {
+  ...Dictation,
+  args: { ...Dictation.args, dictation: "sand" },
+};
+
+/** `dictation="plane"`: the same figures, as water standing on the surface — interference across the whole dish. */
+export const DictationPlane: Story = {
+  ...Dictation,
+  args: { ...Dictation.args, dictation: "plane" },
+};
+
+/** `dictation="ripple"`: the same figures, as rings of water spreading from the middle. */
+export const DictationRipple: Story = {
+  ...Dictation,
+  args: { ...Dictation.args, dictation: "ripple" },
 };
 
 /** Docked, and a pane of its own beside it. */

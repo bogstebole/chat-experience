@@ -1,6 +1,6 @@
 {
   "name": "inline-chat-kit",
-  "version": "0.62.0",
+  "version": "0.63.0",
   "description": "An inline AI chat experience for React. The input is the message: it morphs into the bubble, the answer streams beneath it, and the parts around it — tool calls, reasoning, questions, artifacts, dictation — come with it.",
   "keywords": [
     "react",
@@ -78,7 +78,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "dialkit": "^1.4.3",
     "jsdom": "^29.1.1",
     "lucide-react": "^1.14.0",
     "motion": "^12.40.0",

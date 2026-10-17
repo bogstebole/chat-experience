@@ -252,6 +252,11 @@
   flex-wrap: wrap;
 }
 
+/* `field`: the pill stands in the middle, under the voice drawn above it. */
+.wrap[data-field] {
+  justify-content: center;
+}
+
 .wrap::after {
   content: '';
   position: absolute;
