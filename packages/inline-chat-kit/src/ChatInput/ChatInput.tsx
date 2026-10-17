@@ -64,7 +64,9 @@ import { useComposerControl } from "./useComposerControl";
 import { MorphGlyph } from "./MorphGlyph";
 import { HoverActionsRow } from "./HoverActionsRow";
 import { AddCardsOverlay, type ComposerMenuItem } from "./AddCardsOverlay";
-import { useVoiceInput, type TranscribeHandler } from "../voice/useVoiceInput";
+import { useVoiceInput, type LiveTranscribeHandler, type TranscribeHandler } from "../voice/useVoiceInput";
+import { RECORDER_GROW, RecorderFace, SurfaceFace, useElapsed, useWaited, type ComposerDictation, type DictationPhase } from "./Dictation";
+import dictationStyles from "./Dictation.module.css";
 import styles from "./ChatInput.module.css";
 import { useLabels, type ChatInputLabels } from "../labels/labels";
 
@@ -164,6 +166,20 @@ export interface ChatInputProps {
    * the half a host owns. See `useVoiceInput`.
    */
   onTranscribe?: TranscribeHandler;
+  /**
+   * Words while they are said: the microphone's stream in, the transcript so
+   * far out, and the words appear at the caret as they come. Given alone, it
+   * offers the microphone too; with `onTranscribe`, that one's answer is the
+   * one kept. See `useVoiceInput`.
+   */
+  onTranscribeLive?: LiveTranscribeHandler;
+  /**
+   * What the composer looks like while it listens. `"recorder"`, the default:
+   * the microphone unrolls into a recorder — a count, the level, a stop —
+   * and what was typed stays in view. `"surface"`: the field itself becomes
+   * the recorder until it is done.
+   */
+  dictation?: ComposerDictation;
   onCopy?: (value: string) => void;
   onEdit?: (value: string) => void;
   onCancelEdit?: () => void;
@@ -262,6 +278,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       accept = "image/*",
       multiple = false,
       onTranscribe,
+      onTranscribeLive,
+      dictation: dictationLook = "recorder",
       onCopy,
       onEdit,
       onCancelEdit,
@@ -422,7 +440,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
      * there is something to send and "send it" afterwards, rather than a third
      * button pushed into a pill that has room for two.
      */
-    const meterRef = useRef<HTMLSpanElement>(null);
     /** Where the transcript goes, fixed when recording starts. */
     const dictation = useRef<{ base: string; at: number } | null>(null);
     /**
@@ -438,8 +455,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
      */
     const lastCaret = useRef<number | null>(null);
 
+    const canDictate = !!onTranscribe || !!onTranscribeLive;
     useEffect(() => {
-      if (!onTranscribe) return;
+      if (!canDictate) return;
       const el = editorRef.current;
       if (!el) return;
       const remember = () => {
@@ -452,7 +470,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       // inside a contenteditable does not raise one on the element.
       document.addEventListener("selectionchange", remember);
       return () => document.removeEventListener("selectionchange", remember);
-    }, [onTranscribe]);
+    }, [canDictate]);
 
     const putTranscript = useCallback(
       (text: string) => {
@@ -463,7 +481,11 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         // transcript that grows replaces itself instead of stacking up.
         const next = where.base.slice(0, where.at) + text + where.base.slice(where.at);
         el.textContent = next;
-        placeCursorAt(el, where.at + text.length);
+        // Only where focus already is. Placing a selection inside the field
+        // moves focus there in Chrome, and words arriving while somebody was
+        // still talking took it off the stop: Enter, pressed to finish, sent
+        // the message instead.
+        if (document.activeElement === el) placeCursorAt(el, where.at + text.length);
         onChange(next);
       },
       [onChange]
@@ -471,20 +493,45 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     const voice = useVoiceInput({
       onTranscribe,
+      onTranscribeLive,
       onTranscript: putTranscript,
-      onDone: () => {
+      onDone: (said) => {
+        const where = dictation.current;
         dictation.current = null;
-        editorRef.current?.focus();
+        const el = editorRef.current;
+        if (!el) return;
+        el.focus();
+        if (where) placeCursorAt(el, where.at + said.length);
       },
-      meterRef,
       labels: voiceLabels,
     });
 
+    /** The recorder's face: the microphone, the browser asking, listening, the words coming back. */
+    const waited = useWaited(voice.state === "requesting");
+    const elapsed = useElapsed(voice.state === "listening");
+    const face: DictationPhase =
+      voice.state === "listening" ? "live" : voice.state === "transcribing" ? "busy" : waited ? "wait" : "mic";
+    /**
+     * How wide the recorder is to be: what its arriving face measured. Kept
+     * past the return to the microphone until the spring back has finished,
+     * so that spring is the recorder's own and not the plus's bouncier one.
+     */
+    const [recorderWidth, setRecorderWidth] = useState<number | null>(null);
+    const onRecorderWidth = useCallback((width: number) => setRecorderWidth(width), []);
+    const recording = dictationLook === "recorder";
+    const recorderOpen = recording && face !== "mic" && recorderWidth != null;
+    const recorderMoving = recording && recorderWidth != null;
+    /** `surface`: the field is the recorder while it listens. Not on a sent bubble. */
+    const surfaced = dictationLook === "surface" && canDictate && state !== "responding" && state !== "resting";
+
+    const voiceBusy = voice.state === "listening" || voice.state === "requesting" || voice.state === "transcribing";
     const isGlass = state === "responding" || state === "resting";
     const isReadOnly = isGlass;
     const hasContent = value.trim().length > 0 || attached.length > 0;
     const isInputting = state === "typing" || state === "idle";
-    const showSend = isInputting && hasContent && !busy;
+    /* Not while dictating: what is in the field is not finished, and the
+       recorder needs the width. */
+    const showSend = isInputting && hasContent && !busy && !voiceBusy;
     /* Only with somewhere to report to. A stop that stops nothing was drawn on
        every responding bubble whose host had not wired one, and pressed. */
     const showStop = !!onStop && (state === "responding" || (busy && isInputting));
@@ -494,7 +541,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     const isRestingHovered = state === "resting" && hovered;
     const showActions = isRestingHovered;
     const showReadMore = state === "resting" && isOverflowing;
-    const voiceBusy = voice.state === "listening" || voice.state === "requesting" || voice.state === "transcribing";
     /**
      * The microphone stands beside the plus, not in the send glyph's slot.
      *
@@ -514,7 +560,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
      * leave nothing to explain why — and no way back once the reader has
      * changed it in site settings.
      */
-    const showMic = !!onTranscribe && voice.supported && !isEditing;
+    const showMic = canDictate && voice.supported && !isEditing;
     const showInlineGlyph = showSend || showStop || showHeldSend;
 
     const ac = animationConfig;
@@ -580,12 +626,17 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
      * Where the view goes belongs to `Conversation`, which knows about
      * anchors, tails and whether a reader has scrolled away. Focus is about
      * the keyboard.
+     *
+     * **Not while dictating.** Dictated words make the composer `typing`, and
+     * this took focus off the recorder the moment the first one landed — so
+     * Enter, pressed to stop, sent the message. It comes back when the
+     * dictation is over.
      */
     useEffect(() => {
-      if (state === "idle" || state === "typing") {
+      if ((state === "idle" || state === "typing") && !voiceBusy) {
         editorRef.current?.focus({ preventScroll: true });
       }
-    }, [state]);
+    }, [state, voiceBusy]);
 
     useEffect(() => {
       const el = editorRef.current;
@@ -631,6 +682,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
            its own, for the rest of the session. The placeholder is not text,
            and cleared, a composer is one line again. */
         const empty = value.length === 0;
+        /* Not while dictating, either way. Going to two lines takes the
+           buttons away and brings them back on the second, and words
+           arriving at the caret did that mid-sentence: the recorder vanished
+           while it was recording and focus fell to the page. The words wrap
+           beside it instead, and the composer settles when it is done. */
+        if (voiceBusy) return;
         if (!expandedModeRef.current) {
           compactAvailWidthRef.current = contentW;
           if (!empty && (isMultiline || textW >= compactAvailWidthRef.current * (ac?.wrap?.nearThreshold ?? 0.92))) {
@@ -652,7 +709,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           }
         }
       });
-    }, [value]);
+    }, [value, voiceBusy]);
 
     useEffect(() => {
       if (!isGlass) return;
@@ -909,11 +966,21 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                   <div
                     ref={editorClipRef}
                     className={styles.editorClip}
-                    style={{ flexBasis: expandedMode ? "100%" : undefined }}
+                    style={{ flexBasis: expandedMode ? "100%" : undefined, position: surfaced ? "relative" : undefined }}
+                    data-dictating={voiceBusy || undefined}
                   >
+                {surfaced && (
+                  <SurfaceFace
+                    phase={face}
+                    elapsed={elapsed}
+                    getLevel={voice.getLevel}
+                    waitingText={text.waitingForMicrophoneShort}
+                    transcribingText={text.transcribingNow}
+                  />
+                )}
                 <motion.div
                   ref={editorWrapRef}
-                  className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""}`}
+                  className={`${styles.editorWrap} ${isGlass ? styles.editorWrapGlass : ""} ${surfaced ? (face === "mic" ? dictationStyles.uncovered : dictationStyles.covered) : ""}`}
                   layout="position"
                   animate={isGlass && isOverflowing
                     ? { maxHeight: isExpanded ? fullHeight : 240 }
@@ -967,7 +1034,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     <motion.div
                       key="mic"
                       initial={{ opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0 }}
-                      animate={{ opacity: 1, scale: 1, width: control, marginLeft: 2 }}
+                      /* The recorder's width is this slot's: the button inside
+                         fills it, and its faces report what they need. */
+                      animate={{ opacity: 1, scale: 1, width: recorderOpen ? recorderWidth : control, marginLeft: 2 }}
+                      onAnimationComplete={() => {
+                        if (face === "mic" && recorderWidth != null) setRecorderWidth(null);
+                      }}
                       exit={{
                         opacity: 0, scale: ARRIVES_AT, width: 0, marginLeft: 0,
                         transition: pendingExpansion.current
@@ -982,7 +1054,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                            no delay and the plus waits one stagger — so the
                            microphone, leftmost, waits two. */
                         delay: (ac?.button?.staggerEnter ?? 0.055) * 2,
-                        opacity: { type: "tween", duration: 0.15 }
+                        opacity: { type: "tween", duration: 0.15 },
+                        ...(recorderMoving ? { width: RECORDER_GROW } : null)
                       }}
                       /* The height is stated and never animated. It was going 0 → 28 with the
                          width, and taking it out of the animation took it out
@@ -997,30 +1070,32 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                         kitRole="dictate"
                         boxStyle={{ width: "100%", height: "100%" }}
                         data-voice={voice.state}
+                        data-dictation={dictationLook}
+                        /* Held from the first frame of the press, before
+                           anything else is known. */
+                        className={voiceBusy ? dictationStyles.held : undefined}
                         icon={
-                          <>
-                            {/* The level of the incoming signal. `useVoiceInput`
-                                writes `--ick-voice-level` here once a frame and
-                                nothing reads it but CSS — a number this
-                                component re-rendered on would be sixty renders a
-                                second for a decoration. */}
-                            <span
-                              ref={meterRef}
-                              className={styles.voiceMeter}
-                              data-live={voice.state === "listening" || undefined}
-                              aria-hidden
+                          recording ? (
+                            <RecorderFace
+                              phase={face}
+                              elapsed={elapsed}
+                              getLevel={voice.getLevel}
+                              onWidth={onRecorderWidth}
                             />
-                            {/* A square means "press to stop what is running".
-                                Nothing is running while the browser's prompt is
-                                up, so `requesting` keeps the microphone and says
-                                it is busy instead — a stop button over a
-                                permission dialog claims a recording that has not
-                                started. */}
-                            <MorphGlyph
-                              mode={voice.state === "listening" || voice.state === "transcribing" ? "stop" : "mic"}
-                              size={14}
-                            />
-                          </>
+                          ) : (
+                            /* A square means "press to stop what is running".
+                               Nothing is running while the browser's prompt is
+                               up, so `requesting` keeps the microphone and says
+                               it is busy instead — a stop button over a
+                               permission dialog claims a recording that has not
+                               started. */
+                            <span className={voice.state === "requesting" ? dictationStyles.breathe : undefined}>
+                              <MorphGlyph
+                                mode={voice.state === "listening" || voice.state === "transcribing" ? "stop" : "mic"}
+                                size={14}
+                              />
+                            </span>
+                          )
                         }
                         onClick={(e) => {
                           e.stopPropagation();

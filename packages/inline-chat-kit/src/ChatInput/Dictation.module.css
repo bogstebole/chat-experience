@@ -1,0 +1,249 @@
+/* ─────────────────────────────────────────────
+   Dictation in the composer
+
+   The recorder the microphone unrolls into, and the surface the field
+   becomes. Every colour is a token; the dark theme is the tokens'.
+   ───────────────────────────────────────────── */
+
+/* The microphone held down: the press has landed, before anything else is
+   known. From the first frame of `requesting` to the last word. */
+[data-ick-variant].held {
+  background: var(--ick-surface-active);
+  color: var(--ick-ink);
+}
+
+[data-ick-variant].held:hover:not(:disabled) {
+  background: var(--ick-surface-press);
+}
+
+/* ── recorder ──────────────────────────────────────────────────────────── */
+
+/* Fills the button, whose width `ChatInput` springs; clips the faces while
+   it grows, and keeps them to the right, so the stop stands where the
+   microphone was and the count unrolls out of the left edge. Absolute, so
+   the button's 44px hit area is not clipped with it. */
+.recorder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* Each face keeps its own width while the button grows around it. */
+.face {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 8px;
+  height: 100%;
+  min-width: var(--ick-composer-control);
+  /* The button's own size, so the count is chrome beside its icons — at the
+     composer's 16px on a phone the 14px microphone read as a mistake, and
+     zoom-check said so. */
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+
+.face[data-face="live"] {
+  padding: 0 5px 0 11px;
+}
+
+.face .bars {
+  width: 46px;
+  height: 14px;
+}
+
+/* Where the microphone was, so the next press lands where the last one did. */
+.stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ick-ink);
+  color: var(--ick-surface);
+}
+
+/* The button's own spinner, the microphone's size: while the words come
+   back the recorder is a microphone again, and they have the width. */
+.spinner {
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--ick-border);
+  border-top-color: var(--ick-ink-soft);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── surface ───────────────────────────────────────────────────────────── */
+
+/* Over the field, the same box as its first line, so swapping one for the
+   other moves nothing. On the composer's own grey: a wash of the marker
+   behind it read as a different control rather than the composer at work. */
+.surface {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 100%;
+  padding: var(--ick-space-2) var(--ick-input-text-inset);
+  line-height: 1.45;
+  color: var(--ick-ink-soft);
+  pointer-events: none;
+}
+
+/* What the field held is under the surface, kept but not shown. */
+.covered {
+  opacity: 0;
+  transition: opacity 0.1s var(--ick-ease);
+}
+
+.uncovered {
+  transition: opacity 0.16s var(--ick-ease) 0.09s;
+}
+
+/* The rest of the line, filled with as many bars as fit. */
+.fit {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.fit .bars {
+  color: var(--ick-ink);
+}
+
+/* ── shared ────────────────────────────────────────────────────────────── */
+
+/* Newest on the right; a breath is a run of dots. */
+.bars {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  height: 18px;
+  min-width: 0;
+  color: var(--ick-ink-soft);
+}
+
+.bars > span {
+  --v: 0;
+
+  flex: 0 0 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform: scaleY(max(0.11, var(--v)));
+}
+
+/* Recording. The one red in the composer, and only once it really is. */
+.dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ick-danger);
+  animation: rec 1.2s ease-in-out infinite;
+}
+
+@keyframes rec {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.timer {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ick-ink);
+}
+
+/* Waiting on the browser: a slow breath, not a pulse, and nothing red —
+   it is not recording. */
+.breathe {
+  display: inline-flex;
+  animation: breathe 1.6s var(--ick-ease) infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--ick-ink-faint) 0%,
+    var(--ick-ink-faint) 40%,
+    var(--ick-ink) 50%,
+    var(--ick-ink-faint) 60%,
+    var(--ick-ink-faint) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+/* Still, every state stays legible: the words and the count say it is
+   live; the dot stops pulsing and the level stops moving. */
+@media (prefers-reduced-motion: reduce) {
+  .dot,
+  .breathe,
+  .shimmer {
+    animation: none;
+  }
+
+  .shimmer {
+    background: none;
+    color: var(--ick-ink-faint);
+  }
+
+  .spinner {
+    animation-duration: 2.4s;
+  }
+
+  .covered,
+  .uncovered {
+    transition: none;
+  }
+}

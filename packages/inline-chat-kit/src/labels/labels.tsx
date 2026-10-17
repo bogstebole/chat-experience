@@ -123,6 +123,10 @@ export const defaultLabels = {
     dictate: "Dictate a message",
     stopListening: "Stop listening",
     waitingForMicrophone: "Waiting for microphone access",
+    /** On screen while the browser asks: short, because it has a phone's width to fit in. */
+    waitingForMicrophoneShort: "Waiting for the mic…",
+    /** On screen while the words come back, where the composer says so in words. */
+    transcribingNow: "Transcribing…",
     cancelTranscription: "Cancel transcription",
     microphoneBlocked: "Microphone blocked",
     microphoneBlockedHelp:

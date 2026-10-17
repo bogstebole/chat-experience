@@ -35,7 +35,8 @@ import {
   type InlineAnimConfig,
   type ChatInputHandle,
 } from "../ChatInput/ChatInput";
-import { type TranscribeHandler } from "../voice/useVoiceInput";
+import { type LiveTranscribeHandler, type TranscribeHandler } from "../voice/useVoiceInput";
+import type { ComposerDictation } from "../ChatInput/Dictation";
 import {
   type CustomPart,
   type CustomPartContext,
@@ -164,9 +165,15 @@ export interface ChatExperienceProps {
    * built-in three (Add, Design, Connectors). Keep a list stable.
    */
   composerMenu?: ComposerMenuItem[] | false;
-  /** Speech to text. The kit records; the host transcribes. Omit and the
-      microphone does not appear. */
+  /** Speech to text. The kit records; the host transcribes. Omit this and
+      `onTranscribeLive`, and the microphone does not appear. */
   onTranscribe?: TranscribeHandler;
+  /** Words while they are said: the microphone's stream in, the transcript
+      so far out. See `useVoiceInput`. */
+  onTranscribeLive?: LiveTranscribeHandler;
+  /** What the composer looks like while it listens: `"recorder"` (the
+      default) or `"surface"`. See `ChatInput`. */
+  dictation?: ComposerDictation;
   /** A follow-up asked on a passage. Omit and replying in a thread is off. */
   onThreadReply?: ReplyThreadPopupProps["onSendMessage"];
 
@@ -354,6 +361,8 @@ export function ChatExperience({
   headerActions: builtInActions = true,
   composerMenu,
   onTranscribe,
+  onTranscribeLive,
+  dictation,
   onThreadReply,
   title: titleProp,
   backHref,
@@ -892,6 +901,8 @@ export function ChatExperience({
                   docked && live ? styles.dock : opening && i === 0 ? styles.opening : undefined
                 }
                 onTranscribe={onTranscribe}
+                onTranscribeLive={onTranscribeLive}
+                dictation={dictation}
                 isActiveInput={live}
                 inputRef={live ? activeInputRef : null}
                 entranceDelay={i === 0 ? feedDelay : 0}

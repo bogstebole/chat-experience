@@ -191,6 +191,9 @@ choreography by moving between these values:
 | `onEdit` | `(value: string) => void` | Hover action; put the turn back into `typing` |
 | `onCancelEdit` | `() => void` | Paired with `isEditing` |
 | `isEditing` | `boolean` | Shows save/cancel instead of send |
+| `onTranscribe` | `TranscribeHandler` | The recording in, the words out. See [Dictation](#dictation) |
+| `onTranscribeLive` | `LiveTranscribeHandler` | The microphone's stream in, the words so far out, while they are said |
+| `dictation` | `"recorder" \| "surface"` | What the composer looks like while it listens. `"recorder"` by default |
 | `placeholder` | `string` | |
 | `animationConfig` | `InlineAnimConfig` | Spring and stagger overrides — see below |
 | `style` | `React.CSSProperties` | |
@@ -299,6 +302,180 @@ With a `chat` of your own, give its hook `nextTurn: "at-send"`. Assembling the
 rows by hand, the same shape is `<Conversation dock>` with the live row last,
 `busy={isStreaming}` on it, and `onStop` on it rather than on the bubble being
 answered.
+
+### Dictation
+
+The kit draws dictating and records; **you attach the service that turns
+speech into words.** Pass nothing and there is no microphone at all. That is
+the whole switch, on `ChatExperience`, `ChatTurnRow` and `ChatInput` alike.
+
+Why the service is yours: Whisper, Deepgram, a model on your own server or
+the browser's own recogniser each suit a different product, cost and privacy
+promise, and a kit that picked one would be wrong for most of the people
+using it. Everything that is the same everywhere — the permission prompt, the
+recording, the level, the states in between, where the words go — is the
+kit's.
+
+Two ways to attach one:
+
+- **`onTranscribe(audio, { signal, mimeType })`** gets the recording when the
+  reader is done — a `Blob` — and returns the words: a string, a promise of
+  one, or an async iterable of deltas, the same three shapes `onSend` takes.
+- **`onTranscribeLive(stream, { signal, finished })`** gets the microphone's
+  `MediaStream` the moment it opens, and yields **the whole transcript so far**
+  each time the service has one — not what is new, because a live recogniser
+  goes back and corrects the words it has just heard. When the reader is done,
+  `finished` resolves: tell the service the audio has ended, yield its last
+  words, and return. The words appear at the caret as they are said.
+
+Give both and the live one is what the reader watches while they talk, and
+`onTranscribe`'s answer is the one that is kept: a fast service for the eye,
+a careful one for the record. `signal` aborts when the reader cancels.
+
+**Sent from your own endpoint, once it is done:**
+
+```tsx
+<ChatExperience
+  onSend={send}
+  onTranscribe={async (audio, { signal, mimeType }) => {
+    const response = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": mimeType },
+      body: audio,
+      signal,
+    });
+    return (await response.json()).text;
+  }}
+/>
+```
+
+`mimeType` says what the browser recorded — WebM in Chrome, MP4 in Safari —
+which your server has to tell its transcriber.
+
+**Live, from a streaming service.** The shape, with the parts that differ
+from service to service marked. Your server mints a short-lived token, so the
+API key never reaches the browser — every streaming service worth using
+offers one:
+
+```tsx
+import type { LiveTranscribeHandler } from "inline-chat-kit";
+
+const live: LiveTranscribeHandler = async function* (stream, { signal, finished }) {
+  const { url } = await fetch("/api/transcribe-token").then((r) => r.json());
+  const socket = new WebSocket(url); // the service's address, with the token
+  const recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (event) => socket.readyState === WebSocket.OPEN && socket.send(event.data);
+  socket.onopen = () => recorder.start(250);
+
+  let transcript = "";
+  let wake = () => {};
+  let closed = false;
+  socket.onmessage = (event) => {
+    transcript = parse(event.data, transcript); // the service's message format
+    wake();
+  };
+  socket.onclose = () => {
+    closed = true;
+    wake();
+  };
+  void finished.then(() => socket.send(JSON.stringify({ type: "close" }))); // the service's "audio has ended"
+  signal.addEventListener("abort", () => socket.close());
+
+  let given = "";
+  for (;;) {
+    if (transcript !== given) yield (given = transcript);
+    else if (closed) return;
+    else await new Promise<void>((resolve) => (wake = resolve));
+  }
+};
+
+<ChatExperience onSend={send} onTranscribeLive={live} />;
+```
+
+**Free, in Google Chrome only: the browser's own recogniser.** It costs
+nothing and needs no server, and it is a real trade: Chrome sends the audio to
+Google, and Arc, Brave, Dia, Edge and Firefox do not answer it — the
+microphone works and no words come. Say so to your readers if you ship it.
+It opens the microphone itself rather than taking the stream, and Chrome ends
+it after a long pause, so it starts again keeping what it heard:
+
+```tsx
+const chrome = (lang: string): LiveTranscribeHandler =>
+  async function* (_stream, { signal, finished }) {
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) return;
+    const recognition = new Recognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = lang;
+    let kept = "";
+    let latest = "";
+    let stopping = false;
+    let ended = false;
+    let wake = () => {};
+    recognition.onresult = (event) => {
+      let all = kept;
+      for (let i = 0; i < event.results.length; i++) all += ` ${event.results[i][0].transcript}`;
+      latest = all.trim().replace(/\s+/g, " ");
+      wake();
+    };
+    recognition.onerror = (event) => {
+      if (event.error !== "no-speech" && event.error !== "aborted") stopping = true;
+    };
+    recognition.onend = () => {
+      if (stopping || signal.aborted) {
+        ended = true;
+        wake();
+        return;
+      }
+      kept = latest;
+      recognition.start();
+    };
+    void finished.then(() => {
+      stopping = true;
+      recognition.stop();
+    });
+    signal.addEventListener("abort", () => recognition.abort());
+    recognition.start();
+
+    let given = "";
+    for (;;) {
+      if (latest !== given) yield (given = latest);
+      else if (ended) return;
+      else await new Promise<void>((resolve) => (wake = resolve));
+    }
+  };
+
+<ChatExperience onSend={send} onTranscribeLive={chrome("en-US")} />;
+```
+
+(`SpeechRecognition` is not in TypeScript's DOM types; declare the few members
+used here, as the Storybook story does.)
+
+**What it looks like while it listens** is `dictation`:
+
+| `dictation` | |
+| --- | --- |
+| `"recorder"` (default) | The microphone unrolls to the left into a recorder — a count, the level, a stop where the microphone was — and the whole of it is the stop. What was typed stays in view and the words land at the caret. While the words come back it is a spinner the size of the microphone again. |
+| `"surface"` | The field itself becomes the recorder: the count and the level across the whole line. Louder; what was typed is out of sight until it is done. |
+
+Both share the rules that make a press feel like something started: the
+button is held from the first frame of the press; while the browser's prompt
+is up nothing claims to be recording — no red, no count, no level, the
+microphone breathes; focus stays on the stop for as long as it listens, so
+Enter finishes the dictation rather than sending the message; and under
+reduced motion the dot stops pulsing and the level stops moving while the
+words and the count still say it is live. A refusal is the one state that
+says something in words, under the composer, because a blocked microphone
+looks exactly like an idle one. Every word of it is in `labels.input` and
+`labels.voice`.
+
+The Storybook story `Components/ChatInput/Dictation` has both looks and all
+three ways to attach a service — the Chrome one live, if you are in Chrome.
+
+For a composer of your own, `useVoiceInput` is the same machinery without the
+drawing: `start`, `stop` (done), `cancel` (thrown away), `toggle`, the `state`,
+and `getLevel()` and `getAnalyser()` to draw the level in your own frame loop.
 
 ### Two rules everything follows
 
