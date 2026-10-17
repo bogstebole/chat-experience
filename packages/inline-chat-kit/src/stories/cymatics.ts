@@ -25,6 +25,8 @@ export interface Mode {
    * was chosen by the voice's tone rather than by a word.
    */
   order?: number;
+  /** Which of the figures near that place: a voice that returns to a pitch sees a new one. */
+  variant?: number;
 }
 
 /**
@@ -32,10 +34,13 @@ export interface Mode {
  * water into few, broad petals, a high one into many fine ones — the way a
  * plate's figures grow more intricate as the frequency rises.
  */
-export function modeForOrder(order: number): Mode {
+export function modeForOrder(order: number, variant = 0): Mode {
   const o = Math.min(1, Math.max(0, order));
   const step = Math.round(o * 5);
-  return { n: 3 + step, k: 11 + step * 3.2, phase: 0.8, order: o };
+  // Variants keep the fold and change what the water does with it: how
+  // finely it rings, and the phase between its two wave families.
+  const v = variant % 4;
+  return { n: 3 + step, k: 11 + step * 3.2 + [0, 4.5, -2.5, 7][v], phase: [0.8, 2.6, 4.3, 5.7][v], order: o, variant };
 }
 
 export interface Frame {

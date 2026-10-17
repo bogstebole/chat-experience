@@ -174,6 +174,8 @@ function CymaticsDemo({
   /** The voice's tone, followed slowly; it, not the words, picks the figure. */
   const tracker = useRef(new ToneTracker());
   const shownBand = useRef(-1);
+  /** Counts the figures shown, so returning to a band brings a new figure, not the last one. */
+  const variant = useRef(0);
   const pitchAt = useRef(0);
   const [toneReading, setToneReading] = useState<{ tone: number; band: number } | null>(null);
   const dirty = useRef(true);
@@ -207,8 +209,9 @@ function CymaticsDemo({
     // Small enough that the sand thins out before the screen's edge on a phone.
     const radius = Math.min(box.width * 0.4, (box.height - 160) * 0.4, 280);
     e.radius = radius;
-    // Up to four lines of transcript between the figure and the composer.
-    e.center = { x: box.width / 2, y: dockTop - 128 - radius };
+    // Close above the words: room for two lines, and the figure's own faded
+    // edge takes the rest.
+    e.center = { x: box.width / 2, y: dockTop - 70 - radius * 0.9 };
     const mic = micRef.current?.getBoundingClientRect();
     e.mic = mic ? { x: mic.left - box.left + mic.width / 2, y: mic.top - box.top + mic.height / 2 } : { ...e.center };
     setGeo({ wordsBottom: dock ? box.bottom - dock.top + 22 : 96, full: dock ? dock.width : 358 });
@@ -296,7 +299,8 @@ function CymaticsDemo({
         const band = tracker.current.band;
         if (band !== shownBand.current && engine.current) {
           shownBand.current = band;
-          const mode = modeForOrder(band / (BANDS - 1));
+          variant.current += 1;
+          const mode = modeForOrder(band / (BANDS - 1), variant.current);
           if (still) engine.current.setModeNow(mode);
           else engine.current.setMode(mode);
           dirty.current = true;

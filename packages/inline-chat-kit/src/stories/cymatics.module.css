@@ -84,6 +84,12 @@
   letter-spacing: 0.01em;
   text-align: center;
   color: var(--ick-ink);
+  /* The figure sits close above and its faded edge can run under the words;
+     a halo of the page keeps them legible over the sand. */
+  text-shadow:
+    0 0 2px var(--ick-surface),
+    0 0 6px var(--ick-surface),
+    0 0 12px var(--ick-surface);
   pointer-events: none;
 }
 

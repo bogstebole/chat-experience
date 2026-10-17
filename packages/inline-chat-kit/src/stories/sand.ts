@@ -26,35 +26,136 @@ import type { Frame, Mode } from "./cymatics";
  *   still costs too much on the device it is running on.
  */
 
-interface Plate {
-  a: number;
-  b: number;
-  /** +1 or −1: which of the two degenerate combinations. */
-  s: number;
+/**
+ * The plates the sand lies on. Two kinds, because one kind gave too few
+ * figures: the classic square, cos(aπx)cos(bπy) ∓ cos(bπx)cos(aπy) — crosses
+ * and diagonals — and a round one, J_n(αr)·cos(nθ) + c·J₀(βr) — petals and
+ * rings. Neither is drawn; only the sand on its still lines is.
+ */
+type Plate =
+  | { kind: "square"; a: number; b: number; s: number; rank: number }
+  | { kind: "round"; n: number; alpha: number; c: number; beta: number; rank: number; table?: RoundTable };
+
+interface RoundTable {
+  /** J_n(αr), α·J_n′(αr), J₀(βr), β·J₀′(βr), sampled over r in [0, R_MAX]. */
+  jn: Float32Array;
+  djn: Float32Array;
+  j0: Float32Array;
+  dj0: Float32Array;
 }
 
-/**
- * Low-order modes only. Past about five the figure turns into a lattice of
- * cells — correct, and nothing like the simple, open figures that make a
- * plate worth watching. A word picks one; the same word always picks the same.
- */
+const R_MAX = 1.5;
+const R_STEPS = 1024;
+
+/** Bessel J_n by its integral, J_n(x) = (1/π)∫₀^π cos(nτ − x sin τ) dτ. Exact enough, and only run when a figure is chosen. */
+function besselJ(n: number, x: number) {
+  const steps = 64;
+  let sum = 0;
+  for (let i = 0; i <= steps; i++) {
+    const tau = (i / steps) * Math.PI;
+    const w = i === 0 || i === steps ? 0.5 : 1;
+    sum += w * Math.cos(n * tau - x * Math.sin(tau));
+  }
+  return sum / steps;
+}
+
+function tableFor(p: Extract<Plate, { kind: "round" }>): RoundTable {
+  if (p.table) return p.table;
+  const jn = new Float32Array(R_STEPS + 1);
+  const djn = new Float32Array(R_STEPS + 1);
+  const j0 = new Float32Array(R_STEPS + 1);
+  const dj0 = new Float32Array(R_STEPS + 1);
+  for (let i = 0; i <= R_STEPS; i++) {
+    const r = (i / R_STEPS) * R_MAX;
+    jn[i] = besselJ(p.n, p.alpha * r);
+    djn[i] = (p.alpha * (besselJ(p.n - 1, p.alpha * r) - besselJ(p.n + 1, p.alpha * r))) / 2;
+    j0[i] = besselJ(0, p.beta * r);
+    dj0[i] = -p.beta * besselJ(1, p.beta * r);
+  }
+  p.table = { jn, djn, j0, dj0 };
+  return p.table;
+}
+
+/** Simplest to most intricate; the voice's tone picks a place on this list. */
 const PLATES: Plate[] = [];
 for (let a = 1; a <= 4; a++) {
   for (let b = a + 1; b <= Math.min(5, a + 3); b++) {
-    PLATES.push({ a, b, s: 1 }, { a, b, s: -1 });
+    PLATES.push({ kind: "square", a, b, s: 1, rank: a * a + b * b }, { kind: "square", a, b, s: -1, rank: a * a + b * b + 0.5 });
   }
 }
+for (const n of [2, 3, 4, 5, 6, 8]) {
+  for (const [alpha, c, beta] of [
+    [7.5, 0, 0],
+    [10.5, 0.55, 9],
+    [13.5, 0.45, 12.5],
+  ]) {
+    PLATES.push({ kind: "round", n, alpha, c, beta, rank: n * 2.2 + alpha * 0.9 });
+  }
+}
+PLATES.sort((p, q) => p.rank - q.rank);
 
-/** The same plates from simplest to most intricate, for a figure chosen by tone. */
-const BY_ORDER = [...PLATES].sort((p, q) => p.a * p.a + p.b * p.b - (q.a * q.a + q.b * q.b) || p.s - q.s);
-
+/**
+ * The figure for a mode. Chosen by tone, it is the plate at that place on the
+ * list — or one of its neighbours, by `variant`, so a voice that keeps
+ * returning to the same pitch still sees new figures.
+ */
 const plateFor = (mode: Mode): Plate => {
   if (mode.order != null) {
-    return BY_ORDER[Math.round(Math.min(1, Math.max(0, mode.order)) * (BY_ORDER.length - 1))];
+    const at = Math.round(Math.min(1, Math.max(0, mode.order)) * (PLATES.length - 1));
+    const shift = [0, 1, -1, 2, -2][(mode.variant ?? 0) % 5];
+    return PLATES[Math.min(PLATES.length - 1, Math.max(0, at + shift))];
   }
   const index = Math.abs(Math.round(mode.k * 7 + mode.n * 13 + mode.phase * 31)) % PLATES.length;
   return PLATES[index];
 };
+
+/** The plate under a point: its displacement and slope, written into `out`. */
+function sample(p: Plate, x: number, y: number, out: Float32Array) {
+  if (p.kind === "square") {
+    const { a, b, s } = p;
+    const pa = Math.PI * a;
+    const pb = Math.PI * b;
+    const ca = cosPi(a * x);
+    const sa = sinPi(a * x);
+    const cbx = cosPi(b * x);
+    const sbx = sinPi(b * x);
+    const cay = cosPi(a * y);
+    const say = sinPi(a * y);
+    const cb = cosPi(b * y);
+    const sb = sinPi(b * y);
+    out[0] = (ca * cb - s * cbx * cay) * 0.5;
+    out[1] = (-pa * sa * cb + s * pb * sbx * cay) * 0.5;
+    out[2] = (-pb * ca * sb + s * pa * cbx * say) * 0.5;
+    return;
+  }
+  const tb = p.table ?? tableFor(p);
+  const r = Math.sqrt(x * x + y * y);
+  const f = Math.min(R_STEPS - 1, (r / R_MAX) * R_STEPS);
+  const i = f | 0;
+  const w = f - i;
+  const lerp = (arr: Float32Array) => arr[i] + (arr[i + 1] - arr[i]) * w;
+  // cos(nθ) and sin(nθ) by raising the unit vector to the nth power, with a
+  // petal pointing straight up.
+  const ux = r > 1e-5 ? y / r : 1;
+  const uy = r > 1e-5 ? -x / r : 0;
+  let cn = 1;
+  let sn = 0;
+  for (let k = 0; k < p.n; k++) {
+    const c2 = cn * ux - sn * uy;
+    sn = cn * uy + sn * ux;
+    cn = c2;
+  }
+  const jn = lerp(tb.jn);
+  const fr = lerp(tb.djn) * cn + p.c * lerp(tb.dj0);
+  // ∂f/∂θ divided by r; J_n vanishes like rⁿ at the centre, so this is finite.
+  const ft = r > 1e-4 ? (-p.n * jn * sn) / r : 0;
+  out[0] = (jn * cn + p.c * lerp(tb.j0)) * 1.6;
+  // Back from the turned frame: θ was measured from straight up.
+  const rx = r > 1e-5 ? x / r : 0;
+  const ry = r > 1e-5 ? y / r : 1;
+  out[1] = (fr * rx - ft * ry) * 1.6;
+  out[2] = (fr * ry + ft * rx) * 1.6;
+}
 
 /** cos(πt), from a table: one period in 4096 steps, linearly interpolated. */
 const STEPS = 4096;
@@ -187,6 +288,7 @@ export class Sand {
   private costFrames = 0;
   private rand = mulberry(7);
   private plate: Plate = PLATES[0];
+  private here = new Float32Array(3);
   private pending: Plate | null = null;
   private changedAt = -Infinity;
   private lastTime = -1;
@@ -299,9 +401,8 @@ export class Sand {
    */
   private step(dt: number, drive: number, live: number, every = false) {
     if (live <= 0) return;
-    const { a, b, s } = this.plate;
-    const pa = Math.PI * a;
-    const pb = Math.PI * b;
+    const plate = this.plate;
+    const here = this.here;
     // A square root, so ordinary speech already shakes the plate properly: a
     // quiet voice left the figures half-gathered when the next one came.
     const shake = live * (TUNE.idle + (1 - TUNE.idle) * Math.sqrt(Math.max(0, drive)));
@@ -317,20 +418,12 @@ export class Sand {
       if (settled && !every && i % 3 !== slot) continue;
       const x = pos[i * 2];
       const y = pos[i * 2 + 1];
-      // The plate's displacement under the grain, and its slope. The plate
-      // spans [-1, 1] in both directions; the figure lives inside it.
-      const ca = cosPi(a * x);
-      const sa = sinPi(a * x);
-      const cbx = cosPi(b * x);
-      const sbx = sinPi(b * x);
-      const cay = cosPi(a * y);
-      const say = sinPi(a * y);
-      const cb = cosPi(b * y);
-      const sb = sinPi(b * y);
-      const f = ca * cb - s * cbx * cay;
-      const fx = -pa * sa * cb + s * pb * sbx * cay;
-      const fy = -pb * ca * sb + s * pa * cbx * say;
-      const amp = Math.min(1, Math.abs(f) * 0.5);
+      // The plate's displacement under the grain, and its slope.
+      sample(plate, x, y, here);
+      const f = here[0];
+      const fx = here[1];
+      const fy = here[2];
+      const amp = Math.min(1, Math.abs(f));
       calm[i] = amp < TUNE.calm ? 1 : 0;
       // Never quite still: a floor under the kick keeps the grains on a line
       // jostling, so a line is a band of sand with strays around it, the way
@@ -340,9 +433,13 @@ export class Sand {
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
       let ny = y + k * (this.rand() + this.rand() - 1) * 1.7;
-      // …and sliding toward where it does not, down the slope of f².
-      nx -= d * f * fx;
-      ny -= d * f * fy;
+      // …and sliding toward where it does not. Divided by the slope squared,
+      // so a grain closes on its line at the same pace however steep the
+      // plate is there: steep places used to pull the sand into a hairline
+      // while gentle ones left a wide smear.
+      const pull = (d * 150) / (fx * fx + fy * fy + 4);
+      nx -= pull * f * fx;
+      ny -= pull * f * fy;
       if (nx * nx + ny * ny > 1.35 * 1.35) {
         // Off the heap: it comes back as a fresh grain somewhere in the middle.
         this.drop(i);
