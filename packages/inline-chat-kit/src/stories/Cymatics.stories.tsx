@@ -15,6 +15,14 @@ import "dialkit/styles.css";
 const LOOK_NAMES = ["sand", ...Object.keys(LOOKS)] as ("sand" | keyof typeof LOOKS)[];
 type Look = (typeof LOOK_NAMES)[number];
 
+/**
+ * How far past its radius each look's shader draws, so all three fill the
+ * same place: the radius holding nine tenths of the ink was measured at 88px
+ * for the sand, 56px for the plane and 42px for the ripple, which melt into
+ * the page well inside the radius they are given.
+ */
+const REACH: Record<Look, number> = { sand: 1, plane: 1.55, ripple: 2.1 };
+
 const makeField = (canvas: HTMLCanvasElement, look: Look) => (look === "sand" ? new Sand(canvas) : new Cymatics(canvas, LOOKS[look]));
 import { tone, warmEarcons } from "./earcons";
 import s from "./cymatics.module.css";
@@ -213,6 +221,7 @@ function CymaticsDemo({
   still: forceStill,
   look,
   language,
+  tuning,
 }: {
   source: "simulated" | "microphone";
   promptMs: number;
@@ -220,6 +229,8 @@ function CymaticsDemo({
   look: Look;
   /** A BCP 47 tag for the browser's recogniser, or "browser" for the browser's own language. */
   language: string;
+  /** With the tuning panel: also what the voice's tone is doing, along the top. */
+  tuning: boolean;
 }) {
   const reduced = useReducedMotion() ?? false;
   const still = forceStill || reduced;
@@ -321,7 +332,7 @@ function CymaticsDemo({
     // the words and the composer on a phone. 104px of radius there.
     const L = dialsRef.current?.Layout ?? { size: 0.21, maxRadius: 150, lift: 12 };
     const radius = Math.min(box.width * L.size, (box.height - 160) * L.size, L.maxRadius);
-    e.radius = radius;
+    e.radius = radius * REACH[look];
     // The last loose grains reach about 1.15 radii; they stop just above a
     // transcript of three lines. Measured from the composer's own type, which
     // is 12px on a desktop and 16px on a phone.
@@ -337,7 +348,7 @@ function CymaticsDemo({
     const r = surfaceRef.current ? parseFloat(getComputedStyle(surfaceRef.current).borderTopLeftRadius) : NaN;
     if (Number.isFinite(r)) setRadius(r);
     dirty.current = true;
-  }, []);
+  }, [look]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -682,7 +693,7 @@ function CymaticsDemo({
   const words = heard ? heard.split(" ").filter(Boolean) : [];
 
   const statusLine =
-    phase === "requesting" ? "Waiting for microphone…" : phase === "finishing" ? "Writing it down…" : `Listening · ${clock(elapsed)}`;
+    phase === "requesting" ? "Waiting for the mic…" : phase === "finishing" ? "Writing it down…" : `Listening · ${clock(elapsed)}`;
 
   return (
     <div ref={pageRef} className={s.page} data-open={open || undefined} data-still={still || undefined}>
@@ -860,7 +871,7 @@ function CymaticsDemo({
       {!gl && open && <div className={s.fallback}>This browser cannot draw the water.</div>}
 
       {/* For the exploration only: what the voice's tone is doing. */}
-      {open && toneReading && (
+      {tuning && open && toneReading && (
         <div className={s.readout} data-tone={toneReading.tone} data-band={toneReading.band}>
           {toneReading.hz == null ? "— Hz" : `${toneReading.hz} Hz`} · level {toneReading.level.toFixed(2)} · tone {toneReading.tone.toFixed(2)} · figure {toneReading.band + 1}/{BANDS}
           {toneReading.grains != null && ` · ${toneReading.grains.toLocaleString("en")} grains`}
@@ -872,7 +883,7 @@ function CymaticsDemo({
 
 interface Args {
   look: Look;
-  /** The tuning panel. Closed to a button on a narrow screen, where open it covers the composer. */
+  /** The tuning panel, and the tone readout along the top. Closed to a button on a narrow screen, where open it covers the composer. */
   panel: boolean;
   source: "simulated" | "microphone";
   /** For the browser's recogniser, with the microphone. */
@@ -902,6 +913,7 @@ export const J_Cymatics: StoryObj<Args> = {
         promptMs={a.permission === "prompt" ? 1800 : 60}
         still={a.reducedMotion}
         language={a.language}
+        tuning={a.panel}
       />
     </MotionConfig>
   ),

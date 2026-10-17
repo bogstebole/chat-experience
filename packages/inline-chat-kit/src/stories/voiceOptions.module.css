@@ -173,9 +173,22 @@
   color: var(--ick-ink-soft);
 }
 
-.takeover .bars {
+/* The rest of the line, filled with as many bars as fit. */
+.fit {
+  display: flex;
   flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.fit .bars {
   color: var(--ick-ink);
+}
+
+.surfaceBody {
+  display: flex;
+  width: 100%;
+  min-width: 0;
 }
 
 /* ── B · The microphone grows into a recorder ──────────────────────────── */

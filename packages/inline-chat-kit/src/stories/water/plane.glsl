@@ -194,13 +194,13 @@ void main() {
   // Where the surface turns steeply away it reflects the room, not the light.
   float edge = smoothstep(0.03, 0.7, slope) * (0.6 + 0.4 * smoothstep(-0.1, 0.45, 0.2 - R.y));
 
-  float ink = mix(1.0, 0.8, uDark);
+  float ink = mix(1.0, 0.55, uDark);
   float tone = mix(0.12, 0.08, uDark) * glow + mix(0.012, 0.02, uDark);
   tone += mix(0.4, 0.2, uDark) * edge + mix(0.22, 0.1, uDark) * max(-lens, 0.0);
   vec3 col = mix(uPaper, uInk, clamp(tone, 0.0, 1.0) * ink);
   float hi = mix(0.5, 0.35, uDark) * key + mix(0.9, 0.7, uDark) * top + mix(0.5, 0.25, uDark) * sheen
            + mix(0.4, 0.3, uDark) * max(lens, 0.0) + mix(0.35, 0.25, uDark) * ring;
-  col = mix(col, vec3(1.0), clamp(hi, 0.0, 1.0) * mix(0.97, 0.82, uDark));
+  col = mix(col, vec3(1.0), clamp(hi, 0.0, 1.0) * mix(0.97, 0.5, uDark));
 
   // Dither: colour a triangular step, coverage only where there is coverage.
   float n1 = hash12(frag) + hash12(frag + 17.13) - 1.0;

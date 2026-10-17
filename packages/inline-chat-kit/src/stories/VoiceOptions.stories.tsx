@@ -250,37 +250,81 @@ function MicButton({ view }: { view: View }) {
   );
 }
 
+/* ── Timing shared by A and B ──────────────────────────────────────────── */
+
+/** B's width. */
+const GROW = { type: "spring" as const, visualDuration: 0.34, bounce: 0.1 };
+const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+/** In turn, never both: what was there goes first, then what comes in. Two at once read as a smear. */
+const LEAVE = { duration: 0.1, ease: EASE_OUT };
+const ENTER = { duration: 0.16, delay: 0.09, ease: EASE_OUT };
+const INSTANT = { duration: 0 };
+
 /* ── A · The composer becomes the recorder ──────────────────────────────── */
 
+/** As many bars as the line has room for, recounted when it changes width. */
+function FitBars({ view }: { view: View }) {
+  const [count, setCount] = useState(0);
+  const watch = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    const fit = () => setCount(Math.max(0, Math.min(BARS, Math.floor((el.clientWidth + 2) / 4))));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <span ref={watch} className={s.fit}>
+      {count > 0 && <Bars view={view} count={count} />}
+    </span>
+  );
+}
+
+type SurfacePhase = "edit" | "wait" | "live" | "busy";
+
 function OptionA({ view }: { view: View }) {
-  const { state } = view;
-  let body: ReactNode;
-  if (state === "requesting" && view.waiting) {
-    body = (
-      <div className={s.takeover}>
-        <span>Waiting for microphone access…</span>
-      </div>
-    );
-  } else if (state === "listening") {
-    body = (
-      <div className={s.takeover}>
-        <span className={s.dot} />
-        <span className={s.timer}>{clock(view.elapsed)}</span>
-        <Bars view={view} />
-      </div>
-    );
-  } else if (state === "transcribing" && !view.text) {
-    body = (
-      <div className={s.takeover}>
-        <span className={s.shimmer}>Transcribing…</span>
-      </div>
-    );
-  } else {
-    body = <Editor text={view.text} />;
-  }
+  const { state, still } = view;
+  const phase: SurfacePhase =
+    state === "requesting" && view.waiting
+      ? "wait"
+      : state === "listening"
+        ? "live"
+        : state === "transcribing" && !view.text
+          ? "busy"
+          : "edit";
+  const blur = still ? undefined : "blur(3px)";
   return (
     <Shell view={view}>
-      <div className={composer.editorClip}>{body}</div>
+      <div className={composer.editorClip}>
+        {/* In turn, as in B: the editor goes, then the recorder comes. */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={phase}
+            className={s.surfaceBody}
+            initial={{ opacity: 0, filter: blur }}
+            animate={{ opacity: 1, filter: still ? undefined : "blur(0px)", transition: still ? INSTANT : { ...ENTER, delay: 0 } }}
+            exit={{ opacity: 0, filter: blur, transition: still ? INSTANT : LEAVE }}
+          >
+            {phase === "wait" ? (
+              <div className={s.takeover}>
+                <span>Waiting for the mic…</span>
+              </div>
+            ) : phase === "live" ? (
+              <div className={s.takeover}>
+                <span className={s.dot} />
+                <span className={s.timer}>{clock(view.elapsed)}</span>
+                <FitBars view={view} />
+              </div>
+            ) : phase === "busy" ? (
+              <div className={s.takeover}>
+                <span className={s.shimmer}>Transcribing…</span>
+              </div>
+            ) : (
+              <Editor text={view.text} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
       <div className={composer.buttonGroup}>
         <MicButton view={view} />
         <Plus_ />
@@ -301,12 +345,6 @@ function OptionA({ view }: { view: View }) {
  * It unrolls to the left: the stop sits where the microphone was, so the
  * thing to press next is under the finger that pressed.
  */
-const GROW = { type: "spring" as const, visualDuration: 0.34, bounce: 0.1 };
-const EASE_OUT = [0.23, 1, 0.32, 1] as const;
-/** In turn, never both: what was there goes first, then what comes in. Two at once read as a smear. */
-const LEAVE = { duration: 0.1, ease: EASE_OUT };
-const ENTER = { duration: 0.16, delay: 0.09, ease: EASE_OUT };
-const INSTANT = { duration: 0 };
 
 type RecorderPhase = "mic" | "wait" | "live" | "busy";
 
