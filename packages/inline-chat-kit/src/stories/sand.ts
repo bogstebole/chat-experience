@@ -84,8 +84,11 @@ for (let a = 1; a <= 4; a++) {
   }
 }
 for (const n of [2, 3, 4, 5, 6, 8]) {
+  // Every round figure carries a ring term. Without one, J_n(αr) is flat for
+  // a long way out from the middle and the sand piled there in a blob — a
+  // figure no plate makes.
   for (const [alpha, c, beta] of [
-    [7.5, 0, 0],
+    [7.5, 0.6, 6.5],
     [10.5, 0.55, 9],
     [13.5, 0.45, 12.5],
   ]) {
@@ -93,6 +96,9 @@ for (const n of [2, 3, 4, 5, 6, 8]) {
   }
 }
 PLATES.sort((p, q) => p.rank - q.rank);
+
+/** How many figures there are, for a story that shows them all. */
+export const PLATE_COUNT = PLATES.length;
 
 /**
  * The figure for a mode. Chosen by tone, it is the plate at that place on the
@@ -212,7 +218,7 @@ void main() {
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
   gl_PointSize = uSize * mix(2.1, 1.0, k) * (1.0 + 0.55 * hop) * (1.0 + 0.7 * vGlint);
   // Thinning toward the outside, never stopping at a line.
-  float fade = 1.0 - smoothstep(0.45, 1.05, r);
+  float fade = 1.0 - smoothstep(0.6, 1.1, r);
   vAlpha = max(uAlpha * fade * aMeta.y * k, vGlint * fade);
   vShade = aMeta.x;
 }
@@ -267,10 +273,13 @@ const TUNE = {
   /** Seconds for the stream to pour out of the microphone, and back into it. */
   pourOut: 1.1,
   pourBack: 0.45,
-  /** Sand is scattered as a soft heap of this width. */
-  spread: 0.62,
   /** The kick a grain gets even where the plate is still, as a share of the full kick. */
-  jostle: 0.07,
+  jostle: 0.15,
+  /** How hard, and for how long, the plate shakes everything when the figure changes. */
+  scatter: 2.4,
+  scatterFor: 0.55,
+  /** The share of grains that barely gather — the dust left lying across a real plate. */
+  dust: 0.1,
   /** Below this, a grain is on a line and only needs stepping now and then. */
   calm: 0.04,
   /** Frame cost, in ms of main thread, past which the sand thins itself. */
@@ -296,12 +305,15 @@ export class Sand {
   private meta = new Float32Array(0);
   private metaDirty = true;
   private launchBuffer: WebGLBuffer;
+  private minmax: EXT_blend_minmax | null = null;
   private launch = new Float32Array(0);
   private launchDirty = true;
   /** How far the stream has run, 0..1 — slower than the composer's spring on purpose. */
   private pour = 0;
   private growing = 0;
   private calm = new Uint8Array(0);
+  /** How firmly each grain is drawn to the lines: most fully, the dust hardly. */
+  private grip = new Float32Array(0);
   private frameNo = 0;
   private cost = 0;
   private costFrames = 0;
@@ -345,6 +357,7 @@ export class Sand {
     this.posBuffer = gl.createBuffer()!;
     this.metaBuffer = gl.createBuffer()!;
     this.launchBuffer = gl.createBuffer()!;
+    this.minmax = gl.getExtension("EXT_blend_minmax");
     for (const name of ["uView", "uCenter", "uRadius", "uPour", "uSize", "uAlpha", "uGrain", "uGlint", "uPulse", "uStir", "uTick"]) this.u[name] = gl.getUniformLocation(program, name);
   }
 
@@ -382,6 +395,8 @@ export class Sand {
     this.pos = new Float32Array(want * 2);
     this.meta = new Float32Array(want * 2);
     this.calm = new Uint8Array(want);
+    this.grip = new Float32Array(want);
+    for (let i = 0; i < want; i++) this.grip[i] = this.rand() < TUNE.dust ? 0.12 : 1;
     for (let i = 0; i < want; i++) this.meta[i * 2] = 0.55 + 0.45 * this.rand();
     this.launch = new Float32Array(want * 2);
     for (let i = 0; i < want; i++) {
@@ -394,11 +409,11 @@ export class Sand {
 
   /** A grain dropped somewhere on the heap: dense in the middle, thinning out, no edge. */
   private drop(i: number) {
-    // Box–Muller, then a soft cap so the odd grain does not land far out.
-    const u = Math.max(1e-6, this.rand());
-    const v = this.rand();
-    const r = Math.min(1.15, Math.sqrt(-2 * Math.log(u)) * TUNE.spread);
-    const t = v * Math.PI * 2;
+    // Evenly over the whole plate, as sand is poured on a real one. A heap
+    // dense in the middle left the outer lines with nothing to gather from,
+    // and they came out broken.
+    const r = 1.12 * Math.sqrt(this.rand());
+    const t = this.rand() * Math.PI * 2;
     this.pos[i * 2] = Math.cos(t) * r;
     this.pos[i * 2 + 1] = Math.sin(t) * r;
     this.calm[i] = 0;
@@ -418,7 +433,7 @@ export class Sand {
    * One step of the plate. `drive` is how hard it is shaken (the voice);
    * `live` is whether it is shaken at all.
    */
-  private step(dt: number, drive: number, live: number, every = false, pulse = 0) {
+  private step(dt: number, drive: number, live: number, every = false, pulse = 0, scatter = 0) {
     if (live <= 0) return;
     const plate = this.plate;
     const here = this.here;
@@ -449,7 +464,11 @@ export class Sand {
       // it is on a real plate, rather than a pencil stroke one grain wide.
       // A syllable jostles every grain a little, even on a line; the plate
       // gathers them back within the next few frames.
-      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + 0.5 * pulse);
+      // Just after a change the whole plate shakes hard for a moment, lines
+      // and all, so the sand spreads out again before it gathers. Without it
+      // grains walked only to the nearest new line: those piled up dark and
+      // the lines further off stayed empty.
+      const k = (settled && !every ? kickCalm : kick) * (amp + TUNE.jostle + 0.3 * pulse + TUNE.scatter * scatter);
       const d = settled && !every ? driftCalm : drift;
       // Thrown about where the plate moves, still where it does not…
       let nx = x + k * (this.rand() + this.rand() - 1) * 1.7;
@@ -458,7 +477,7 @@ export class Sand {
       // so a grain closes on its line at the same pace however steep the
       // plate is there: steep places used to pull the sand into a hairline
       // while gentle ones left a wide smear.
-      const pull = (d * 150) / (fx * fx + fy * fy + 4);
+      const pull = ((d * 150) / (fx * fx + fy * fy + 4)) * this.grip[i];
       nx -= pull * f * fx;
       ny -= pull * f * fy;
       if (nx * nx + ny * ny > 1.35 * 1.35) {
@@ -500,7 +519,8 @@ export class Sand {
       // Every grain is on new ground now; none of them is settled.
       this.calm.fill(0);
     }
-    if (dt > 0) this.step(dt, frame.level, frame.live, false, frame.pulse ?? 0);
+    const scatter = Math.max(0, 1 - (frame.time - this.changedAt) / TUNE.scatterFor);
+    if (dt > 0) this.step(dt, frame.level, frame.live, false, frame.pulse ?? 0, scatter * scatter);
 
     // Fresh grains fade in over about a third of a second.
     if (this.growing > 0 && dt > 0) {
@@ -532,7 +552,9 @@ export class Sand {
     if (!this.colours || now - this.colours.at > 500) {
       this.colours = { at: now, grain: channel(canvas, "--ick-ink-rgb", [0.07, 0.07, 0.07]) };
       const [r, g, b] = this.colours.grain;
-      this.weight = r + g + b < 1.5 ? 0.72 : 1;
+      // With the strongest grain winning, a band is as dark as one grain:
+      // 72% on paper, which is what reads as sand there.
+      this.weight = this.minmax ? (r + g + b < 1.5 ? 0.85 : 0.95) : r + g + b < 1.5 ? 0.5 : 0.8;
     }
 
     gl.useProgram(this.program);
@@ -575,7 +597,14 @@ export class Sand {
     gl.uniform1f(this.u.uStir, Math.max(0, 1 - (frame.time - this.changedAt) / 1.2) * frame.live);
     gl.uniform1f(this.u.uTick, Math.floor(frame.time * 9) % 997);
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    if (this.minmax) {
+      // The strongest grain at a pixel wins rather than all of them adding up:
+      // a dense band is solid sand at one grain's strength, never black, and
+      // a stray grain still reads as a grain.
+      gl.blendEquation(this.minmax.MAX_EXT);
+    } else {
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    }
     gl.drawArrays(gl.POINTS, 0, this.count);
 
     // A device that cannot keep up gets less sand rather than a stutter.
