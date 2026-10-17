@@ -314,7 +314,8 @@ export class Sand {
   /** Each grain's own draw of how quick it is, as a normal deviate. */
   private pace = new Float32Array(0);
   private frameNo = 0;
-  private cost = 0;
+  /** The last second of frame costs, in ms, for deciding how much sand a device can carry. */
+  private costs = new Float32Array(60);
   private costFrames = 0;
   private rand = mulberry(7);
   private plate: Plate = PLATES[0];
@@ -616,13 +617,20 @@ export class Sand {
     }
     gl.drawArrays(gl.POINTS, 0, this.count);
 
-    // A device that cannot keep up gets less sand rather than a stutter.
-    const spent = performance.now() - started;
-    this.cost = this.costFrames === 0 ? spent : this.cost * 0.9 + spent * 0.1;
-    this.costFrames++;
-    if (this.costFrames > 30 && this.cost > this.tune.budget && this.count > this.tune.minGrains) {
-      this.count = Math.max(this.tune.minGrains, Math.floor(this.count * 0.8));
-      this.costFrames = 0;
+    // A device that cannot keep up gets less sand rather than a stutter —
+    // judged on the median of a second of frames, so one slow frame (a
+    // collection, a panel re-rendering) does not cost sand, and given back
+    // once it can carry it again. The first version thinned on a smoothed
+    // average and never gave back: a few hiccups while tuning took a laptop
+    // from 42,000 grains to 5,000 for good.
+    this.costs[this.costFrames++ % this.costs.length] = performance.now() - started;
+    if (this.costFrames % this.costs.length === 0) {
+      const median = [...this.costs].sort((a, b) => a - b)[this.costs.length >> 1];
+      if (median > this.tune.budget && this.count > this.tune.minGrains) {
+        this.count = Math.max(this.tune.minGrains, Math.floor(this.count * 0.85));
+      } else if (median < this.tune.budget * 0.4 && this.count < this.size) {
+        this.count = Math.min(this.size, Math.ceil(this.count * 1.1));
+      }
     }
   }
 

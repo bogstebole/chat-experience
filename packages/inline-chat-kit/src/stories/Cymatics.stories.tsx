@@ -245,7 +245,8 @@ function CymaticsDemo({
   /** Counts the figures shown, so returning to a band brings a new figure, not the last one. */
   const variant = useRef(0);
   const pitchAt = useRef(0);
-  const [toneReading, setToneReading] = useState<{ tone: number; band: number; hz: number | null; level: number } | null>(null);
+  const [toneReading, setToneReading] = useState<{ tone: number; band: number; hz: number | null; level: number; grains: number | null } | null>(null);
+  const readAt = useRef(0);
   const lastFigureAt = useRef(0);
   const dirty = useRef(true);
   /** Set on the way out; the microphone is inert until the dish has closed. */
@@ -392,7 +393,12 @@ function CymaticsDemo({
           dirty.current = true;
         }
         const hz = tracker.current.heard;
-        setToneReading({ tone: Math.round(tracker.current.tone * 100) / 100, band, hz: hz == null ? null : Math.round(hz), level: Math.round(d.level * 100) / 100 });
+        // Ten times a second: a re-render every frame was itself a cost.
+        if (now - readAt.current > 100) {
+          readAt.current = now;
+          const grains = engine.current instanceof Sand ? engine.current.grains : null;
+          setToneReading({ tone: Math.round(tracker.current.tone * 100) / 100, band, hz: hz == null ? null : Math.round(hz), level: Math.round(d.level * 100) / 100, grains });
+        }
       }
       // The panel's values, every frame: cheap, and a slider moves the sand
       // while it is on screen.
@@ -771,6 +777,7 @@ function CymaticsDemo({
       {open && toneReading && (
         <div className={s.readout} data-tone={toneReading.tone} data-band={toneReading.band}>
           {toneReading.hz == null ? "— Hz" : `${toneReading.hz} Hz`} · level {toneReading.level.toFixed(2)} · tone {toneReading.tone.toFixed(2)} · figure {toneReading.band + 1}/{BANDS}
+          {toneReading.grains != null && ` · ${toneReading.grains.toLocaleString("en")} grains`}
         </div>
       )}
     </div>
