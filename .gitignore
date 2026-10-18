@@ -37,3 +37,22 @@ packages/*/dist
 # one was a stale snapshot that disagreed with the file it shadowed, the other
 # a byte-identical test that would have run twice.
 * [0-9].*
+
+# Secrets. Nothing here is needed to build the kit; a key in a commit is a key
+# on GitHub forever, whatever happens to the file afterwards.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.npmrc
+
+# Claude Code's per-machine state: its worktrees and local settings.
+.claude/worktrees/
+.claude/settings.local.json
+
+# Local-only notes: research, private roadmap items, hand-overs. Never pushed.
+# A pre-push hook in .git/hooks refuses any push that touches these paths,
+# because .gitignore cannot stop a file that was committed before it was listed.
+/private/
+docs/research/
