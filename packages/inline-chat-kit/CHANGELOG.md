@@ -8,7 +8,7 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
-## 0.63.0 — 2026-10-17
+## 0.63.0 — 2026-10-18
 
 Dictation: what pressing the microphone looks like, and what the host has to
 attach for it to work. The kit draws it and records; **the host attaches the
