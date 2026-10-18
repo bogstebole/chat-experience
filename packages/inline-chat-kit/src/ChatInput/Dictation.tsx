@@ -54,9 +54,19 @@ const INSTANT = { duration: 0 };
 /** The recorder's width, on one spring that does not overshoot a control. */
 export const RECORDER_GROW = { type: "spring" as const, visualDuration: 0.34, bounce: 0.1 };
 
-/** The level's history: one bar per 55ms, so a breath is a gap you can see. */
-const HISTORY = 64;
+/**
+ * The level's history: one bar per 55ms, so a breath is a gap you can see.
+ * Enough for the widest line a composer has — 64 filled half of one on a
+ * desktop and left the rest of the surface empty.
+ */
+const HISTORY = 256;
 const STEP_MS = 55;
+/**
+ * How long the surface's line takes to fill, whatever its width. At 55ms a
+ * bar, a desktop's 128 took seven seconds and a short dictation was mostly a
+ * dotted line; the story it was chosen from filled its 64 in three and a half.
+ */
+const FILL_MS = 3500;
 
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -91,7 +101,9 @@ function LevelBars({ getLevel, count, fit, still }: { getLevel: () => number; co
     let frame = 0;
     let pushed = 0;
     const tick = (now: number) => {
-      if (now - pushed >= STEP_MS) {
+      const shown = barsRef.current?.children.length ?? 0;
+      const step = fit && shown ? Math.max(20, Math.min(STEP_MS, FILL_MS / shown)) : STEP_MS;
+      if (now - pushed >= step) {
         pushed = now;
         history.shift();
         // Speech sits low on the meter — a tenth to a half — so it is drawn on
@@ -108,7 +120,7 @@ function LevelBars({ getLevel, count, fit, still }: { getLevel: () => number; co
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [getLevel, still]);
+  }, [getLevel, still, fit]);
 
   return (
     <span ref={measure} className={fit ? styles.fit : undefined}>
