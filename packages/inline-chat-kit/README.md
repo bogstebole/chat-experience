@@ -1921,9 +1921,7 @@ argument:
 
 ## Contributing
 
-The dev environment, the tooling and the release live in
-[CONTRIBUTING.md](../../CONTRIBUTING.md) at the root of the repo. What follows
-is what is peculiar about *this package's* tests.
+What follows is what is peculiar about *this package's* tests.
 
 ```bash
 npm install

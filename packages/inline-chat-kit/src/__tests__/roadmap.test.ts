@@ -15,21 +15,26 @@ import { dirname, join } from "node:path";
  * does not. Neither can tell whether a paragraph is true, but both catch the
  * thing that actually rotted: a heading nobody moved.
  *
+ * The roadmap is a local file: it is not in the repository, so a fresh clone
+ * (CI's) has none and these checks skip there rather than fail.
+ *
  * Read from disk rather than imported, because the file is outside the
  * package's own root and `?raw` cannot reach it. Walked up from the working
  * directory rather than resolved against `import.meta.url`, which under Vitest
  * is an http URL and not a path at all.
  */
-const repoRoot = () => {
+const repoRoot = (): string | null => {
   let at = process.cwd();
   for (let up = 0; up < 6; up += 1) {
     if (existsSync(join(at, "ROADMAP.md"))) return at;
     at = dirname(at);
   }
-  throw new Error("no ROADMAP.md above the working directory");
+  return null;
 };
 
-const roadmap = async () => readFile(join(repoRoot(), "ROADMAP.md"), "utf8");
+const root = repoRoot();
+
+const roadmap = async () => readFile(join(root ?? "", "ROADMAP.md"), "utf8");
 
 /** Every `## ` section, with the lines under it. */
 const sections = (text: string) => {
@@ -42,7 +47,7 @@ const sections = (text: string) => {
   return out;
 };
 
-describe("the roadmap", () => {
+describe.skipIf(root === null)("the roadmap", () => {
   it("keeps work under Now and nothing else there", async () => {
     const now = sections(await roadmap()).filter((s) => s.heading.startsWith("Now"));
     expect(now.length, "there is no Now section").toBeGreaterThan(0);

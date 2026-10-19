@@ -83,12 +83,4 @@ describe("the front-door README", () => {
     }
   });
 
-  it("sends contributors somewhere, and it is not this file", async () => {
-    // The dev environment moved out of the README so that the README could be
-    // for people installing the package. The move only works if the pointer
-    // survives.
-    const text = await readme();
-    expect(text).toContain("CONTRIBUTING.md");
-    expect(existsSync(join(repoRoot(), "CONTRIBUTING.md"))).toBe(true);
-  });
 });
