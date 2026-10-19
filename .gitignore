@@ -56,3 +56,12 @@ packages/*/dist
 # because .gitignore cannot stop a file that was committed before it was listed.
 /private/
 docs/research/
+
+# Internal docs and agent tooling, kept on this machine and out of the public
+# repo: the roadmap, the contributing guide, the playground's notes, and the
+# Claude Code skills and agents. The roadmap test skips where there is none.
+/ROADMAP.md
+/CONTRIBUTING.md
+/apps/playground/README.md
+/.claude/skills/
+/.claude/agents/

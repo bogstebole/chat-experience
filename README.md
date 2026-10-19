@@ -163,8 +163,6 @@ manual one was done with VoiceOver.
 | [Full API reference](packages/inline-chat-kit/README.md) | every component, every prop, and why each one is shaped the way it is |
 | [`theming.md`](packages/inline-chat-kit/theming.md) | the token system |
 | [`CHANGELOG.md`](packages/inline-chat-kit/CHANGELOG.md) | breaking changes and what to do about each |
-| [`ROADMAP.md`](ROADMAP.md) | what is built, what is not, and what was deliberately left out |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | the monorepo, the dev environment and the release |
 
 Storybook is the source of truth for how anything looks:
 
