@@ -123,6 +123,20 @@ export const defaultLabels = {
     dictate: "Dictate a message",
     stopListening: "Stop listening",
     waitingForMicrophone: "Waiting for microphone access",
+    /** On screen while the browser asks: short, because it has a phone's width to fit in. */
+    waitingForMicrophoneShort: "Waiting for the mic…",
+    /** On screen while the words come back, where the composer says so in words. */
+    transcribingNow: "Transcribing…",
+    /** With `sand`, `plane` or `ripple`: the composer while it listens. `{time}` is the count. */
+    listeningFor: "Listening · {time}",
+    /** …and while the last words come back. */
+    writingItDown: "Writing it down…",
+    /** Above the composer, until the first word arrives. */
+    goAhead: "Go ahead — I'm listening",
+    /** The microphone, while it listens: throw it away. */
+    cancelDictation: "Cancel dictation",
+    /** The plus, while it listens: keep it. */
+    doneDictating: "Done — put it in the message",
     cancelTranscription: "Cancel transcription",
     microphoneBlocked: "Microphone blocked",
     microphoneBlockedHelp:

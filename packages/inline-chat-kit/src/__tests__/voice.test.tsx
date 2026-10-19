@@ -3,7 +3,9 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { ChatInput } from "../ChatInput/ChatInput";
-import { useVoiceInput, type TranscribeHandler } from "../voice/useVoiceInput";
+import { ChatExperience } from "../ChatExperience/ChatExperience";
+import type { DictationEnd, DictationSnapshot } from "../ChatInput/Dictation";
+import { useVoiceInput, type LiveTranscribeHandler, type TranscribeHandler } from "../voice/useVoiceInput";
 
 /**
  * Dictation, tested where jsdom can answer honestly.
@@ -35,6 +37,7 @@ type Recorder = {
 };
 
 let recorder: Recorder | null = null;
+let recordersMade = 0;
 let stoppedTracks = 0;
 let closedContexts = 0;
 let getUserMedia: ReturnType<typeof vi.fn>;
@@ -43,6 +46,7 @@ const installMedia = () => {
   stoppedTracks = 0;
   closedContexts = 0;
   recorder = null;
+  recordersMade = 0;
 
   getUserMedia = vi.fn(async () => ({
     getTracks: () => [{ stop: () => { stoppedTracks += 1; } }],
@@ -60,6 +64,7 @@ const installMedia = () => {
     onstop: (() => void) | null = null;
     constructor() {
       recorder = this as unknown as Recorder;
+      recordersMade += 1;
     }
     start() {
       this.state = "recording";
@@ -144,10 +149,10 @@ describe("whether there is a microphone at all", () => {
 
 });
 
-function Probe({ onTranscribe }: { onTranscribe?: TranscribeHandler }) {
+function Probe({ onTranscribe, onTranscribeLive }: { onTranscribe?: TranscribeHandler; onTranscribeLive?: LiveTranscribeHandler }) {
   const [text, setText] = useState("");
   const [done, setDone] = useState("");
-  const voice = useVoiceInput({ onTranscribe, onTranscript: setText, onDone: setDone });
+  const voice = useVoiceInput({ onTranscribe, onTranscribeLive, onTranscript: setText, onDone: setDone });
   return (
     <div>
       <span data-testid="state">{voice.state}</span>
@@ -155,6 +160,7 @@ function Probe({ onTranscribe }: { onTranscribe?: TranscribeHandler }) {
       <span data-testid="text">{text}</span>
       <span data-testid="done">{done}</span>
       <button onClick={() => voice.toggle()}>toggle</button>
+      <button onClick={() => voice.cancel()}>cancel</button>
     </div>
   );
 }
@@ -237,5 +243,164 @@ describe("the hardware", () => {
     await waitFor(() => expect(at("state")).toBe("listening"));
     view.unmount();
     expect(stoppedTracks).toBe(1);
+  });
+});
+
+describe("a press while the browser asks", () => {
+  it("is a cancel, and the yes that comes after it starts nothing", async () => {
+    // The browser's prompt is up; pressing again means "never mind". The
+    // grant used to arrive afterwards and start the recording anyway.
+    let grant: (stream: unknown) => void = () => {};
+    getUserMedia.mockImplementationOnce(() => new Promise((resolve) => (grant = resolve)));
+    const user = userEvent.setup();
+    render(<Probe onTranscribe={async () => "ok"} />);
+    await press(user);
+    await waitFor(() => expect(at("state")).toBe("requesting"));
+    await press(user);
+    expect(at("state")).toBe("idle");
+    await act(async () => {
+      grant({ getTracks: () => [{ stop: () => { stoppedTracks += 1; } }] });
+    });
+    expect(at("state")).toBe("idle");
+    expect(recordersMade).toBe(0);
+    // And the microphone it was given goes straight back.
+    expect(stoppedTracks).toBe(1);
+  });
+});
+
+describe("words while they are said", () => {
+  it("shows the whole transcript so far, and keeps the last one", async () => {
+    const live: LiveTranscribeHandler = async function* (_stream, { finished }) {
+      yield "book";
+      yield "book a table";
+      await finished;
+      // The service's last word, after the reader said they were done.
+      yield "book a table for two";
+    };
+    const user = userEvent.setup();
+    render(<Probe onTranscribeLive={live} />);
+    await press(user);
+    await waitFor(() => expect(at("text")).toBe("book a table"));
+    expect(at("state")).toBe("listening");
+    // Live words alone need no recording.
+    expect(recordersMade).toBe(0);
+    await press(user);
+    await waitFor(() => expect(at("done")).toBe("book a table for two"));
+    expect(at("state")).toBe("idle");
+    expect(stoppedTracks).toBe(1);
+  });
+
+  it("gives way to onTranscribe's answer when there is one", async () => {
+    const live: LiveTranscribeHandler = async function* () {
+      yield "the quick one";
+    };
+    const user = userEvent.setup();
+    render(<Probe onTranscribeLive={live} onTranscribe={async () => "the careful one"} />);
+    await press(user);
+    await waitFor(() => expect(at("text")).toBe("the quick one"));
+    await act(async () => { recorder!.stop(); });
+    await waitFor(() => expect(at("done")).toBe("the careful one"));
+  });
+
+  it("throws it all away on a cancel", async () => {
+    const live: LiveTranscribeHandler = async function* (_stream, { signal }) {
+      yield "book a table";
+      await new Promise((resolve) => signal.addEventListener("abort", resolve));
+    };
+    const user = userEvent.setup();
+    render(<Probe onTranscribeLive={live} />);
+    await press(user);
+    await waitFor(() => expect(at("text")).toBe("book a table"));
+    await user.click(screen.getByRole("button", { name: "cancel" }));
+    expect(at("state")).toBe("idle");
+    expect(at("done")).toBe("");
+    expect(stoppedTracks).toBe(1);
+  });
+});
+
+describe("a microphone with only a live transcriber", () => {
+  it("is offered", async () => {
+    render(
+      <ChatInput
+        state="idle"
+        value=""
+        onChange={() => {}}
+        onSubmit={() => {}}
+        onTranscribeLive={async function* () {}}
+        placeholder="Ask"
+      />
+    );
+    await waitFor(() => expect(mic()).not.toBeNull());
+  });
+});
+
+describe("a field drawn above the composer", () => {
+  it("is the recorder where there is no WebGL to draw it with", async () => {
+    // jsdom has no WebGL, which is exactly the browser this is for.
+    render(<ChatExperience onSend={async () => "ok"} dictation="sand" onTranscribe={async () => "ok"} />);
+    await waitFor(() => expect(mic()).not.toBeNull());
+    expect(document.querySelector("[data-look]")).toBeNull();
+  });
+
+  it("hands over what it hears, and how it ended", async () => {
+    const seen: { state?: DictationSnapshot["state"]; transcript?: string; ended?: DictationEnd }[] = [];
+    const live: LiveTranscribeHandler = async function* (_stream, { finished }) {
+      yield "book a table";
+      await finished;
+    };
+    function Field() {
+      const [value, setValue] = useState("");
+      return (
+        <ChatInput
+          state={value ? "typing" : "idle"}
+          value={value}
+          onChange={setValue}
+          onSubmit={() => {}}
+          dictation="field"
+          onTranscribeLive={live}
+          onDictation={(snapshot, ended) => seen.push(snapshot ? { state: snapshot.state, transcript: snapshot.transcript } : { ended })}
+          placeholder="Ask"
+        />
+      );
+    }
+    const user = userEvent.setup();
+    render(<Field />);
+    await waitFor(() => expect(mic()).not.toBeNull());
+    await user.click(mic()!);
+    await waitFor(() => expect(seen.some((s) => s.transcript === "book a table" && s.state === "listening")).toBe(true));
+    // The words are above the composer while they are said, not in it — and
+    // the field is put away under the pill meanwhile, hence `hidden`.
+    expect(screen.getByRole("textbox", { hidden: true }).textContent).toBe("");
+    await user.click(screen.getByRole("button", { name: /done/i }));
+    await waitFor(() => expect(seen.at(-1)).toEqual({ ended: "done" }));
+    // And arrive in it once the transcript above has gone.
+    await waitFor(() => expect(screen.getByRole("textbox").textContent).toBe("book a table"));
+  });
+
+  it("says so when it was thrown away", async () => {
+    const seen: (DictationEnd | undefined)[] = [];
+    const live: LiveTranscribeHandler = async function* (_stream, { signal }) {
+      yield "book a table";
+      await new Promise((resolve) => signal.addEventListener("abort", resolve));
+    };
+    const user = userEvent.setup();
+    render(
+      <ChatInput
+        state="idle"
+        value=""
+        onChange={() => {}}
+        onSubmit={() => {}}
+        dictation="field"
+        onTranscribeLive={live}
+        onDictation={(snapshot, ended) => !snapshot && seen.push(ended)}
+        placeholder="Ask"
+      />
+    );
+    await waitFor(() => expect(mic()).not.toBeNull());
+    await user.click(mic()!);
+    await waitFor(() => expect(screen.queryByRole("button", { name: /cancel dictation/i })).not.toBeNull());
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(seen).toEqual(["cancel"]));
+    expect(screen.getByRole("textbox").textContent).toBe("");
   });
 });

@@ -47,6 +47,9 @@
    be sized by its content rather than by its `max-width` until it is given a
    `width` to cap. */
 .chat {
+  /* Positioned for what a host lays over the conversation — the dictation
+     field — without lifting anything inside it. */
+  position: relative;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

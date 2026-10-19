@@ -64,6 +64,14 @@
   --ick-input-text: var(--ick-ink);
 }
 
+/* Dictating is the composer at work, wherever focus is. When the words reach
+   the actions and they move to the second line, the recorder is gone for a
+   moment and focus with it; the words greyed out for that moment. */
+.surface:not(.glass):has([data-dictating]) {
+  --ick-input-fill: var(--ick-input-fill-hover);
+  --ick-input-text: var(--ick-ink);
+}
+
 /* ── Glass surface variant (responding / resting bubble) ──
    Mirrors GlassButton.module.css concave-glass shadow stack so
    the morph is purely a CSS state change on the SAME element. */
@@ -203,6 +211,16 @@
   pointer-events: none;
 }
 
+/* While it is dictating the recorder takes width from the line, and a
+   placeholder that wrapped there made the composer a line taller for as long
+   as somebody spoke. One line, cut short instead. */
+.editorClip[data-dictating] .editor:empty::before {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 
 /* In glass mode the text is inked, not muted, and the caret is hidden */
 .surface.glass .editor {
@@ -232,6 +250,11 @@
      second line before. The two overlays here are absolutely positioned and
      are not items at all, so this changes nothing that already existed. */
   flex-wrap: wrap;
+}
+
+/* `field`: the pill stands in the middle, under the voice drawn above it. */
+.wrap[data-field] {
+  justify-content: center;
 }
 
 .wrap::after {
@@ -345,42 +368,8 @@
 }
 
 /* ── Dictation ──────────────────────────────────────────────────────────────
-   The microphone sits in the send glyph's slot, so it needs nothing of its
-   own except the ring that shows the level of what it is hearing. */
-
-/* Driven by `useVoiceInput`, which writes `--ick-voice-level` here once a
-   frame and never through React. A number this component re-rendered on would
-   be sixty renders a second for a decoration — the same arithmetic that took
-   the highlighter's hover out of React after it cost 28 mutations a crossing.
-
-   `scale` and `opacity` only: both are composited, so the ring costs no
-   layout and no paint however loudly somebody talks. */
-.voiceMeter {
-  --ick-voice-level: 0;
-
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: var(--ick-voice-meter);
-  transform: scale(calc(1 + var(--ick-voice-level) * var(--ick-voice-meter-spread)));
-  opacity: 0;
-  transition: opacity var(--ick-duration-fast) var(--ick-ease);
-}
-
-.voiceMeter[data-live] {
-  opacity: calc(0.35 + var(--ick-voice-level) * 0.65);
-}
-
-/* Under reduced motion the level is never written, so the ring would sit at
-   its resting scale and read as nothing at all. A steady halo instead: the
-   state is still visible, it just does not move. */
-@media (prefers-reduced-motion: reduce) {
-  .voiceMeter[data-live] {
-    transform: scale(calc(1 + var(--ick-voice-meter-spread) * 0.5));
-    opacity: 0.6;
-  }
-}
+   The recorder and the surface are `Dictation.module.css`. What is left here
+   is the note a refusal needs, which is the composer's. */
 
 /* Lined up with the words in the composer rather than with its edge — the
    kit's one alignment rule, stated the same way everywhere. */
@@ -401,10 +390,6 @@
 .voiceNote[data-tone="denied"] {
   color: var(--ick-danger);
 }
-
-/* The microphone's slot is a Motion child now, like the plus and the send
-   glyph, so its size and entrance live in `ChatInput.tsx` beside theirs. What
-   is left here is the ring that shows the level of what it is hearing. */
 
 /* Lined up with the words in the composer rather than with its edge — the
    kit's one alignment rule, stated the same way everywhere. */

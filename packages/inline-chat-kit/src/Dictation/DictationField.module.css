@@ -1,0 +1,78 @@
+/* ─────────────────────────────────────────────
+   The field: the figure the voice draws, and its words
+
+   Laid over the conversation's column, under nothing a reader can press: the
+   composer stays the thing to press. Every colour is a token; the figure
+   reads the kit's ink, paper and marker channels itself.
+   ───────────────────────────────────────────── */
+
+.field {
+  position: absolute;
+  inset: 0;
+  /* Over the conversation, under the docked composer: the pill stays on top. */
+  z-index: var(--ick-z-raised);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* At the composer's own size: these are the words that will land in it.
+   Four lines, nearly always the whole of what was said. */
+.words {
+  position: absolute;
+  left: 50%;
+  box-sizing: border-box;
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(1.6em * 4);
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-family: var(--ick-font-sans);
+  font-size: var(--ick-composer-size);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  text-align: center;
+  color: var(--ick-ink);
+  /* The figure's faded edge can run under the words; a halo of the page
+     keeps them legible over it. */
+  text-shadow:
+    0 0 2px var(--ick-page),
+    0 0 6px var(--ick-page),
+    0 0 12px var(--ick-page);
+}
+
+.hint {
+  color: var(--ick-ink-faint);
+}
+
+/* Inline-block so each word can rise on its own; the spaces between them are
+   real spaces, so the line breaks where the composer's will. */
+.word {
+  display: inline-block;
+  border-radius: 3px;
+  transition:
+    background-color 700ms var(--ick-ease),
+    box-shadow 700ms var(--ick-ease);
+}
+
+/* The word just heard wears the marker, drawn outside its box so it costs no
+   layout, and lets go of it when the next one arrives. */
+.word.newest {
+  background-color: var(--ick-marker-tint);
+  box-shadow: 0 0 0 2px var(--ick-marker-tint);
+  transition-duration: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word {
+    transition: none;
+  }
+}

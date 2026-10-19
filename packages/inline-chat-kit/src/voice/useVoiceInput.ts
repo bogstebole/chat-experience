@@ -17,7 +17,10 @@ import { defaultLabels, type VoiceLabels } from "../labels/labels";
  * Whisper, Deepgram, a local model and somebody's own endpoint, and a kit that
  * chose one for its consumers would be wrong for most of them.
  *
- * So this records and hands over a `Blob`. What comes back is text.
+ * So this records and hands over a `Blob`. What comes back is text. Or, for
+ * words that appear while somebody is still talking, it hands over the
+ * microphone's stream as it opens and takes back the transcript so far, as
+ * often as the host's service has one — `onTranscribeLive`.
  *
  * **What that costs, stated rather than discovered:** the browser's own
  * `SpeechRecognition` cannot be reached through this, because it insists on
@@ -59,8 +62,36 @@ export type TranscribeHandler = (
   context: TranscribeContext
 ) => string | Promise<string> | AsyncIterable<string>;
 
+export interface LiveTranscribeContext {
+  /** Aborts when the reader cancels, or when the component goes away. */
+  signal: AbortSignal;
+  /**
+   * Resolves when the reader says they are done. Finish there: tell the
+   * service the audio has ended, yield the last words it sends back, and end
+   * the iterable. The microphone has already stopped by then.
+   */
+  finished: Promise<void>;
+}
+
+/**
+ * The microphone in, the words so far out, while the reader is still talking.
+ *
+ * Called once the browser has handed over the microphone, with its stream —
+ * send it to whatever service you use, from the browser or through your own
+ * server. Yield the **whole transcript so far** each time rather than what is
+ * new: a live recogniser goes back and corrects the words it has just heard,
+ * and a delta cannot say that. End the iterable after `finished` resolves.
+ */
+export type LiveTranscribeHandler = (stream: MediaStream, context: LiveTranscribeContext) => AsyncIterable<string>;
+
 export interface UseVoiceInputOptions {
   onTranscribe?: TranscribeHandler;
+  /**
+   * Words while they are said. With `onTranscribe` as well, these are what is
+   * shown while recording and its answer is the one that is kept — a fast
+   * live service for the eye, a careful one for the record.
+   */
+  onTranscribeLive?: LiveTranscribeHandler;
   /**
    * Called with the transcript so far, every time it grows. Cumulative rather
    * than per-delta: the caller is putting this inside a string it already
@@ -94,16 +125,33 @@ export interface VoiceInput {
   /** Why it failed, when it did. Safe to show. */
   error: string | null;
   start: () => void;
+  /** Done: keep what was said. While the browser is still asking, a cancel. */
   stop: () => void;
+  /** Throw the recording away, whatever it is doing. */
+  cancel: () => void;
   toggle: () => void;
   /** Forget a refusal, so the button can be offered again. */
   reset: () => void;
+  /**
+   * The level of the incoming signal, 0 to 1, smoothed — read it in your own
+   * frame loop. Always 0 under reduced motion, where nothing should move
+   * with it.
+   */
+  getLevel: () => number;
+  /** The microphone's analyser while it is open, for anything that wants more than the level. */
+  getAnalyser: () => AnalyserNode | null;
 }
 
 /** Level meter smoothing. Raw RMS jitters enough to read as noise. */
 const SMOOTHING = 0.6;
 /** Quietest signal that still moves the meter, so a silent room reads as still. */
 const FLOOR = 0.02;
+/**
+ * How long a live transcriber has, after Done, to hand over its last words.
+ * Long enough for a service to answer a close; short enough that one which
+ * never ends its iterable does not hold the composer.
+ */
+const LIVE_GRACE_MS = 2500;
 
 /** Support cannot change while the page is open, so there is nothing to watch. */
 const subscribeNever = () => () => {};
@@ -130,6 +178,7 @@ const pickMimeType = (): string | undefined => {
 
 export function useVoiceInput({
   onTranscribe,
+  onTranscribeLive,
   onTranscript,
   onDone,
   meterRef,
@@ -160,14 +209,25 @@ export function useVoiceInput({
   const abortRef = useRef<AbortController | null>(null);
   /** Set while stopping, so the recorder's own stop event knows why. */
   const cancelledRef = useRef(false);
+  /**
+   * Counts recordings. A press while the browser's prompt was up used to
+   * cancel nothing: the grant arrived afterwards and the recording started
+   * anyway. Each start takes a number, a cancel moves it on, and a grant for
+   * a number that is no longer current hands the microphone straight back.
+   */
+  const sessionRef = useRef(0);
+  const levelRef = useRef(0);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  /** The live transcriber's run: its words so far, how to finish it, and when it has. */
+  const liveRef = useRef<{ text: string; finish: () => void; done: Promise<void>; abort: AbortController } | null>(null);
 
   // Callbacks are read through a ref so that starting the microphone does not
   // depend on the identity of a function the host recreates every render.
-  const handlers = useRef({ onTranscribe, onTranscript, onDone });
+  const handlers = useRef({ onTranscribe, onTranscribeLive, onTranscript, onDone });
   // Read the same way, and for the same reason: a host writes it inline.
   const said = useRef<VoiceLabels>({ ...defaultLabels.voice, ...labels });
   useEffect(() => {
-    handlers.current = { onTranscribe, onTranscript, onDone };
+    handlers.current = { onTranscribe, onTranscribeLive, onTranscript, onDone };
     said.current = { ...defaultLabels.voice, ...labels };
   });
 
@@ -183,7 +243,9 @@ export function useVoiceInput({
     // close. Either way the graph stops running.
     void audioRef.current?.close().catch(() => {});
     audioRef.current = null;
+    analyserRef.current = null;
     recorderRef.current = null;
+    levelRef.current = 0;
     meterRef?.current?.style.setProperty("--ick-voice-level", "0");
   }, [meterRef]);
 
@@ -191,6 +253,7 @@ export function useVoiceInput({
     () => () => {
       cancelledRef.current = true;
       abortRef.current?.abort();
+      liveRef.current?.abort.abort();
       teardown();
     },
     [teardown]
@@ -218,6 +281,7 @@ export function useVoiceInput({
         const rms = Math.sqrt(sum / buffer.length);
         const level = rms < FLOOR ? 0 : Math.min(1, rms * 3);
         smoothed = smoothed * SMOOTHING + level * (1 - SMOOTHING);
+        levelRef.current = smoothed;
         meterRef?.current?.style.setProperty("--ick-voice-level", smoothed.toFixed(3));
         frameRef.current = requestAnimationFrame(tick);
       };
@@ -240,6 +304,21 @@ export function useVoiceInput({
     return await (result as Promise<string>);
   }, []);
 
+  /** What happens once the words are in, however they came. */
+  const land = useCallback((text: string) => {
+    // A recording with nothing in it is not a failure. Saying so out loud
+    // is the difference between "it is broken" and "say something".
+    if (!text) {
+      announce(said.current.nothingHeard);
+      setPhase("idle");
+      return;
+    }
+    handlers.current.onTranscript?.(text);
+    handlers.current.onDone?.(text);
+    announce(said.current.transcriptAdded);
+    setPhase("idle");
+  }, []);
+
   const transcribe = useCallback(
     async (audio: Blob, mimeType: string) => {
       const handler = handlers.current.onTranscribe;
@@ -254,17 +333,7 @@ export function useVoiceInput({
       try {
         const text = await consume(handler(audio, { signal: controller.signal, mimeType }));
         if (controller.signal.aborted) return;
-        // A recording with nothing in it is not a failure. Saying so out loud
-        // is the difference between "it is broken" and "say something".
-        if (!text) {
-          announce(said.current.nothingHeard);
-          setPhase("idle");
-          return;
-        }
-        handlers.current.onTranscript?.(text);
-        handlers.current.onDone?.(text);
-        announce(said.current.transcriptAdded);
-        setPhase("idle");
+        land(text);
       } catch (cause) {
         if (controller.signal.aborted) return;
         setError(cause instanceof Error ? cause.message : said.current.transcriptFailed);
@@ -274,8 +343,51 @@ export function useVoiceInput({
         abortRef.current = null;
       }
     },
-    [consume]
+    [consume, land]
   );
+
+  /**
+   * Done, with only a live transcriber: the microphone goes now, and the
+   * service gets a moment to send the last words before they land.
+   */
+  const finishLive = useCallback(async () => {
+    const live = liveRef.current;
+    if (!live) return;
+    setPhase("transcribing");
+    announce(said.current.transcribing);
+    teardown();
+    live.finish();
+    let timer = 0;
+    await Promise.race([live.done, new Promise<void>((resolve) => (timer = window.setTimeout(resolve, LIVE_GRACE_MS)))]);
+    clearTimeout(timer);
+    if (live.abort.signal.aborted || liveRef.current !== live) return;
+    liveRef.current = null;
+    live.abort.abort();
+    land(live.text.trim());
+  }, [land, teardown]);
+
+  /** Starts the host's live transcriber on the open stream, and keeps its latest words. */
+  const runLive = useCallback((stream: MediaStream) => {
+    const handler = handlers.current.onTranscribeLive;
+    if (!handler) return;
+    const abort = new AbortController();
+    let finish = () => {};
+    const finished = new Promise<void>((resolve) => (finish = resolve));
+    const run = { text: "", finish, abort, done: Promise.resolve() };
+    run.done = (async () => {
+      try {
+        for await (const text of handler(stream, { signal: abort.signal, finished })) {
+          if (abort.signal.aborted) return;
+          run.text = text;
+          handlers.current.onTranscript?.(text);
+        }
+      } catch {
+        // A live service failing is not the recording failing: the words so
+        // far stay, and `onTranscribe`, if there is one, still gets the audio.
+      }
+    })();
+    liveRef.current = run;
+  }, []);
 
   const start = useCallback(async () => {
     // Support is not a phase any more — it is read straight from the platform
@@ -283,11 +395,13 @@ export function useVoiceInput({
     if (!canRecord()) return;
     setError(null);
     cancelledRef.current = false;
+    const session = ++sessionRef.current;
     setPhase("requesting");
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (cause) {
+      if (session !== sessionRef.current) return;
       const name = (cause as DOMException)?.name;
       // A refusal is a durable state, not a passing error: the browser will
       // not raise its prompt again, so telling the reader to try again would
@@ -302,6 +416,12 @@ export function useVoiceInput({
       }
       return;
     }
+    // Cancelled while the browser was asking: the yes that came after it
+    // must not start a recording.
+    if (session !== sessionRef.current) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
 
     streamRef.current = stream;
     chunksRef.current = [];
@@ -311,11 +431,21 @@ export function useVoiceInput({
       const context = new Ctor();
       audioRef.current = context;
       const analyser = context.createAnalyser();
-      analyser.fftSize = 512;
+      // Two periods of the lowest voice, for anything that wants its pitch.
+      analyser.fftSize = 2048;
       context.createMediaStreamSource(stream).connect(analyser);
+      analyserRef.current = analyser;
       runMeter(analyser);
     } catch {
       // No meter is a lesser thing than no recording. Carry on without it.
+    }
+
+    runLive(stream);
+    // Live words alone need no recording; `onTranscribe` does.
+    if (!handlers.current.onTranscribe) {
+      setPhase("listening");
+      announce(said.current.listening);
+      return;
     }
 
     const mimeType = pickMimeType();
@@ -329,6 +459,9 @@ export function useVoiceInput({
       const audio = new Blob(chunksRef.current, { type });
       chunksRef.current = [];
       teardown();
+      // The careful answer replaces the live one, so the live one stops here.
+      liveRef.current?.abort.abort();
+      liveRef.current = null;
       if (cancelledRef.current || audio.size === 0) {
         setPhase("idle");
         return;
@@ -338,7 +471,20 @@ export function useVoiceInput({
     recorder.start();
     setPhase("listening");
     announce(said.current.listening);
-  }, [runMeter, teardown, transcribe]);
+  }, [runLive, runMeter, teardown, transcribe]);
+
+  const cancel = useCallback(() => {
+    sessionRef.current += 1;
+    cancelledRef.current = true;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    liveRef.current?.abort.abort();
+    liveRef.current = null;
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    teardown();
+    setPhase("idle");
+  }, [teardown]);
 
   const stop = useCallback(() => {
     const recorder = recorderRef.current;
@@ -347,12 +493,14 @@ export function useVoiceInput({
       recorder.stop();
       return;
     }
+    if (liveRef.current && streamRef.current) {
+      announce(said.current.stoppedListening);
+      void finishLive();
+      return;
+    }
     // Nothing recording, so this is a cancel of whatever came after it.
-    abortRef.current?.abort();
-    abortRef.current = null;
-    teardown();
-    setPhase("idle");
-  }, [teardown]);
+    cancel();
+  }, [cancel, finishLive]);
 
   const toggle = useCallback(() => {
     if (state === "listening" || state === "requesting" || state === "transcribing") stop();
@@ -364,13 +512,20 @@ export function useVoiceInput({
     if (canRecord()) setPhase("idle");
   }, []);
 
+  // Stable, so a frame loop or an effect can hold them.
+  const getLevel = useCallback(() => levelRef.current, []);
+  const getAnalyser = useCallback(() => analyserRef.current, []);
+
   return {
     state,
     supported,
     error,
     start: () => void start(),
     stop,
+    cancel,
     toggle,
     reset,
+    getLevel,
+    getAnalyser,
   };
 }

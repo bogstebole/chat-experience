@@ -1,4 +1,4 @@
-import type { Attachment, Question, Source, TurnPart, TurnPartUpdate } from "../index";
+import type { Attachment, LiveTranscribeHandler, Question, Source, TurnPart, TurnPartUpdate } from "../index";
 
 /**
  * The demo pretending to be a model, and now pretending to be an agent.
@@ -518,7 +518,7 @@ export async function* threadReply(): AsyncGenerator<string> {
  *
  * So the words are scripted, like every other answer in this demo, and the
  * feature list says so. Everything around them is not: refuse the permission
- * prompt and the refusal is real, talk louder and the ring is reading your
+ * prompt and the refusal is real, talk louder and the level is reading your
  * room, press stop halfway and the abort signal fires.
  *
  * A real handler is this shape with a `fetch` in it.
@@ -535,3 +535,18 @@ export async function* scriptedTranscript(
     yield `${word} `;
   }
 }
+
+/**
+ * The same, live: what a streaming service hands back while somebody is
+ * still talking, a word every 380ms until they are done. The microphone and
+ * its level are real; the sentence is not.
+ */
+export const scriptedLiveTranscript: LiveTranscribeHandler = async function* (_stream, { signal, finished }) {
+  const words = "book a table for two on friday at eight somewhere quiet near the river".split(" ");
+  let done = false;
+  void finished.then(() => (done = true));
+  for (let said = 1; said <= words.length && !done && !signal.aborted; said++) {
+    await new Promise((wait) => setTimeout(wait, 380));
+    yield words.slice(0, said).join(" ");
+  }
+};

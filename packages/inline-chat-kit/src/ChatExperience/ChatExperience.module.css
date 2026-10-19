@@ -437,3 +437,33 @@
   outline: 2px solid var(--ick-focus-ring);
   outline-offset: 2px;
 }
+
+/* ── Dictating, with a field ─────────────────────────────────────────────
+   While the voice is drawn above the composer the conversation steps back —
+   every turn but the one dictating, the openers and the header — and comes forward over
+   half a second after. Transitions only while it does, so nothing else that
+   animates a turn is slowed by them. `!important` on the opacity because a
+   turn's entrance leaves Motion's inline `opacity: 1` on it, which a rule
+   cannot otherwise beat. */
+.page[data-recede] [id^="turn-"]:not(:has([data-ick-dictating])),
+.page[data-recede] .openingBlock,
+.page[data-recede] .header {
+  transition:
+    opacity 0.45s var(--ick-ease),
+    filter 0.45s var(--ick-ease);
+}
+
+.page[data-recede="open"] [id^="turn-"]:not(:has([data-ick-dictating])),
+.page[data-recede="open"] .openingBlock,
+.page[data-recede="open"] .header {
+  opacity: 0.28 !important;
+  filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page[data-recede="open"] [id^="turn-"]:not(:has([data-ick-dictating])),
+  .page[data-recede="open"] .openingBlock,
+  .page[data-recede="open"] .header {
+    filter: none;
+  }
+}

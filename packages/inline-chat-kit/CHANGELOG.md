@@ -8,6 +8,80 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.63.0 — 2026-10-18
+
+Dictation: what pressing the microphone looks like, and what the host has to
+attach for it to work. The kit draws it and records; **the host attaches the
+service that turns speech into words.** Pass nothing and there is no
+microphone, as before. The README's new "Dictation" section has the contract
+and three ways to meet it.
+
+### Added
+
+- **`dictation`** on `ChatExperience`, `ChatTurnRow` and `ChatInput` — what it
+  looks like while it listens. Five looks, chosen out of a dozen drawn as
+  stories first:
+  - `"recorder"`, the default: the microphone unrolls to the left into a
+    recorder — a count, the level, a stop where the microphone was — on one
+    spring, its faces changing in turn under a short blur, and a spinner the
+    size of the microphone while the words come back. The words land at the
+    caret, and when they reach the actions the actions move to the second
+    line, as they do for typing.
+  - `"surface"`: the field itself becomes the recorder until it is done.
+  - `"sand"`, `"plane"`, `"ripple"` on `ChatExperience`: the composer narrows to
+    a pill — the count, Cancel and Done — the conversation steps back, and
+    above the words the voice is drawn: grains gathering on the figures of a
+    vibrating plate, water standing in them across the surface, or rings
+    spreading from the middle. The speaker's tone, followed over seconds
+    rather than syllables, picks the figure; the level drives it. On Done the
+    words above leave under a blur, and then they arrive in the composer.
+    Escape throws it away. WebGL, in a chunk of its own (36 kB, 13 kB gzipped)
+    loaded the first time — fetched ahead in an idle moment — and the recorder
+    where there is no WebGL. Under reduced motion the figure stands still and
+    the conversation dims without blurring.
+- **`onTranscribeLive(stream, { signal, finished })`** — the microphone's
+  stream in as it opens, the whole transcript so far out, so words appear
+  while they are said. Either it or `onTranscribe` offers the microphone; with
+  both, the live one is shown and `onTranscribe`'s answer is kept.
+- **`ChatInput`: `dictation="field"` and `onDictation`** — the pill, and what
+  it hears handed over (`DictationSnapshot`), for a host drawing its own field
+  above it. It is what `ChatExperience` uses for the last three looks.
+- **`useVoiceInput`: `cancel()`, `getLevel()`, `getAnalyser()`** — throwing a
+  recording away rather than finishing it, and the level and the analyser to
+  draw from in a frame loop of your own. The analyser reads 2048 samples, two
+  periods of the lowest voice.
+- Labels: `input.waitingForMicrophoneShort`, `transcribingNow`,
+  `listeningFor`, `writingItDown`, `goAhead`, `cancelDictation` and
+  `doneDictating`.
+- Types: `LiveTranscribeHandler`, `LiveTranscribeContext`, `ComposerDictation`,
+  `ExperienceDictation`, `DictationSnapshot`, `DictationEnd`.
+- `inline-chat-kit/demo`: `scriptedLiveTranscript`, a live transcriber that
+  says the same sentence, for showing the looks without a service.
+
+### Changed
+
+- **The ring around the microphone is gone.** The recorder shows the level as
+  bars. `--ick-voice-meter` and `--ick-voice-meter-spread` are still defined
+  and no longer draw anything; they go at 1.0.
+- While dictating, the send glyph is not offered — what is in the field is not
+  finished — and a placeholder stays on one line, cut short, instead of
+  wrapping beside the recorder.
+- `ChatLayout`'s conversation column is `position: relative`, so the field can
+  be laid over it. Something a host absolutely positions inside the column
+  with no positioned ancestor of its own now places against the column rather
+  than the page.
+
+### Fixed
+
+- **A second press while the browser was asking cancelled nothing.** The grant
+  arrived afterwards and the recording started anyway. A grant for a
+  recording that was cancelled now hands the microphone straight back.
+- **Focus left the stop while dictating.** Words arriving made the composer
+  `typing`, which moved focus to the field, so Enter — pressed to finish —
+  sent the message. Focus stays on the stop for as long as it listens, comes
+  back to it when the actions move to the second line, and goes to the field,
+  at the end of the words, when it is done.
+
 ## 0.62.0 — 2026-10-16
 
 ### Changed

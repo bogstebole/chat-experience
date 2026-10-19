@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -35,7 +36,19 @@ import {
   type InlineAnimConfig,
   type ChatInputHandle,
 } from "../ChatInput/ChatInput";
-import { type TranscribeHandler } from "../voice/useVoiceInput";
+import { type LiveTranscribeHandler, type TranscribeHandler } from "../voice/useVoiceInput";
+import type { ComposerDictation, DictationEnd, DictationSnapshot } from "../ChatInput/Dictation";
+import { DictationField, fieldSupported, type FieldLook } from "../Dictation/DictationField";
+
+/**
+ * What dictating looks like. `"recorder"` and `"surface"` are the composer's
+ * own; `"sand"`, `"plane"` and `"ripple"` draw the voice above it — a figure
+ * that gathers as it is spoken to — while the conversation steps back.
+ */
+export type ExperienceDictation = Exclude<ComposerDictation, "field"> | FieldLook;
+
+const FIELD_LOOKS: readonly string[] = ["sand", "plane", "ripple"];
+const subscribeNever = () => () => {};
 import {
   type CustomPart,
   type CustomPartContext,
@@ -164,9 +177,16 @@ export interface ChatExperienceProps {
    * built-in three (Add, Design, Connectors). Keep a list stable.
    */
   composerMenu?: ComposerMenuItem[] | false;
-  /** Speech to text. The kit records; the host transcribes. Omit and the
-      microphone does not appear. */
+  /** Speech to text. The kit records; the host transcribes. Omit this and
+      `onTranscribeLive`, and the microphone does not appear. */
   onTranscribe?: TranscribeHandler;
+  /** Words while they are said: the microphone's stream in, the transcript
+      so far out. See `useVoiceInput`. */
+  onTranscribeLive?: LiveTranscribeHandler;
+  /** What dictating looks like: `"recorder"` (the default) or `"surface"`
+      in the composer, or `"sand"`, `"plane"` or `"ripple"` drawn above it.
+      Those three need WebGL, and are the recorder where there is none. */
+  dictation?: ExperienceDictation;
   /** A follow-up asked on a passage. Omit and replying in a thread is off. */
   onThreadReply?: ReplyThreadPopupProps["onSendMessage"];
 
@@ -354,6 +374,8 @@ export function ChatExperience({
   headerActions: builtInActions = true,
   composerMenu,
   onTranscribe,
+  onTranscribeLive,
+  dictation,
   onThreadReply,
   title: titleProp,
   backHref,
@@ -393,6 +415,36 @@ export function ChatExperience({
   const title = titleProp ?? text.title;
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [showHighlights, setShowHighlights] = useState(false);
+
+  /**
+   * `sand`, `plane`, `ripple`: the composer becomes a pill and hands over
+   * what it hears, and the field above draws it. WebGL decides whether there
+   * can be a field at all — asked on the client, and no on the server, so
+   * the first render agrees with what the server sent.
+   */
+  const canDraw = useSyncExternalStore(subscribeNever, fieldSupported, () => false);
+  const fieldLook = dictation && FIELD_LOOKS.includes(dictation) && canDraw ? (dictation as FieldLook) : null;
+  const composerDictation: ComposerDictation | undefined = fieldLook
+    ? "field"
+    : dictation && FIELD_LOOKS.includes(dictation)
+      ? "recorder"
+      : (dictation as ComposerDictation | undefined);
+  const [dictating, setDictating] = useState<DictationSnapshot | null>(null);
+  const [dictationEnded, setDictationEnded] = useState<DictationEnd>("done");
+  /** The conversation steps back while it listens, and comes forward over half a second after. */
+  const [recede, setRecede] = useState<"open" | "closing" | null>(null);
+  const recedeTimer = useRef(0);
+  useEffect(() => () => clearTimeout(recedeTimer.current), []);
+  const onDictation = useCallback((snapshot: DictationSnapshot | null, ended?: DictationEnd) => {
+    setDictating(snapshot);
+    if (ended) setDictationEnded(ended);
+    clearTimeout(recedeTimer.current);
+    if (snapshot) setRecede("open");
+    else {
+      setRecede("closing");
+      recedeTimer.current = window.setTimeout(() => setRecede(null), 500);
+    }
+  }, []);
   const [activeReply, setActiveReply] = useState<{ text: string; rect: DOMRect } | null>(null);
   const [selectionMode, setSelectionMode] = useState<"marker" | "precise">("marker");
   const activeInputRef = useRef<ChatInputHandle>(null);
@@ -766,6 +818,7 @@ export function ChatExperience({
         .join(" ")}
       style={{ "--ick-experience-anchor": `${anchorOffset}px` } as CSSProperties}
       data-composer={docked ? "docked" : undefined}
+      data-recede={recede ?? undefined}
       initial={{ opacity: 0 }}
       animate={{
         opacity: activeReply || showHighlights ? 0.4 : 1,
@@ -892,6 +945,9 @@ export function ChatExperience({
                   docked && live ? styles.dock : opening && i === 0 ? styles.opening : undefined
                 }
                 onTranscribe={onTranscribe}
+                onTranscribeLive={onTranscribeLive}
+                dictation={composerDictation}
+                onDictation={fieldLook ? onDictation : undefined}
                 isActiveInput={live}
                 inputRef={live ? activeInputRef : null}
                 entranceDelay={i === 0 ? feedDelay : 0}
@@ -990,6 +1046,8 @@ export function ChatExperience({
         }
       >
         {chat}
+        {/* Keyed by the look: a WebGL context lost to one look cannot draw the next. */}
+        {fieldLook && <DictationField key={fieldLook} look={fieldLook} snapshot={dictating} ended={dictationEnded} />}
       </ChatLayout>
 
       <AnimatePresence>
