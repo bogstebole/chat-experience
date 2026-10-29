@@ -113,6 +113,34 @@ const textFromIndices = (indices: Set<number>, tokens: string[]) => {
   return out.trim();
 };
 
+/**
+ * The words a range covers, read off the tokens rather than the range.
+ *
+ * `Selection.toString()` is every text node in the range, and a citation
+ * marker is one: a double-click or a drag from the margin across "c²[^1]" kept
+ * and quoted back "c²1". A marker is not a word of the answer — the parser
+ * leaves it untokenised for that reason, and a drawn stroke's text was already
+ * the tokens. The two ends are cut where the range is, so a selection that
+ * starts mid-word still starts there.
+ */
+const textInRange = (range: Range, indices: Set<number>, container: Element, tokens: string[]) => {
+  if (indices.size === 0) return "";
+  const sorted = [...indices].sort((a, b) => a - b);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const node = (i: number) => container.querySelector(`span[data-index="${i}"]`)?.firstChild;
+  const startNode = node(first);
+  const endNode = node(last);
+  let out = "";
+  for (let i = first; i <= last; i++) {
+    let token = tokens[i] ?? "";
+    if (i === last && endNode && endNode === range.endContainer) token = token.slice(0, range.endOffset);
+    if (i === first && startNode && startNode === range.startContainer) token = token.slice(range.startOffset);
+    out += token;
+  }
+  return out.trim();
+};
+
 /** Long passages make unusable labels; a screen reader reads every character. */
 const shorten = (text: string, max = 60) =>
   text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
@@ -228,9 +256,11 @@ export function TextHighlighter({
   const selectionsRef = useRef(selections);
   const onHighlightCompleteRef = useRef(onHighlightComplete);
   const menuAnchorRef = useRef(menuAnchor);
+  const tokensRef = useRef(tokens);
 
   useEffect(() => {
     selectionsRef.current = selections;
+    tokensRef.current = tokens;
     onHighlightCompleteRef.current = onHighlightComplete;
     menuAnchorRef.current = menuAnchor;
   });
@@ -278,8 +308,7 @@ export function TextHighlighter({
    */
   const commitRange = useCallback((range: Range, rawText: string, viaKeyboard = false) => {
     const container = containerRef.current;
-    const text = rawText.trim();
-    if (!container || !text) return;
+    if (!container || !rawText.trim()) return;
 
     const highlightedIndices = new Set<number>();
     container.querySelectorAll("span[data-index]").forEach((span) => {
@@ -287,6 +316,7 @@ export function TextHighlighter({
         highlightedIndices.add(parseInt(span.getAttribute("data-index")!, 10));
       }
     });
+    const text = textInRange(range, highlightedIndices, container, tokensRef.current) || rawText.trim();
 
     // Reported before the geometry, and regardless of it. Somebody highlighted
     // this text; whether a marker can be drawn over it is a separate question,

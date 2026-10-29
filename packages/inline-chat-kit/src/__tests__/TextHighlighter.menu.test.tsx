@@ -216,6 +216,38 @@ describe("the highlight menu — opening from a selection the reader made", () =
 
     expect(menu()).not.toBeNull();
   });
+
+  /* `Selection.toString()` reads the citation marker's number as text: a
+     selection across "125 GeV[^1]" was kept and quoted back as "125 GeV1". */
+  const selectAndKeep = (text: string, select: (surface: HTMLElement, range: Range) => void) => {
+    const onBookmark = vi.fn();
+    const utils = render(<TextHighlighter text={text} onReplyInThread={vi.fn()} onBookmark={onBookmark} />);
+    const surface = utils.container.querySelector("[tabindex]") as HTMLElement;
+    const range = document.createRange();
+    select(surface, range);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    fireEvent.mouseUp(document);
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Bookmark" }));
+    return onBookmark.mock.calls[0]?.[0];
+  };
+
+  it("keeps the words without the citation markers between them", () => {
+    const kept = selectAndKeep("Measured at 125 GeV[^1], by both.", (surface, range) =>
+      range.selectNodeContents(surface)
+    );
+    expect(kept).toBe("Measured at 125 GeV, by both.");
+  });
+
+  it("starts and ends where the selection does, mid-word or not", () => {
+    const kept = selectAndKeep(TEXT, (surface, range) => {
+      const word = (w: string) =>
+        [...surface.querySelectorAll("span[data-index]")].find((s) => s.textContent === w)!.firstChild!;
+      range.setStart(word("physics"), 3);
+      range.setEnd(word("studies"), 4);
+    });
+    expect(kept).toBe("sics stud");
+  });
 });
 
 /* A highlight is not a bookmark by being drawn: keeping one is a choice, made

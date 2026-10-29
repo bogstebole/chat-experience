@@ -29,6 +29,15 @@ existing install is called out under **Breaking**, with what to do about it.
   without saving still leaves no trace. `ReplyThreadPopup` draws Save only
   when it has an `onSave`, and only once something has been answered.
 
+### Fixed
+
+- **A selected passage no longer carries its citation numbers.** A
+  double-click, a drag from the margin or a select-all took its text from the
+  browser's selection, which reads a `[^1]` marker as a digit: "125.25
+  GeV/c²[^1]" was quoted back in a thread, and kept, as "GeV/c²1". A
+  select-all also took the hidden keyboard hint with it. The text now comes
+  from the answer's words, the way a drawn stroke's already did.
+
 ### Added
 
 - `onBookmark` and `bookmarked` on `TextHighlighter` and `ChatTurnRow`.
