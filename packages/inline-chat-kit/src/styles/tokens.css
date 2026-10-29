@@ -1138,6 +1138,12 @@
     --ick-dark-tray-thumb: rgb(var(--ick-ink-rgb) / 0.2);
     --ick-dark-marker-stroke: rgb(var(--ick-marker-rgb) / 0.22);
     --ick-dark-marker-blend: normal;
+    /* The glow and the sheen of the marker under an open menu, brought down
+       with the stroke. Left at the light theme's, the glow was 60% under a
+       22% stroke — a halo three times brighter than the mark it surrounds —
+       and the sheen was white light swept across a dark tint. */
+    --ick-dark-marker-glow: rgb(var(--ick-marker-rgb) / 0.18);
+    --ick-dark-marker-sheen: rgb(var(--ick-glass-rim-rgb) / 0.35);
     /* And with the stroke now darker than the ink, a word under an open menu
        stops being repainted: black on this tint is a fifth of the contrast
        the page's ink already has on it. */
@@ -1291,6 +1297,8 @@
     --ick-tray-thumb: var(--ick-dark-tray-thumb);
     --ick-marker-stroke: var(--ick-dark-marker-stroke);
     --ick-marker-blend: var(--ick-dark-marker-blend);
+    --ick-marker-glow: var(--ick-dark-marker-glow);
+    --ick-marker-sheen: var(--ick-dark-marker-sheen);
     --ick-marker-active-ink: var(--ick-dark-marker-active-ink);
       --ick-danger-rgb: var(--ick-dark-danger-rgb);
       --ick-ink-glass: var(--ick-dark-ink-glass);
@@ -1334,6 +1342,8 @@
     --ick-tray-thumb: var(--ick-dark-tray-thumb);
     --ick-marker-stroke: var(--ick-dark-marker-stroke);
     --ick-marker-blend: var(--ick-dark-marker-blend);
+    --ick-marker-glow: var(--ick-dark-marker-glow);
+    --ick-marker-sheen: var(--ick-dark-marker-sheen);
     --ick-marker-active-ink: var(--ick-dark-marker-active-ink);
     --ick-danger-rgb: var(--ick-dark-danger-rgb);
     --ick-ink-glass: var(--ick-dark-ink-glass);

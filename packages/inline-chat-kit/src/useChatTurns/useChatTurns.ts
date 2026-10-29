@@ -115,6 +115,12 @@ export interface UseChatTurnsOptions {
    * flight is refused rather than started on top of the first; queueing it is
    * a separate thing (see the roadmap, I3).
    */
+  /**
+   * A conversation to start from — a thread saved earlier and opened again.
+   * Read once, at mount; a fresh input is opened under it. Answered turns
+   * only: one still being written has nothing to finish it.
+   */
+  initialTurns?: ChatTurn[];
   nextTurn?: "after-answer" | "at-send";
 }
 
@@ -230,8 +236,11 @@ export function useChatTurns({
   sentencePause = DEFAULT_SENTENCE_PAUSE,
   announcements,
   nextTurn = "after-answer",
+  initialTurns,
 }: UseChatTurnsOptions): UseChatTurnsResult {
-  const [turns, setTurns] = useState<ChatTurn[]>(() => [emptyTurn()]);
+  const [turns, setTurns] = useState<ChatTurn[]>(() =>
+    initialTurns?.length ? [...initialTurns, emptyTurn()] : [emptyTurn()]
+  );
   const [isStreaming, setIsStreaming] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);

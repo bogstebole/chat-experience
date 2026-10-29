@@ -147,6 +147,8 @@ export const defaultLabels = {
   highlighter: {
     menu: "Highlight actions",
     reply: "Reply in thread",
+    bookmark: "Bookmark",
+    unbookmark: "Remove bookmark",
     remove: "Remove highlight",
     /** The invisible button per highlight, followed by its text. */
     highlight: "Highlight:",
@@ -186,6 +188,8 @@ export const defaultLabels = {
   experience: {
     title: "Chat",
     savedHighlights: "Saved highlights",
+    savedThreads: "Saved threads",
+    threads: "Threads",
     themeToLight: "Switch to the light theme",
     themeToDark: "Switch to the dark theme",
     share: "Share",

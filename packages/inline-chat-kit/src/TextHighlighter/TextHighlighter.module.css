@@ -82,8 +82,14 @@
   animation-play-state: running;
 }
 
+/* Once, not for as long as the menu is open. The sweep is an invitation on
+   hover; under an open menu the reader is reading the words it covers, and a
+   light passing over them every two seconds was the one thing on the page
+   still moving — in the dark, a flashlight. One pass says "this one", and it
+   is quicker than the hover's. After the hover rule, which it overrides. */
 .marker[data-active="true"] + .shimmer {
   stroke-width: 28px;
+  animation: shimmer-sweep 1.2s ease-out 1 forwards;
 }
 
 @keyframes shimmer-sweep {
@@ -105,7 +111,8 @@
   .marker {
     transition: none;
   }
-  .shimmer {
+  .shimmer,
+  .marker[data-active="true"] + .shimmer {
     animation: none;
   }
 }

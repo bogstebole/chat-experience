@@ -116,7 +116,7 @@ describe("a host's button, everywhere the kit draws one", () => {
           collapseActionsAt={10_000}
           actions={[{ id: "save", label: "Save", icon: <svg />, onClick: () => {} }]}
         />
-        <ReplyThreadPopup activeReply={{ text: "a passage", rect: anchorRect() }} onClose={() => {}} onSendMessage={() => ""} />
+        <ReplyThreadPopup activeReply={{ text: "a passage", rect: anchorRect() }} onClose={() => {}} onSave={() => {}} onSendMessage={() => ""} />
         <ChatInput state="typing" value="Hi" onChange={() => {}} onSubmit={() => {}} />
         <ChatInput state="typing" value="Hi" isEditing onChange={() => {}} onSubmit={() => {}} onCancelEdit={() => {}} />
       </>

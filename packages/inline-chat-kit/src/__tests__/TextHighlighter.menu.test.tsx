@@ -216,4 +216,75 @@ describe("the highlight menu — opening from a selection the reader made", () =
 
     expect(menu()).not.toBeNull();
   });
+
+  /* `Selection.toString()` reads the citation marker's number as text: a
+     selection across "125 GeV[^1]" was kept and quoted back as "125 GeV1". */
+  const selectAndKeep = (text: string, select: (surface: HTMLElement, range: Range) => void) => {
+    const onBookmark = vi.fn();
+    const utils = render(<TextHighlighter text={text} onReplyInThread={vi.fn()} onBookmark={onBookmark} />);
+    const surface = utils.container.querySelector("[tabindex]") as HTMLElement;
+    const range = document.createRange();
+    select(surface, range);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    fireEvent.mouseUp(document);
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Bookmark" }));
+    return onBookmark.mock.calls[0]?.[0];
+  };
+
+  it("keeps the words without the citation markers between them", () => {
+    const kept = selectAndKeep("Measured at 125 GeV[^1], by both.", (surface, range) =>
+      range.selectNodeContents(surface)
+    );
+    expect(kept).toBe("Measured at 125 GeV, by both.");
+  });
+
+  it("starts and ends where the selection does, mid-word or not", () => {
+    const kept = selectAndKeep(TEXT, (surface, range) => {
+      const word = (w: string) =>
+        [...surface.querySelectorAll("span[data-index]")].find((s) => s.textContent === w)!.firstChild!;
+      range.setStart(word("physics"), 3);
+      range.setEnd(word("studies"), 4);
+    });
+    expect(kept).toBe("sics stud");
+  });
+});
+
+/* A highlight is not a bookmark by being drawn: keeping one is a choice, made
+   in the menu, and undone there. */
+describe("the highlight menu — keeping a passage", () => {
+  const keep = (props: { bookmarked?: string[] } = {}) => {
+    const onBookmark = vi.fn();
+    const utils = render(<TextHighlighter text={TEXT} onReplyInThread={vi.fn()} onBookmark={onBookmark} {...props} />);
+    const surface = utils.container.querySelector("[tabindex]") as HTMLElement;
+    surface.focus();
+    fireEvent.keyDown(surface, { key: "ArrowRight" });
+    fireEvent.keyDown(surface, { key: "Enter" });
+    return { onBookmark };
+  };
+
+  it("offers to keep it, between replying and removing", () => {
+    keep();
+    const order = [...screen.getByRole("menu").querySelectorAll("[data-ick-action]")].map((a) =>
+      a.getAttribute("data-ick-action")
+    );
+    expect(order).toEqual(["reply", "bookmark", "remove"]);
+    expect(screen.getByRole("menuitemcheckbox", { name: "Bookmark" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("keeps it on a press, with the words it covers", () => {
+    const { onBookmark } = keep();
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Bookmark" }));
+    expect(onBookmark).toHaveBeenCalledWith("Particle");
+  });
+
+  it("offers to let go of one already kept", () => {
+    keep({ bookmarked: ["Particle"] });
+    expect(screen.getByRole("menuitemcheckbox", { name: "Remove bookmark" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("is not offered when nobody keeps them", () => {
+    render(<TextHighlighter text={TEXT} onReplyInThread={vi.fn()} />);
+    expect(screen.queryByRole("menuitemcheckbox")).toBeNull();
+  });
 });

@@ -280,7 +280,8 @@ describe("labels reach the pieces around the conversation", () => {
     surface.focus();
     fireEvent.keyDown(surface, { key: "ArrowRight" });
     fireEvent.keyDown(surface, { key: "Enter" });
-    fireEvent.keyDown(await screen.findByRole("menu"), { key: "Escape" });
+    expect(leaks(), "the highlight's menu, Bookmark included").toEqual([]);
+    fireEvent.click(await screen.findByRole("menuitemcheckbox", { name: SENTINEL }));
 
     fireEvent.click(await screen.findByRole("button", { name: `${SENTINEL}, 1` }));
     const sheet = await screen.findByRole("dialog", { name: SENTINEL });

@@ -8,6 +8,46 @@ The versions before 1.0 follow the pre-release convention: **a breaking change
 or new public API bumps the minor**, and the patch is for fixes. Anything that would break an
 existing install is called out under **Breaking**, with what to do about it.
 
+## 0.63.0 — 2026-10-29
+
+### Changed
+
+- **A highlight is kept only when the reader asks.** Every highlight went
+  into the saved list the moment it was drawn; now the highlight's menu has
+  "Bookmark" between "Reply in thread" and removing, and on a kept passage it
+  reads "Remove bookmark". `bookmarks={false}` takes the item away.
+- **The open highlight is quieter.** Its sheen swept across it every two
+  seconds for as long as the menu was open; now it passes once. In the dark
+  theme the glow under it is 18% rather than 60% — it was three times the
+  22% stroke it surrounds — and the sheen is a third as bright.
+- **Removing a highlight is an X**, not a bin.
+- **A thread's Save keeps it.** It did nothing: `ChatExperience` never
+  handed the panel an `onSave`. Now a saved thread — the passage and what was
+  said about it — goes into a list behind a "Saved threads" button in the
+  header, with its count, and opens from there where it was asked, to carry
+  on. Saved again, it is updated rather than listed twice. Closing a thread
+  without saving still leaves no trace. `ReplyThreadPopup` draws Save only
+  when it has an `onSave`, and only once something has been answered.
+
+### Fixed
+
+- **A selected passage no longer carries its citation numbers.** A
+  double-click, a drag from the margin or a select-all took its text from the
+  browser's selection, which reads a `[^1]` marker as a digit: "125.25
+  GeV/c²[^1]" was quoted back in a thread, and kept, as "GeV/c²1". A
+  select-all also took the hidden keyboard hint with it. The text now comes
+  from the answer's words, the way a drawn stroke's already did.
+
+### Added
+
+- `onBookmark` and `bookmarked` on `TextHighlighter` and `ChatTurnRow`.
+- `ReplyThreadPopup`: `onSave(thread)` now receives `{ quote, turns }` (the
+  `ReplyThread` type), and `initialTurns` opens a kept thread to carry on.
+  `useChatTurns` takes `initialTurns` for the same. `ChatTurnRow`'s
+  `onReplyInThread` gets the turn's id as a third argument.
+- `--ick-dark-marker-glow`, `--ick-dark-marker-sheen`.
+- `TextHighlighter` `Menu` story.
+
 ## 0.62.0 — 2026-10-16
 
 ### Changed
