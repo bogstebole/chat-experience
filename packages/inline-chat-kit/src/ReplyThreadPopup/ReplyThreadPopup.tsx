@@ -13,10 +13,24 @@ import { placePanel } from "./placePanel";
 import styles from "./ReplyThreadPopup.module.css";
 import { useLabels } from "../labels/labels";
 
+/** A thread as it is kept: the passage it hangs off, and what was said. */
+export interface ReplyThread {
+  quote: string;
+  /** The answered turns, in order. */
+  turns: ChatTurn[];
+}
+
 export interface ReplyThreadPopupProps {
   activeReply: { text: string; rect: DOMRect };
   onClose: () => void;
-  onSave?: () => void;
+  /**
+   * Keep the thread. Given, the panel offers "Save" once something has been
+   * answered in it, and hands over the passage and the turns; without it there
+   * is no Save, rather than one that does nothing.
+   */
+  onSave?: (thread: ReplyThread) => void;
+  /** A thread kept earlier, to carry on from. Read once, when it opens. */
+  initialTurns?: ChatTurn[];
   /**
    * Produce the reply to a message sent inside the thread. Receives the
    * message and the passage the thread hangs off. Required — the popup has no
@@ -47,7 +61,13 @@ const sheet = {
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
 
-export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }: ReplyThreadPopupProps) {
+export function ReplyThreadPopup({
+  activeReply,
+  onClose,
+  onSave,
+  initialTurns,
+  onSendMessage,
+}: ReplyThreadPopupProps) {
   const text = useLabels("thread");
   const { responding } = useLabels("experience");
   const [threadFade, setThreadFade] = useState<"none" | "top" | "bottom" | "both">("none");
@@ -109,7 +129,11 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
   } = useChatTurns({
     onSend: (message, context) => onSendMessage(message, quoted, context),
     announcements: { responding },
+    initialTurns,
   });
+  /* What would be kept: everything answered. A thread with nothing answered
+     yet has nothing to save. */
+  const answered = threadTurns.filter((turn) => turn.state === "resting" && turn.ai);
 
   /**
    * A dialog owns focus while it is open, and gives it back when it closes.
@@ -313,14 +337,17 @@ export function ReplyThreadPopup({ activeReply, onClose, onSave, onSendMessage }
             <p className={styles.headerText}>{text.title}</p>
           </div>
           <div className={styles.headerActions}>
-            <KitButton
-              variant="primary"
-              kitRole="thread-save"
-              icon={<Save size={16} />}
-              onClick={onSave}
-            >
-              {text.save}
-            </KitButton>
+            {onSave && (
+              <KitButton
+                variant="primary"
+                kitRole="thread-save"
+                icon={<Save size={16} />}
+                disabled={answered.length === 0}
+                onClick={() => onSave({ quote: quoted, turns: answered })}
+              >
+                {text.save}
+              </KitButton>
+            )}
             <KitButton
               variant="secondary"
               kitRole="thread-close"

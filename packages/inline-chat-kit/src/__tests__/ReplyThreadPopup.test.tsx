@@ -175,3 +175,61 @@ describe("placePanel", () => {
     expect(placePanel(anchor, 1280).maxHeight).toBe(Infinity);
   });
 });
+
+/* A thread worth keeping is kept, with what was said in it, and carried on
+   from later. Save does nothing without somewhere to keep it, so it is not
+   drawn then. */
+describe("ReplyThreadPopup — keeping a thread", () => {
+  const ask = (container: HTMLElement, question: string) => {
+    const editor = container.querySelector("[contenteditable]") as HTMLElement;
+    editor.textContent = question;
+    fireEvent.input(editor);
+    fireEvent.keyDown(editor, { key: "Enter" });
+  };
+
+  it("offers no Save when nothing keeps threads", () => {
+    render(<ReplyThreadPopup activeReply={activeReply} onClose={vi.fn()} onSendMessage={() => ""} />);
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+  });
+
+  it("keeps the passage and the answered turns, once there is an answer", async () => {
+    const onSave = vi.fn();
+    const { container } = render(
+      <ReplyThreadPopup
+        activeReply={activeReply}
+        onClose={vi.fn()}
+        onSave={onSave}
+        onSendMessage={() => "an answer"}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Save" }), "nothing answered yet").toBeDisabled();
+
+    ask(container, "a question");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save" })).toBeEnabled(), {
+      timeout: 3000,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    const [thread] = onSave.mock.calls[0];
+    expect(thread.quote).toBe("the quoted passage");
+    expect(thread.turns.map((t: { user: string; ai: string }) => [t.user, t.ai])).toEqual([
+      ["a question", "an answer"],
+    ]);
+  });
+
+  it("carries on from a thread kept earlier", () => {
+    const earlier = [
+      { id: "t1", user: "kept question", ai: "kept answer", parts: [], versions: [], versionIndex: 0, state: "resting" as const },
+    ];
+    render(
+      <ReplyThreadPopup
+        activeReply={activeReply}
+        onClose={vi.fn()}
+        onSendMessage={() => ""}
+        initialTurns={earlier}
+      />
+    );
+    expect(screen.getAllByText("kept question").length).toBeGreaterThan(0);
+    expect(screen.getByText(/kept answer/)).toBeInTheDocument();
+  });
+});

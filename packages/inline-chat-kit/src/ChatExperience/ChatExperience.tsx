@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { motion, AnimatePresence, MotionConfig, type Transition } from "motion/react";
-import { Bookmark, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
+import { Bookmark, MessagesSquare, Share, Highlighter, TextCursor, Sun, Moon } from "lucide-react";
 
 import { ChatHeader, type ChatHeaderAction } from "../ChatHeader/ChatHeader";
 import { ChatTurnRow } from "../ChatTurnRow/ChatTurnRow";
@@ -19,7 +19,11 @@ import { ChatLayout } from "../Artifact/ChatLayout";
 import { useArtifacts } from "../Artifact/useArtifacts";
 import { Conversation } from "../Conversation/Conversation";
 import { EmptyState } from "../EmptyState/EmptyState";
-import { ReplyThreadPopup, type ReplyThreadPopupProps } from "../ReplyThreadPopup/ReplyThreadPopup";
+import {
+  ReplyThreadPopup,
+  type ReplyThread,
+  type ReplyThreadPopupProps,
+} from "../ReplyThreadPopup/ReplyThreadPopup";
 import { SystemMessage } from "../SystemMessage/SystemMessage";
 import { CustomCursor } from "../CustomCursor/CustomCursor";
 import {
@@ -281,12 +285,13 @@ export interface ChatExperienceProps {
    */
   highlights?: boolean;
   /**
-   * Whether marked passages are kept.
+   * Whether marked passages can be kept.
    *
-   * On by default, and only ever visible once there is one: the header grows
-   * a button with the count, and it opens the sheet that lists them.
-   * `false` keeps marking and threads and drops the keeping — for a host that
-   * would rather store them itself, through `onHighlight`.
+   * On by default: a highlight's menu offers "Bookmark" beside replying and
+   * removing, and once one is kept the header grows a button with the count,
+   * which opens the sheet that lists them. Drawing a highlight keeps nothing
+   * by itself. `false` keeps marking and threads and drops the keeping — for
+   * a host that would rather store them itself, through `onHighlight`.
    */
   bookmarks?: boolean;
 
@@ -328,6 +333,37 @@ interface Highlight {
   turnId: string;
   text: string;
 }
+
+/** A thread kept from the menu over a passage, and where it was asked. */
+interface SavedThread extends ReplyThread {
+  id: string;
+  turnId?: string;
+}
+
+/** The thread open over the conversation: new, or one opened from the list. */
+interface ActiveReply {
+  text: string;
+  rect: DOMRect;
+  turnId?: string;
+  threadId?: string;
+  initialTurns?: ReplyThread["turns"];
+}
+
+/* Bring a turn to just under the header — the way back to a kept passage or
+   a kept thread. Falls back to the browser's own when there is no feed. */
+const scrollToTurn = (el: HTMLElement | null) => {
+  const feed = document.querySelector(".ick-chat-feed");
+  const header = document.querySelector(".ick-chat-header");
+  if (el && feed) {
+    const top = header ? (header as HTMLElement).offsetHeight : 80;
+    feed.scrollTo({ top: el.offsetTop - top - 16, behavior: "smooth" });
+  } else {
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+};
+
+/** No passages kept from a turn — one array, so a row's memo can hold. */
+const NONE_KEPT: readonly string[] = [];
 
 /** Stands in for a missing `onSend` when the host brought `chat` instead. */
 const silent = () => "";
@@ -392,8 +428,11 @@ export function ChatExperience({
   const text = useLabels("experience", labels?.experience);
   const title = titleProp ?? text.title;
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [showHighlights, setShowHighlights] = useState(false);
-  const [activeReply, setActiveReply] = useState<{ text: string; rect: DOMRect } | null>(null);
+  /* Which list is open over the conversation, if one is. */
+  const [sheet, setSheet] = useState<null | "highlights" | "threads">(null);
+  const [threads, setThreads] = useState<SavedThread[]>([]);
+  const threadCount = useRef(0);
+  const [activeReply, setActiveReply] = useState<ActiveReply | null>(null);
   const [selectionMode, setSelectionMode] = useState<"marker" | "precise">("marker");
   const activeInputRef = useRef<ChatInputHandle>(null);
 
@@ -639,15 +678,27 @@ export function ChatExperience({
       .find((turn) => turn.state !== "idle" && turn.state !== "typing" && turn.user.trim())
       ?.user.trim() ?? title;
 
-  const handleHighlight = useCallback(
-    (turnId: string, text: string) => {
-      if (!bookmarks) return;
-      if (text.trim().length > 0) {
-        setHighlights((prev) => [...prev, { turnId, text: text.trim() }]);
-      }
-    },
-    [bookmarks]
-  );
+  /* Kept when the reader says so, and let go the same way.
+
+     Every highlight used to be kept the moment it was drawn. A marker is how
+     somebody points at a sentence — often to ask about it and move on — so
+     the saved list filled with passages nobody had meant to save. */
+  const handleBookmark = useCallback((turnId: string, text: string) => {
+    setHighlights((prev) =>
+      prev.some((h) => h.turnId === turnId && h.text === text)
+        ? prev.filter((h) => !(h.turnId === turnId && h.text === text))
+        : [...prev, { turnId, text }]
+    );
+  }, []);
+
+  /* Per turn, and one array per turn for as long as nothing is kept or let
+     go: the rows are memoised, and a new array every render would redraw
+     every finished one on every frame of an answer arriving. */
+  const bookmarkedByTurn = useMemo(() => {
+    const byTurn = new Map<string, string[]>();
+    for (const h of highlights) byTurn.set(h.turnId, [...(byTurn.get(h.turnId) ?? []), h.text]);
+    return byTurn;
+  }, [highlights]);
 
   /* Hoisted for the memo. It was an arrow written inline in the row's props,
      which is a new function every render — so every finished row re-rendered
@@ -660,8 +711,52 @@ export function ChatExperience({
     [changeArtifact]
   );
 
-  const handleReplyInThread = useCallback((text: string, rect: DOMRect) => {
-    setActiveReply({ text, rect });
+  const handleReplyInThread = useCallback((text: string, rect: DOMRect, turnId?: string) => {
+    setActiveReply({ text, rect, turnId });
+  }, []);
+
+  /* Kept, or kept again: a thread opened from the list and carried on is the
+     same thread, so it is replaced rather than listed twice. */
+  const saveThread = useCallback(
+    (thread: ReplyThread) => {
+      setThreads((all) => {
+        const id = activeReply?.threadId;
+        if (id && all.some((t) => t.id === id)) {
+          return all.map((t) => (t.id === id ? { ...t, turns: thread.turns } : t));
+        }
+        threadCount.current += 1;
+        return [
+          ...all,
+          { id: `thread-${threadCount.current}`, turnId: activeReply?.turnId, ...thread },
+        ];
+      });
+      setActiveReply(null);
+    },
+    [activeReply]
+  );
+
+  /* Back to where the thread was asked, and the thread over it again. */
+  const reopenThread = useCallback((thread: SavedThread) => {
+    setSheet(null);
+    const el = thread.turnId ? document.getElementById(`turn-${thread.turnId}`) : null;
+    setTimeout(() => {
+      scrollToTurn(el);
+      /* Once the scroll has had its time, so the panel is placed beside
+         where the passage ends up rather than where it was. */
+      setTimeout(() => {
+        const box = el?.getBoundingClientRect();
+        const rect = box
+          ? new DOMRect(box.left, box.top, box.width, Math.min(box.height, 80))
+          : new DOMRect(window.innerWidth / 2, window.innerHeight / 3, 0, 0);
+        setActiveReply({
+          text: thread.quote,
+          rect,
+          turnId: thread.turnId,
+          threadId: thread.id,
+          initialTurns: thread.turns,
+        });
+      }, 450);
+    }, 100);
   }, []);
 
   /* Bound to `updatePart` here so the host's handler keeps the plain shape it
@@ -722,7 +817,19 @@ export function ChatExperience({
             icon: <Bookmark size={16} aria-hidden />,
             count: highlights.length,
             pinned: true,
-            onClick: () => setShowHighlights(true),
+            onClick: () => setSheet("highlights"),
+          },
+        ]
+      : []),
+    ...(onThreadReply && threads.length > 0
+      ? [
+          {
+            id: "threads",
+            label: text.savedThreads,
+            icon: <MessagesSquare size={16} aria-hidden />,
+            count: threads.length,
+            pinned: true,
+            onClick: () => setSheet("threads"),
           },
         ]
       : []),
@@ -768,9 +875,9 @@ export function ChatExperience({
       data-composer={docked ? "docked" : undefined}
       initial={{ opacity: 0 }}
       animate={{
-        opacity: activeReply || showHighlights ? 0.4 : 1,
-        filter: activeReply || showHighlights ? "blur(3px)" : "blur(0px)",
-        scale: activeReply || showHighlights ? 0.9 : 1,
+        opacity: activeReply || sheet ? 0.4 : 1,
+        filter: activeReply || sheet ? "blur(3px)" : "blur(0px)",
+        scale: activeReply || sheet ? 0.9 : 1,
       }}
       transition={{ type: "spring", stiffness: 260, damping: 30, mass: 0.9 }}
       onAnimationComplete={() => {
@@ -925,7 +1032,8 @@ export function ChatExperience({
                 busy={docked && live ? isStreaming : undefined}
                 onEdit={beginEdit}
                 onCancelEdit={cancelEdit}
-                onHighlight={handleHighlight}
+                onBookmark={bookmarks ? handleBookmark : undefined}
+                bookmarked={bookmarkedByTurn.get(turn.id) ?? NONE_KEPT}
                 onReplyInThread={onThreadReply ? handleReplyInThread : undefined}
                 onAnswerQuestion={answerQuestion}
                 onEditQuestion={editQuestion}
@@ -993,13 +1101,13 @@ export function ChatExperience({
       </ChatLayout>
 
       <AnimatePresence>
-        {showHighlights && (
+        {sheet === "highlights" && (
           <motion.div
             className={styles.scrim}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowHighlights(false)}
+            onClick={() => setSheet(null)}
           >
             <motion.div
               className={styles.sheet}
@@ -1012,7 +1120,7 @@ export function ChatExperience({
             >
               <div className={styles.sheetHead}>
                 <h2 className={styles.sheetTitle}>{text.highlights}</h2>
-                <button className={styles.close} onClick={() => setShowHighlights(false)}>
+                <button className={styles.close} onClick={() => setSheet(null)}>
                   {text.close}
                 </button>
               </div>
@@ -1031,20 +1139,13 @@ export function ChatExperience({
                           type="button"
                           className={styles.mark}
                           onClick={() => {
-                            setShowHighlights(false);
+                            setSheet(null);
                             /* After the sheet has gone, so the scroll is not
                                competing with an exit animation for the frame. */
-                            setTimeout(() => {
-                              const el = document.getElementById(`turn-${turnId}`);
-                              const feed = document.querySelector(".ick-chat-feed");
-                              const header = document.querySelector(".ick-chat-header");
-                              if (el && feed) {
-                                const top = header ? (header as HTMLElement).offsetHeight : 80;
-                                feed.scrollTo({ top: el.offsetTop - top - 16, behavior: "smooth" });
-                              } else {
-                                el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                              }
-                            }, 100);
+                            setTimeout(
+                              () => scrollToTurn(document.getElementById(`turn-${turnId}`)),
+                              100
+                            );
                           }}
                         >
                           {h.text}
@@ -1059,10 +1160,56 @@ export function ChatExperience({
       </AnimatePresence>
 
       <AnimatePresence>
+        {sheet === "threads" && (
+          <motion.div
+            className={styles.scrim}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSheet(null)}
+          >
+            <motion.div
+              className={styles.sheet}
+              role="dialog"
+              aria-label={text.savedThreads}
+              initial={{ y: 20, scale: 0.95 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 20, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.sheetHead}>
+                <h2 className={styles.sheetTitle}>{text.threads}</h2>
+                <button className={styles.close} onClick={() => setSheet(null)}>
+                  {text.close}
+                </button>
+              </div>
+              <div className={styles.threads}>
+                {threads.map((thread) => (
+                  <button
+                    key={thread.id}
+                    type="button"
+                    className={styles.thread}
+                    onClick={() => reopenThread(thread)}
+                  >
+                    <span className={styles.threadQuote}>{thread.quote}</span>
+                    <span className={styles.threadAsked}>{thread.turns[0]?.user}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {activeReply && onThreadReply && (
           <ReplyThreadPopup
-            key="thread-popup"
+            /* A different thread is a different conversation: remounted, so
+               one opened from the list starts from its own turns. */
+            key={activeReply.threadId ?? "thread-popup"}
             activeReply={activeReply}
+            initialTurns={activeReply.initialTurns}
+            onSave={saveThread}
             onClose={() => setActiveReply(null)}
             /* Prose only: a thread is a follow-up on a passage, and a tool call
                inside a popover over the answer would be absurd. */

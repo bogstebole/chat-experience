@@ -205,7 +205,7 @@ export { loadHighlighter, canHighlight } from "./CodeBlock/highlight";
 
 /* Conversation surface */
 export { ReplyThreadPopup } from "./ReplyThreadPopup/ReplyThreadPopup";
-export type { ReplyThreadPopupProps, Turn } from "./ReplyThreadPopup/ReplyThreadPopup";
+export type { ReplyThreadPopupProps, ReplyThread, Turn } from "./ReplyThreadPopup/ReplyThreadPopup";
 export { TextHighlighter } from "./TextHighlighter/TextHighlighter";
 export type { TextHighlighterProps } from "./TextHighlighter/TextHighlighter";
 export { CustomCursor } from "./CustomCursor/CustomCursor";

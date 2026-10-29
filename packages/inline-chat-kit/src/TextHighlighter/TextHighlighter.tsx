@@ -9,7 +9,7 @@ import { InlineCitation } from "../InlineCitation/InlineCitation";
 import type { Source } from "../Sources/Sources";
 import styles from "./TextHighlighter.module.css";
 import { fill, useLabels } from "../labels/labels";
-import { MessageCircle, Trash2 } from "lucide-react";
+import { Bookmark, BookmarkCheck, MessageCircle, X } from "lucide-react";
 
 const SKEW_ANGLE = -20;
 const TAN_ANGLE = Math.tan((SKEW_ANGLE * Math.PI) / 180);
@@ -43,6 +43,18 @@ export interface TextHighlighterProps {
   selectionMode?: "marker" | "precise";
   onHighlightComplete?: (highlightedText: string) => void;
   onReplyInThread?: (text: string, rect: DOMRect) => void;
+  /**
+   * Keep a marked passage. Given, the highlight's menu offers it beside
+   * replying and removing; called with the passage's text — again to take it
+   * back, once it is in `bookmarked`. Keeping it is the host's.
+   *
+   * A highlight is not a bookmark by being drawn. A marker is how a reader
+   * points at a sentence, often to ask about it and move on, and keeping every
+   * one filled the saved list with passages nobody meant to save.
+   */
+  onBookmark?: (text: string) => void;
+  /** The passages already kept, by their text, so the menu offers to undo. */
+  bookmarked?: readonly string[];
   /**
    * What `[^1]` in the text points at, in the order the answer cites them.
    *
@@ -122,6 +134,8 @@ export function TextHighlighter({
   selectionMode = "marker",
   onHighlightComplete,
   onReplyInThread,
+  onBookmark,
+  bookmarked,
   sources,
   onSelectSource,
 }: TextHighlighterProps) {
@@ -419,7 +433,9 @@ export function TextHighlighter({
   };
 
   const menuItems = () => [
-    ...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+    ...(menuRef.current?.querySelectorAll<HTMLElement>(
+      '[role="menuitem"], [role="menuitemcheckbox"]'
+    ) ?? []),
   ];
 
   /**
@@ -630,6 +646,22 @@ export function TextHighlighter({
     // The control focus would return to is the one being deleted, so focus
     // goes back to the paragraph instead of nowhere.
     dismissMenu(viaKeyboard ? "container" : "none");
+  };
+
+  /** The words under the open menu, whichever kind of highlight it is. */
+  const anchoredText = () => {
+    if (!menuAnchor) return "";
+    if (menuAnchor.kind === "selection") {
+      return selections.find((s) => s.id === menuAnchor.pathId)?.text ?? "";
+    }
+    return getHighlightedText(menuAnchor.pathId);
+  };
+
+  const toggleBookmark = () => {
+    const viaKeyboard = menuAnchor?.viaKeyboard;
+    const text = anchoredText().trim();
+    if (text) onBookmark?.(text);
+    dismissMenu(viaKeyboard ? "restore" : "none");
   };
 
   const replyInThread = () => {
@@ -928,6 +960,36 @@ export function TextHighlighter({
               </KitButton>
             </motion.div>
 
+            {onBookmark && (() => {
+              /* A toggle, so it says which way it goes: kept passages offer
+                 to be let go, and the reader can see that before pressing. */
+              const kept = !!bookmarked?.includes(anchoredText().trim());
+              const label = kept ? text_.unbookmark : text_.bookmark;
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 400, damping: 25 } }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
+                >
+                  <KitButton
+                    variant="primary"
+                    role="menuitemcheckbox"
+                    aria-checked={kept}
+                    kitRole="highlight-action"
+                    data-ick-action="bookmark"
+                    tabIndex={menuIndex === 1 ? 0 : -1}
+                    icon={kept ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBookmark();
+                    }}
+                    title={label}
+                    aria-label={label}
+                  />
+                </motion.div>
+              );
+            })()}
+
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 400, damping: 25 } }}
@@ -938,8 +1000,8 @@ export function TextHighlighter({
                 role="menuitem"
                 kitRole="highlight-action"
                 data-ick-action="remove"
-                tabIndex={menuIndex === 1 ? 0 : -1}
-                icon={<Trash2 size={14} />}
+                tabIndex={menuIndex === (onBookmark ? 2 : 1) ? 0 : -1}
+                icon={<X size={14} />}
                 onClick={(e) => {
                   e.stopPropagation();
                   removeHighlight(menuAnchor.pathId);

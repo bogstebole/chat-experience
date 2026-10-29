@@ -120,7 +120,15 @@ export interface ChatTurnRowProps {
   /** Defaults to writing to the clipboard. */
   onCopy?: (value: string) => void;
   onHighlight?: (turnId: string, text: string) => void;
-  onReplyInThread?: (text: string, rect: DOMRect) => void;
+  /** The third argument is this turn's id, for a host that keeps threads. */
+  onReplyInThread?: (text: string, rect: DOMRect, turnId: string) => void;
+  /**
+   * Keep a marked passage — offered in the highlight's menu, called again to
+   * take it back. See `TextHighlighter`'s `onBookmark`.
+   */
+  onBookmark?: (turnId: string, text: string) => void;
+  /** This turn's kept passages, by their text. Keep the array stable. */
+  bookmarked?: readonly string[];
 
   /**
    * The row of actions under a settled answer.
@@ -302,6 +310,8 @@ export const ChatTurnRow = memo(function ChatTurnRow({
   onCopy = copyToClipboard,
   onHighlight,
   onReplyInThread,
+  onBookmark,
+  bookmarked,
   onRegenerate,
   onShowVersion,
   onFeedback,
@@ -602,7 +612,15 @@ export const ChatTurnRow = memo(function ChatTurnRow({
                 onHighlightComplete={
                   highlights ? (text) => onHighlight?.(turn.id, text) : undefined
                 }
-                onReplyInThread={highlights ? onReplyInThread : undefined}
+                onReplyInThread={
+                  highlights && onReplyInThread
+                    ? (text, rect) => onReplyInThread(text, rect, turn.id)
+                    : undefined
+                }
+                onBookmark={
+                  highlights && onBookmark ? (text) => onBookmark(turn.id, text) : undefined
+                }
+                bookmarked={bookmarked}
               />
               {/* In the last run of prose when the answer ends in prose, so
                   that answer looks exactly as it did before prose could be

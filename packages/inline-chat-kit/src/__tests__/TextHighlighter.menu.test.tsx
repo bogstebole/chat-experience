@@ -217,3 +217,42 @@ describe("the highlight menu — opening from a selection the reader made", () =
     expect(menu()).not.toBeNull();
   });
 });
+
+/* A highlight is not a bookmark by being drawn: keeping one is a choice, made
+   in the menu, and undone there. */
+describe("the highlight menu — keeping a passage", () => {
+  const keep = (props: { bookmarked?: string[] } = {}) => {
+    const onBookmark = vi.fn();
+    const utils = render(<TextHighlighter text={TEXT} onReplyInThread={vi.fn()} onBookmark={onBookmark} {...props} />);
+    const surface = utils.container.querySelector("[tabindex]") as HTMLElement;
+    surface.focus();
+    fireEvent.keyDown(surface, { key: "ArrowRight" });
+    fireEvent.keyDown(surface, { key: "Enter" });
+    return { onBookmark };
+  };
+
+  it("offers to keep it, between replying and removing", () => {
+    keep();
+    const order = [...screen.getByRole("menu").querySelectorAll("[data-ick-action]")].map((a) =>
+      a.getAttribute("data-ick-action")
+    );
+    expect(order).toEqual(["reply", "bookmark", "remove"]);
+    expect(screen.getByRole("menuitemcheckbox", { name: "Bookmark" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("keeps it on a press, with the words it covers", () => {
+    const { onBookmark } = keep();
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Bookmark" }));
+    expect(onBookmark).toHaveBeenCalledWith("Particle");
+  });
+
+  it("offers to let go of one already kept", () => {
+    keep({ bookmarked: ["Particle"] });
+    expect(screen.getByRole("menuitemcheckbox", { name: "Remove bookmark" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("is not offered when nobody keeps them", () => {
+    render(<TextHighlighter text={TEXT} onReplyInThread={vi.fn()} />);
+    expect(screen.queryByRole("menuitemcheckbox")).toBeNull();
+  });
+});

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 import { TextHighlighter } from "../TextHighlighter/TextHighlighter";
 
 const TEXT =
@@ -35,4 +36,33 @@ export const Precise: Story = {
       <TextHighlighter {...args} />
     </div>
   ),
+};
+
+/**
+ * The menu on a highlight: reply in a thread, keep it, or take it away.
+ *
+ * Drawing a highlight keeps nothing. "Bookmark" does, and on a kept passage
+ * the same item says "Remove bookmark". The open highlight is lifted with one
+ * pass of light rather than a sweep that repeats for as long as the menu is
+ * open — try it in the dark theme, where that was a flashlight.
+ */
+export const Menu: Story = {
+  render: function Menu(args) {
+    const [kept, setKept] = useState<string[]>([]);
+    return (
+      <div style={{ maxWidth: 520, fontSize: 14, lineHeight: 1.65 }}>
+        <TextHighlighter
+          {...args}
+          onReplyInThread={() => {}}
+          onBookmark={(text) =>
+            setKept((all) => (all.includes(text) ? all.filter((t) => t !== text) : [...all, text]))
+          }
+          bookmarked={kept}
+        />
+        <p style={{ marginTop: 24, fontSize: 12, color: "var(--ick-ink-faint)" }}>
+          Kept: {kept.length ? kept.map((t) => `“${t}”`).join(", ") : "nothing yet"}
+        </p>
+      </div>
+    );
+  },
 };

@@ -73,7 +73,8 @@ describe("highlights and bookmarks", () => {
     expect(screen.queryByRole("button", { name: /Saved highlights/ })).toBeNull();
   });
 
-  it("offers the saved ones once there are some", async () => {
+  /* Drawn, a highlight is not kept: that is the menu's "Bookmark". */
+  it("offers the saved ones once one has been kept, and not before", async () => {
     const { container } = answered();
     fireEvent.click(screen.getByRole("button", { name: "Pitanje" }));
     await screen.findByText(/Odgovor/, undefined, { timeout: 3000 });
@@ -81,6 +82,8 @@ describe("highlights and bookmarks", () => {
     marked.focus();
     fireEvent.keyDown(marked, { key: "ArrowRight" });
     fireEvent.keyDown(marked, { key: "Enter" });
+    expect(screen.queryByRole("button", { name: /Saved highlights/ })).toBeNull();
+    fireEvent.click(await screen.findByRole("menuitemcheckbox", { name: "Bookmark" }));
     expect(await screen.findByRole("button", { name: /Saved highlights/ })).toBeInTheDocument();
   });
 });

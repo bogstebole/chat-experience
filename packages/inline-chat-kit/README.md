@@ -224,6 +224,8 @@ input that morphs into its own bubble rather than a record of what was typed.
 | `onCopy` | `(value) => void` | writes to the clipboard | |
 | `onHighlight` | `(turnId, text) => void` | | A passage was marked |
 | `onReplyInThread` | `(text, rect) => void` | | Open a thread on the marked passage |
+| `onBookmark` | `(turnId, text) => void` | | Offers "Bookmark" in the highlight's menu; called again to take it back |
+| `bookmarked` | `readonly string[]` | | This turn's kept passages. Keep the array stable |
 | `onRegenerate` | `(id) => void` | | Draws the regenerate button |
 | `onFeedback` | `(id, verdict) => void` | | Draws the thumbs |
 | `feedback` | `"up" \| "down" \| null` | `null` | Which one is lit |
@@ -1445,6 +1447,8 @@ stops being fine.
 | `selectionMode` | `"marker" \| "precise"` | Freeform drawn marker, or native char-level selection |
 | `onHighlightComplete` | `(text: string) => void` | Fires when a highlight is drawn |
 | `onReplyInThread` | `(text: string, rect: DOMRect) => void` | Reader chose "reply in thread" |
+| `onBookmark` | `(text: string) => void` | Offers "Bookmark" in the menu; called again on a kept passage to let it go |
+| `bookmarked` | `readonly string[]` | Kept passages, by text — the menu says "Remove bookmark" on these |
 
 It renders block-level elements for the marker overlay, so give it a `<div>`
 wrapper, not a `<p>` — a `<div>` inside a `<p>` is invalid HTML and trips a
@@ -1458,7 +1462,8 @@ A focused sub-conversation anchored to a highlighted passage.
 | --- | --- | --- |
 | `activeReply` | `{ text: string; rect: DOMRect }` | Pass what `onReplyInThread` gave you |
 | `onClose` | `() => void` | |
-| `onSave` | `() => void` | |
+| `onSave` | `(thread: ReplyThread) => void` | Draws Save, enabled once something is answered; hands over `{ quote, turns }` |
+| `initialTurns` | `ChatTurn[]` | A kept thread, to carry on from |
 | `onSendMessage` | `(message, quotedText) => Promise<string> \| string` | **Provide this.** Without it the popup streams placeholder copy |
 
 ### `<CustomCursor>`
@@ -1578,7 +1583,9 @@ Assembling the rows by hand, the same switch is `highlights` on
 `<ChatTurnRow>`, which is `marking` on `<TextHighlighter>`.
 
 The saved highlights button is not one of the header's actions — it appears
-only once there is a highlight, and it is the only way back to them. An entry in
+only once a passage has been kept, and it is the only way back to them. A
+passage is kept from its highlight's menu, "Bookmark"; drawing a highlight
+keeps nothing by itself. An entry in
 your own menu with id `"attach"` and no `onSelect` opens the file picker.
 
 ## Theming
